@@ -490,8 +490,8 @@ async function computeAll(lat, lon, dateStr, period, name, pre) {
   /* 极昼/极夜 */
   let tMs = period === "am" ? ev.riseMs : ev.setMs;
   if (tMs == null) {
-    if (ev.polarNight) notes.push(["bad", "该日该地处于极夜（或太阳整天不升起），不存在朝霞/晚霞。"]);
-    else notes.push(["warn", "该纬度该日期太阳不落（极昼），无日出/日落时刻，已改用太阳最低高度角时刻近似。"]);
+    if (ev.polarNight) notes.push(["bad", i18n("该日该地处于极夜（或太阳整天不升起），不存在朝霞/晚霞。")]);
+    else notes.push(["warn", i18n("该纬度该日期太阳不落（极昼），无日出/日落时刻，已改用太阳最低高度角时刻近似。")]);
     tMs = ev.noonMs + 12 * 3600000;
   }
   const sp = solarPosition(tMs, lat, lon);
@@ -518,9 +518,9 @@ async function computeAll(lat, lon, dateStr, period, name, pre) {
   if (!bundle) {
     const gfsP = apiForecast(MODEL_NAME.gfs, pts, ymd(new Date(dayMs - 86400000)), ymd(new Date(dayMs + 86400000)), API_TZ, "sunrise,sunset");
     let ecP = apiForecast(MODEL_NAME.ec, pts, ymd(new Date(dayMs - 86400000)), ymd(new Date(dayMs + 86400000)), API_TZ)
-      .catch(e => { notes.push(["warn", "ECMWF-IFS 模式数据请求失败，已退化为仅用 GFS 数据计算综合结果。"]); return null; });
+      .catch(e => { notes.push(["warn", i18n("ECMWF-IFS 模式数据请求失败，已退化为仅用 GFS 数据计算综合结果。")]); return null; });
     let aqP = apiAQ(pts, ymd(new Date(dayMs - 86400000)), ymd(new Date(dayMs + 86400000)), API_TZ)
-      .catch(e => { notes.push(["warn", "气溶胶（AOD）数据请求失败，已按中等偏洁净大气 AOD=0.25 估算，结果不确定性上升。"]); return null; });
+      .catch(e => { notes.push(["warn", i18n("气溶胶（AOD）数据请求失败，已按中等偏洁净大气 AOD=0.25 估算，结果不确定性上升。")]); return null; });
     const [gfsD, ecD, aqD] = await Promise.all([gfsP, ecP, aqP]);
     bundle = { gfsD, ecD, aqD };
     /* 只有自主取回来的才写缓存。pre（趋势注入）用的是**所选日期的样带几何**，
@@ -529,9 +529,9 @@ async function computeAll(lat, lon, dateStr, period, name, pre) {
     if (!pre) { State.cache[key] = bundle; pointCachePut(lat, lon, dateStr, period, bundle); }
   } else if (!pre) {
     State.cache[key] = bundle;    // 磁盘命中顺手提进内存，同一会话里后续切回不再读盘
-    notes.push(["info", fromDisk
+    notes.push(["info", i18n(fromDisk
       ? "本次使用了本地缓存的气象数据（同地点、同日期、同时段在 3 小时内不重复请求）。"
-      : "本次使用了缓存的气象数据（同一地点与日期在本次会话中不重复请求）。"]);
+      : "本次使用了缓存的气象数据（同一地点与日期在本次会话中不重复请求）。")]);
   }
   const { gfsD, ecD, aqD } = bundle;
 
@@ -551,7 +551,7 @@ async function computeAll(lat, lon, dateStr, period, name, pre) {
       if (!isNum(envE[k]) && isNum(envG[k])) { envE[k] = envG[k]; fallbackFields.push(k); }
     });
     if (fallbackFields.length && fallbackFields.some(k => k === "vis" || k === "fz")) {
-      notes.push(["warn", "ECMWF-IFS 模式不提供 能见度 / 0℃层高度 / 边界层高度，已用 GFS 同点位数据补全后再参与计算（已在结果中标注）。"]);
+      notes.push(["warn", i18n("ECMWF-IFS 模式不提供 能见度 / 0℃层高度 / 边界层高度，已用 GFS 同点位数据补全后再参与计算（已在结果中标注）。")]);
     }
   }
   const aodMain = serA ? serA[0].at("aerosol_optical_depth", tMs) : null;
@@ -561,8 +561,8 @@ async function computeAll(lat, lon, dateStr, period, name, pre) {
   const aodAnomaly = isNum(aodMain) && (aodMain > 2 || aodMain < 0);
   envG.aod = aodUse;
   if (envE) envE.aod = aodUse;
-  if (!isNum(aodMain)) notes.push(["warn", "未取到 AOD（气溶胶光学厚度），按 0.25 估算。"]);
-  else if (aodAnomaly) notes.push(["warn", "AOD 数值异常（" + aodMain.toFixed(2) + "），已截断到合理范围后使用。"]);
+  if (!isNum(aodMain)) notes.push(["warn", i18n("未取到 AOD（气溶胶光学厚度），按 0.25 估算。")]);
+  else if (aodAnomaly) notes.push(["warn", i18n("AOD 数值异常（{v}），已截断到合理范围后使用。", { v: aodMain.toFixed(2) })]);
 
   /* 样带分析 */
   const mk = (serArr) => TRANSECT.map((d, i) => ({
@@ -630,25 +630,27 @@ async function computeAll(lat, lon, dateStr, period, name, pre) {
 
   /* 数据质量提示 */
   const leadH = (tMs - Date.now()) / 3600000;
-  if (leadH > 120) notes.push(["warn", "预报时效约 " + Math.round(leadH) + " 小时，远超教程建议的 36 小时上限，霞光受云的三维分布影响极大，结论仅供参考。"]);
-  else if (leadH > 36) notes.push(["warn", "预报时效约 " + Math.round(leadH) + " 小时，已超过 36 小时，建议临近时再用实况外推订正。"]);
-  else if (leadH > 0) notes.push(["ok", "预报时效约 " + Math.round(leadH) + " 小时，处于数值模式较可信区间。"]);
-  else notes.push(["info", "所选时间为" + (leadH < -1 ? "过去 " + Math.round(-leadH) + " 小时" : "当前时刻") + "，数据来源于模式分析场/历史存档，可用于复盘。"]);
+  if (leadH > 120) notes.push(["warn", i18n("预报时效约 {n} 小时，远超教程建议的 36 小时上限，霞光受云的三维分布影响极大，结论仅供参考。", { n: Math.round(leadH) })]);
+  else if (leadH > 36) notes.push(["warn", i18n("预报时效约 {n} 小时，已超过 36 小时，建议临近时再用实况外推订正。", { n: Math.round(leadH) })]);
+  else if (leadH > 0) notes.push(["ok", i18n("预报时效约 {n} 小时，处于数值模式较可信区间。", { n: Math.round(leadH) })]);
+  else notes.push(["info", i18n("所选时间为{when}，数据来源于模式分析场/历史存档，可用于复盘。", {
+    when: leadH < -1 ? i18n("过去 {n} 小时", { n: Math.round(-leadH) }) : i18n("当前时刻") })]);
   /* 分歧提示（B3）：档位与文案都改由 ENS_CONF_BANDS 驱动，不再手写 18/35；
      措辞也从「GFS 与 EC」改成「三套算法」—— 这个极差本来就把光追算在内，
      旧文案漏掉它，会让人以为分歧只可能来自两套全球模式。 */
   if (isNum(dvI)) {
+    const cfT = confText(conf);
     notes.push([conf.key === "hi" ? "ok" : (conf.key === "mid" ? "info" : "warn"),
-      conf.txt + "（ΔI " + Math.round(dvI) + " 分）· " + ensConfDetail(spread, spreadQ) + "。" + conf.hint]);
+      cfT.txt + "（ΔI " + Math.round(dvI) + " " + i18n("分") + "）· " + ensConfDetail(spread, spreadQ) + "。" + cfT.hint]);
   }
   /* 云边界不确定性：云边界上的风速沿日出/日落方向的投影（教程 4.x）
      <15 m/s 不确定度小；15~30 偏大；>30 很大 */
   let along = null;
   if (isNum(envG.ws) && isNum(envG.wd) && isNum(az)) along = alongComponent(envG.ws, envG.wd, az);
   if (along != null) {
-    if (along > 30) notes.push(["bad", "日落/日出方向的风分量约 " + along.toFixed(0) + " m/s，云边界位置不确定性很大，云边界距离的参考价值明显下降。"]);
-    else if (along > 15) notes.push(["warn", "日落/日出方向的风分量约 " + along.toFixed(0) + " m/s，云边界位置存在一定不确定性，请结合临近云图复核。"]);
-    else notes.push(["ok", "日落/日出方向的风分量约 " + along.toFixed(0) + " m/s（<15 m/s），云边界位置不确定性较小。"]);
+    if (along > 30) notes.push(["bad", i18n("日落/日出方向的风分量约 {v} m/s，云边界位置不确定性很大，云边界距离的参考价值明显下降。", { v: along.toFixed(0) })]);
+    else if (along > 15) notes.push(["warn", i18n("日落/日出方向的风分量约 {v} m/s，云边界位置存在一定不确定性，请结合临近云图复核。", { v: along.toFixed(0) })]);
+    else notes.push(["ok", i18n("日落/日出方向的风分量约 {v} m/s（<15 m/s），云边界位置不确定性较小。", { v: along.toFixed(0) })]);
   }
   const apiRise = gfsD[0] && gfsD[0].daily && gfsD[0].daily.sunrise && gfsD[0].daily.sunrise[0];
   const apiSet = gfsD[0] && gfsD[0].daily && gfsD[0].daily.sunset && gfsD[0].daily.sunset[0];
@@ -659,13 +661,13 @@ async function computeAll(lat, lon, dateStr, period, name, pre) {
   }
   const dRise = diffMin(apiRise, ev.riseMs), dSet = diffMin(apiSet, ev.setMs);
   if ((isNum(dRise) && dRise > 8) || (isNum(dSet) && dSet > 8))
-    notes.push(["warn", "本地天文计算的事件时刻与模式给出的日出日落相差 " + Math.round(Math.max(dRise || 0, dSet || 0)) + " 分钟，可能与该点位高程或时区偏移有关，已以天文计算为准。"]);
-  if (Math.abs(lat) > 60) notes.push(["info", "高纬度地区：日出/日落线速度与太阳高度角变化率均显著变小，霞光可持续很久，但也可能因太阳高度角过低而偏暗。"]);
+    notes.push(["warn", i18n("本地天文计算的事件时刻与模式给出的日出日落相差 {n} 分钟，可能与该点位高程或时区偏移有关，已以天文计算为准。", { n: Math.round(Math.max(dRise || 0, dSet || 0)) })]);
+  if (Math.abs(lat) > 60) notes.push(["info", i18n("高纬度地区：日出/日落线速度与太阳高度角变化率均显著变小，霞光可持续很久，但也可能因太阳高度角过低而偏暗。")]);
   const missAll = Array.from(new Set(envG.missing.concat(envE ? envE.missing : [])));
-  if (missAll.length) notes.push(["warn", "以下要素缺失并已做插值或替代：" + missAll.map(fieldName).join("、") + "。"]);
-  if (sRT.peak.T550 < 0.002) notes.push(["warn", "光路消光很强（550nm 透射率 " + sRT.peak.T550.toExponential(2) + "），即使出现霞光也偏暗弱。"]);
-  if (!isNum(aodMain)) notes.push(["info", "气溶胶数据缺失时的替代值会影响颜色鲜艳度判断，请留意。"]);
-  if (dust != null && dust > 50 && aodUse > 0.5) notes.push(["warn", "沙尘或强霾信号明显（dust≈" + Math.round(dust) + " μg/m³），霞光颜色很可能偏浑浊发白。"]);
+  if (missAll.length) notes.push(["warn", i18n("以下要素缺失并已做插值或替代：{v}。", { v: listJoin(missAll.map(f => i18n(fieldName(f)))) })]);
+  if (sRT.peak.T550 < 0.002) notes.push(["warn", i18n("光路消光很强（550nm 透射率 {v}），即使出现霞光也偏暗弱。", { v: sRT.peak.T550.toExponential(2) })]);
+  if (!isNum(aodMain)) notes.push(["info", i18n("气溶胶数据缺失时的替代值会影响颜色鲜艳度判断，请留意。")]);
+  if (dust != null && dust > 50 && aodUse > 0.5) notes.push(["warn", i18n("沙尘或强霾信号明显（dust≈{v} μg/m³），霞光颜色很可能偏浑浊发白。", { v: Math.round(dust) })]);
 
   return {
     name, lat, lon, dateStr, period, ev, tMs, az, vSpd, omega, offsetS, tzName,

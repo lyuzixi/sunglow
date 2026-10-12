@@ -269,59 +269,63 @@ function renderFactors(r) {
 
   const coverSc = trap(p.cover, [[0, 0], [8, 0.12], [22, 0.62], [38, 1], [75, 1], [88, 0.5], [100, 0.22]]);
   add(i18n("云量类型与覆盖度"), `${p.type} · ${Math.round(p.cover)}%`, coverSc,
-    p.type + "属" + (["低云 ", "中云 ", "高云"][p.level]) + "，云底约 " + uAlt(p.base * 1000) + "。" +
-    (p.cover < 20 ? "云量偏少，可能没有足够云体承接霞光。" : p.cover > 90 ? "云量接近全覆盖，阳光难以穿透，易形成闷烧或无霞。" :
-      "云量处于理想区间，云块之间既能透光又能承接低角度阳光。"));
+    i18n("{type}属{deck}，云底约 {base}。{tail}", {
+      type: i18n(p.type), deck: i18n(["低云", "中云", "高云"][p.level]), base: uAlt(p.base * 1000),
+      tail: i18n(p.cover < 20 ? "云量偏少，可能没有足够云体承接霞光。"
+        : p.cover > 90 ? "云量接近全覆盖，阳光难以穿透，易形成闷烧或无霞。"
+          : "云量处于理想区间，云块之间既能透光又能承接低角度阳光。") }));
 
   const baseSc = trap(p.base, [[0.1, 0.05], [0.6, 0.24], [1.2, 0.55], [2.0, 0.8], [3.0, 1], [9, 1], [13, 0.68]]);
   add(i18n("云底高度"), uAlt(p.base * 1000), baseSc,
-    "云底越高，霞光可出现的范围与色相变化越丰富；云底越低，霞光越局限于橘红且持续时间短。");
+    i18n("云底越高，霞光可出现的范围与色相变化越丰富；云底越低，霞光越局限于橘红且持续时间短。"));
 
   const heqSc = trap(s.Heq, [[0, 1], [0.8, 1], [1.5, 0.8], [2.5, 0.5], [3.5, 0.3], [5, 0.12], [8, 0.03]]);
   add(i18n("光学等效地表高度"), uDist(s.Heq, 2), heqSc,
-    "气溶胶把光线“垫高”的等效地表高度，由 AOD 与气溶胶标高 Hs=" + n1(s.Hs, 2) + " km 计算（z=Hs·ln(AOD/(Hs·k₀))）。该值越大，等效云底越低，霞光越难形成。");
+    i18n("气溶胶把光线“垫高”的等效地表高度，由 AOD 与气溶胶标高 Hs={v} km 计算（z=Hs·ln(AOD/(Hs·k₀))）。该值越大，等效云底越低，霞光越难形成。", { v: n1(s.Hs, 2) }));
 
   const heffSc = trap(s.hEff, [[0, 0.03], [0.4, 0.25], [1, 0.6], [2, 0.85], [4, 1], [10, 1]]);
-  add(i18n("等效云底高度"), uDist(s.hEff, 2), heffSc, "云底高度减去光学等效地表高度后的有效高度，是几何判定的真正输入。");
+  add(i18n("等效云底高度"), uDist(s.hEff, 2), heffSc, i18n("云底高度减去光学等效地表高度后的有效高度，是几何判定的真正输入。"));
 
   const dSc = s.geom.ok ? clamp(1 - s.d / s.geom.xMax, 0, 1) * 0.6 + 0.4 : 0.05;
   add(i18n("云边界距离"), isNum(s.d) ? uDist(s.d) + i18n("（上限 {v}）", { v: uDist(s.geom.xMax) }) : i18n("无明显云边界"), dSc,
-    "沿日出/日落方位以 25 km 间隔采样（地图批量估算时以采样网格插值代替实地采样）得到的云盘外缘距离。必须小于霞光深入距离 2√(2Rh)，阳光才能从云底下方照进来；距离越远，颜色越红、开始越晚。");
+    i18n("沿日出/日落方位以 25 km 间隔采样（地图批量估算时以采样网格插值代替实地采样）得到的云盘外缘距离。必须小于霞光深入距离 2√(2Rh)，阳光才能从云底下方照进来；距离越远，颜色越红、开始越晚。"));
 
   const blockSc = trap(isNum(tr.upstreamLowMax) ? tr.upstreamLowMax : (env.cLow || 0),
     [[0, 1], [25, 0.95], [45, 0.72], [65, 0.4], [85, 0.18], [100, 0.1]]);
   add(i18n("光路上游低层云遮挡"), `${Math.round(isNum(tr.upstreamLowMax) ? tr.upstreamLowMax : 0)}%`, blockSc,
-    "低云位于霞光光路下方，是最常见的“翻车”原因：低云量高会把阳光彻底挡住。");
+    i18n("低云位于霞光光路下方，是最常见的“翻车”原因：低云量高会把阳光彻底挡住。"));
 
   const aeroSc = trap(r.aodUse, [[0, 1], [0.1, 1], [0.2, 0.88], [0.3, 0.72], [0.5, 0.52], [0.8, 0.26], [1.2, 0.12], [3, 0.03]]);
   add(i18n("气溶胶光学厚度 AOD"), `${n1(r.aodUse, 2)}（550nm）`, aeroSc,
-    r.aodUse < 0.2 ? "气溶胶很少，瑞利散射占主导，阳光颜色纯净、饱和度高，水晶天。" :
-      r.aodUse < 0.5 ? "气溶胶一般，天空通透度普通，颜色饱和度会略降。" :
-        r.aodUse < 0.8 ? "气溶胶较多，天空偏霾，会明显削弱霞光的亮度与饱和度。" :
-          "气溶胶大量存在，属“污烧”，低角度霞光细节会被灰霾吞掉。");
+    i18n(r.aodUse < 0.2 ? "气溶胶很少，瑞利散射占主导，阳光颜色纯净、饱和度高，水晶天。"
+      : r.aodUse < 0.5 ? "气溶胶一般，天空通透度普通，颜色饱和度会略降。"
+        : r.aodUse < 0.8 ? "气溶胶较多，天空偏霾，会明显削弱霞光的亮度与饱和度。"
+          : "气溶胶大量存在，属“污烧”，低角度霞光细节会被灰霾吞掉。"));
 
   const visSc = isNum(env.vis) ? trap(env.vis / 1000, [[0.4, 0.05], [2, 0.2], [5, 0.42], [10, 0.66], [20, 0.92], [30, 1], [80, 1]]) : null;
-  add("能见度", isNum(env.vis) ? uDist(env.vis / 1000, 1) : "—", visSc,
-    "反映底层大气通透程度。能见度低于 5 km 时地面附近霾/雾显著，霞光的低角度部分会被遮挡。");
+  add(i18n("能见度"), isNum(env.vis) ? uDist(env.vis / 1000, 1) : "—", visSc,
+    i18n("反映底层大气通透程度。能见度低于 5 km 时地面附近霾/雾显著，霞光的低角度部分会被遮挡。"));
 
   const humSc = isNum(env.RH) ? trap(env.RH, [[5, 0.7], [20, 0.92], [40, 1], [75, 1], [88, 0.78], [95, 0.45], [100, 0.3]]) : null;
   add(i18n("2m 相对湿度"), isNum(env.RH) ? Math.round(env.RH) + "%" : "—", humSc,
-    "湿度适中利于云的存在与散射；相对湿度过高（>90%）会形成雾并放大气溶胶消光，反而使天空浑浊；过低则可能没有云。");
+    i18n("湿度适中利于云的存在与散射；相对湿度过高（>90%）会形成雾并放大气溶胶消光，反而使天空浑浊；过低则可能没有云。"));
 
   const dPv = r.trendVal;
   const stabSc = isNum(dPv) ? trap(dPv, [[0, 1], [0.6, 1], [1.2, 0.8], [2.5, 0.52], [6, 0.3]]) : null;
   add(i18n("气压稳定性"), isNum(dPv) ? "|ΔP/Δt| = " + dPv.toFixed(2) + " hPa/h" : "—", stabSc,
-    "气压稳定说明天气系统移动缓慢，云边界位置可预测；气压快速变化意味着云况随时可能改变，预报不确定性大。");
+    i18n("气压稳定说明天气系统移动缓慢，云边界位置可预测；气压快速变化意味着云况随时可能改变，预报不确定性大。"));
 
   const comp = alongComponent(env.ws, env.wd, r.az);
   const compSc = isNum(comp) ? trap(comp, [[0, 1], [8, 1], [15, 0.75], [22, 0.5], [32, 0.3], [50, 0.15]]) : null;
   add(i18n("云边界风速分量"), isNum(comp) ? uSpeed(comp) : "—", compSc,
-    "云边界沿日出/日落方向的速度分量。经验上 <15 m/s 云边界位置不确定度小，>30 m/s 则很大（云边界会明显推移）。");
+    i18n("云边界沿日出/日落方向的速度分量。经验上 <15 m/s 云边界位置不确定度小，>30 m/s 则很大（云边界会明显推移）。"));
 
   const cape = env.cape, pr = env.precip;
   const convSc = isNum(cape) ? trap(cape, [[0, 1], [300, 1], [800, 0.8], [1500, 0.55], [3000, 0.32]]) : null;
-  add(i18n("对流活动"), (isNum(cape) ? "CAPE " + Math.round(cape) + " J/kg" : "—") + (isNum(pr) ? " · 降水 " + pr.toFixed(1) + " mm" : ""), convSc,
-    "对流强时局地积云/积雨云发展，会随机遮挡光路；但积雨云云砧本身也可能形成漂亮的云砧晚霞。");
+  add(i18n("对流活动"),
+    (isNum(cape) ? "CAPE " + Math.round(cape) + " J/kg" : "—")
+    + (isNum(pr) ? i18n(" · 降水 {v} mm", { v: pr.toFixed(1) }) : ""), convSc,
+    i18n("对流强时局地积云/积雨云发展，会随机遮挡光路；但积雨云云砧本身也可能形成漂亮的云砧晚霞。"));
 
   /* 模式一致性（B2/B3）：档位、措辞一律来自 ENS_CONF_BANDS / ensConfDetail ——
      原先这里手写 18 / 35 两个阈值，措辞还只说"两套全球模式与光追"，
@@ -334,7 +338,7 @@ function renderFactors(r) {
       : i18n("数据不足"),
     clamp(r.consist / 100, 0, 1),
     isNum(r.dvI)
-      ? cfF.txt + "，" + ensConfDetail(r.spread, r.spreadQ) + "。" + cfF.hint
+      ? i18n("{txt}，{detail}。{hint}", { txt: cfF.txt, detail: ensConfDetail(r.spread, r.spreadQ), hint: cfF.hint })
       : i18n("不足两套算法给出结果，无法评估模型一致性。"));
 
   $("#fac").innerHTML = `<thead><tr><th style="width:170px">${i18n("因素")}</th><th style="width:180px">${i18n("数值")}</th>

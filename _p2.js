@@ -95,9 +95,9 @@ function fmtHM(hoursFloat) {
 }
 function fmtDur(min) {
   if (!isNum(min)) return "—";
-  if (min <= 0) return "0 分";
+  if (min <= 0) return i18n("0 分");
   const m = Math.floor(min), s = Math.round((min - m) * 60);
-  return (m > 0 ? m + " 分 " : "") + s + " 秒";
+  return m > 0 ? i18n("{m} 分 {s} 秒", { m: m, s: s }) : i18n("{s} 秒", { s: s });
 }
 
 /* =========================================================================

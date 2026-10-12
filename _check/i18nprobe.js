@@ -55,7 +55,15 @@ const DYNAMIC_KEYS = [
   "极亮（可能过曝、色泽偏白）", "明亮（最佳区间）", "明亮偏弱（仍清晰可见）",
   "较暗（闷烧）", "很暗（观赏价值低）", "极暗（基本看不到）", "完全不可见",
   /* 三元表达式里的字面量（静态扫描抓不到 i18n(isAM ? "日出" : "日落") 这种写法） */
-  "日出", "日落", "AOD"
+  "日出", "日落", "AOD",
+  /* _p5.js 的 FIELD_CN：变量名 → 中文显示名，展示时才过 i18n */
+  "温度", "露点", "总云量", "低云量", "中云量", "高云量", "地面气压", "风速", "风向",
+  "阵风", "0℃层高度", "边界层高度", "降水量", "对流有效位能", "短波辐射", "沙尘",
+  /* _p3.js 的两条兜底文案（进入 primary.type 后由展示层 i18n） */
+  "无样带数据", "日出/日落方向 400km 内无明显云盘",
+  /* _p6.js 的 MAP_MODELS[].desc：值来自数据表，展示时才 i18n */
+  "GFS / ECMWF / 光追 加权几何平均", "NOAA 全球模式 · 云属/湿度统计评分",
+  "欧洲中心全球模式 · 云属/湿度统计评分", "纯物理：多波长光路积分 + CIE 色度"
 ];
 
 /* `_pi18n.js` 顶层只有声明、没有副作用，可以直接执行取词典 ——
@@ -68,17 +76,51 @@ function loadDicts() {
    只认字面量：`i18n(变量)` 这类动态键（云属名、颜色名）无法静态校验，
    它们靠中文回落兜底，是本表刻意不覆盖的部分。
    **404 页不在这张表里** —— 它是独立产物、自带最小词典，由 check404Dict() 单独核对。 */
+/* 出现在 i18n(...) 参数里、但**不是翻译键**的字面量：
+   它们是判据（`i18n(period === "am" ? … : …)`），扫到了也不能当键。 */
+const NOT_KEYS = ["am", "pm", "ens", "dv", ""];
+
 function usedKeys() {
   const keys = new Set();
-  const jsFiles = ["_p2.js", "_p3.js", "_p4.js", "_p5.js", "_p5b.js", "_p6.js"];
-  for (const f of jsFiles) {
-    const src = readF(f);
-    const re = /\bi18n\(\s*(["'])((?:\\.|(?!\1)[^\\])*?)\1/g;
+  /* 括号配对扫描：取 `i18n(` 之后到配对右括号之间的**全部**字符串字面量。
+     只认"紧跟在 i18n( 后面的那个字面量"是不够的 —— 大量键写在**三元表达式**里
+     （`i18n(cond ? "甲" : "乙")`、`i18n(a < 0.2 ? "很少" : "较多")`），
+     单字面量正则会把它们全部漏掉，于是它们在"孤儿键"里被误报。
+     扫描时跳过字符串内部（含转义），所以参数里的 `"` 不会打乱括号计数。 */
+  const scan = src => {
+    const re = /\bi18n\(/g;
     let m;
-    while ((m = re.exec(src))) keys.add(m[2]);
-  }
+    while ((m = re.exec(src))) {
+      let i = m.index + m[0].length - 1, depth = 0, brace = 0, inStr = null, esc = false, buf = "";
+      for (; i < src.length; i++) {
+        const c = src[i];
+        if (inStr) {
+          if (esc) { buf += c; esc = false; continue; }
+          if (c === "\\") { esc = true; continue; }
+          if (c === inStr) {
+            /* 只收**第一层实参**里的字面量：深度 >1 说明它在嵌套调用里，
+               在 {} / [] 里说明它是参数对象的字段值（如 { v: "am" }）——
+               两者都不是翻译键，收进来会制造一堆假缺译。 */
+            if (depth === 1 && brace === 0 && NOT_KEYS.indexOf(buf) < 0) keys.add(buf);
+            inStr = null; continue;
+          }
+          buf += c; continue;
+        }
+        if (c === '"' || c === "'" || c === "`") { inStr = c; buf = ""; continue; }
+        if (c === "(") depth++;
+        else if (c === "{") brace++;
+        else if (c === "}") brace--;
+        else if (c === ")") { depth--; if (depth === 0) break; }
+      }
+      /* 关键：只推进到 `i18n(` 之后，**不要**跳到配对右括号 ——
+         否则嵌在参数里的 i18n(...) 永远不会被单独扫到，
+         那些键（三元表达式、嵌套模板）就会被误报成"孤儿键"。 */
+      re.lastIndex = m.index + m[0].length;
+    }
+  };
+  for (const f of ["_p2.js", "_p3.js", "_p4.js", "_p5.js", "_p5b.js", "_p6.js"]) scan(readF(f));
   const src = readF("tpl/template.html");
-  const re = /data-i18n(?:-ph|-aria|-title)?="([^"]*)"/g;
+  const re = /data-i18n(?:-ph|-aria|-title|-html)?="([^"]*)"/g;
   let m;
   while ((m = re.exec(src))) keys.add(m[1]);
   return keys;
@@ -113,7 +155,7 @@ function dict404() {
 /* 404 页用到的键（模板里的 data-i18n* 属性） */
 function keys404() {
   const src = readF("tpl/404.html");
-  const re = /data-i18n(?:-ph|-aria|-title)?="([^"]*)"/g;
+  const re = /data-i18n(?:-ph|-aria|-title|-html)?="([^"]*)"/g;
   const out = new Set();
   let m;
   while ((m = re.exec(src))) out.add(m[1]);
@@ -180,7 +222,7 @@ class CDP {
     "语言表定义了三种语言且都带 htmllang": LANGS.length === 3 &&
       LANGS.every(x => x.k && x.name && x.htmllang),
     "模板静态文案的覆盖量达标（≥40 条 data-i18n）":
-      (readF("tpl/template.html").match(/data-i18n(?:-ph|-aria|-title)?=/g) || []).length >= 40,
+      (readF("tpl/template.html").match(/data-i18n(?:-ph|-aria|-title|-html)?=/g) || []).length >= 40,
     "404 页自带词典覆盖它自己的全部文案": miss404En.length === 0 && miss404Hant.length === 0,
     "404 页词典两份键集合一致": !!d404 &&
       Object.keys(d404.en).length === Object.keys(d404.zhHant).length
@@ -244,6 +286,19 @@ class CDP {
       var k = el.getAttribute("data-i18n");
       var want = (window.__DICT && window.__DICT[k] !== undefined) ? window.__DICT[k] : k;
       if (el.textContent !== want) out.bad.push(k + " → \\"" + el.textContent + "\\"");
+    });
+    /* 含行内标签的长段落（页脚算法说明）：比 innerHTML，不能比 textContent */
+    document.querySelectorAll("[data-i18n-html]").forEach(function(el){
+      out.n++;
+      var k = el.getAttribute("data-i18n-html");
+      var want = (window.__DICT && window.__DICT[k] !== undefined) ? window.__DICT[k] : k;
+      /* 规范化：先放进一个游离节点让浏览器解码实体（&lt; 变成 <）并统一属性写法，
+         再比对 innerHTML —— 否则词典里的实体写法与 DOM 里的字符永远不相等，
+         这条断言会恒假（第一版就是这样）。
+         注意：本段是**模板串内部**，注释里绝不能出现反引号 —— 会当场截断模板串。 */
+      var tmp = document.createElement("div");
+      tmp.innerHTML = want;
+      if (el.innerHTML !== tmp.innerHTML) out.bad.push("[html] " + k.slice(0, 28));
     });
     document.querySelectorAll("[data-i18n-ph]").forEach(function(el){
       var k = el.getAttribute("data-i18n-ph");

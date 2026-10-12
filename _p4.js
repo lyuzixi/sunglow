@@ -103,9 +103,7 @@ async function jget(url, tries) {
            判别，比钉死整句更耐改；反向也成立：短时限流的 reason 里不会出现 daily。 */
         if (/daily/i.test(body) && /limit|exceed|quota|rate/i.test(body)) {
           err.fatal = true;
-          err.friendly = "今日气象数据额度已用尽。Open-Meteo 免费层按「出口 IP」计"
-            + "（每日 10,000 次 / 每小时 5,000 次），不是按账号 ——"
-            + "若你在公司、学校或代理等共享网络下，很可能是同一出口 IP 的其他使用者消耗掉的。";
+          err.friendly = i18n("今日气象数据额度已用尽。Open-Meteo 免费层按「出口 IP」计（每日 10,000 次 / 每小时 5,000 次），不是按账号 —— 若你在公司、学校或代理等共享网络下，很可能是同一出口 IP 的其他使用者消耗掉的。");
         } else {
           err.friendly = i18n("气象接口暂时限流（短时并发过高），约一分钟内会自动恢复。");
         }
@@ -116,7 +114,7 @@ async function jget(url, tries) {
          统一映射成可读文案，并标记 timeout，供上层给出针对性的提示。 */
       const aborted = e && (e.name === "AbortError" || e.code === 20);
       if (aborted) {
-        lastErr = new Error("请求超时（超过 " + Math.round(JGET_TIMEOUT_MS / 1000) + " 秒无响应）");
+        lastErr = new Error(i18n("请求超时（超过 {n} 秒无响应）", { n: Math.round(JGET_TIMEOUT_MS / 1000) }));
         lastErr.timeout = true;
       } else {
         lastErr = e;
@@ -134,7 +132,7 @@ async function jget(url, tries) {
       if (timer) clearTimeout(timer);
     }
   }
-  throw lastErr || new Error("网络请求失败");
+  throw lastErr || new Error(i18n("网络请求失败"));
 }
 
 function qs(obj) {
@@ -372,7 +370,7 @@ function scoreStat(env, tr, ctx) {
   if (noCloud) Q = Math.min(Q, 10);
   Q = clamp(Q, 0, 100);
 
-  if (isNum(env.cape) && env.cape > 1500) notes.push("对流有效位能偏高，可能出现局地对流云遮挡");
+  if (isNum(env.cape) && env.cape > 1500) notes.push(i18n("对流有效位能偏高，可能出现局地对流云遮挡"));
   return { P, Q, primary, decks, noCloud, hEff, Heq, Hs, aodUp, d, geom, f, s: S, missF, notes };
 }
 
@@ -510,10 +508,13 @@ function ensConfOf(dv) {
    那种量级本来就只是取整噪声，硬说"主要在某一侧"是过度解读。 */
 function ensConfDetail(spreadP, spreadQ) {
   const a = nz(spreadP, 0), b = nz(spreadQ, 0);
-  if (Math.max(a, b) < 8) return "两方面分歧都很小";
+  if (Math.max(a, b) < 8) return i18n("两方面分歧都很小");
   const mainIsP = a >= b;
-  return "分歧主要在" + (mainIsP ? "出现概率" : "观赏质量") + "（" + Math.round(Math.max(a, b)) +
-    " 分），" + (mainIsP ? "观赏质量" : "出现概率") + "较一致（" + Math.round(Math.min(a, b)) + " 分）";
+  /* 中文用「（…分）」、英文用 " (… pts)" —— 整句做成模板，标点随语言走 */
+  return i18n("分歧主要在{v1}（{a} 分），{v2}较一致（{b} 分）", {
+    v1: i18n(mainIsP ? "出现概率" : "观赏质量"), a: Math.round(Math.max(a, b)),
+    v2: i18n(mainIsP ? "观赏质量" : "出现概率"), b: Math.round(Math.min(a, b))
+  });
 }
 /* 等级在图例色条上的代表位置：取区间中点（优＝90、良＝72、一般＝54.5、差＝22） */
 function bandMid(b) { return (b.min + Math.min(b.max, 100)) / 2; }
