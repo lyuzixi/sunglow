@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>霞光预报 · 朝霞与晚霞概率与观赏质量</title>
+<meta name="description" content="基于气象数据预测朝霞与晚霞（火烧云）的出现概率与观赏质量。GFS / ECMWF / 光追三路模型合成评分，含逐日趋势与周边热力图。">
+<meta name="color-scheme" content="light">
+<!-- theme-color 取页面底色而不是品牌橙：它控制的是移动端浏览器地址栏的配色，
+     跟页面融为一体才不突兀。 -->
+<meta name="theme-color" content="#f4f6fa">
+<!-- 图标全部内联：产物必须是单文件，引外部图片文件就破坏了这一点。
+     两个占位符由 assemble.py 注入（SVG 给浏览器，PNG 给 iOS —— iOS 不支持
+     SVG 格式的 apple-touch-icon）。 -->
+<link rel="icon" type="image/svg+xml" href="__ICON_SVG__">
+<link rel="apple-touch-icon" sizes="180x180" href="data:image/png;base64,__ICON_PNG180__">
+<!-- og / twitter 卡片只做标题与描述。
+     **刻意不做 og:image**：爬虫不会去取 data: URI，它需要一个真实的外部图片 URL，
+     加了就等于给产物引入一个外部文件依赖，破坏"单文件"这个核心属性；
+     og:url 同理 —— 构建期并不知道将来部署在哪个域名。 -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="霞光预报 · 朝霞与晚霞概率与观赏质量">
+<meta property="og:description" content="基于气象数据预测朝霞与晚霞（火烧云）的出现概率与观赏质量。GFS / ECMWF / 光追三路模型合成评分，含逐日趋势与周边热力图。">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="霞光预报 · 朝霞与晚霞概率与观赏质量">
+<meta name="twitter:description" content="基于气象数据预测朝霞与晚霞（火烧云）的出现概率与观赏质量。GFS / ECMWF / 光追三路模型合成评分，含逐日趋势与周边热力图。">
+<style>
+:root{
+  --bg:#f4f6fa; --card:#ffffff; --line:#e5e9f0; --line2:#eef1f6;
+  --tx:#1f2733; --tx2:#5b6675; --tx3:#667081;
+  --ok:#0f7a45; --okbg:#e9f7ef;
+  --warn:#9c5a09; --warnbg:#fdf3e3;
+  --bad:#c0392b; --badbg:#fdeceb;
+  --acc:#e2601f; --acc2:#bd4a17; --accbg:#fff3ec;
+  --blue:#2563eb; --bluebg:#eef3ff;
+  --r:14px; --r2:10px;
+  --sh:0 1px 2px rgba(16,24,40,.04), 0 6px 20px -8px rgba(16,24,40,.10);
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(1200px 380px at 12% -8%, #ffeede 0%, rgba(255,238,222,0) 62%),
+    radial-gradient(1000px 340px at 92% -6%, #e9f0ff 0%, rgba(233,240,255,0) 60%),
+    var(--bg);
+  color:var(--tx);
+  font:15px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:1560px;margin:0 auto;padding:0 16px 48px}
+h1,h2,h3,h4{margin:0;font-weight:700;letter-spacing:.2px}
+a{color:var(--blue)}
+.mono{font-family:var(--mono)}
+
+/* ---------- 顶部 ---------- */
+.top{position:sticky;top:0;z-index:60;backdrop-filter:saturate(1.4) blur(10px);
+  background:rgba(255,255,255,.86);border-bottom:1px solid var(--line)}
+.top-in{max-width:1560px;margin:0 auto;padding:11px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{width:34px;height:34px;border-radius:11px;flex:0 0 auto;
+  background:linear-gradient(150deg,#ffd08a,#f08a3c 46%,#c9501a);box-shadow:0 4px 12px -4px rgba(201,80,26,.55)}
+.top h1{font-size:17.5px;line-height:1.25}
+.top .sub{font-size:12px;color:var(--tx3);margin-top:1px}
+/* 标题列必须有 min-width:0 —— flex 子项默认 min-width:auto，而 h1 是
+   white-space:nowrap，其 min-content = 整行标题的宽度 ⇒ 标题列**不许收缩**，
+   窄屏上会把 flex:0 0 auto 的 badge 顶出容器右缘（实测 390 视口下 badge
+   右边界 451 = body.scrollWidth 451 的唯一来源），真机据此可以横向拖出
+   一整条空白、Chrome 还会把布局视口等比放大（390 → 451，×1.157），
+   而用 innerWidth 做"越界"参照的断言从此永远抓不到自己（自指掩盖）。
+   min-width:0 之后窄屏由 h1 的 ellipsis 兜底；桌面无收缩压力，零影响。
+   注意只写 min-width:0，**不要**顺手写 flex:1 —— 那会跟 .spacer 分剩余
+   空间，badge 不再贴右。 */
+.top-tx{min-width:0}
+.top .spacer{flex:1 1 auto}
+.badge{font-size:11.5px;padding:4px 9px;border-radius:999px;background:var(--accbg);color:var(--acc2);border:1px solid #ffd9c2;white-space:nowrap}
+/* 手机端：顶部整块在窄屏下会**换行摊开** —— .top-in 是 flex-wrap:wrap，而中间的
+   文字列没有 min-width:0，于是 h1 与 sub 先各自撑成整行，badge 再被挤到第三行。
+   实测 390×844 下占掉视口高度的 20.8%（175 px、摊成 3 行），而这一屏里
+   没有一格是可操作信息。压法按"信息价值"排序：
+   ① sub（技术栈罗列）隐藏 —— 它在 noscript 与 README 里都有，此处是装饰；
+   ② 标题压到 14 px（见下）；
+   ③ badge 与标题同行（右对齐），不再单独占一行；
+   ④ logo 从 34 缩到 26；
+   ⑤ sticky 改成 static —— 压薄之后这 43 px 虽然小，但半透明浮在内容上，
+      实拍里它正好压在"① 查询条件"的城市按钮行上、把那行截断成两半。
+      顶部条的价值是"随时知道在看哪儿"，而它带的信息（地名/日期/时段）
+      在地图卡片与结论卡里都有；桌面端保持 sticky（宽屏有空间且不重叠）。
+   结果：175 px（20.8%、3 行）→ **43 px（4.4%、1 行）**，
+   且**不删任何一行用户要读的内容** —— 地名/日期/时段全在 badge 里，
+   那是真正被反复看的那一行。 */
+@media (max-width:760px){
+  .top{position:static}
+  .top-in{padding:8px 11px;gap:8px;flex-wrap:nowrap}
+  .logo{width:26px;height:26px;border-radius:9px}
+  /* 14px 而不是 15px：标题 20 个汉字 + badge 约 130px，两者加上 logo 与 gap
+     在 360px 的屏上只剩约 205px 给标题，15px 时会折成两行且**断在词中间**
+     （"概/率与观赏质量"）。14px 恰好单行放得下，断行难看比小一号字更伤。 */
+  .top h1{font-size:14px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .top .sub{display:none}
+  .top .spacer{flex:1 1 0;min-width:0}
+  .badge{flex:0 0 auto;font-size:11px;padding:3px 8px}
+}
+
+/* ---------- 通用卡片 ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px}
+.card+.card{margin-top:14px}
+.card-h{display:flex;align-items:center;gap:9px;margin-bottom:12px;flex-wrap:wrap}
+.card-h h2{font-size:15.5px}
+.card-h .tag{font-size:11.5px;color:var(--tx3)}
+.card-h .right{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.hint{font-size:12.5px;color:var(--tx3);line-height:1.6}
+
+/* ---------- 配色纪律（改之前先读这段） ----------
+   --tx3 / --acc2 这两个色**不是随手挑的**，是 C1 无障碍审计按 WCAG 对比度定下来的：
+     · --tx3（次级说明文字：#6b7686）—— 原值 #8b96a5 在白底上只有 **3.0**，
+       而它承载的是 `.hint` / `.kv .k` / `.tag` / `.sub` 这些**成段说明文字**，
+       12px 正文的达标线是 4.5。原值等于"全站最需要读的那些说明，恰好最难读"。
+     · --acc2（强调色文字：#bd4a17）—— 原值 #c9501a 在 --accbg(#fff3ec) 上只有 **4.15**，
+       与 4.5 只差一点点，但承载它的 `.badge` 正是"当前城市 · 日期 · 时段"这枚关键信息。
+   **别把它们调浅**：调浅就是把这批文字重新推回不达标 —— `_check/a11yprobe.js`
+   会立刻红（它就是为此写到一键序列里的）。要改配色，先跑那个探针看新值够不够。
+   注意 --acc（#e2601f）**故意不动**：它是色块/渐变用的，浅底上的对比度本来就不适合做文字 ——
+   需要"强调文字"时用 --acc2。 */
+
+/* ---------- 表单 ---------- */
+.field{position:relative}
+label.lb{display:block;font-size:12.5px;color:var(--tx2);font-weight:600;margin-bottom:5px}
+input,select,button{font:inherit;color:inherit}
+input[type=text],input[type=date],input[type=number],select{
+  width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:var(--r2);
+  background:#fff;outline:none;transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus{border-color:#f0b189;box-shadow:0 0 0 3px #ffe6d6}
+button{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:var(--r2);
+  padding:9px 14px;font-weight:600;transition:.15s}
+button:hover{border-color:#d6dbe4;background:#fafbfd}
+button.primary{background:linear-gradient(180deg,#f0763a,#dd5a1d);border-color:#d0521a;color:#fff;
+  box-shadow:0 6px 14px -6px rgba(221,90,29,.7)}
+button.primary:hover{filter:brightness(1.05);background:linear-gradient(180deg,#f0763a,#dd5a1d)}
+button:disabled{opacity:.55;cursor:not-allowed}
+button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
+
+/* ---------- 焦点可见性（C1） ----------
+   上面 `input/select{outline:none}` 是作者显式关掉 UA 焦点环的写法 ——
+   它换来"点击时不出现难看的黑框"，代价是**按下 Tab 之后再也看不见焦点在哪**。
+   鼠标用户完全感觉不到这件事坏了，所以它一直没被发现，直到 a11yprobe 量出来。
+   这里统一补一条 `:focus-visible`：
+     · 用 :focus-visible 而不是 :focus —— 后者会让每次鼠标点击也留下焦点环；
+     · 用 --blue 而不是 --acc —— 橙色焦点环在浅底上对比度只有 ~2.6，不够醒目；
+     · 关键字/图钉/gal 这类自定义可聚焦元素同样受益（它们本来就靠 Tab 走到）。
+   已有更具体规则的地方（`#map`、`.rank .rr`、`.td-cell`）优先级更高，不受影响。 */
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.seg button:focus-visible,.unitseg button:focus-visible,.presets button:focus-visible{outline-offset:1px}
+
+/* 搜索下拉 */
+.sug{position:absolute;left:0;right:0;top:calc(100% + 5px);background:#fff;border:1px solid var(--line);
+  border-radius:var(--r2);box-shadow:0 14px 34px -12px rgba(16,24,40,.34);max-height:296px;overflow:auto;z-index:70;display:none}
+.sug.on{display:block}
+.sug div{padding:9px 12px;font-size:13.5px;cursor:pointer;display:flex;gap:8px;align-items:baseline}
+.sug div:hover div,.sug div:hover{background:var(--accbg)}
+.sug .s1{font-weight:600}
+.sug .s2{font-size:11.5px;color:var(--tx3);margin-left:auto;font-family:var(--mono)}
+
+/* ---------- 控制面板 ---------- */
+.ctrl-grid{display:grid;grid-template-columns:minmax(240px,1.5fr) 150px 150px 128px auto;gap:12px;align-items:end}
+.seg{display:flex;gap:6px;background:#f1f4f9;border:1px solid var(--line);padding:4px;border-radius:12px}
+.seg button{border:0;background:transparent;padding:7px 12px;border-radius:8px;font-size:13.5px;color:var(--tx2)}
+.seg button.on{background:#fff;color:var(--acc2);box-shadow:0 2px 8px -3px rgba(16,24,40,.22)}
+.rowline{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--tx2);cursor:pointer;user-select:none}
+.presets{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.presets button{font-size:12.5px;padding:5px 10px;border-radius:999px;color:var(--tx2)}
+
+/* ---------- 布局 ---------- */
+.layout{display:grid;grid-template-columns:minmax(0,1.02fr) minmax(0,1fr);gap:14px;margin-top:14px;align-items:start}
+.col{min-width:0}
+@media (max-width:1180px){.layout{grid-template-columns:1fr}}
+@media (max-width:760px){
+  .ctrl-grid{grid-template-columns:1fr 1fr}
+  .ctrl-grid .full{grid-column:1 / -1}
+  .wrap{padding:0 11px 40px}
+  .card{padding:13px}
+}
+
+/* ---------- 结论条 ---------- */
+.hero{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.dial{position:relative;width:126px;height:126px;flex:0 0 auto}
+.dial svg{transform:rotate(-90deg)}
+.dial .dv{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.dial .dv b{font-size:27px;letter-spacing:-.5px}
+.dial .dv span{font-size:11px;color:var(--tx3)}
+.hero-txt{flex:1 1 260px;min-width:220px}
+.hero-txt .big{font-size:19px;font-weight:700;line-height:1.45}
+.hero-txt .big em{font-style:normal;color:var(--acc2)}
+
+/* ---------- 可信度徽标（B2） ----------
+   三档配色由 _p4.js 的 ENS_CONF_BANDS 通过 --cfb / --cfbg / --cfbd 传入，
+   CSS 里不重复写任何阈值或颜色 —— 阈值只有一个来源。
+   （带 ens 前缀是为了避开 _p6.js 里同名的 `confOf(km)` —— 那是空间可信度，不是模型一致性。） */
+.cfbadge{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;max-width:100%;
+  margin:0 0 8px;padding:4px 12px 4px 9px;border-radius:14px;
+  font-size:12px;font-weight:700;line-height:1.7;
+  color:var(--cfb);background:var(--cfbg);border:1px solid var(--cfbd)}
+.cfbadge i{width:7px;height:7px;border-radius:50%;background:var(--cfb);flex:0 0 auto}
+.cfbadge b{font-weight:800}
+/* 明细用等宽体以便数字对齐，但不动 letter-spacing —— 负字距在中英混排下会挤成一团 */
+.cfbadge .cfsm{font-weight:500;font-family:var(--mono);font-size:11px;opacity:.86}
+/* 窄屏不再整段隐藏：宁可让它换行，也不要把 ΔI / 一致性 这些判断依据丢掉 */
+@media (max-width:520px){.cfbadge .cfsm{flex:1 1 100%;padding-left:13px}}
+.grade{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12.5px;font-weight:700;border:1px solid}
+.g-优{background:#e9f7ef;color:#12734a;border-color:#bfe7d2}
+.g-良{background:#eef6e8;color:#4c7a16;border-color:#d5e9c0}
+.g-一般{background:#fdf3e3;color:#9a5b06;border-color:#f2ddba}
+.g-差{background:#fdeceb;color:#a93226;border-color:#f5cdc9}
+
+/* ---------- 概览小格 ---------- */
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:9px}
+.kv .it{background:#fafbfd;border:1px solid var(--line2);border-radius:var(--r2);padding:8px 10px}
+.kv .k{font-size:11.5px;color:var(--tx3)}
+.kv .v{font-size:14.5px;font-weight:700;margin-top:2px;font-family:var(--mono);word-break:break-all}
+
+/* ---------- 模型卡 ---------- */
+.models{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+@media (max-width:640px){.models{grid-template-columns:1fr}}
+.mcard{border:1px solid var(--line);border-radius:var(--r2);padding:12px;background:#fff;position:relative;overflow:hidden}
+.mcard.ens{border-color:#f3c9ab;background:linear-gradient(180deg,#fff8f4,#fff)}
+.mcard .mh{display:flex;align-items:center;gap:7px;margin-bottom:9px}
+.mcard .mh b{font-size:14px}
+.mcard .mh .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.mcard .mh .rt{margin-left:auto;font-size:11px;color:var(--tx3)}
+.mrow{display:flex;align-items:flex-end;gap:9px}
+.mnum{font-size:30px;font-weight:800;line-height:1;letter-spacing:-1px;font-family:var(--mono)}
+.mnum small{font-size:14px;font-weight:700;margin-left:1px}
+.mmeta{display:flex;flex-direction:column;gap:3px;padding-bottom:2px}
+.bar{height:7px;border-radius:99px;background:#eef1f6;overflow:hidden;margin-top:9px}
+.bar i{display:block;height:100%;border-radius:99px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.mfacts{margin-top:9px;font-size:12.2px;color:var(--tx2);line-height:1.75}
+.mfacts span{display:inline-block;margin-right:10px;white-space:nowrap}
+.mfacts b{color:var(--tx);font-family:var(--mono);font-weight:700}
+
+/* ---------- 因素表 ---------- */
+.ftab{width:100%;border-collapse:collapse;font-size:13px}
+.ftab th{text-align:left;font-size:11.5px;color:var(--tx3);font-weight:600;padding:0 8px 7px 0;border-bottom:1px solid var(--line);white-space:nowrap}
+.ftab td{padding:8px 8px 8px 0;border-bottom:1px solid var(--line2);vertical-align:top}
+.ftab tr:last-child td{border-bottom:0}
+.ftab td.v{font-family:var(--mono);font-weight:700;white-space:nowrap}
+.ftab td.d{color:var(--tx2);font-size:12.3px;line-height:1.6}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:700;border:1px solid;white-space:nowrap}
+.p-ok{background:var(--okbg);color:var(--ok);border-color:#bfe7d2}
+.p-mid{background:var(--warnbg);color:var(--warn);border-color:#f2ddba}
+.p-bad{background:var(--badbg);color:var(--bad);border-color:#f5cdc9}
+/* 滚动容器的宽度必须显式封顶。`overflow-x:auto` 本身**不**封顶：作为
+   flex/grid 子项时它带着 `min-width:auto`，会被内容（本例是 table#fac.ftab）
+   一起撑开。手机上这不是"某个表格有点宽"，而是把整页的 scrollWidth 从 390
+   顶到 451 —— 移动端浏览器据此**放大布局视口**（实测 innerWidth 451、
+   visualViewport.scale 1），效果就是整页被缩小：字变小、留白变大、每一屏能看
+   的信息都变少。加上 min-width:0 后表格老老实实在自己容器里横向滚动。 */
+.t-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;min-width:0;max-width:100%}
+
+/* ---------- 光追 ---------- */
+.ray{display:grid;grid-template-columns:repeat(auto-fit,minmax(146px,1fr));gap:9px}
+.swatch{height:42px;border-radius:9px;border:1px solid rgba(0,0,0,.09);display:flex;align-items:flex-end;
+  justify-content:flex-end;padding:3px 7px;font-size:11px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.tl{position:relative;height:56px;margin:12px 0 4px;border-radius:9px;background:#fafbfd;border:1px solid var(--line2);overflow:hidden}
+.tl .seg2{position:absolute;top:0;bottom:0;background:linear-gradient(180deg,#ffd9a8,#f08a3c);opacity:.32}
+.tl .mk{position:absolute;top:0;bottom:0;width:1px;background:#94a3b8}
+.tl .lb2{position:absolute;font-size:10.5px;color:var(--tx3);bottom:4px;transform:translateX(-50%);white-space:nowrap}
+.tl .lb3{position:absolute;font-size:10.5px;color:var(--tx3);top:4px;transform:translateX(-50%);white-space:nowrap}
+
+/* ---------- 提示 ---------- */
+.notes{display:flex;flex-direction:column;gap:7px}
+.note{display:flex;gap:9px;font-size:12.7px;line-height:1.6;padding:8px 11px;border-radius:var(--r2);border:1px solid}
+.note b{font-weight:700}
+.n-ok{background:var(--okbg);border-color:#d3ecdf;color:#14603f}
+.n-warn{background:var(--warnbg);border-color:#f2ddba;color:#8a5306}
+.n-bad{background:var(--badbg);border-color:#f5cdc9;color:#8f2b21}
+.n-info{background:var(--bluebg);border-color:#d9e3fb;color:#1d4ed8}
+
+/* ---------- 地图 ---------- */
+.mapwrap{position:relative;border-radius:var(--r2);overflow:hidden;border:1px solid var(--line);background:#eef1f5}
+#map{width:100%;height:600px;touch-action:none}
+/* touch-action:none：真机上"地图无法左右滑"的另一半根因 —— 页面一旦有横向
+   溢出（见 .top-tx），浏览器的横向平移手势会跟地图拖动竞争，单指横滑被
+   浏览器抢走。none 把 #map 内的全部手势判定交给腾讯地图 SDK 自己处理。
+   **只能设在 #map，绝不能设在 .mapwrap**：.tip.dock 是它的后代且要纵向
+   滚动（overflow-y:auto），手势判定取触摸链上所有元素 touch-action 的
+   交集，祖先 none 会连卡片内滚动一起禁掉。 */
+@media (max-width:1180px){#map{height:520px}}
+@media (max-width:760px){#map{height:420px}}
+/* 霞光值场覆盖层：自绘栅格，按地理范围贴合底图（与缩放级别无关）。
+   分「纬度条带」逐条定位，用来抵消墨卡托投影纵向的非线性拉伸。 */
+/* 图层顺序（全部在 .mapwrap 的层叠上下文里，不依赖 DOM 顺序）：
+   0 底图压暗 → 1 色面 → 2 等值线 + 经纬网 → 3 可信度纱 → 4 事件方位·距离环
+   → 5 数值直标 → 6 图钉 → 7 加载遮罩 → 20 提示卡。
+   「深色底图」开关（第 8 批）**不改层号**：它给 #map 和全部叠加层套同一个
+   invert(1) hue-rotate(180deg)，两次翻转互相抵消 ⇒ 色面像素一个都不变（见 .mapwrap.dark）。
+   色面层此前是 z-index:auto、数值直标是 6，而加载遮罩是 5 —— 于是"加载中"的遮罩
+   压在色面之上、却被数值直标压在下面，是个说不过去的次序；一并归位。
+   M1 又插进"方位环"这一层（它要压在色面之上、数值直标之下），而 3 已被占用，
+   所以 4/5/6 整体后移一位。
+   第 9 批再插进"等值线 + 经纬网"（`.clayer`），它要压在色面之上、可信度纱之下 ——
+   纱盖住的恰是"外推"区，那里的等值线本就该被压淡，所以让纱压在线之上。
+   于是 3/4/5/6 再整体后移一位。**改这张表就要同步**：它是全项目图层号的唯一来源。 */
+.rlayer{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden;pointer-events:none;display:none;z-index:1}
+.rlayer.on{display:block}
+/* 色面陈旧标记：本次取数无可用数值时保留上一次的色面，但整体压暗，
+   明确表示"图上这块颜色不是当前日期的结果"，而不是静默清空成一张白图。 */
+.rlayer.stale{opacity:.4;filter:grayscale(.6)}
+.rlayer canvas{position:absolute;left:0;top:0;transform-origin:0 0;display:block}
+/* 等值线 + 经纬网：**都是矢量**的一层 —— 等值线是一张容器分辨率的画布（几何在栅格
+   坐标里算一次、每帧投影后按**固定的屏幕线宽**描边），经纬网是一张覆盖整层的 SVG。
+   为什么不让等值线直接描进色面栅格：**色面像素与数值保持单值映射**
+   是 zoomprobe 像素级断言守护的性质（"看图反查数值"），在色面栅格上描线会把它打掉。
+   为什么也不"逐格栅格化"到这一层：线宽会绑死在栅格上，放大多少就粗多少。
+   宁可多一层：色面一个像素都不动，线只在 .clayer 里。 */
+.clayer{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden;pointer-events:none;display:none;z-index:2}
+.clayer.on{display:block}
+.clayer canvas{position:absolute;left:0;top:0;display:block}
+.clayer svg{position:absolute;left:0;top:0;pointer-events:none}
+/* 陈旧标记：等值线是**上一次色面**的档界，色面一旦置灰它必须跟着置灰，
+   单独留在那儿会被当成当前结果。这里只用 opacity，不用 filter ——
+   .mapwrap.dark 已经把 invert 挂在同一个元素上，再加一条 filter 会把它顶掉。 */
+.clayer.stale{opacity:.4}
+/* 可信度纱：独立画布，像素与色面完全分离（见 buildConfStrips 的两条硬约束） */
+.conflayer{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden;pointer-events:none;display:none;z-index:3}
+.conflayer.on{display:block}
+.conflayer canvas{position:absolute;left:0;top:0;transform-origin:0 0;display:block}
+/* M1 · 事件方位线 + 距离环：这套模型的核心几何就是"沿日出/日落方位量到 400 km"，
+   而图面上此前没有任何方向或距离参照 —— 提示卡写着"云边界 425 km"却不说是往哪边量的，
+   而"西边 300 km 那片云会挡光"与"东边 300 km 完全无关"是两回事。
+   压在色面之上、数值直标之下；pointer-events:none 不拦截悬停。 */
+.azilayer{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden;pointer-events:none;display:none;z-index:4}
+.azilayer.on{display:block}
+.azilayer .aziray{position:absolute;left:0;top:0;height:0;transform-origin:0 50%;border-top:1.5px dashed rgba(192,122,16,.85)}
+.azilayer .aziring{position:absolute;left:0;top:0;border-radius:50%;border:1px dashed rgba(120,132,150,.45)}
+.azilayer .azilab{position:absolute;transform:translate(-50%,-50%);font-family:var(--mono);font-size:10.5px;
+  color:#6b7486;background:rgba(255,255,255,.72);padding:0 3px;border-radius:4px;white-space:nowrap}
+.azilayer .azilab.hd{color:#8a5306;font-weight:700}
+/* 地图整体不可用时的兜底说明（离线 / 代理占位符未替换） */
+.mapfail{padding:22px;font-size:13.5px;color:var(--tx2);line-height:1.8}
+.mapfail code{font-family:var(--mono);font-size:12px;background:var(--line2);padding:1px 5px;border-radius:5px}
+.mload{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;
+  background:rgba(255,255,255,.9);z-index:7;font-size:13.5px;color:var(--tx2)}
+.spin{width:26px;height:26px;border-radius:50%;border:3px solid #f0d8c8;border-top-color:var(--acc);animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.mload.err{padding:20px 18px;text-align:center;line-height:1.75;background:rgba(255,255,255,.96)}
+.mload.err .spin{display:none}
+.mretry{margin-left:6px;padding:4px 12px;border:1px solid var(--acc);background:transparent;color:var(--acc);
+  border-radius:8px;font-size:12.5px;cursor:pointer;font-family:inherit}
+.mretry:hover{background:var(--acc);color:#fff}
+.tip{position:absolute;z-index:20;pointer-events:none;background:rgba(255,255,255,.98);border:1px solid var(--line);
+  border-radius:11px;box-shadow:0 12px 30px -10px rgba(16,24,40,.4);padding:9px 11px;font-size:12.5px;min-width:172px;
+  max-width:calc(100% - 12px);
+  transform:translate(-50%,calc(-100% - 14px + var(--tipshift,0px)));opacity:0;transition:opacity .12s;line-height:1.6}
+.tip.on{opacity:1}
+/* 卡片自身的宽度由内容决定，`max-width` 是最后一道闸：它撑到比容器还宽时，
+   居中定位（translateX(-50%)）会让**左右两侧同时**溢出，而 .mapwrap 是
+   overflow:hidden —— 溢出部分直接被裁掉（真机截图里"郴州市附近"上面那行
+   的开头就是这样没的）。窄屏改走 .dock（贴底通栏）后这条更是必须。 */
+.tip .tclose{margin-left:auto;flex:0 0 auto;width:20px;height:20px;border-radius:50%;
+  border:1px solid var(--line);background:#fff;color:var(--tx2);font:inherit;font-size:12px;line-height:1;
+  cursor:pointer;pointer-events:auto;display:none;align-items:center;justify-content:center;padding:0}
+.tip .tclose:hover{background:var(--accbg);color:var(--acc2);border-color:var(--acc)}
+/* 桌面端不需要它：`.tip` 是 pointer-events:none，指针能穿过去 ⇒ mouseleave 照常触发。
+   只在触屏上把卡片本体变成可交互层，× 才看得见也点得到。 */
+@media (hover:none){.tip .tclose{display:flex}}
+@media (max-width:760px){
+  /* 手机端提示卡改为**贴底通栏**（bottom sheet），不再跟随指针。三个理由：
+     ① 跟随指针在 ~360 px 宽的容器里必然左右溢出（卡片内容常撑到 260 px+，
+        加上 translateX(-50%) 居中）⇒ 两侧都被 overflow:hidden 裁掉；
+     ② 触屏没有 mouseleave，卡片一旦被点击钉住就再也不会自动收起；
+     ③ 触屏没有 hover，"跟随指针"这件事本身就没有意义 —— 手指还压着地图时
+        根本看不到卡片落点。
+     通栏之后位置完全由 CSS 决定，JS 侧对应地**不写** left/top/--tipshift
+     （见 _p6.js 的 showMapTip），避免两处定位互相打架。
+     max-height 给到 72%：#map 在窄屏是 420 px，卡片约 300 px，
+     放不下就在卡内滚动（pointer-events:auto 才滚得动）。 */
+  .tip.dock{left:6px;right:6px;bottom:6px;top:auto;transform:none;
+    max-width:none;max-height:72%;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    pointer-events:auto;
+    /* 卡片可见时，双指落在卡片上也不该缩放**整个网页**：pan-y 只放行纵向
+       滚动（卡片要能滚），禁掉 pinch-zoom（第四批真机反馈"双指缩放有概率
+       触发浏览器缩放"的另一半）。关闭卡片后卡片回到 pointer-events:none
+       （hideMapTip 会摘 .dock），那块整页缩放的可能也随之消失。 */
+    touch-action:pan-y;
+    /* 这里必须**不透明**：.tip 的 rgba(255,255,255,.98) 是为桌面那把小卡片设计的 ——
+       220×172 的面积上 2% 透明几乎看不出来；而贴底通栏有 326×302，底下压着
+       "查询点"图钉、数值直标、色面，那 2% 会让它们整片透上来变成脏点
+       （实拍里"郴州市附近"四个字清晰浮在卡片中间）。层序是对的（tip z=20 >
+       pinlayer z=6），问题纯粹在 alpha。 */
+    background:#fff;
+    /* z=2000 而不是 20：腾讯地图 SDK 会在**触屏真机**上自动加缩放（+/−）与
+       罗盘控件，z-index 是 SDK 内部值、无从约定 —— 真机实测它们整只压在
+       z=20 的卡片上，连卡片右上角的 × 都被盖住（第二批真机反馈）。
+       headless 探针里 SDK 不渲染这些控件（#map 一层只有我们自己的层），
+       所以这条**量不出来、只能防**：给一个远高于 SDK 常见取值（≤1000）的数。
+       卡片盖住控件是 bottom sheet 的预期行为 —— 要操作地图先关卡片，
+       三条关闭路径都是给这个用的。桌面端 .tip 保持 z=20 不动。 */
+    z-index:2000}
+  .tip.dock .tclose{display:flex}
+}
+/* M1 · 上方放不下就翻到下方；两侧都放不下时再整体平移（--tipshift）。
+   指针在地图上半部时，卡片会被 .mapwrap 的 overflow:hidden 从顶部裁掉 ——
+   而换地点后地图是查询点居中的，上半图正是西/西北方向，也就是**晚霞方位**所在的那一半，
+   恰好是最需要悬停的地方。实测指针 y=100 时原先裁掉 178 px，且裁掉的正是信息量最大的
+   上半部分（地点/时段/综合指数/概率/质量），只剩最下面的按钮。 */
+.tip.below{transform:translate(-50%,calc(14px + var(--tipshift,0px)))}
+.tip .t1{font-weight:700;font-size:13.5px;display:flex;gap:7px;align-items:center}
+.tip .t2{color:var(--tx3);font-size:11.5px;margin-bottom:5px}
+.tip .t3{display:flex;justify-content:space-between;gap:12px}
+.tip .t3 b{font-family:var(--mono)}
+.legend{margin-top:11px}
+.legend .bar2{height:14px;border-radius:5px;border:1px solid var(--line);overflow:hidden;display:flex}
+.legend .bar2 i{flex:1}
+.legend .ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--tx3);margin-top:5px;font-family:var(--mono)}
+.lgm-rows{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:9px;font-size:12.2px;color:var(--tx2)}
+.lgm-rows span{display:inline-flex;align-items:center;gap:6px}
+/* M2-3 · 长文折叠：默认收起，别让它把地图卡片撑到 1713 px */
+.lgmore{margin-top:8px;font-size:12.4px;color:var(--tx2)}
+.lgmore summary{cursor:pointer;font-weight:600;color:var(--tx3);font-size:12.3px;padding:3px 0}
+.lgmore summary:hover{color:var(--acc)}
+.lgmore .hint{margin-top:7px}
+.chipc{width:13px;height:13px;border-radius:4px;border:1px solid rgba(0,0,0,.12);flex:0 0 auto}
+
+/* ---------- 地图工具条 ---------- */
+.maptool{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:11px}
+/* M2-2：这条规则本意是给**下拉框**一个最小宽度，但 .maptool 里还有 5 个复选框，
+   它们也被撑成了 118 px 的盒子（实测各多占 105 px），
+   观感上就是"方块和它的文字被拉开一大截"。拆成两条，复选框回到自然尺寸。
+   注意：**这不减少行数**（实测归零后仍是 129 px / 3 行）—— 折行由 4 个宽控件
+   （118+181+166+284）决定，面积下界本来就是 3 行。所以这是一处纯观感修复。
+   C1 加了第 5 个复选框（「经纬网」）后实测 129 px / 3 行**不变** —— 它塞进了第 3 行
+   的余量里（该行原本只有 4 个复选框、本来就空着一大截）。 */
+.maptool select{width:auto;min-width:118px}
+.maptool input[type=checkbox]{min-width:0;width:13px;height:13px;padding:0;margin:0;flex:0 0 auto}
+.rank{margin-top:12px;border-top:1px dashed var(--line);padding-top:11px}
+.rank h4{font-size:13px;margin-bottom:8px}
+/* M1 · 榜单每行都可点：与"点击地图上任意一点"走同一条通路（gotoLatLng + 单点查询），
+   悬停时给个明确的反馈，键盘也能用（Enter / Space）。 */
+.rank .rr{display:flex;align-items:center;gap:9px;font-size:12.5px;padding:4px 0;border-bottom:1px solid var(--line2);
+  cursor:pointer;border-radius:6px;transition:background .12s}
+.rank .rr:last-child{border-bottom:0}
+.rank .rr:hover{background:var(--bluebg)}
+.rank .rr:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.rank .rr:active{background:var(--line2)}
+.rank .rr .nm{min-width:86px;font-weight:600}
+/* 条形底色比色阶最低端（白）略深一档，否则"低值"的白色条会融进轨道里看不出长度 */
+.rank .rr .b3{flex:1;height:8px;border-radius:99px;background:#e3e8f0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.05);overflow:hidden}
+.rank .rr .b3 i{display:block;height:100%}
+.rank .rr .vv{font-family:var(--mono);font-weight:700;min-width:42px;text-align:right}
+
+/* ---------- 页脚 ---------- */
+footer{margin-top:20px;font-size:12.3px;color:var(--tx3);line-height:1.75}
+footer details{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:10px}
+footer summary{cursor:pointer;font-weight:700;color:var(--tx);font-size:13.5px}
+footer .body{padding-top:9px}
+footer ul{margin:7px 0;padding-left:19px}
+footer li{margin:3px 0}
+
+/* ---------- 环境输入条（F7：让单位切换落到实处，也让结论可复核） ---------- */
+.envstrip{margin-top:12px;border:1px dashed var(--line);border-radius:var(--r2);padding:9px 11px;background:#fbfcfe}
+.envstrip .esh{font-size:12.5px;color:var(--tx3);margin-bottom:7px}
+
+/* ---------- 霞光强度/彩度演变曲线（F3） ---------- */
+.rcwrap{margin:2px 0 4px}
+.rcurve{display:block;width:100%;height:96px}
+.rcg{stroke:var(--line2);stroke-width:1}
+.rcL{fill:none;stroke:#2f6fd0;stroke-width:1.8}
+.rcC{fill:none;stroke:#e2601f;stroke-width:1.8;stroke-dasharray:4 3}
+.rcaxis{display:flex;justify-content:space-between;font-size:11.5px;color:var(--tx3);margin-top:2px}
+.rcleg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--tx2);margin-top:6px}
+.rcleg i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.rcleg .rcLi{background:#2f6fd0}
+.rcleg .rcCi{background:#e2601f}
+
+/* ---------- 七日趋势（F5） ---------- */
+.t-trend{width:100%;border-collapse:collapse;font-size:13px}
+.t-trend th,.t-trend td{border-bottom:1px solid var(--line2);padding:6px 8px;text-align:left;vertical-align:middle}
+.t-trend th{font-size:12px;color:var(--tx3);font-weight:600}
+.t-trend tr.cur td{background:#fff8f2}
+.td-date{white-space:nowrap;color:var(--tx2);font-family:var(--mono);font-size:12.5px}
+.td-date i{color:var(--acc);font-style:normal;font-size:11px;margin-left:4px}
+.td-cell{cursor:pointer;border-radius:6px}
+.td-cell:hover{background:#fdf6f1}
+.td-cell.on{outline:2px solid var(--acc);outline-offset:-2px}
+.td-cell:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+.td-cell.empty{color:var(--tx3);cursor:default}
+.tp{font-weight:700;font-size:16px;margin-right:8px;font-family:var(--mono)}
+.tp i{font-style:normal;font-size:11px;font-weight:500}
+.tq{font-size:11.5px;color:var(--tx2);white-space:nowrap}
+
+/* ---------- 数据可信度（B12） ---------- */
+.cf-hi{color:var(--ok)} .cf-mid{color:var(--warn)} .cf-lo{color:var(--bad)}
+.t3.tflat{opacity:.8}
+.t3.tflat span{font-size:11px;color:var(--tx3)}
+.tgo{display:block;width:100%;margin-top:8px;padding:6px 8px;border:1px solid var(--acc);
+  background:var(--accbg);color:var(--acc2);border-radius:8px;font:inherit;font-size:12.5px;cursor:pointer;
+  pointer-events:auto}
+.tgo:hover{background:#ffe6d8}
+
+/* ---------- 数值直标：第二编码（F6） ---------- */
+.mlayer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;display:none;z-index:5;overflow:hidden}
+.mlayer.on{display:block}
+.mlbl{position:absolute;left:0;top:0;margin:-19px 0 0 -18px;padding:1px 5px;border-radius:7px;
+  background:rgba(255,255,255,.9);border:1px solid var(--line);color:var(--tx);
+  font:11px/1.5 var(--mono);white-space:nowrap;box-shadow:0 1px 3px rgba(16,24,40,.14)}
+
+/* ---------- 采样点 / 查询点图钉 ----------
+   纯 DOM 叠加层，用 projectToContainer 定位；不参与色面栅格，
+   所以"看图反查数值"这条性质（zoomprobe 像素级断言守护的）不受影响。 */
+.pinlayer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;
+  display:none;z-index:6;overflow:hidden}
+.pinlayer.on{display:block}
+.pin{position:absolute;left:0;top:0}
+.pin.s{width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;
+  background:rgba(255,255,255,.5);box-shadow:0 0 0 1px rgba(15,23,42,.5)}
+.pin.q,.pin.c{display:flex;align-items:center;gap:4px;margin:-8px 0 0 -5px;
+  white-space:nowrap;font-size:11px;font-weight:600;line-height:1}
+.pin.q i,.pin.c i{width:10px;height:10px;flex:0 0 auto;border-radius:50%;
+  box-shadow:0 0 0 2px rgba(255,255,255,.92)}
+.pin.q i{background:#1d4ed8}
+.pin.c i{background:#b45309;border-radius:2px}
+.pin.q b,.pin.c b{padding:1px 5px;border-radius:6px;border:1px solid var(--line);
+  background:rgba(255,255,255,.92);color:var(--tx)}
+
+/* ---------- 底图压暗 / 深色底图 ----------
+   浅色底图对色面有两个实际影响：① 色阶低端是白色，与底图分不开，低值区看起来像"没数据"；
+   ② 一张浅底 + 淡色斑的图，彩色区域跳不出来。所以做一个**可选**的深色底衬。
+   做法分两步，都只在勾选时生效：
+     · `.dimbase` 夹在 TMap 画布与色面之间，把底图整体压暗（保留少量地图信息）；
+     · `.mapwrap.dark` 给 `#map` 加 `invert(1) hue-rotate(180deg)`，把整张浅色底图翻成深色
+       —— 只有这样，城市名这类**深色文字标签**才会变成浅色，读得出来。
+   为什么要给叠加层也加同一个 filter：父元素的 filter 作用在**合成结果**上，会连子层一起翻。
+   `invert∘invert = id`、`hue-rotate(180)∘hue-rotate(180) = id`，所以子层再套同一个 filter
+   就恰好抵消 —— 色面的颜色一个像素都不会变。这两个 filter 都是仿射线性的，
+   与 alpha 合成可交换，所以半透明的纱、提示卡也照样抵消。
+   注意**不能**在链上加 contrast/saturate：它们不是对合的，子层就抵消不掉了。
+   不用腾讯地图自定义样式（mapStyleId）：那需要一个样式 ID，且在本项目的联调环境里
+   （地图 API 是替身）根本发不出去，改了也无法验证。纯 CSS 没这个问题，且随时可关。 */
+.dimbase{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;
+  background:#0b1220;opacity:0;transition:opacity .18s;z-index:0}
+.dimbase.on{opacity:.45}
+.mapwrap.dark #map{filter:invert(1) hue-rotate(180deg)}
+.mapwrap.dark .dimbase,
+.mapwrap.dark .rlayer,
+.mapwrap.dark .clayer,
+.mapwrap.dark .conflayer,
+.mapwrap.dark .azilayer,
+.mapwrap.dark .mlayer,
+.mapwrap.dark .pinlayer{filter:invert(1) hue-rotate(180deg)}
+
+/* ---------- 省份下钻（F4） ---------- */
+.drill{display:none;margin-top:10px;border:1px solid var(--line);border-radius:var(--r2);background:#fbfcfe;padding:9px 11px}
+.drill.on{display:block}
+.dhead{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin-bottom:7px}
+.dhead .dsub{font-size:11.5px;color:var(--tx3)}
+.dhead .dx{margin-left:auto;border:1px solid var(--line);background:#fff;border-radius:7px;
+  padding:2px 9px;font:inherit;font-size:12px;color:var(--tx2);cursor:pointer}
+.dlist{display:flex;flex-wrap:wrap;gap:6px}
+.dcity{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:#fff;
+  border-radius:9px;padding:4px 9px;font:inherit;font-size:12.5px;cursor:pointer}
+.dcity:hover{border-color:var(--acc);background:#fff8f2}
+.dcity .dv{font-family:var(--mono);font-weight:700;color:var(--acc2)}
+.dcity .grade{transform:scale(.9)}
+
+/* ---------- 单位 / 时间制切换（F7） ---------- */
+.unitseg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff}
+.unitseg button{border:0;background:transparent;padding:4px 10px;font:inherit;font-size:12.5px;
+  color:var(--tx2);cursor:pointer}
+.unitseg button.on{background:var(--accbg);color:var(--acc2);font-weight:600}
+
+/* ---------- <noscript> 兜底（B13） ---------- */
+.noscript{margin:14px 0;padding:12px 14px;border:1px solid var(--warn);background:var(--warnbg);
+  border-radius:var(--r2);color:var(--warn);font-size:13.5px;line-height:1.7}
+
+/* ---------- 键盘焦点可见（F6） ---------- */
+#map:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+</style>
+</head>
+<body>
+
+<noscript>
+  <div class="wrap"><div class="noscript">
+    <b>本页的计算全部在浏览器内完成，需要启用 JavaScript。</b><br>
+    启用后即可离线检索 363 个中国地级市与 116 个全球主要城市，并在联网时获取气象数据；
+    地图底图由腾讯地图提供，需要联网。
+  </div></div>
+</noscript>
+
+<div class="top">
+  <div class="top-in">
+    <div class="logo"></div>
+    <div class="top-tx">
+      <h1>霞光预报 · 朝霞 / 晚霞 概率与观赏质量</h1>
+      <div class="sub">多模型融合（GFS · ECMWF-IFS · 光追算法）+ 火烧云三角几何模型 + 大气消光光谱计算</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="badge" id="topBadge">等待计算</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- ============ 控制面板 ============ -->
+  <div class="card" style="margin-top:14px">
+    <div class="card-h">
+      <h2>① 查询条件</h2>
+      <span class="tag">支持全国所有城市、全球主要城市，或直接输入经纬度 · 修改地区后重新计算即可</span>
+    </div>
+
+    <div class="ctrl-grid">
+      <div class="field full">
+        <label class="lb" for="q">地区搜索（输入城市名 / 拼音首字母 / 「纬度,经度」）</label>
+        <input type="text" id="q" placeholder="例如：广州、shenzhen、拉萨、东京、23.13,113.26" autocomplete="off"
+          role="combobox" aria-expanded="false" aria-controls="sug" aria-autocomplete="list">
+        <div class="sug" id="sug" role="listbox"></div>
+      </div>
+      <div class="field">
+        <label class="lb" for="lat">纬度（-90 ~ 90）</label>
+        <input type="number" id="lat" step="0.0001" value="31.2304" aria-label="纬度">
+      </div>
+      <div class="field">
+        <label class="lb" for="lon">经度（-180 ~ 180）</label>
+        <input type="number" id="lon" step="0.0001" value="121.4737" aria-label="经度">
+      </div>
+      <div class="field">
+        <label class="lb" for="date">日期</label>
+        <input type="date" id="date" aria-label="日期">
+      </div>
+      <div class="field">
+        <span class="lb" id="goLbl">计算</span>
+        <button class="primary" id="go" style="width:100%" aria-describedby="goLbl">开始预报</button>
+      </div>
+    </div>
+
+    <div class="rowline">
+      <div class="seg" id="periodSeg" role="group" aria-label="时段：朝霞（日出）或晚霞（日落）">
+        <button data-p="am" aria-pressed="false">朝霞（日出）</button>
+        <button data-p="pm" class="on" aria-pressed="true">晚霞（日落）</button>
+      </div>
+      <button class="sm" id="geoBtn">使用我的定位</button>
+      <button class="sm" id="nowBtn">回到今天</button>
+      <label class="chk"><input type="checkbox" id="autoMap"> 地图跟随查询自动刷新（已有缓存直接用，无缓存才额外取数）</label>
+      <div class="unitseg" id="unitSeg" role="group" aria-label="单位制">
+        <button data-u="metric" class="on" aria-pressed="true">公制</button>
+        <button data-u="imperial" aria-pressed="false">英制</button>
+      </div>
+      <div class="unitseg" id="clockSeg" role="group" aria-label="时间制">
+        <button data-c="24" class="on" aria-pressed="true">24 时</button>
+        <button data-c="12" aria-pressed="false">12 时</button>
+      </div>
+      <span class="hint" id="locHint" style="margin-left:auto"></span>
+    </div>
+
+    <div class="presets" id="presets"></div>
+  </div>
+
+  <!-- ============ 主体 ============ -->
+  <div class="layout">
+
+    <!-- ---------- 左列：预报结果 ---------- -->
+    <div class="col">
+
+      <div class="card" id="cardHero">
+        <div class="card-h"><h2>② 预报结论</h2><span class="tag" id="heroTag">多模型综合</span>
+          <span class="right"><button class="sm" id="shareCard" disabled>保存为图片</button></span></div>
+        <div id="hero"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><h2>③ 各模型独立结果</h2><span class="tag">每种模型单独给出概率与质量，末尾为多模型综合</span></div>
+        <div class="models" id="models"></div>
+        <div class="hint" style="margin-top:11px">
+          概率 P = 该模型输入场下「出现可观赏霞光」的置信度（0–100%）；质量 Q = 观赏质量评分（0–100 分）→ 优 ≥80 / 良 65–79 / 一般 45–64 / 差 &lt;45。
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><h2>④ 主要影响因素分析</h2><span class="tag" id="facTag">按影响权重排序</span></div>
+        <div class="t-scroll"><table class="ftab" id="fac"></table></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><h2>⑤ 光追算法细节</h2><span class="tag">沿真实光路的消光积分 + CIE 色度换算</span></div>
+        <div id="ray"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><h2>⑥ 数据质量与提示</h2><span class="tag">缺失值、异常值与不确定性来源</span></div>
+        <div class="notes" id="notes"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">
+          <h2 id="trendTitle">⑧ 未来趋势</h2>
+          <span class="tag">同一点位的逐日对比，一次取数看完整窗口（点格子可跳转）</span>
+          <span class="right"><button class="sm" id="trendGo">加载趋势</button></span>
+        </div>
+        <div id="trendBody"></div>
+      </div>
+
+    </div>
+
+    <!-- ---------- 右列：地图 ---------- -->
+    <div class="col">
+      <div class="card" style="position:sticky;top:64px">
+        <div class="card-h">
+          <h2>⑦ 周边霞光热力图</h2>
+          <span class="tag" id="mapTag"></span>
+        </div>
+        <div class="maptool">
+          <div class="seg" id="mapPeriod" role="group" aria-label="地图时段：朝霞或晚霞">
+            <button data-p="am" aria-pressed="false">朝霞</button>
+            <button data-p="pm" class="on" aria-pressed="true">晚霞</button>
+          </div>
+          <select id="mapDateSel" title="日期" aria-label="地图日期"></select>
+          <select id="mapModel" title="算法模型" aria-label="算法模型">
+            <option value="ens">模型：多模型综合</option>
+            <option value="gfs">模型：GFS</option>
+            <option value="ec">模型：ECMWF-IFS</option>
+            <option value="rt">模型：光追算法</option>
+          </select>
+          <select id="mapDim" title="着色依据" aria-label="着色依据">
+            <option value="mix">着色：综合指数（概率+质量）</option>
+            <option value="p">着色：仅出现概率</option>
+            <option value="q">着色：仅观赏质量</option>
+            <option value="dv">着色：模型分歧（三模型不一致度）</option>
+          </select>
+          <button class="sm primary" id="mapGo">刷新地图</button>
+          <label class="chk"><input type="checkbox" id="numLabels"> 数值直标</label>
+          <label class="chk"><input type="checkbox" id="showPts"> 采样点</label>
+          <label class="chk"><input type="checkbox" id="showConf"> 可信度</label>
+          <label class="chk"><input type="checkbox" id="showGrid" checked> 经纬网</label>
+          <label class="chk"><input type="checkbox" id="dimBase"> 深色底图</label>
+        </div>
+        <div class="hint" id="modelNote" style="display:none;margin:-2px 0 9px"></div>
+        <div class="mapwrap">
+          <div id="map" role="application" aria-label="周边霞光热力图，可用方向键移动、Enter 查看该处数值"></div>
+          <div class="mload" id="mapLoad"><div class="spin"></div><span id="mapLoadTxt">地图资源加载中…</span></div>
+          <div class="tip" id="tip" role="tooltip"></div>
+          <div class="mlayer" id="mapLabels" aria-hidden="true"></div>
+        </div>
+        <div class="drill" id="drill"></div>
+        <div class="legend">
+          <div class="bar2" id="lgBar"></div>
+          <div class="ticks"><span>0</span><span>20</span><span>40</span><span>60</span><span>80</span><span>100</span></div>
+          <div class="lgm-rows" id="lgRows"></div>
+          <!-- M1/M2-3：色条 + 刻度 + 等级行 + 这一段短说明＝"图例"的本体，**必须留在外面**
+               （功能需求第 4 条就是"清晰图例"）。剩下的长文（值域拉伸为什么这么算、
+               四个勾选项各自做什么、换地点会不会重取数……）第一次读需要、之后再也不看，
+               实测它单独占了 480 px（整张地图卡片 1713 px），折进 <details> 默认收起。 -->
+          <div class="hint" style="margin-top:9px" id="lgNote"></div>
+          <details class="lgmore">
+            <summary>色面与叠加层的细节说明</summary>
+            <div class="hint" id="lgMore"></div>
+          </details>
+        </div>
+        <div class="rank">
+          <h4><span id="rankTitle">当日数值最高的地区</span>（前 8）<span class="tag" id="rankScope" style="margin-left:6px"></span></h4>
+          <div id="rank"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <details open>
+      <summary>算法原理与计算流程（提炼自公开的火烧云定量预报教程）</summary>
+      <div class="body">
+        <ul>
+          <li><b>几何模型（火烧云三角）</b>：用抛物线 z(x)=h+x·tanθ+x²/(2R) 近似光线路径（R 为地球半径）。远边界由地球遮挡决定：|θ|=√(2h/R)；近边界由云边界遮挡决定：|θ|=d/(2R)（d 为沿日出/日落方位的云边界距离）。因此只有当 <b>d &lt; 2√(2Rh)</b> 时，云底才可能被照亮，2√(2Rh) 即「霞光深入距离」。</li>
+          <li><b>等效地表高度</b>：气溶胶消光系数随高度指数衰减 σ(z)=σ₀·e^(−z/Hs) 时，光线被消光到无法穿透的高度为 z=Hs·ln(AOD/(Hs·k₀))（k₀ 取 550nm 气溶胶消光系数阈值 0.02 /km）。等效云底高度 = 云底高度 − 等效地表高度。</li>
+          <li><b>光追消光</b>：沿上述抛物线路径对瑞利散射（τ∝λ⁻⁴）与气溶胶米散射（τ∝λ⁻¹·³）做数值积分，得到 400–700nm 的透射光谱，再经 CIE 1931 色度函数换算为颜色与色饱和度。550nm 透射率 T 决定亮度等级。</li>
+          <li><b>云属判据</b>：卷层云/高层云最壮观，卷云、高积云次之，层积云一般，低层云与雨层云几乎不成霞；云底越高、云边界越远颜色越红、持续时间越长。</li>
+          <li><b>日出日落线速度</b>：采用按纬度与日期查表的经验值（约 21 km/min@赤道、18 km/min@30°N、14 km/min@50°N），用于把几何距离换算为持续时间。</li>
+        </ul>
+      </div>
+    </details>
+    <details>
+      <summary>数据来源、模型说明与免责声明</summary>
+      <div class="body">
+        <ul>
+          <li>气象要素（温度、露点、相对湿度、云量、能见度、气压、风、0℃层高度等）来自 <b>Open-Meteo</b> 数值模式接口，分别取 <b>GFS</b> 与 <b>ECMWF IFS</b> 两套模式；气溶胶光学厚度 AOD、PM2.5 来自 <b>CAMS</b> 空气质量接口。</li>
+          <li>底图由<b>腾讯地图</b>提供（GCJ-02），符合中国地图使用规范；热力与色块为本应用根据气象数据计算生成，不代表官方结论。</li>
+          <li><b>光追算法</b>为本地实现的物理模型：在几何可行基础上做多波长消光积分与色度换算，不依赖任何统计订正。</li>
+          <li><b>地图的算法模型选择</b>：热力图可分别按 <b>多模型综合 / GFS / ECMWF-IFS / 光追算法</b> 四者之一着色。四套结果在<b>同一次取数</b>中一次性算好并随该日数据缓存，因此切换模型只是换个维度重新插值着色，<b>不会产生新的网络请求</b>；多模型综合＝GFS / ECMWF / 光追 按 0.30 / 0.34 / 0.36 的加权几何平均，某个模型缺数据时自动剔除该项并重新归一（与单点查询口径一致）。若某模型本次确实没有可用结果，选择框中会标注「本次无数据」并置灰，误选时会自动回退到多模型综合并给出提示；整批取数失败（如接口限流）则在地图区显示错误说明，点「刷新地图」重试。</li>
+          <li>霞光对云的三维分布极为敏感。教程明确指出：短期预报时效不建议超过 36 小时；超过时效或模式间分歧较大时，结论仅作参考，应以临近时刻的卫星云图与实况外推为准。</li>
+          <li>本程序为科普与辅助决策工具，不构成任何形式的专业气象预报或出行承诺。</li>
+        </ul>
+      </div>
+    </details>
+    <div style="text-align:center;padding-top:6px">霞光预报单文件版 · 全部计算在浏览器本地完成 · 数据经 Open-Meteo / CAMS 实时获取</div>
+  </footer>
+
+</div>
+
+<script>
+/*__BLOCK0__*/
+</script>
+<script>
+/* 腾讯地图的 key 不能明文出现在产物里（会被抄走刷配额），所以地图请求要走一个
+   中转端点。这个端点的地址由**部署环境**在构建时注入（见 assemble.py）：
+     · 设了 TMAP_SERVICE_HOST → 用它（自行部署：通常填 https://你的域名/_TMapService，
+       由 functions/_TMapService/[[path]].js 提供）；
+     · 没设 → 换成 WorkBuddy 本地预览用的形态（__WB_*，由运行时服务页面时替换），
+       开发预览的行为与本改动之前完全一致。
+   下面这个占位符由 assemble.py 替换，**产物里不允许残留** —— 前端靠它判断
+   "地图其实是部署没配"，留着就等于把"没配"伪装成"配好了"。
+   另注：配置必须在 SDK 引入**之前**，顺序不能反。 */
+window._TMapSecurityConfig = {
+  serviceHost: '__TMAP_SERVICE_HOST__',
+};
+</script>
+<script src="https://map.qq.com/api/gljs?v=1.exp&libraries=visualization"></script>
+<script>
+/*__BLOCK2__*/
+</script>
+</body>
+</html>
