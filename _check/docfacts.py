@@ -48,7 +48,7 @@ FACTS_JSON = os.path.join(CHECK, ".facts.json")
 
 # ---------------------------------------------------------------- 事实提取
 
-SRCFILES = ["_p2.js", "_p3.js", "_p4.js", "_p5.js", "_p5b.js", "_p6.js"]
+SRCFILES = ["_pi18n.js", "_p2.js", "_p3.js", "_p4.js", "_p5.js", "_p5b.js", "_p6.js"]
 
 
 def read(path):
@@ -136,6 +136,7 @@ def probe_facts():
 DECL = [
     # ---- 源码行数（阶段性总结 §3.1） ----
     ("src.total", "源码总行数", [("阶段性总结.md", r"源码 \*\*([\d,]+) 行\*\*", [1])]),
+    ("src._pi18n", "`_pi18n.js` 行数", [("阶段性总结.md", r"`_pi18n` (\d+)", [1])]),
     ("src._p2", "`_p2.js` 行数", [("阶段性总结.md", r"`_p2` (\d+)", [1])]),
     ("src._p3", "`_p3.js` 行数", [("阶段性总结.md", r"`_p3` (\d+)", [1])]),
     ("src._p4", "`_p4.js` 行数", [("阶段性总结.md", r"`_p4` (\d+)", [1])]),
@@ -205,6 +206,7 @@ def build_truth(pf):
     """算出全部事实的真值。取不到的置 None（会被报成 FACTS-MISSING）。"""
     t = {}
     t["src.total"] = sum(wc_l(p) for p in SRCFILES) + wc_l("tpl/template.html")
+    t["src._pi18n"] = wc_l("_pi18n.js")
     for p, key in [("_p2.js", "src._p2"), ("_p3.js", "src._p3"), ("_p4.js", "src._p4"),
                    ("_p5.js", "src._p5"), ("_p5b.js", "src._p5b"), ("_p6.js", "src._p6"),
                    ("tpl/template.html", "src.tpl")]:

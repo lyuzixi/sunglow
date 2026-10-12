@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>页面不存在 · 霞光预报</title>
+<title data-i18n="页面不存在 · 霞光预报">页面不存在 · 霞光预报</title>
 <meta name="description" content="你访问的地址没有对应的页面。返回霞光预报首页，查询朝霞与晚霞的出现概率与观赏质量。">
 <!-- 404 页**必须** noindex：它会被托管平台拿去应答**任意**未知路径（包括爬虫顺着
      外链摸过来的各种拼错地址），放进索引等于给站点造出一批空壳收录。 -->
@@ -92,6 +92,13 @@ a{color:var(--blue)}
 /* 作者样式里的 display 会盖掉 [hidden] 的 UA display:none，必须自己钉死。 */
 [hidden]{display:none!important}
 .nf-foot{margin:16px 0 0}
+/* 语言切换：与主页同款分段控件（这里自带最小实现，不共用主页的 CSS 类） */
+.nf-lang{display:flex;gap:6px;justify-content:center;margin-top:16px;background:#f1f4f9;
+  border:1px solid var(--line);padding:4px;border-radius:12px;width:max-content;margin-left:auto;margin-right:auto}
+.nf-lang button{border:0;background:transparent;padding:6px 11px;border-radius:8px;font-size:13px;
+  color:var(--tx2);cursor:pointer;font-family:inherit}
+.nf-lang button.on{background:#fff;color:var(--acc2);box-shadow:0 2px 8px -3px rgba(16,24,40,.22)}
+.nf-lang button:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
 
 /* ---------- 手机端（断点与主页同为 760px，三处之一） ----------
    顶部条的压法与主页**完全一致**（sub 隐藏 / h1 14px / badge 同行 /
@@ -126,41 +133,50 @@ a{color:var(--blue)}
   <div class="top-in">
     <div class="logo" aria-hidden="true"></div>
     <div class="top-tx">
-      <h1>霞光预报 · 朝霞 / 晚霞 概率与观赏质量</h1>
+      <h1 data-i18n="霞光预报 · 朝霞 / 晚霞 概率与观赏质量">霞光预报 · 朝霞 / 晚霞 概率与观赏质量</h1>
       <div class="sub">多模型融合（GFS · ECMWF-IFS · 光追算法）+ 火烧云三角几何模型 + 大气消光光谱计算</div>
     </div>
     <div class="spacer"></div>
-    <div class="badge">404 · 页面不存在</div>
+    <div class="badge" data-i18n="404 · 页面不存在">404 · 页面不存在</div>
   </div>
 </div>
 
 <main class="wrap">
   <div class="card nf">
     <div class="nf-code" aria-hidden="true">404</div>
-    <h2>找不到这个页面</h2>
-    <p class="nf-lead">这个地址没有对应的页面 —— 可能是链接过期、地址输错，或者页面已经挪走了。</p>
-    <p class="nf-path" id="missPath" hidden>请求的地址：<code class="mono" id="missPathTx"></code></p>
+    <h2 data-i18n="找不到这个页面">找不到这个页面</h2>
+    <p class="nf-lead" data-i18n="这个地址没有对应的页面 —— 可能是链接过期、地址输错，或者页面已经挪走了。">这个地址没有对应的页面 —— 可能是链接过期、地址输错，或者页面已经挪走了。</p>
+    <p class="nf-path" id="missPath" hidden><span data-i18n="请求的地址：">请求的地址：</span><code class="mono" id="missPathTx"></code></p>
 
     <div class="acts">
       <!-- 主出口是**真链接**：没有 JS 也能回首页（404 页被各种奇怪客户端打开过，
            不能把唯一出路挂在一个 script 上）。 -->
-      <a class="btn pri" href="__SITE_BASE__" id="btnHome">返回首页</a>
+      <a class="btn pri" href="__SITE_BASE__" id="btnHome" data-i18n="返回首页">返回首页</a>
       <!-- 次出口相反：它只有在 JS 确认"确实有上一页"时才显形，见下面那段脚本。 -->
-      <button type="button" class="btn" id="btnBack" hidden>返回上一页</button>
+      <button type="button" class="btn" id="btnBack" hidden data-i18n="返回上一页">返回上一页</button>
     </div>
 
-    <p class="hint nf-foot">回首页后可以重新选地点与日期，查询朝霞 / 晚霞的出现概率与观赏质量。</p>
+    <p class="hint nf-foot" data-i18n="回首页后可以重新选地点与日期，查询朝霞 / 晚霞的出现概率与观赏质量。">回首页后可以重新选地点与日期，查询朝霞 / 晚霞的出现概率与观赏质量。</p>
+
+    <!-- 语言切换：这页是**独立产物**（构建期生成、可能在任何路径下返回），
+         所以它自带一份**最小词典**，不依赖主页的 _pi18n.js。
+         HTML 里的原文一律是简体中文 ⇒ 没有 JS 时页面照常可读（这一点对 404 页尤其重要：
+         它会被爬虫、被禁了 JS 的浏览器、被各种奇怪客户端打开）。 -->
+    <div class="unitseg nf-lang" id="langSeg" role="group" aria-label="语言" data-i18n-aria="语言"></div>
   </div>
 </main>
 
 <script>
-/* 404 页的 JS 只有两件事，都很小，**刻意不引任何库**：这页要在任意路径下被
+/* 404 页的 JS 只有三件事，都很小，**刻意不引任何库**：这页要在任意路径下被
    返回，多一个外部依赖就多一处"加载不到就整页失效"。
    1) 把请求到的地址显示出来（用 textContent，绝不拼 innerHTML —— 路径是
       用户可控输入，拼进去就是一个反射型 XSS）。
    2) 只在**真的有上一页**时才放出「返回上一页」。history.length 是唯一能拿到的
       信号（浏览器不允许读历史内容），刚开的新标签页是 1 —— 那时这个按钮
-      点下去会把人扔回一个空白页，不如不给。 */
+      点下去会把人扔回一个空白页，不如不给。
+   3) 语言切换。这页是**独立产物**，所以自带一份最小词典，不依赖主页的 _pi18n.js；
+       HTML 里的原文一律是简体中文 ⇒ 即便脚本被拦截，页面也照常可读（只是不换语言）。
+       优先级与主页一致：URL 参数 ?lang= > 浏览器语言 > 简体。 */
 (function () {
   var home = document.body.getAttribute("data-home") || "/";
   var p = location.pathname + (location.search || "");
@@ -176,6 +192,84 @@ a{color:var(--blue)}
       else location.href = home;
     });
   }
+
+  /* ---- 最小词典（只有本页用到的 9 条 + 语言名） ---- */
+  var LANGS = [["zh", "中文"], ["zhHant", "繁體"], ["en", "English"]];
+  var DICT = {
+    en: {
+      "页面不存在 · 霞光预报": "Page not found · Glowcast",
+      "霞光预报 · 朝霞 / 晚霞 概率与观赏质量": "Glowcast · Dawn & dusk glow probability and viewing quality",
+      "404 · 页面不存在": "404 · Page not found",
+      "找不到这个页面": "This page does not exist",
+      "这个地址没有对应的页面 —— 可能是链接过期、地址输错，或者页面已经挪走了。":
+        "There is no page at this address — the link may have expired, the address may be mistyped, or the page may have moved.",
+      "请求的地址：": "Requested address: ",
+      "返回首页": "Back to home",
+      "返回上一页": "Go back",
+      "回首页后可以重新选地点与日期，查询朝霞 / 晚霞的出现概率与观赏质量。":
+        "Back on the home page you can pick a new location and date to check the probability and viewing quality of dawn or dusk glow.",
+      "语言": "Language"
+    },
+    zhHant: {
+      "页面不存在 · 霞光预报": "頁面不存在 · 霞光預報",
+      "霞光预报 · 朝霞 / 晚霞 概率与观赏质量": "霞光預報 · 朝霞 / 晚霞 機率與觀賞品質",
+      "404 · 页面不存在": "404 · 頁面不存在",
+      "找不到这个页面": "找不到這個頁面",
+      "这个地址没有对应的页面 —— 可能是链接过期、地址输错，或者页面已经挪走了。":
+        "這個位址沒有對應的頁面 —— 可能是連結過期、位址輸入錯誤，或頁面已經搬走了。",
+      "请求的地址：": "請求的位址：",
+      "返回首页": "返回首頁",
+      "返回上一页": "返回上一頁",
+      "回首页后可以重新选地点与日期，查询朝霞 / 晚霞的出现概率与观赏质量。":
+        "回首頁後可以重新選地點與日期，查詢朝霞 / 晚霞的出現機率與觀賞品質。",
+      "语言": "語言"
+    }
+  };
+  var lang = "zh";
+  function t(k) {
+    var d = DICT[lang];
+    return (d && d[k] !== undefined) ? d[k] : k;
+  }
+  function paint() {
+    var list = document.querySelectorAll("[data-i18n]");
+    for (var i = 0; i < list.length; i++) {
+      var el = list[i], k = el.getAttribute("data-i18n");
+      // <title> 改 textContent 就是改标题，不需要特判
+      el.textContent = t(k);
+    }
+    var ar = document.querySelectorAll("[data-i18n-aria]");
+    for (var j = 0; j < ar.length; j++) ar[j].setAttribute("aria-label", t(ar[j].getAttribute("data-i18n-aria")));
+    var bs = document.querySelectorAll("#langSeg button");
+    for (var m = 0; m < bs.length; m++) {
+      var on = bs[m].getAttribute("data-lang") === lang;
+      bs[m].className = on ? "on" : "";
+      bs[m].setAttribute("aria-pressed", on ? "true" : "false");
+    }
+    document.documentElement.lang = lang === "zhHant" ? "zh-Hant-TW" : (lang === "en" ? "en" : "zh-CN");
+  }
+  function pick() {
+    var q = "";
+    try { q = (new URLSearchParams(location.search || "")).get("lang") || ""; } catch (e) { }
+    var raw = String(q || navigator.language || "").toLowerCase();
+    /* 繁体的判定与主页 normalizeLang() 同一套规则 */
+    if (/^zh[-_]?(hant|tw|hk|mo)/.test(raw) || raw === "zh-hant") return "zhHant";
+    if (/^en/.test(raw)) return "en";
+    return "zh";
+  }
+  var seg = document.getElementById("langSeg");
+  if (seg) {
+    seg.innerHTML = LANGS.map(function (l) {
+      return '<button type="button" data-lang="' + l[0] + '">' + l[1] + "</button>";
+    }).join("");
+    seg.addEventListener("click", function (ev) {
+      var b = ev.target.closest ? ev.target.closest("button[data-lang]") : null;
+      if (!b) return;
+      lang = b.getAttribute("data-lang");
+      paint();
+    });
+  }
+  lang = pick();
+  paint();
 })();
 </script>
 </body>

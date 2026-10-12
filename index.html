@@ -580,9 +580,9 @@ footer li{margin:3px 0}
 
 <noscript>
   <div class="wrap"><div class="noscript">
-    <b>本页的计算全部在浏览器内完成，需要启用 JavaScript。</b><br>
-    启用后即可离线检索 363 个中国地级市与 116 个全球主要城市，并在联网时获取气象数据；
-    地图底图由腾讯地图提供，需要联网。
+    <b data-i18n="本页的计算全部在浏览器内完成，需要启用 JavaScript。">本页的计算全部在浏览器内完成，需要启用 JavaScript。</b><br>
+    <span data-i18n="启用后即可离线检索 363 个中国地级市与 116 个全球主要城市，并在联网时获取气象数据；地图底图由腾讯地图提供，需要联网。">启用后即可离线检索 363 个中国地级市与 116 个全球主要城市，并在联网时获取气象数据；
+    地图底图由腾讯地图提供，需要联网。</span>
   </div></div>
 </noscript>
 
@@ -590,8 +590,8 @@ footer li{margin:3px 0}
   <div class="top-in">
     <div class="logo"></div>
     <div class="top-tx">
-      <h1>霞光预报 · 朝霞 / 晚霞 概率与观赏质量</h1>
-      <div class="sub">多模型融合（GFS · ECMWF-IFS · 光追算法）+ 火烧云三角几何模型 + 大气消光光谱计算</div>
+      <h1 data-i18n="霞光预报 · 朝霞 / 晚霞 概率与观赏质量">霞光预报 · 朝霞 / 晚霞 概率与观赏质量</h1>
+      <div class="sub" data-i18n="多模型融合（GFS · ECMWF-IFS · 光追算法）+ 火烧云三角几何模型 + 大气消光光谱计算">多模型融合（GFS · ECMWF-IFS · 光追算法）+ 火烧云三角几何模型 + 大气消光光谱计算</div>
     </div>
     <div class="spacer"></div>
     <div class="badge" id="topBadge">等待计算</div>
@@ -603,51 +603,57 @@ footer li{margin:3px 0}
   <!-- ============ 控制面板 ============ -->
   <div class="card" style="margin-top:14px">
     <div class="card-h">
-      <h2>① 查询条件</h2>
-      <span class="tag">支持全国所有城市、全球主要城市，或直接输入经纬度 · 修改地区后重新计算即可</span>
+      <h2 data-i18n="① 查询条件">① 查询条件</h2>
+      <span class="tag" data-i18n="支持全国所有城市、全球主要城市，或直接输入经纬度 · 修改地区后重新计算即可">支持全国所有城市、全球主要城市，或直接输入经纬度 · 修改地区后重新计算即可</span>
     </div>
 
     <div class="ctrl-grid">
       <div class="field full">
-        <label class="lb" for="q">地区搜索（输入城市名 / 拼音首字母 / 「纬度,经度」）</label>
-        <input type="text" id="q" placeholder="例如：广州、shenzhen、拉萨、东京、23.13,113.26" autocomplete="off"
+        <label class="lb" for="q" data-i18n="地区搜索（输入城市名 / 拼音首字母 / 「纬度,经度」）">地区搜索（输入城市名 / 拼音首字母 / 「纬度,经度」）</label>
+        <input type="text" id="q" placeholder="例如：广州、shenzhen、拉萨、东京、23.13,113.26" data-i18n-ph="例如：广州、shenzhen、拉萨、东京、23.13,113.26" autocomplete="off"
           role="combobox" aria-expanded="false" aria-controls="sug" aria-autocomplete="list">
         <div class="sug" id="sug" role="listbox"></div>
       </div>
       <div class="field">
-        <label class="lb" for="lat">纬度（-90 ~ 90）</label>
-        <input type="number" id="lat" step="0.0001" value="31.2304" aria-label="纬度">
+        <label class="lb" for="lat" data-i18n="纬度（-90 ~ 90）">纬度（-90 ~ 90）</label>
+        <input type="number" id="lat" step="0.0001" value="31.2304" aria-label="纬度" data-i18n-aria="纬度">
       </div>
       <div class="field">
-        <label class="lb" for="lon">经度（-180 ~ 180）</label>
-        <input type="number" id="lon" step="0.0001" value="121.4737" aria-label="经度">
+        <label class="lb" for="lon" data-i18n="经度（-180 ~ 180）">经度（-180 ~ 180）</label>
+        <input type="number" id="lon" step="0.0001" value="121.4737" aria-label="经度" data-i18n-aria="经度">
       </div>
       <div class="field">
-        <label class="lb" for="date">日期</label>
-        <input type="date" id="date" aria-label="日期">
+        <label class="lb" for="date" data-i18n="日期">日期</label>
+        <input type="date" id="date" aria-label="日期" data-i18n-aria="日期">
       </div>
       <div class="field">
-        <span class="lb" id="goLbl">计算</span>
-        <button class="primary" id="go" style="width:100%" aria-describedby="goLbl">开始预报</button>
+        <span class="lb" id="goLbl" data-i18n="计算">计算</span>
+        <button class="primary" id="go" style="width:100%" aria-describedby="goLbl" data-i18n="开始预报">开始预报</button>
       </div>
     </div>
 
     <div class="rowline">
-      <div class="seg" id="periodSeg" role="group" aria-label="时段：朝霞（日出）或晚霞（日落）">
-        <button data-p="am" aria-pressed="false">朝霞（日出）</button>
-        <button data-p="pm" class="on" aria-pressed="true">晚霞（日落）</button>
+      <div class="seg" id="periodSeg" role="group" aria-label="时段：朝霞（日出）或晚霞（日落）" data-i18n-aria="时段：朝霞（日出）或晚霞（日落）">
+        <button data-p="am" aria-pressed="false" data-i18n="朝霞（日出）">朝霞（日出）</button>
+        <button data-p="pm" class="on" aria-pressed="true" data-i18n="晚霞（日落）">晚霞（日落）</button>
       </div>
-      <button class="sm" id="geoBtn">使用我的定位</button>
-      <button class="sm" id="nowBtn">回到今天</button>
-      <label class="chk"><input type="checkbox" id="autoMap"> 地图跟随查询自动刷新（已有缓存直接用，无缓存才额外取数）</label>
-      <div class="unitseg" id="unitSeg" role="group" aria-label="单位制">
-        <button data-u="metric" class="on" aria-pressed="true">公制</button>
-        <button data-u="imperial" aria-pressed="false">英制</button>
+      <button class="sm" id="geoBtn" data-i18n="使用我的定位">使用我的定位</button>
+      <button class="sm" id="nowBtn" data-i18n="回到今天">回到今天</button>
+      <label class="chk"><input type="checkbox" id="autoMap"> <span data-i18n="地图跟随查询自动刷新（已有缓存直接用，无缓存才额外取数）">地图跟随查询自动刷新（已有缓存直接用，无缓存才额外取数）</span></label>
+      <div class="unitseg" id="unitSeg" role="group" aria-label="单位制" data-i18n-aria="单位制">
+        <button data-u="metric" class="on" aria-pressed="true" data-i18n="公制">公制</button>
+        <button data-u="imperial" aria-pressed="false" data-i18n="英制">英制</button>
       </div>
-      <div class="unitseg" id="clockSeg" role="group" aria-label="时间制">
-        <button data-c="24" class="on" aria-pressed="true">24 时</button>
-        <button data-c="12" aria-pressed="false">12 时</button>
+      <div class="unitseg" id="clockSeg" role="group" aria-label="时间制" data-i18n-aria="时间制">
+        <button data-c="24" class="on" aria-pressed="true" data-i18n="24 时">24 时</button>
+        <button data-c="12" aria-pressed="false" data-i18n="12 时">12 时</button>
       </div>
+      <!-- 语言切换（i18n）：与时段/单位同款分段控件。
+           **刻意不放顶栏** —— 窄屏顶部条有"必须收成一行（≤43 px）"的硬约束
+           （见 44 号约束与 mobileprobe 的断言），多一个三按钮的分段控件必然把它顶成两行。
+           这一行本来就 flex-wrap，加一个控件不影响任何现有断言。
+           按钮文字用各语言自己的写法（中文 / 繁體 / English），不参与翻译。 -->
+      <div class="unitseg" id="langSeg" role="group" aria-label="语言" data-i18n-aria="语言"></div>
       <span class="hint" id="locHint" style="margin-left:auto"></span>
     </div>
 
@@ -661,13 +667,13 @@ footer li{margin:3px 0}
     <div class="col">
 
       <div class="card" id="cardHero">
-        <div class="card-h"><h2>② 预报结论</h2><span class="tag" id="heroTag">多模型综合</span>
-          <span class="right"><button class="sm" id="shareCard" disabled>保存为图片</button></span></div>
+        <div class="card-h"><h2 data-i18n="② 预报结论">② 预报结论</h2><span class="tag" id="heroTag" data-i18n="多模型综合">多模型综合</span>
+          <span class="right"><button class="sm" id="shareCard" disabled data-i18n="保存为图片">保存为图片</button></span></div>
         <div id="hero"></div>
       </div>
 
       <div class="card">
-        <div class="card-h"><h2>③ 各模型独立结果</h2><span class="tag">每种模型单独给出概率与质量，末尾为多模型综合</span></div>
+        <div class="card-h"><h2 data-i18n="③ 各模型独立结果">③ 各模型独立结果</h2><span class="tag" data-i18n="每种模型单独给出概率与质量，末尾为多模型综合">每种模型单独给出概率与质量，末尾为多模型综合</span></div>
         <div class="models" id="models"></div>
         <div class="hint" style="margin-top:11px">
           概率 P = 该模型输入场下「出现可观赏霞光」的置信度（0–100%）；质量 Q = 观赏质量评分（0–100 分）→ 优 ≥80 / 良 65–79 / 一般 45–64 / 差 &lt;45。
@@ -675,24 +681,24 @@ footer li{margin:3px 0}
       </div>
 
       <div class="card">
-        <div class="card-h"><h2>④ 主要影响因素分析</h2><span class="tag" id="facTag">按影响权重排序</span></div>
+        <div class="card-h"><h2 data-i18n="④ 主要影响因素分析">④ 主要影响因素分析</h2><span class="tag" id="facTag" data-i18n="按影响权重排序">按影响权重排序</span></div>
         <div class="t-scroll"><table class="ftab" id="fac"></table></div>
       </div>
 
       <div class="card">
-        <div class="card-h"><h2>⑤ 光追算法细节</h2><span class="tag">沿真实光路的消光积分 + CIE 色度换算</span></div>
+        <div class="card-h"><h2 data-i18n="⑤ 光追算法细节">⑤ 光追算法细节</h2><span class="tag" data-i18n="沿真实光路的消光积分 + CIE 色度换算">沿真实光路的消光积分 + CIE 色度换算</span></div>
         <div id="ray"></div>
       </div>
 
       <div class="card">
-        <div class="card-h"><h2>⑥ 数据质量与提示</h2><span class="tag">缺失值、异常值与不确定性来源</span></div>
+        <div class="card-h"><h2 data-i18n="⑥ 数据质量与提示">⑥ 数据质量与提示</h2><span class="tag" data-i18n="缺失值、异常值与不确定性来源">缺失值、异常值与不确定性来源</span></div>
         <div class="notes" id="notes"></div>
       </div>
 
       <div class="card">
         <div class="card-h">
           <h2 id="trendTitle">⑧ 未来趋势</h2>
-          <span class="tag">同一点位的逐日对比，一次取数看完整窗口（点格子可跳转）</span>
+          <span class="tag" data-i18n="同一点位的逐日对比，一次取数看完整窗口（点格子可跳转）">同一点位的逐日对比，一次取数看完整窗口（点格子可跳转）</span>
           <span class="right"><button class="sm" id="trendGo">加载趋势</button></span>
         </div>
         <div id="trendBody"></div>
@@ -704,37 +710,37 @@ footer li{margin:3px 0}
     <div class="col">
       <div class="card" style="position:sticky;top:64px">
         <div class="card-h">
-          <h2>⑦ 周边霞光热力图</h2>
+          <h2 data-i18n="⑦ 周边霞光热力图">⑦ 周边霞光热力图</h2>
           <span class="tag" id="mapTag"></span>
         </div>
         <div class="maptool">
-          <div class="seg" id="mapPeriod" role="group" aria-label="地图时段：朝霞或晚霞">
-            <button data-p="am" aria-pressed="false">朝霞</button>
-            <button data-p="pm" class="on" aria-pressed="true">晚霞</button>
+          <div class="seg" id="mapPeriod" role="group" aria-label="时段：朝霞（日出）或晚霞（日落）" data-i18n-aria="时段：朝霞（日出）或晚霞（日落）">
+            <button data-p="am" aria-pressed="false" data-i18n="朝霞">朝霞</button>
+            <button data-p="pm" class="on" aria-pressed="true" data-i18n="晚霞">晚霞</button>
           </div>
-          <select id="mapDateSel" title="日期" aria-label="地图日期"></select>
-          <select id="mapModel" title="算法模型" aria-label="算法模型">
+          <select id="mapDateSel" title="日期" aria-label="日期" data-i18n-title="日期" data-i18n-aria="日期"></select>
+          <select id="mapModel" title="算法模型" aria-label="算法模型" data-i18n-title="算法模型" data-i18n-aria="算法模型">
             <option value="ens">模型：多模型综合</option>
             <option value="gfs">模型：GFS</option>
             <option value="ec">模型：ECMWF-IFS</option>
             <option value="rt">模型：光追算法</option>
           </select>
-          <select id="mapDim" title="着色依据" aria-label="着色依据">
-            <option value="mix">着色：综合指数（概率+质量）</option>
-            <option value="p">着色：仅出现概率</option>
-            <option value="q">着色：仅观赏质量</option>
-            <option value="dv">着色：模型分歧（三模型不一致度）</option>
+          <select id="mapDim" title="着色依据" aria-label="着色依据" data-i18n-title="着色依据" data-i18n-aria="着色依据">
+            <option value="mix" data-i18n="着色：综合指数（概率+质量）">着色：综合指数（概率+质量）</option>
+            <option value="p" data-i18n="着色：仅出现概率">着色：仅出现概率</option>
+            <option value="q" data-i18n="着色：仅观赏质量">着色：仅观赏质量</option>
+            <option value="dv" data-i18n="着色：模型分歧（三模型不一致度）">着色：模型分歧（三模型不一致度）</option>
           </select>
-          <button class="sm primary" id="mapGo">刷新地图</button>
-          <label class="chk"><input type="checkbox" id="numLabels"> 数值直标</label>
-          <label class="chk"><input type="checkbox" id="showPts"> 采样点</label>
-          <label class="chk"><input type="checkbox" id="showConf"> 可信度</label>
-          <label class="chk"><input type="checkbox" id="showGrid" checked> 经纬网</label>
-          <label class="chk"><input type="checkbox" id="dimBase"> 深色底图</label>
+          <button class="sm primary" id="mapGo" data-i18n="刷新地图">刷新地图</button>
+          <label class="chk"><input type="checkbox" id="numLabels"> <span data-i18n="数值直标">数值直标</span></label>
+          <label class="chk"><input type="checkbox" id="showPts"> <span data-i18n="采样点">采样点</span></label>
+          <label class="chk"><input type="checkbox" id="showConf"> <span data-i18n="可信度">可信度</span></label>
+          <label class="chk"><input type="checkbox" id="showGrid" checked> <span data-i18n="经纬网">经纬网</span></label>
+          <label class="chk"><input type="checkbox" id="dimBase"> <span data-i18n="深色底图">深色底图</span></label>
         </div>
         <div class="hint" id="modelNote" style="display:none;margin:-2px 0 9px"></div>
         <div class="mapwrap">
-          <div id="map" role="application" aria-label="周边霞光热力图，可用方向键移动、Enter 查看该处数值"></div>
+          <div id="map" role="application" aria-label="周边霞光热力图" data-i18n-aria="⑦ 周边霞光热力图"></div>
           <div class="mload" id="mapLoad"><div class="spin"></div><span id="mapLoadTxt">地图资源加载中…</span></div>
           <div class="tip" id="tip" role="tooltip"></div>
           <div class="mlayer" id="mapLabels" aria-hidden="true"></div>
@@ -750,12 +756,12 @@ footer li{margin:3px 0}
                实测它单独占了 480 px（整张地图卡片 1713 px），折进 <details> 默认收起。 -->
           <div class="hint" style="margin-top:9px" id="lgNote"></div>
           <details class="lgmore">
-            <summary>色面与叠加层的细节说明</summary>
+            <summary data-i18n="色面与叠加层的细节说明">色面与叠加层的细节说明</summary>
             <div class="hint" id="lgMore"></div>
           </details>
         </div>
         <div class="rank">
-          <h4><span id="rankTitle">当日数值最高的地区</span>（前 8）<span class="tag" id="rankScope" style="margin-left:6px"></span></h4>
+          <h4><span id="rankTitle">当日数值最高的地区</span><span id="rankTop">（前 8）</span><span class="tag" id="rankScope" style="margin-left:6px"></span></h4>
           <div id="rank"></div>
         </div>
       </div>
@@ -795,6 +801,749 @@ footer li{margin:3px 0}
 </div>
 
 <script>
+/* =========================================================================
+   Part 0：多语言（i18n）
+   -------------------------------------------------------------------------
+   三种语言：简体中文（基准）/ 繁體中文（中国台湾·香港用语）/ English。
+
+   **键＝简体中文原文**（msgid 风格，不是 `hero.title` 那种符号键）。理由：
+     · 加一处文案时不需要在三个地方同步键名，直接 `i18n("原文")` 即可；
+     · 缺译时**回落到中文原文**，而不是显示 `hero.title` 这种占位符；
+     · 词典本身就是"哪些文案要翻"的清单，人读得懂。
+   代价：同一句文案若有两处含义不同，不能共用一个键（本项目未出现）。
+
+   **为什么不叫 `t`**：`_p5.js:806/832`、`_p6.js:2570` 等处有局部的
+   `const t = ...`，全局 `function t()` 会被那些函数**静默遮蔽**（同约束 28）。
+   同理，本文件放在第一个片段（PARTS 首位）执行，保证任何调用点运行前已就绪。
+
+   **域名不翻译**：城市名、省份名（数据，363 个地级市 + 116 个全球城市）保持原文，
+   它们来自内置数据表，属于专有名词；搜索仍支持拼音与英文别名。
+   ========================================================================= */
+const LANGS = [
+  { k: "zh", name: "中文", htmllang: "zh-CN" },
+  { k: "zhHant", name: "繁體", htmllang: "zh-Hant-TW" },
+  { k: "en", name: "English", htmllang: "en" }
+];
+/* 当前语言。初值 "zh"；可在 readUrl() 之前被 URL 参数或偏好覆盖 */
+let LANG = "zh";
+
+/* ---- 繁體中文（中国台湾·香港用语）----
+   不只是字形转换：用词按当地习惯（机率 / 品质 / 资料 / 网路 / 载入 / 快取 / 预设 /
+   演算法 / 重新整理 / 储存 / 萤幕 / 搜寻）。气溶胶取「氣溶膠」——
+   台湾中央气象署作「氣膠」、香港天文台作「氣溶膠」，取后者以便两地都认。 */
+const I18N_ZH_HANT = {
+  /* 顶栏 */
+  "霞光预报 · 朝霞 / 晚霞 概率与观赏质量": "霞光預報 · 朝霞 / 晚霞 機率與觀賞品質",
+  "多模型融合（GFS · ECMWF-IFS · 光追算法）+ 火烧云三角几何模型 + 大气消光光谱计算": "多模型融合（GFS · ECMWF-IFS · 光追演算法）+ 火燒雲三角幾何模型 + 大氣消光光譜計算",
+  "等待计算": "等待計算",
+  "获取失败": "取得失敗",
+  "正在获取数据…": "正在取得資料…",
+  "计算中…": "計算中…",
+  "上一次计算仍在进行，完成后将按最新条件自动重算…": "上一次計算仍在進行，完成後將依最新條件自動重算…",
+  "开始预报": "開始預報",
+  "计算": "計算",
+  "本页的计算全部在浏览器内完成，需要启用 JavaScript。": "本頁的計算全部在瀏覽器內完成，需要啟用 JavaScript。",
+  "启用后即可离线检索 363 个中国地级市与 116 个全球主要城市，并在联网时获取气象数据；地图底图由腾讯地图提供，需要联网。": "啟用後即可離線檢索 363 個中國地級市與 116 個全球主要城市，並在連網時取得氣象資料；地圖底圖由騰訊地圖提供，需要連網。",
+  /* 语言切换器 */
+  "语言": "語言",
+  /* 查询条件 */
+  "① 查询条件": "① 查詢條件",
+  "支持全国所有城市、全球主要城市，或直接输入经纬度 · 修改地区后重新计算即可": "支援全國所有城市、全球主要城市，或直接輸入經緯度 · 修改地區後重新計算即可",
+  "地区搜索（输入城市名 / 拼音首字母 / 「纬度,经度」）": "地區搜尋（輸入城市名 / 拼音首字母 / 「緯度,經度」）",
+  "例如：广州、shenzhen、拉萨、东京、23.13,113.26": "例如：廣州、shenzhen、拉薩、東京、23.13,113.26",
+  "纬度（-90 ~ 90）": "緯度（-90 ~ 90）",
+  "经度（-180 ~ 180）": "經度（-180 ~ 180）",
+  "日期": "日期",
+  "纬度": "緯度",
+  "经度": "經度",
+  "时段：朝霞（日出）或晚霞（日落）": "時段：朝霞（日出）或晚霞（日落）",
+  "朝霞（日出）": "朝霞（日出）",
+  "晚霞（日落）": "晚霞（日落）",
+  "朝霞": "朝霞",
+  "晚霞": "晚霞",
+  "使用我的定位": "使用我的定位",
+  "回到今天": "回到今天",
+  "地图跟随查询自动刷新（已有缓存直接用，无缓存才额外取数）": "地圖跟隨查詢自動重新整理（已有快取直接使用，無快取才額外取數）",
+  "单位制": "單位系統",
+  "公制": "公制",
+  "英制": "英制",
+  "时间制": "時間制",
+  "24 时": "24 時",
+  "12 时": "12 時",
+  "当前：{v}": "目前：{v}",
+  "正在获取定位…": "正在取得定位…",
+  "当前浏览器不支持定位，请手动输入经纬度": "目前的瀏覽器不支援定位，請手動輸入經緯度",
+  "{why}，请手动输入经纬度或搜索城市。": "{why}，請手動輸入經緯度或搜尋城市。",
+  "使用坐标：{v}": "使用座標：{v}",
+  "直接定位": "直接定位",
+  "自定义坐标": "自訂座標",
+  "我的位置": "我的位置",
+  /* 卡片标题 */
+  "② 预报结论": "② 預報結論",
+  "③ 各模型独立结果": "③ 各模型獨立結果",
+  "④ 主要影响因素分析": "④ 主要影響因素分析",
+  "⑤ 光追算法细节": "⑤ 光追演算法細節",
+  "⑥ 数据质量与提示": "⑥ 資料品質與提示",
+  "⑦ 周边霞光热力图": "⑦ 周邊霞光熱力圖",
+  "未来 {n} 天趋势": "未來 {n} 天趨勢",
+  "多模型综合": "多模型綜合",
+  "每种模型单独给出概率与质量，末尾为多模型综合": "每種模型單獨給出機率與品質，末尾為多模型綜合",
+  "按影响权重排序": "依影響權重排序",
+  "沿真实光路的消光积分 + CIE 色度换算": "沿真實光路的消光積分 + CIE 色度換算",
+  "缺失值、异常值与不确定性来源": "缺失值、異常值與不確定性來源",
+  "同一点位的逐日对比，一次取数看完整窗口（点格子可跳转）": "同一地點的逐日對比，一次取數看完整視窗（點格子可跳轉）",
+  "保存为图片": "儲存為圖片",
+  "加载 {n} 日趋势": "載入 {n} 日趨勢",
+  "重新加载趋势": "重新載入趨勢",
+  "取数中…": "取數中…",
+  /* 结果卡 */
+  "出现概率": "出現機率",
+  "观赏质量": "觀賞品質",
+  "优秀": "優秀",
+  "良好": "良好",
+  "一般": "一般",
+  "较差": "較差",
+  "优": "優",
+  "良": "良",
+  "差": "差",
+  "预计 {site} {date} {period}{concl}（{p}），{q} 分 · {qual} {grade}": "預計 {site} {date} {period}{concl}（{p}），{q} 分 · {qual} {grade}",
+  "分": "分",
+  "可信度": "可信度",
+  "一致性 {v}%": "一致性 {v}%",
+  "高": "高",
+  "中": "中",
+  "低": "低",
+  "三套算法结论接近": "三套演算法結論接近",
+  "三套算法存在一定分歧": "三套演算法存在一定分歧",
+  "三套算法分歧较大": "三套演算法分歧較大",
+  "可信度较高，可直接据此安排。": "可信度較高，可直接據此安排。",
+  "分歧在可接受范围内，建议结合临近云图复核。": "分歧在可接受範圍內，建議結合臨近雲圖複核。",
+  "请谨慎采信，临近日再确认一次。": "請謹慎採信，臨近日再確認一次。",
+  "出现霞光的可能性很低": "出現霞光的可能性很低",
+  "有一定机会，但条件不够理想": "有一定機會，但條件不夠理想",
+  "较可能出现，值得留意": "較可能出現，值得留意",
+  "很可能出现，建议安排观赏": "很可能出現，建議安排觀賞",
+  "出现霞光的可能性很高": "出現霞光的可能性很高",
+  "承载霞光的主要云层：{type}（{decks}），云底约 {base}；{geom}，等效云底 {heff}，云边界 {d}。": "承載霞光的主要雲層：{type}（{decks}），雲底約 {base}；{geom}，等效雲底 {heff}，雲邊界 {d}。",
+  "火烧云三角几何条件成立": "火燒雲三角幾何條件成立",
+  "几何条件不成立或云边界过远": "幾何條件不成立或雲邊界過遠",
+  "无明显边界": "無明顯邊界",
+  "各算法综合指数 I（0–100，越高越好）：{parts} · 综合 {mix}": "各演算法綜合指數 I（0–100，越高越好）：{parts} · 綜合 {mix}",
+  "{ev}时刻（本地）": "{ev}時刻（當地）",
+  "{ev}方位角": "{ev}方位角",
+  "日出": "日出",
+  "日落": "日落",
+  "日出日落线速度": "日出日落線速度",
+  "太阳高度角变化率": "太陽高度角變化率",
+  "霞光深入距离上限": "霞光深入距離上限",
+  "云边界距离": "雲邊界距離",
+  "云底 / 等效云底": "雲底 / 等效雲底",
+  "光学等效地表高度": "光學等效地表高度",
+  "550nm 透射率": "550nm 透射率",
+  "预计持续时间（头顶）": "預計持續時間（頭頂）",
+  "综合指数 I=0.55P+0.45Q": "綜合指數 I=0.55P+0.45Q",
+  "环境输入 · 评分所用的综合场（GFS 与 ECMWF-IFS 逐时平均）": "環境輸入 · 評分所用的綜合場（GFS 與 ECMWF-IFS 逐時平均）",
+  "2m 温度": "2m 溫度",
+  "2m 露点": "2m 露點",
+  "相对湿度": "相對濕度",
+  "10m 风速": "10m 風速",
+  "海平面气压": "海平面氣壓",
+  "能见度": "能見度",
+  /* 模型卡 */
+  "GFS 模式": "GFS 模式",
+  "NOAA 全球模式 · 1 小时分辨率": "NOAA 全球模式 · 1 小時解析度",
+  "ECMWF-IFS 模式": "ECMWF-IFS 模式",
+  "欧洲中心全球模式": "歐洲中心全球模式",
+  "光追算法": "光追演算法",
+  "纯物理：多波长光路积分 + CIE 色度": "純物理：多波長光路積分 + CIE 色度",
+  "GFS 30% + EC 34% + 光追 36%": "GFS 30% + EC 34% + 光追 36%",
+  "该日期/点位未取到 ECMWF 数据，本次综合结果由 GFS 与光追算法构成。": "該日期/地點未取得 ECMWF 資料，本次綜合結果由 GFS 與光追演算法構成。",
+  "质量 {q} 分 · {grade}": "品質 {q} 分 · {grade}",
+  "云型": "雲型",
+  "主云量": "主要雲量",
+  "云底": "雲底",
+  "云边界": "雲邊界",
+  "等效云底": "等效雲底",
+  "持续": "持續",
+  "AOD": "AOD",
+  "无": "無",
+  "主云型": "主要雲型",
+  "等效地表": "等效地表",
+  "峰值透射": "峰值透射",
+  "亮度": "亮度",
+  "颜色": "顏色",
+  "饱和": "飽和",
+  "几何": "幾何",
+  "成立": "成立",
+  "不成立": "不成立",
+  "（三算法综合指数极差）": "（三演算法綜合指數極差）",
+  "等级": "等級",
+  "时效": "時效",
+  "小时": "小時",
+  "实况/历史": "實況/歷史",
+  "综合指数": "綜合指數",
+  /* 因素表 */
+  "因素": "因素",
+  "数值": "數值",
+  "判定": "判定",
+  "对霞光的影响": "對霞光的影響",
+  "数据缺失": "資料缺失",
+  "有利": "有利",
+  "中性": "中性",
+  "不利": "不利",
+  "云量类型与覆盖度": "雲量類型與覆蓋度",
+  "云底高度": "雲底高度",
+  "等效云底高度": "等效雲底高度",
+  "光路上游低层云遮挡": "光路上游低層雲遮蔽",
+  "气溶胶光学厚度 AOD": "氣溶膠光學厚度 AOD",
+  "2m 相对湿度": "2m 相對濕度",
+  "气压稳定性": "氣壓穩定性",
+  "云边界风速分量": "雲邊界風速分量",
+  "对流活动": "對流活動",
+  "模式一致性": "模式一致性",
+  "（上限 {v}）": "（上限 {v}）",
+  "数据不足": "資料不足",
+  "因素详细解读目前仅提供中文。": "因素詳細解讀目前僅提供中文。",
+  /* 云属、云层、颜色、亮度 */
+  "层云/雾": "層雲/霧",
+  "层积云": "層積雲",
+  "积云": "積雲",
+  "高积云": "高積雲",
+  "高层云": "高層雲",
+  "卷层云": "卷層雲",
+  "卷云": "卷雲",
+  "低云": "低雲",
+  "中云": "中雲",
+  "高云": "高雲",
+  "灰暗无彩": "灰暗無彩",
+  "灰白（大气浑浊）": "灰白（大氣混濁）",
+  "深红 / 暗红": "深紅 / 暗紅",
+  "红": "紅",
+  "橘红": "橘紅",
+  "橙色": "橙色",
+  "金黄 / 橘黄": "金黃 / 橘黃",
+  "淡黄": "淡黃",
+  "粉紫": "粉紫",
+  "黄绿（少见）": "黃綠（少見）",
+  "极亮（可能过曝、色泽偏白）": "極亮（可能過曝、色澤偏白）",
+  "明亮（最佳区间）": "明亮（最佳區間）",
+  "明亮偏弱（仍清晰可见）": "明亮偏弱（仍清晰可見）",
+  "较暗（闷烧）": "較暗（悶燒）",
+  "很暗（观赏价值低）": "很暗（觀賞價值低）",
+  "极暗（基本看不到）": "極暗（基本看不到）",
+  "完全不可见": "完全不可見",
+  /* 光追卡 */
+  "峰值透射率 T(550nm)": "峰值透射率 T(550nm)",
+  "亮度等级": "亮度等級",
+  "峰值路径光学厚度 τ": "峰值路徑光學厚度 τ",
+  "峰值颜色": "峰值顏色",
+  "色相跨距（颜色丰富度）": "色相跨距（顏色豐富度）",
+  "气溶胶标高 Hs": "氣溶膠標高 Hs",
+  "近边界角（云遮挡）": "近邊界角（雲遮蔽）",
+  "远边界角（地球遮挡）": "遠邊界角（地球遮蔽）",
+  "霞光强度与彩度随时间的演变（横轴＝事件后分钟数，竖线＝各采样点的实际颜色）：": "霞光強度與彩度隨時間的演變（橫軸＝事件後分鐘數，豎線＝各取樣點的實際顏色）：",
+  "同一组采样时刻的光谱与颜色（左＝刚被照亮，右＝掠地最红）：": "同一組取樣時刻的光譜與顏色（左＝剛被照亮，右＝掠地最紅）：",
+  "本地云底被照亮的时段（火烧云三角）：": "當地雲底被照亮的時段（火燒雲三角）：",
+  "开始 +{v}": "開始 +{v}",
+  "结束 +{v}": "結束 +{v}",
+  "{ev}时刻": "{ev}時刻",
+  "相对亮度（峰值 +{v} 分）": "相對亮度（峰值 +{v} 分）",
+  "彩度 · OKLab（峰值 {v}）": "彩度 · OKLab（峰值 {v}）",
+  "0 分": "0 分",
+  "几何条件不成立：{why}。光追结果按最接近的掠射情形估算，仅作参考。": "幾何條件不成立：{why}。光追結果依最接近的掠射情形估算，僅供參考。",
+  "云边界距离 {d} 已超过霞光深入距离上限 {m}（该云盘范围内阳光无法从云底下方射入）": "雲邊界距離 {d} 已超過霞光深入距離上限 {m}（該雲盤範圍內陽光無法從雲底下方射入）",
+  "日出/日落方向 400 km 内没有找到可承载霞光的云盘": "日出/日落方向 400 km 內沒有找到可承載霞光的雲盤",
+  /* 提示 */
+  "本时段各要素齐全，未发现明显缺失或异常。": "本時段各要素齊全，未發現明顯缺失或異常。",
+  /* 趋势 */
+  "（今天）": "（今天）",
+  "（明天）": "（明天）",
+  "正在取 {n} 天数据（{c} 个坐标 × 3 路，朝/晚霞共用一次取数）…": "正在取 {n} 天資料（{c} 個座標 × 3 路，朝/晚霞共用一次取數）…",
+  "趋势数据获取失败：{m}": "趨勢資料取得失敗：{m}",
+  "额度会在次日重置，之后即可恢复。": "額度會在次日重置，之後即可恢復。",
+  /* 地图 */
+  "地图数据尚未加载。一次取周边 {r} km 内的 {n} 个网格点 × 2 套模式 + 气溶胶，约 {c} 个计费调用": "地圖資料尚未載入。一次取周邊 {r} km 內的 {n} 個網格點 × 2 套模式 + 氣溶膠，約 {c} 個計費呼叫",
+  "加载周边地图": "載入周邊地圖",
+  "地图组件未能加载（脚本被拦截或网络不可达）。": "地圖元件未能載入（指令碼被封鎖或網路不可達）。",
+  "刷新地图": "重新整理地圖",
+  "数值直标": "數值直標",
+  "采样点": "取樣點",
+  "可信度": "可信度",
+  "经纬网": "經緯網",
+  "深色底图": "深色底圖",
+  "算法模型": "演算法模型",
+  "着色依据": "著色依據",
+  "模型：{v}": "模型：{v}",
+  "（本次无数据）": "（本次無資料）",
+  "着色：综合指数（概率+质量）": "著色：綜合指數（機率+品質）",
+  "着色：仅出现概率": "著色：僅出現機率",
+  "着色：仅观赏质量": "著色：僅觀賞品質",
+  "着色：模型分歧（三模型不一致度）": "著色：模型分歧（三模型不一致度）",
+  "当日数值最高的地区": "當日數值最高的地區",
+  "（前 {n}）": "（前 {n}）",
+  "色面与叠加层的细节说明": "色面與疊加層的細節說明",
+  "模型分歧": "模型分歧",
+  "概率高（≥80%）": "機率高（≥80%）",
+  "概率较高（65–79%）": "機率較高（65–79%）",
+  "概率一般（45–64%）": "機率一般（45–64%）",
+  "分歧大（ΔI ≥ 30 分）": "分歧大（ΔI ≥ 30 分）",
+  "分歧较大（20–29 分）": "分歧較大（20–29 分）",
+  "分歧中等（10–19 分）": "分歧中等（10–19 分）",
+  "出现概率 P": "出現機率 P",
+  "观赏质量分 Q": "觀賞品質分 Q",
+  "模型分歧 ΔI": "模型分歧 ΔI",
+  "综合指数 I": "綜合指數 I",
+  "该省在当前周边 {n} 个网格点里没有落点": "該省在目前周邊 {n} 個網格點裡沒有落點",
+  "（采样点未覆盖）": "（取樣點未覆蓋）",
+  "{n} 个采样点 · 当前口径 {dim}": "{n} 個取樣點 · 目前口徑 {dim}",
+  "（与所选模型无关）": "（與所選模型無關）",
+  "点城市可发起该点的单点精细查询（含 400 km 样带与光追模型）。": "點城市可發起該點的單點精細查詢（含 400 km 樣帶與光追模型）。",
+  "收起": "收起",
+  "正在取模式数据（周边 {n} 个网格点，朝/晚霞共用）…": "正在取模式資料（周邊 {n} 個網格點，朝/晚霞共用）…",
+  "正在计算 {n} 个网格点…": "正在計算 {n} 個網格點…",
+  "地图数据获取失败（{m}）。": "地圖資料取得失敗（{m}）。",
+  "网络异常": "網路異常",
+  "已自动切换为多模型综合": "已自動切換為多模型綜合",
+  "所选模型「{v}」在本次取数中没有可用结果": "所選模型「{v}」在本次取數中沒有可用結果",
+  "当前模型（{v}）有 {n}/{t} 个点算出结果，色面按这些点插值。": "目前模型（{v}）有 {n}/{t} 個點算出結果，色面依這些點插值。",
+  /* 悬停卡 */
+  "距离 / 方位": "距離 / 方位",
+  "查询点本身": "查詢點本身",
+  "本次无数据": "本次無資料",
+  "综合观赏质量": "綜合觀賞品質",
+  /* 错误与额度 */
+  "气象接口暂时限流（短时并发过高），约一分钟内会自动恢复。": "氣象介面暫時限流（短時併發過高），約一分鐘內會自動恢復。",
+  "气象接口暂时限流（同一 IP 请求过于频繁），请稍候约 1 分钟后重试。": "氣象介面暫時限流（同一 IP 請求過於頻繁），請稍候約 1 分鐘後重試。",
+  "请检查网络连接或稍后重试；也可能是该日期超出模式可提供的范围（可预报范围约 今天−7 天 ~ 今天+10 天）。": "請檢查網路連線或稍後重試；也可能是該日期超出模式可提供的範圍（可預報範圍約 今天−7 天 ~ 今天+10 天）。",
+  "请求未完成，无结果可展示。": "請求未完成，無結果可展示。",
+  "请先完成一次预报，再保存图片。": "請先完成一次預報，再儲存圖片。",
+  "点位": "地點",
+  "预报时效约 {n} 小时": "預報時效約 {n} 小時",
+  "实况 / 历史分析场": "實況 / 歷史分析場",
+  "霞光预报 · 数据源 Open-Meteo（GFS / ECMWF-IFS / CAMS 气溶胶）· 结论仅供观赏参考": "霞光預報 · 資料來源 Open-Meteo（GFS / ECMWF-IFS / CAMS 氣溶膠）· 結論僅供觀賞參考",
+  "载霞云层 {v}": "載霞雲層 {v}",
+  "覆盖 {v}": "覆蓋 {v}",
+  "可信度 {v}": "可信度 {v}",
+  "综合 I {v}": "綜合 I {v}",
+  "气象接口响应超时（超过 12 秒），请检查网络后重试。": "氣象介面回應逾時（超過 12 秒），請檢查網路後重試。",
+  "数据获取失败：{v}": "資料取得失敗：{v}",
+  "额度会在次日重置，之后即可恢复。想继续使用的话：地图数据占单次首屏约 88% 的调用量，不点「加载周边地图」就不会消耗；也可以改用付费计划或自建实例。": "額度會在次日重置，之後即可恢復。想繼續使用的話：地圖資料佔單次首屏約 88% 的呼叫量，不點「載入周邊地圖」就不會消耗；也可以改用付費方案或自建執行個體。",
+  "点上方按钮加载趋势（最长 {n} 天，具体天数受模式可预报范围限制）—— 一次取数即可比较“哪天值得去”，不用一天天手动切。（会额外发一轮约 {c} 个坐标的请求。）": "點上方按鈕載入趨勢（最長 {n} 天，具體天數受模式可預報範圍限制）—— 一次取數即可比較「哪天值得去」，不用一天天手動切。（會額外發一輪約 {c} 個座標的請求。）",
+  "区间 {a} ~ {b}；一次取数 {n} 个坐标（朝/晚霞共用），样带方位按 {a} 构造，其余日期有几公里量级的方位偏差；点任意格子可跳到该日期与该时段。": "區間 {a} ~ {b}；一次取數 {n} 個座標（朝/晚霞共用），樣帶方位依 {a} 構造，其餘日期有幾公里量級的方位偏差；點任意格子可跳到該日期與該時段。",
+  "当前所选日期不在已加载区间内，点「重新加载趋势」更新。": "目前所選日期不在已載入區間內，點「重新載入趨勢」更新。",
+  "本次缺少 {v} 数据，相应结论不确定性更高。": "本次缺少 {v} 資料，相應結論不確定性更高。",
+  "霞光相对亮度与彩度随时间的演变（横轴＝事件后分钟数，竖线＝各采样点的实际颜色）：": "霞光相對亮度與彩度隨時間的演變（橫軸＝事件後分鐘數，豎線＝各取樣點的實際顏色）：",
+  "无明显云边界": "無明顯雲邊界",
+  "不足两套算法给出结果，无法评估模型一致性。": "不足兩套演算法給出結果，無法評估模式一致性。",
+  "（{v}）": "（{v}）",
+  "，ΔI {v}": "，ΔI {v}",
+  "光追 ": "光追 ",
+  "霞光预报": "霞光預報",
+  "（首屏只取了单点结果，这部分等你要看时再取）。": "（首屏只取了單點結果，這部分等你要看時再取）。",
+  "（当前地点没有生成网格点）": "（目前地點沒有產生網格點）",
+  "概率低（&lt;45%）": "機率低（&lt;45%）",
+  "分歧小（&lt;10 分）": "分歧小（&lt;10 分）",
+  "模型分歧最大的地区": "模型分歧最大的地區",
+  "{n} 点可见": "{n} 點可見",
+  "（另有 {n} 点不在显示范围内）": "（另有 {n} 點不在顯示範圍內）",
+  "上方查询功能不依赖地图，仍可正常使用；地图在联网环境下会自动恢复。": "上方查詢功能不依賴地圖，仍可正常使用；地圖在連網環境下會自動恢復。",
+};
+
+/* ---- English ---- */
+const I18N_EN = {
+  /* 顶栏 */
+  "霞光预报 · 朝霞 / 晚霞 概率与观赏质量": "Glowcast · Dawn & dusk glow probability and viewing quality",
+  "多模型融合（GFS · ECMWF-IFS · 光追算法）+ 火烧云三角几何模型 + 大气消光光谱计算": "GFS · ECMWF-IFS · ray-tracing blend + the \"fire-cloud\" triangle geometry model + atmospheric extinction spectra",
+  "等待计算": "Waiting",
+  "获取失败": "Failed",
+  "正在获取数据…": "Fetching data…",
+  "计算中…": "Computing…",
+  "上一次计算仍在进行，完成后将按最新条件自动重算…": "Previous run still in progress; it will recompute with your latest inputs.",
+  "开始预报": "Run forecast",
+  "计算": "Run",
+  "本页的计算全部在浏览器内完成，需要启用 JavaScript。": "All computation happens in your browser; JavaScript is required.",
+  "启用后即可离线检索 363 个中国地级市与 116 个全球主要城市，并在联网时获取气象数据；地图底图由腾讯地图提供，需要联网。": "With JavaScript enabled you can search 363 Chinese prefecture-level cities and 116 major world cities offline, and fetch weather data when online. The map basemap is provided by Tencent Maps and requires a connection.",
+  /* 语言切换器 */
+  "语言": "Language",
+  /* 查询条件 */
+  "① 查询条件": "① Query",
+  "支持全国所有城市、全球主要城市，或直接输入经纬度 · 修改地区后重新计算即可": "Any city in China, major world cities, or direct lat/lon input · change the location and run again",
+  "地区搜索（输入城市名 / 拼音首字母 / 「纬度,经度」）": "Location search (city name / pinyin initials / \"lat,lon\")",
+  "例如：广州、shenzhen、拉萨、东京、23.13,113.26": "e.g. 广州, shenzhen, 拉萨, Tokyo, 23.13,113.26",
+  "纬度（-90 ~ 90）": "Latitude (-90 to 90)",
+  "经度（-180 ~ 180）": "Longitude (-180 to 180)",
+  "日期": "Date",
+  "纬度": "Latitude",
+  "经度": "Longitude",
+  "时段：朝霞（日出）或晚霞（日落）": "Period: dawn glow (sunrise) or dusk glow (sunset)",
+  "朝霞（日出）": "Dawn (sunrise)",
+  "晚霞（日落）": "Dusk (sunset)",
+  "朝霞": "Dawn glow",
+  "晚霞": "Dusk glow",
+  "使用我的定位": "Use my location",
+  "回到今天": "Back to today",
+  "地图跟随查询自动刷新（已有缓存直接用，无缓存才额外取数）": "Auto-refresh map with the query (cached dates draw instantly; only uncached ones cost quota)",
+  "单位制": "Units",
+  "公制": "Metric",
+  "英制": "Imperial",
+  "时间制": "Clock",
+  "24 时": "24 h",
+  "12 时": "12 h",
+  "当前：{v}": "Now: {v}",
+  "正在获取定位…": "Locating…",
+  "当前浏览器不支持定位，请手动输入经纬度": "This browser does not support geolocation; please enter coordinates manually",
+  "{why}，请手动输入经纬度或搜索城市。": "{why}; please enter coordinates manually or search for a city.",
+  "使用坐标：{v}": "Use coordinates: {v}",
+  "直接定位": "Go to point",
+  "自定义坐标": "Custom coordinates",
+  "我的位置": "My location",
+  /* 卡片标题 */
+  "② 预报结论": "② Verdict",
+  "③ 各模型独立结果": "③ Per-model results",
+  "④ 主要影响因素分析": "④ Contributing factors",
+  "⑤ 光追算法细节": "⑤ Ray-tracing detail",
+  "⑥ 数据质量与提示": "⑥ Data quality & caveats",
+  "⑦ 周边霞光热力图": "⑦ Surrounding glow map",
+  "未来 {n} 天趋势": "Next {n} days",
+  "多模型综合": "Model blend",
+  "每种模型单独给出概率与质量，末尾为多模型综合": "Each model scored separately; the last card is the blend",
+  "按影响权重排序": "Sorted by weight of influence",
+  "沿真实光路的消光积分 + CIE 色度换算": "Extinction integrated along the real light path + CIE chroma",
+  "缺失值、异常值与不确定性来源": "Missing values, outliers and sources of uncertainty",
+  "同一点位的逐日对比，一次取数看完整窗口（点格子可跳转）": "Day-by-day comparison for one point, one request covers the whole window (click a cell to jump)",
+  "保存为图片": "Save as image",
+  "加载 {n} 日趋势": "Load {n}-day outlook",
+  "重新加载趋势": "Reload outlook",
+  "取数中…": "Fetching…",
+  /* 结果卡 */
+  "出现概率": "Probability",
+  "观赏质量": "Viewing quality",
+  "优秀": "excellent",
+  "良好": "good",
+  "一般": "fair",
+  "较差": "poor",
+  "优": "Excellent",
+  "良": "Good",
+  "差": "Poor",
+  "预计 {site} {date} {period}{concl}（{p}），{q} 分 · {qual} {grade}": "At {site} on {date}, the {period} will {concl} ({p}), {q} pts · {qual} {grade}",
+  "分": "pts",
+  "可信度": "Confidence",
+  "一致性 {v}%": "agreement {v}%",
+  "高": "High",
+  "中": "Medium",
+  "低": "Low",
+  "三套算法结论接近": "the three algorithms largely agree",
+  "三套算法存在一定分歧": "the three algorithms differ somewhat",
+  "三套算法分歧较大": "the three algorithms disagree strongly",
+  "可信度较高，可直接据此安排。": "Fairly reliable; you can plan on it.",
+  "分歧在可接受范围内，建议结合临近云图复核。": "Disagreement is within an acceptable range; double-check with recent satellite imagery.",
+  "请谨慎采信，临近日再确认一次。": "Treat with caution and re-check closer to the date.",
+  "出现霞光的可能性很低": "be unlikely to produce glow",
+  "有一定机会，但条件不够理想": "have some chance, though conditions are mediocre",
+  "较可能出现，值得留意": "probably produce glow — worth watching",
+  "很可能出现，建议安排观赏": "very likely produce glow — worth planning for",
+  "出现霞光的可能性很高": "very likely produce glow",
+  "承载霞光的主要云层：{type}（{decks}），云底约 {base}；{geom}，等效云底 {heff}，云边界 {d}。": "Main glow-bearing cloud: {type} ({decks}), base about {base}; {geom}, effective base {heff}, cloud edge {d}.",
+  "火烧云三角几何条件成立": "the fire-cloud triangle geometry holds",
+  "几何条件不成立或云边界过远": "the geometry does not hold or the cloud edge is too far",
+  "无明显边界": "no clear edge",
+  "各算法综合指数 I（0–100，越高越好）：{parts} · 综合 {mix}": "Composite index I per algorithm (0–100, higher is better): {parts} · blend {mix}",
+  "{ev}时刻（本地）": "{ev} time (local)",
+  "{ev}方位角": "{ev} azimuth",
+  "日出": "Sunrise",
+  "日落": "Sunset",
+  "日出日落线速度": "Terminator speed",
+  "太阳高度角变化率": "Solar altitude rate",
+  "霞光深入距离上限": "Max glow reach",
+  "云边界距离": "Cloud edge distance",
+  "云底 / 等效云底": "Base / effective base",
+  "光学等效地表高度": "Optical equivalent ground height",
+  "550nm 透射率": "550 nm transmittance",
+  "预计持续时间（头顶）": "Expected duration (overhead)",
+  "综合指数 I=0.55P+0.45Q": "Composite index I=0.55P+0.45Q",
+  "环境输入 · 评分所用的综合场（GFS 与 ECMWF-IFS 逐时平均）": "Environment input · the blended field used for scoring (hourly mean of GFS and ECMWF-IFS)",
+  "2m 温度": "2 m temperature",
+  "2m 露点": "2 m dew point",
+  "相对湿度": "Relative humidity",
+  "10m 风速": "10 m wind",
+  "海平面气压": "Mean sea-level pressure",
+  "能见度": "Visibility",
+  /* 模型卡 */
+  "GFS 模式": "GFS",
+  "NOAA 全球模式 · 1 小时分辨率": "NOAA global model · hourly",
+  "ECMWF-IFS 模式": "ECMWF-IFS",
+  "欧洲中心全球模式": "ECMWF global model",
+  "光追算法": "Ray tracing",
+  "纯物理：多波长光路积分 + CIE 色度": "Pure physics: multi-wavelength path integration + CIE chroma",
+  "GFS 30% + EC 34% + 光追 36%": "GFS 30% + EC 34% + ray 36%",
+  "该日期/点位未取到 ECMWF 数据，本次综合结果由 GFS 与光追算法构成。": "No ECMWF data for this date/location; the blend is made of GFS and ray tracing only.",
+  "质量 {q} 分 · {grade}": "Quality {q} pts · {grade}",
+  "云型": "Cloud type",
+  "主云量": "Main cloud cover",
+  "云底": "Cloud base",
+  "云边界": "Cloud edge",
+  "等效云底": "Effective base",
+  "持续": "Duration",
+  "AOD": "AOD",
+  "无": "none",
+  "主云型": "Main type",
+  "等效地表": "Equiv. ground",
+  "峰值透射": "Peak transmittance",
+  "亮度": "Brightness",
+  "颜色": "Colour",
+  "饱和": "Saturation",
+  "几何": "Geometry",
+  "成立": "holds",
+  "不成立": "fails",
+  "（三算法综合指数极差）": " (spread of the three composite indices)",
+  "等级": "Grade",
+  "时效": "Lead time",
+  "小时": "h",
+  "实况/历史": "Analysis/history",
+  "综合指数": "Composite index",
+  /* 因素表 */
+  "因素": "Factor",
+  "数值": "Value",
+  "判定": "Verdict",
+  "对霞光的影响": "Effect on glow",
+  "数据缺失": "no data",
+  "有利": "favourable",
+  "中性": "neutral",
+  "不利": "unfavourable",
+  "云量类型与覆盖度": "Cloud type and cover",
+  "云底高度": "Cloud base height",
+  "等效云底高度": "Effective cloud base",
+  "光路上游低层云遮挡": "Upstream low cloud blocking",
+  "气溶胶光学厚度 AOD": "Aerosol optical depth (AOD)",
+  "2m 相对湿度": "2 m relative humidity",
+  "气压稳定性": "Pressure stability",
+  "云边界风速分量": "Along-path wind component",
+  "对流活动": "Convection",
+  "模式一致性": "Model agreement",
+  "（上限 {v}）": " (max {v})",
+  "数据不足": "insufficient data",
+  "因素详细解读目前仅提供中文。": "Detailed factor explanations are currently Chinese-only.",
+  /* 云属、云层、颜色、亮度 */
+  "层云/雾": "Stratus/fog",
+  "层积云": "Stratocumulus",
+  "积云": "Cumulus",
+  "高积云": "Altocumulus",
+  "高层云": "Altostratus",
+  "卷层云": "Cirrostratus",
+  "卷云": "Cirrus",
+  "低云": "Low",
+  "中云": "Mid",
+  "高云": "High",
+  "灰暗无彩": "Dull grey",
+  "灰白（大气浑浊）": "Grey-white (hazy)",
+  "深红 / 暗红": "Deep red / dark red",
+  "红": "Red",
+  "橘红": "Orange-red",
+  "橙色": "Orange",
+  "金黄 / 橘黄": "Golden / amber",
+  "淡黄": "Pale yellow",
+  "粉紫": "Pink-violet",
+  "黄绿（少见）": "Yellow-green (rare)",
+  "极亮（可能过曝、色泽偏白）": "Very bright (may blow out, washes white)",
+  "明亮（最佳区间）": "Bright (sweet spot)",
+  "明亮偏弱（仍清晰可见）": "Fairly bright (still clearly visible)",
+  "较暗（闷烧）": "Dim (smouldering)",
+  "很暗（观赏价值低）": "Very dim (little to see)",
+  "极暗（基本看不到）": "Extremely dim (barely visible)",
+  "完全不可见": "Not visible",
+  /* 光追卡 */
+  "峰值透射率 T(550nm)": "Peak transmittance T(550 nm)",
+  "亮度等级": "Brightness class",
+  "峰值路径光学厚度 τ": "Peak path optical depth τ",
+  "峰值颜色": "Peak colour",
+  "色相跨距（颜色丰富度）": "Hue span (colour richness)",
+  "气溶胶标高 Hs": "Aerosol scale height Hs",
+  "近边界角（云遮挡）": "Near edge angle (cloud)",
+  "远边界角（地球遮挡）": "Far edge angle (earth)",
+  "霞光强度与彩度随时间的演变（横轴＝事件后分钟数，竖线＝各采样点的实际颜色）：": "Glow intensity and chroma over time (x-axis: minutes after the event; bars show the sampled colours):",
+  "同一组采样时刻的光谱与颜色（左＝刚被照亮，右＝掠地最红）：": "Spectra and colours for the same sample times (left: just lit; right: reddest at the horizon):",
+  "本地云底被照亮的时段（火烧云三角）：": "Window during which the local cloud base is lit (fire-cloud triangle):",
+  "开始 +{v}": "starts +{v}",
+  "结束 +{v}": "ends +{v}",
+  "{ev}时刻": "{ev}",
+  "相对亮度（峰值 +{v} 分）": "Relative brightness (peak +{v} min)",
+  "彩度 · OKLab（峰值 {v}）": "Chroma · OKLab (peak {v})",
+  "0 分": "0 min",
+  "几何条件不成立：{why}。光追结果按最接近的掠射情形估算，仅作参考。": "Geometry does not hold: {why}. The ray-tracing result is estimated from the closest grazing case and is indicative only.",
+  "云边界距离 {d} 已超过霞光深入距离上限 {m}（该云盘范围内阳光无法从云底下方射入）": "the cloud edge at {d} exceeds the maximum glow reach of {m} (within that cloud deck sunlight cannot get in under the base)",
+  "日出/日落方向 400 km 内没有找到可承载霞光的云盘": "no glow-bearing cloud deck found within 400 km along the sunrise/sunset azimuth",
+  /* 提示 */
+  "本时段各要素齐全，未发现明显缺失或异常。": "All inputs are present; no obvious gaps or anomalies.",
+  /* 趋势 */
+  "（今天）": " (today)",
+  "（明天）": " (tomorrow)",
+  "正在取 {n} 天数据（{c} 个坐标 × 3 路，朝/晚霞共用一次取数）…": "Fetching {n} days ({c} coordinates × 3 paths, one request covers dawn and dusk)…",
+  "趋势数据获取失败：{m}": "Failed to load the outlook: {m}",
+  "额度会在次日重置，之后即可恢复。": "The quota resets tomorrow; it will recover then.",
+  /* 地图 */
+  "地图数据尚未加载。一次取周边 {r} km 内的 {n} 个网格点 × 2 套模式 + 气溶胶，约 {c} 个计费调用": "Map data not loaded yet. One request covers {n} grid points within {r} km × 2 models + aerosol, about {c} billable calls",
+  "加载周边地图": "Load map",
+  "地图组件未能加载（脚本被拦截或网络不可达）。": "The map component failed to load (script blocked or offline).",
+  "刷新地图": "Refresh map",
+  "数值直标": "Value labels",
+  "采样点": "Sample points",
+  "可信度": "Confidence",
+  "经纬网": "Graticule",
+  "深色底图": "Dark basemap",
+  "算法模型": "Model",
+  "着色依据": "Colour by",
+  "模型：{v}": "Model: {v}",
+  "（本次无数据）": " (no data this run)",
+  "着色：综合指数（概率+质量）": "Colour: composite (probability + quality)",
+  "着色：仅出现概率": "Colour: probability only",
+  "着色：仅观赏质量": "Colour: quality only",
+  "着色：模型分歧（三模型不一致度）": "Colour: model spread (disagreement)",
+  "当日数值最高的地区": "Highest values today",
+  "（前 {n}）": " (top {n})",
+  "色面与叠加层的细节说明": "Details of the colour field and overlays",
+  "模型分歧": "Model spread",
+  "概率高（≥80%）": "High (≥80%)",
+  "概率较高（65–79%）": "Fairly high (65–79%)",
+  "概率一般（45–64%）": "Moderate (45–64%)",
+  "分歧大（ΔI ≥ 30 分）": "Large (ΔI ≥ 30)",
+  "分歧较大（20–29 分）": "Fairly large (20–29)",
+  "分歧中等（10–19 分）": "Moderate (10–19)",
+  "出现概率 P": "Probability P",
+  "观赏质量分 Q": "Quality Q",
+  "模型分歧 ΔI": "Model spread ΔI",
+  "综合指数 I": "Composite I",
+  "该省在当前周边 {n} 个网格点里没有落点": "this province has no grid point among the {n} around the query point",
+  "（采样点未覆盖）": " (not covered by sample points)",
+  "{n} 个采样点 · 当前口径 {dim}": "{n} sample points · coloured by {dim}",
+  "（与所选模型无关）": " (independent of the selected model)",
+  "点城市可发起该点的单点精细查询（含 400 km 样带与光追模型）。": "Click a city for a detailed single-point forecast there (400 km transect + ray tracing).",
+  "收起": "Collapse",
+  "正在取模式数据（周边 {n} 个网格点，朝/晚霞共用）…": "Fetching model data ({n} grid points around the point; shared by dawn and dusk)…",
+  "正在计算 {n} 个网格点…": "Computing {n} grid points…",
+  "地图数据获取失败（{m}）。": "Failed to load map data ({m}).",
+  "网络异常": "network error",
+  "已自动切换为多模型综合": "Switched back to the model blend",
+  "所选模型「{v}」在本次取数中没有可用结果": "the selected model \"{v}\" has no usable result in this run",
+  "当前模型（{v}）有 {n}/{t} 个点算出结果，色面按这些点插值。": "Model {v} produced results for {n}/{t} points; the colour field interpolates from those.",
+  /* 悬停卡 */
+  "距离 / 方位": "Distance / bearing",
+  "查询点本身": "the query point itself",
+  "本次无数据": "no data",
+  "综合观赏质量": "Blended quality",
+  /* 错误与额度 */
+  "气象接口暂时限流（短时并发过高），约一分钟内会自动恢复。": "The weather API is rate-limiting briefly (too many parallel calls); it should recover within about a minute.",
+  "气象接口暂时限流（同一 IP 请求过于频繁），请稍候约 1 分钟后重试。": "The weather API is rate-limiting this IP; please retry in about a minute.",
+  "请检查网络连接或稍后重试；也可能是该日期超出模式可提供的范围（可预报范围约 今天−7 天 ~ 今天+10 天）。": "Check your connection or retry later; the date may also be outside the model range (roughly today−7 days to today+10 days).",
+  "请求未完成，无结果可展示。": "The request did not complete, so there is nothing to show.",
+  "请先完成一次预报，再保存图片。": "Run a forecast first, then save the image.",
+  "点位": "point",
+  "预报时效约 {n} 小时": "Lead time about {n} h",
+  "实况 / 历史分析场": "Analysis / historical field",
+  "霞光预报 · 数据源 Open-Meteo（GFS / ECMWF-IFS / CAMS 气溶胶）· 结论仅供观赏参考": "Glowcast · Data: Open-Meteo (GFS / ECMWF-IFS / CAMS aerosol) · For viewing guidance only",
+  "载霞云层 {v}": "Glow cloud {v}",
+  "覆盖 {v}": "cover {v}",
+  "可信度 {v}": "confidence {v}",
+  "综合 I {v}": "blend I {v}",
+  "气象接口响应超时（超过 12 秒），请检查网络后重试。": "The weather API timed out (over 12 s); check your connection and retry.",
+  "数据获取失败：{v}": "Failed to fetch data: {v}",
+  "额度会在次日重置，之后即可恢复。想继续使用的话：地图数据占单次首屏约 88% 的调用量，不点「加载周边地图」就不会消耗；也可以改用付费计划或自建实例。": "The quota resets tomorrow, so it will recover. To keep using it: the map accounts for about 88% of the calls in one first load, so simply not clicking \"Load map\" avoids that cost; a paid plan or a self-hosted instance is another option.",
+  "点上方按钮加载趋势（最长 {n} 天，具体天数受模式可预报范围限制）—— 一次取数即可比较“哪天值得去”，不用一天天手动切。（会额外发一轮约 {c} 个坐标的请求。）": "Click the button above to load the outlook (up to {n} days; the exact span depends on the model range). One request compares every day at once, so you do not have to step through them. (It costs an extra round of about {c} coordinates.)",
+  "区间 {a} ~ {b}；一次取数 {n} 个坐标（朝/晚霞共用），样带方位按 {a} 构造，其余日期有几公里量级的方位偏差；点任意格子可跳到该日期与该时段。": "Range {a} to {b}; one request covers {n} coordinates (shared by dawn and dusk). The transect azimuth is built for {a}, so other days carry an offset of a few kilometres. Click any cell to jump to that date and period.",
+  "当前所选日期不在已加载区间内，点「重新加载趋势」更新。": "The selected date is outside the loaded range; click \"Reload outlook\" to update.",
+  "本次缺少 {v} 数据，相应结论不确定性更高。": "This run is missing {v} data, so the conclusion is less certain.",
+  "霞光相对亮度与彩度随时间的演变（横轴＝事件后分钟数，竖线＝各采样点的实际颜色）：": "Relative brightness and chroma of the glow over time (x-axis: minutes after the event; bars show the sampled colours):",
+  "无明显云边界": "no clear cloud edge",
+  "不足两套算法给出结果，无法评估模型一致性。": "Fewer than two algorithms returned results, so model agreement cannot be assessed.",
+  "（{v}）": " ({v})",
+  "，ΔI {v}": ", ΔI {v}",
+  "光追 ": "ray ",
+  "霞光预报": "Glowcast",
+  "（首屏只取了单点结果，这部分等你要看时再取）。": " (the first load only fetches the single-point result; this part is fetched on demand).",
+  "（当前地点没有生成网格点）": " (no grid points for this location)",
+  "概率低（&lt;45%）": "Low (&lt;45%)",
+  "分歧小（&lt;10 分）": "Small (&lt;10)",
+  "模型分歧最大的地区": "Largest model spread",
+  "{n} 点可见": "{n} visible",
+  "（另有 {n} 点不在显示范围内）": " ({n} more outside the visible area)",
+  "上方查询功能不依赖地图，仍可正常使用；地图在联网环境下会自动恢复。": "The query features above do not depend on the map and still work; the map recovers automatically once you are online.",
+};
+
+const I18N = { zh: null, zhHant: I18N_ZH_HANT, en: I18N_EN };
+
+function langInfo(k) {
+  for (let i = 0; i < LANGS.length; i++) if (LANGS[i].k === k) return LANGS[i];
+  return LANGS[0];
+}
+/* 取词。`vars` 用 {name} 占位 —— 拼中文时用「·」「：」，拼英文时该用 ", " ": "，
+   所以句子里凡是有标点的地方都做成整句模板 + 参数，而不是把中文标点拼进英文。 */
+function i18n(zh, vars) {
+  const d = I18N[LANG];
+  let s = (d && Object.prototype.hasOwnProperty.call(d, zh)) ? d[zh] : zh;
+  if (vars) s = s.replace(/\{(\w+)\}/g, (m, k) => (vars[k] === undefined || vars[k] === null) ? "" : String(vars[k]));
+  return s;
+}
+/* 语言识别：URL 参数 > 偏好存储 > 浏览器语言 > 简体。
+   之所以把 URL 放在最前：分享链接要能固定语言（与 lat/lon/date 同一套约定）。 */
+function detectLang() {
+  let k = null;
+  try {
+    const p = new URLSearchParams(location.search || "");
+    k = p.get("lang");
+  } catch (e) { /* 无 URL 环境，忽略 */ }
+  if (!k && typeof prefRead === "function") {
+    try { const pr = prefRead(); if (pr && pr.lang) k = pr.lang; } catch (e) { }
+  }
+  if (!k && navigator.languages && navigator.languages.length) k = navigator.languages[0];
+  else if (!k) k = navigator.language || "";
+  return normalizeLang(k);
+}
+function normalizeLang(raw) {
+  const s = String(raw || "").toLowerCase();
+  if (!s) return "zh";
+  /* 繁体：zh-TW / zh-HK / zh-MO / zh-Hant*，以及显式写的 zh-hant */
+  if (/^zh[-_]?(hant|tw|hk|mo)/.test(s) || s === "zh-hant") return "zhHant";
+  if (/^zh/.test(s)) return "zh";
+  if (/^en/.test(s)) return "en";
+  return "zh";
+}
+/* 切换语言：写 <html lang>、刷新静态 DOM、重渲所有动态区域。
+   `relang` 定义在 _p6.js（地图 UI 也在这里刷新）—— 用 typeof 探测而不是直接调用，
+   免得"没加载到那里"就抛错。 */
+function setLang(k, silent) {
+  const info = langInfo(k);
+  LANG = info.k;
+  try { document.documentElement.lang = info.htmllang; } catch (e) { }
+  applyI18nDom(document);
+  if (!silent && typeof relang === "function") { try { relang(); } catch (e) { softWarn("语言切换后重渲染失败", e); } }
+  return LANG;
+}
+/* 静态文案：模板里带 data-i18n 的元素按属性改写。
+   四种位置各管一种：文本 / placeholder / aria-label / title。 */
+function applyI18nDom(root) {
+  const sc = root || document;
+  const each = (sel, attr, key) => {
+    const list = sc.querySelectorAll("[" + sel + "]");
+    for (let i = 0; i < list.length; i++) {
+      const el = list[i];
+      const v = i18n(el.getAttribute(sel));
+      if (attr === "text") el.textContent = v; else el.setAttribute(attr, v);
+    }
+  };
+  each("data-i18n", "text");
+  each("data-i18n-ph", "placeholder");
+  each("data-i18n-aria", "aria-label");
+  each("data-i18n-title", "title");
+}
+/* 可信度文案（唯一入口）：ENS_CONF_BANDS 只存中文键与阈值（约束 25），
+   展示层在这里过一遍 i18n —— 四个使用点（徽标 / 模型卡 / 因素表 / 悬停卡）
+   都走它，避免在四处各写一遍 i18n(cf.txt)。 */
+function confText(cf) {
+  return {
+    lv: i18n(cf.lv), txt: i18n(cf.txt), hint: i18n(cf.hint),
+    color: cf.color, bg: cf.bg, bd: cf.bd, key: cf.key
+  };
+}
+
 /* =========================================================================
    霞光预报 · 单文件应用
    Part 2：基础常量 / 数学工具 / 天文计算 / 城市库
@@ -1487,7 +2236,7 @@ async function jget(url, tries) {
             + "（每日 10,000 次 / 每小时 5,000 次），不是按账号 ——"
             + "若你在公司、学校或代理等共享网络下，很可能是同一出口 IP 的其他使用者消耗掉的。";
         } else {
-          err.friendly = "气象接口暂时限流（短时并发过高），约一分钟内会自动恢复。";
+          err.friendly = i18n("气象接口暂时限流（短时并发过高），约一分钟内会自动恢复。");
         }
       }
       throw err;
@@ -2044,7 +2793,10 @@ const PREF_BOOL = ["numLabels", "showPts", "showConf", "showGrid", "dimBase", "h
 const PREF_STR = {
   units: ["metric", "imperial"],
   mapDim: ["mix", "p", "q", "dv"],
-  mapModel: ["ens", "gfs", "ec", "rt"]
+  mapModel: ["ens", "gfs", "ec", "rt"],
+  /* 语言：与其它枚举同一套白名单。坏值/未知码降级为"没有偏好"，
+     下一步 detectLang() 自然回落（URL > 偏好 > 浏览器 > 简体）。 */
+  lang: ["zh", "zhHant", "en"]
 };
 /* 读：不存在 / 解析失败 / 字段类型不对 一律静默降级为"没有偏好"。
    版本号写在键里 —— 升 `v2` 即隔离，旧值自然作废（与 `MAP_CACHE_PREFIX` 同一惯例），
@@ -2094,8 +2846,61 @@ function applyMapLayerPrefs() {
   setGratUser(!!(g && g.checked));
 }
 
+/* ---------- 三处"由 JS 生成的静态文案" ----------
+   抽成函数是为了多语言：它们原本内联在 initUI 里，切语言时没法重跑。
+   内容一字未改，只是从"初始化时跑一次"变成"可重入"。 */
+/* 日期下拉的选项：（今天）/（明天）那套文案只在这里定义一次 */
+function refreshDateSelect() {
+  const sel = $("#mapDateSel");
+  if (!sel) return;
+  const keep = sel.value;
+  sel.innerHTML = "";
+  for (let k = -7; k <= 10; k++) {
+    const d = new Date(Date.now() + k * 86400000);
+    const v = ymd(new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())));
+    const o = document.createElement("option");
+    o.value = v;
+    o.textContent = v + (k === 0 ? i18n("（今天）") : (k === 1 ? i18n("（明天）") : ""));
+    /* 基础文案存进 dataset：「已缓存」标记要反复拼在它后面，
+       而（今天）/（明天）那套判断只该有一处定义（见 markCachedDates）。 */
+    o.dataset.base = o.textContent;
+    sel.appendChild(o);
+  }
+  sel.value = keep || State.dateStr;
+}
+/* 趋势卡的标题与按钮：天数一律从 TREND_DAYS 取，模板里不留数字。
+   原先标题 / 按钮 / 提示三处各写死一个 7，改窗口长度时全靠 grep 才不会漏 ——
+   漏一处就会出现"标题写 10 天、按钮写 7 日"这种自相矛盾的界面。
+   文案里刻意不含"周"：窗口不一定是 7 天（现在是 10 天）。 */
+function refreshTrendLabels() {
+  const tTitle = $("#trendTitle"), tBtn = $("#trendGo");
+  if (tTitle) tTitle.textContent = i18n("未来 {n} 天趋势", { n: TREND_DAYS });
+  if (tBtn && !tBtn.disabled) tBtn.textContent = i18n("加载 {n} 日趋势", { n: TREND_DAYS });
+}
+/* 顶栏徽标：等待 / 结果摘要 / 失败三态，文案都随语言走 */
+function refreshBadge() {
+  const el = $("#topBadge");
+  if (!el) return;
+  const r = State.result;
+  el.textContent = r
+    ? r.name + " · " + r.dateStr + " · " + i18n(r.period === "am" ? "朝霞" : "晚霞")
+    : i18n("等待计算");
+}
+/* 当前地点的提示行（定位状态也写在这里，切语言时只重铺这一句） */
+function refreshLocHint() {
+  const el = $("#locHint");
+  if (!el) return;
+  el.textContent = i18n("当前：{v}", { v: State.name + "（" + State.lat.toFixed(3) + "°, " + State.lon.toFixed(3) + "°）" });
+}
+
 /* ---------- 初始化界面 ---------- */
 function initUI() {
+  /* 语言最先定：它是**所有静态文案的渲染前提**（data-i18n 那批）。
+     这里传 silent=true —— 此刻页面还没算过任何东西，不需要重渲染结果卡，
+     只把 DOM 文案铺好即可（relang() 会做的事此刻无事可做）。
+     它与下面的 applyPrefs() 不冲突：这里动的是文案，那边动的是控件值。
+     优先级由 detectLang() 决定：URL 参数 > 偏好存储 > 浏览器语言 > 简体。 */
+  setLang(detectLang(), true);
   /* 先读地址栏状态（F4）：分享链接、刷新、后退都靠它把"地区 / 日期 / 时段"带回来。
      必须在下面写默认值之前调用，否则会被默认值覆盖。 */
   readUrl();
@@ -2108,28 +2913,8 @@ function initUI() {
   $("#date").min = ymd(new Date(Date.now() - 7 * 86400000));
   $("#date").max = ymd(new Date(Date.now() + 10 * 86400000));
 
-  /* 趋势卡里的天数一律从 TREND_DAYS 取，模板里不留数字。
-     原先标题 / 按钮 / 提示三处各写死一个 7，改窗口长度时全靠 grep 才不会漏 ——
-     漏一处就会出现"标题写 10 天、按钮写 7 日"这种自相矛盾的界面。
-     文案里刻意不含"周"：窗口不一定是 7 天（现在是 10 天）。 */
-  const tTitle = $("#trendTitle"), tBtn = $("#trendGo");
-  if (tTitle) tTitle.textContent = "⑧ 未来 " + TREND_DAYS + " 天趋势";
-  if (tBtn) tBtn.textContent = "加载 " + TREND_DAYS + " 日趋势";
-
-  const sel = $("#mapDateSel");
-  sel.innerHTML = "";
-  for (let k = -7; k <= 10; k++) {
-    const d = new Date(Date.now() + k * 86400000);
-    const v = ymd(new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())));
-    const o = document.createElement("option");
-    o.value = v;
-    o.textContent = v + (k === 0 ? "（今天）" : (k === 1 ? "（明天）" : ""));
-    /* 基础文案存进 dataset：「已缓存」标记要反复拼在它后面，
-       而（今天）/（明天）那套判断只该有一处定义（见 markCachedDates）。 */
-    o.dataset.base = o.textContent;
-    sel.appendChild(o);
-  }
-  sel.value = State.dateStr;
+  refreshTrendLabels();
+  refreshDateSelect();
   /* 打开页面就把"哪些日期是免费的"标出来（只读 localStorage，不取数） */
   markCachedDates();
 
@@ -2223,6 +3008,23 @@ function initUI() {
   bindSeg("#unitSeg", d => { State.units = d.u; prefWrite({ units: State.units }); });
   bindSeg("#clockSeg", d => { State.hour12 = (d.c === "12"); prefWrite({ hour12: State.hour12 }); });
 
+  /* 语言切换：按钮由 LANGS 生成（模板里不写死，加一种语言不必改 HTML）。
+     与其它分段控件同款 —— setSegActive 负责视觉态与 aria-pressed 同步。
+     切换后三件事：setLang 重渲全部动态区（relang）、落盘、把语言写进地址栏
+     （分享链接带走语言；URL 参数在 detectLang 里是最高优先级）。 */
+  const lseg = $("#langSeg");
+  if (lseg) {
+    lseg.innerHTML = LANGS.map(l =>
+      `<button type="button" data-lang="${l.k}" aria-pressed="${l.k === LANG}">${l.name}</button>`).join("");
+    setSegActive("#langSeg", lseg.querySelector('button[data-lang="' + LANG + '"]'));
+    $$("#langSeg button").forEach(b => b.addEventListener("click", () => {
+      setSegActive("#langSeg", b);
+      setLang(b.getAttribute("data-lang"));
+      prefWrite({ lang: LANG });
+      syncUrl();
+    }));
+  }
+
   /* 图层开关（F6 第二编码 / C1）：纯重绘或只切叠加层显隐，都不取数。
      五个开关一律"先应用、再落盘" —— 落盘失败（隐私模式）不影响本次生效。 */
   const nl = $("#numLabels");
@@ -2246,7 +3048,7 @@ function initUI() {
   /* 首屏定位：**唯一来源是 `State`** —— 它的初值就是默认城市，地址栏带了参数时
      已在上面的 readUrl() 里覆盖。这里绝不能再另写一份写死的城市名：那样改默认城市
      要改两处，漏一处就会出现"标题写着上海、数据却是广州"这种自相矛盾的首屏。 */
-  setLocation(State.lat, State.lon, State.name || "我的位置", State.region || "");
+  setLocation(State.lat, State.lon, State.name || i18n("我的位置"), State.region || "");
   syncUrl();
   renderTrend();
   /* 趋势也"有缓存就直接画出来"（B2，与地图 B14 同构）：
@@ -2276,7 +3078,7 @@ function setLocation(lat, lon, name, region) {
   State.name = name; State.region = region || "";
   $("#lat").value = State.lat.toFixed(4);
   $("#lon").value = State.lon.toFixed(4);
-  $("#locHint").textContent = "当前：" + name + "（" + State.lat.toFixed(3) + "°, " + State.lon.toFixed(3) + "°）";
+  refreshLocHint();
   /* 换了地方，已加载的趋势数据不再成立（它是按位置取的 34 个坐标） */
   if (moved && State.trend) { State.trend = null; renderTrend(); }
   /* 地图同理，而且更彻底：局部网格是围绕查询点生成的（B13），
@@ -2287,8 +3089,8 @@ function setLocation(lat, lon, name, region) {
 function useGeo() {
   /* 用页面内的提示条代替 alert()：alert 会阻塞主线程、样式与整体 UI 不一致，
      在移动端还会打断用户操作（F6）。 */
-  if (!navigator.geolocation) { $("#locHint").textContent = "当前浏览器不支持定位，请手动输入经纬度"; return; }
-  $("#locHint").textContent = "正在获取定位…";
+  if (!navigator.geolocation) { $("#locHint").textContent = i18n("当前浏览器不支持定位，请手动输入经纬度"); return; }
+  $("#locHint").textContent = i18n("正在获取定位…");
   navigator.geolocation.getCurrentPosition(pos => {
     const la = pos.coords.latitude, lo = pos.coords.longitude;
     const nc = nearestCity(la, lo, ALL_CITIES);
@@ -2296,7 +3098,7 @@ function useGeo() {
     runForecast(true);
   }, err => {
     const why = (err && err.code === 1) ? "定位权限被拒绝" : "定位失败";
-    $("#locHint").textContent = why + "，请手动输入经纬度或搜索城市。";
+    $("#locHint").textContent = i18n("{why}，请手动输入经纬度或搜索城市。", { why: why });
   }, { timeout: 8000 });
 }
 function onSearch() {
@@ -2306,7 +3108,7 @@ function onSearch() {
   const m = q.match(/^\s*(-?\d+(?:\.\d+)?)\s*[,，\s]+\s*(-?\d+(?:\.\d+)?)\s*$/);
   if (m) {
     const a = parseFloat(m[1]), b = parseFloat(m[2]);
-    box.innerHTML = `<div data-lat="${a}" data-lon="${b}" data-nm="自定义坐标"><div class="s1">使用坐标：${a.toFixed(4)}, ${b.toFixed(4)}</div><div class="s2">直接定位</div></div>`;
+    box.innerHTML = `<div data-lat="${a}" data-lon="${b}" data-nm="${i18n("自定义坐标")}"><div class="s1">${i18n("使用坐标：{v}", { v: a.toFixed(4) + ", " + b.toFixed(4) })}</div><div class="s2">${i18n("直接定位")}</div></div>`;
     box.classList.add("on");
     return;
   }
@@ -2339,13 +3141,13 @@ async function runForecast(scroll) {
      当前这轮结束后自动补跑 —— 最终结果一定是最后一次操作的输入。 */
   if (State.busy) {
     State.pending = true;
-    $("#topBadge").textContent = "上一次计算仍在进行，完成后将按最新条件自动重算…";
+    $("#topBadge").textContent = i18n("上一次计算仍在进行，完成后将按最新条件自动重算…");
     return;
   }
   State.busy = true;
   const btn = $("#go");
-  btn.disabled = true; btn.textContent = "计算中…";
-  $("#topBadge").textContent = "正在获取数据…";
+  btn.disabled = true; btn.textContent = i18n("计算中…");
+  $("#topBadge").textContent = i18n("正在获取数据…");
   const lat = parseFloat($("#lat").value), lon = parseFloat($("#lon").value);
   State.lat = clamp(isNum(lat) ? lat : State.lat, -90, 90);
   State.lon = clamp(isNum(lon) ? lon : State.lon, -180, 180);
@@ -2358,7 +3160,7 @@ async function runForecast(scroll) {
     const res = await computeAll(State.lat, State.lon, dateStr, period, name);
     State.result = res;
     renderAll(res);
-    $("#topBadge").textContent = res.name + " · " + res.dateStr + " · " + (res.period === "am" ? "朝霞" : "晚霞");
+    refreshBadge();
     if (scroll && window.innerWidth < 900) $("#cardHero").scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (e) {
     console.warn("预报失败", e);
@@ -2369,21 +3171,20 @@ async function runForecast(scroll) {
     const head = (e && e.friendly)
       ? e.friendly
       : e && e.timeout
-        ? "气象接口响应超时（超过 12 秒），请检查网络后重试。"
+        ? i18n("气象接口响应超时（超过 12 秒），请检查网络后重试。")
         : st === 429
-          ? "气象接口暂时限流（同一 IP 请求过于频繁），请稍候约 1 分钟后重试。"
-          : "数据获取失败：" + String(e.message || e);
+          ? i18n("气象接口暂时限流（同一 IP 请求过于频繁），请稍候约 1 分钟后重试。")
+          : i18n("数据获取失败：{v}", { v: String(e.message || e) });
     const tail = (e && e.fatal)
-      ? "额度会在次日重置，之后即可恢复。想继续使用的话：地图数据占单次首屏约 88% 的调用量，"
-        + "不点「加载周边地图」就不会消耗；也可以改用付费计划或自建实例。"
-      : "请检查网络连接或稍后重试；也可能是该日期超出模式可提供的范围（可预报范围约 今天−7 天 ~ 今天+10 天）。";
+      ? i18n("额度会在次日重置，之后即可恢复。想继续使用的话：地图数据占单次首屏约 88% 的调用量，不点「加载周边地图」就不会消耗；也可以改用付费计划或自建实例。")
+      : i18n("请检查网络连接或稍后重试；也可能是该日期超出模式可提供的范围（可预报范围约 今天−7 天 ~ 今天+10 天）。");
     $("#hero").innerHTML = `<div class="note n-bad">${head}<br>${tail}</div>`;
     $("#models").innerHTML = ""; $("#fac").innerHTML = ""; $("#ray").innerHTML = "";
-    $("#notes").innerHTML = `<div class="note n-bad">请求未完成，无结果可展示。</div>`;
-    $("#topBadge").textContent = "获取失败";
+    $("#notes").innerHTML = `<div class="note n-bad">${i18n("请求未完成，无结果可展示。")}</div>`;
+    $("#topBadge").textContent = i18n("获取失败");
   } finally {
     State.busy = false;
-    btn.disabled = false; btn.textContent = "开始预报";
+    btn.disabled = false; btn.textContent = i18n("开始预报");
     if (State.pending) { State.pending = false; runForecast(scroll); }
   }
 }
@@ -2614,7 +3415,10 @@ function syncUrl() {
     const q = "?lat=" + State.lat.toFixed(4) + "&lon=" + State.lon.toFixed(4) +
       "&date=" + encodeURIComponent(State.dateStr) + "&period=" + State.period +
       (State.name ? "&name=" + encodeURIComponent(State.name) : "") +
-      (State.region ? "&region=" + encodeURIComponent(State.region) : "");
+      (State.region ? "&region=" + encodeURIComponent(State.region) : "") +
+      /* 语言也进地址栏：分享链接要能固定语言（否则对方按浏览器语言看到另一种）。
+         它同时是 detectLang() 里的最高优先级来源。 */
+      "&lang=" + encodeURIComponent(LANG);
     window.history.replaceState(null, "", location.pathname + q);
   } catch (e) { softWarn("地址栏状态同步失败", e); }
 }
@@ -2724,8 +3528,8 @@ async function loadTrend(cacheOnly) {
   const sD = ymd(new Date(day0));
   const nDay = trendWindow(day0);
   const eD = ymd(new Date(day0 + (nDay - 1) * 86400000));
-  if (btn) { btn.disabled = true; btn.textContent = "取数中…"; }
-  if (out) out.innerHTML = `<div class="hint">正在取 ${nDay} 天数据（${all.length} 个坐标 × 3 路，朝/晚霞共用一次取数）…</div>`;
+  if (btn) { btn.disabled = true; btn.textContent = i18n("取数中…"); }
+  if (out) out.innerHTML = `<div class="hint">${i18n("正在取 {n} 天数据（{c} 个坐标 × 3 路，朝/晚霞共用一次取数）…", { n: nDay, c: all.length })}</div>`;
   try {
     /* 不请求 daily：趋势只需要逐时要素；daily 也会计入变量权重，且其日出日落
        只对应窗口第一天，对后续日期反而会算出无意义的"天文-模式时刻偏差"提示。 */
@@ -2756,12 +3560,12 @@ async function loadTrend(cacheOnly) {
        趋势取数同样会撞上日额度耗尽，甩一句"稍候 1 分钟重试"会把人引到错误方向。 */
     const m = (e && e.friendly) ? e.friendly
       : e && e.timeout ? "气象接口响应超时（超过 12 秒无响应），请检查网络后重试。"
-        : st === 429 ? "气象接口暂时限流（同一 IP 请求过于频繁），请稍候约 1 分钟后重试。"
-          : "趋势数据获取失败：" + (e && e.message ? e.message : "网络异常");
-    const tail = (e && e.fatal) ? "<br>额度会在次日重置，之后即可恢复。" : "";
+        : st === 429 ? i18n("气象接口暂时限流（同一 IP 请求过于频繁），请稍候约 1 分钟后重试。")
+          : i18n("趋势数据获取失败：{m}", { m: (e && e.message ? e.message : i18n("网络异常")) });
+    const tail = (e && e.fatal) ? "<br>" + i18n("额度会在次日重置，之后即可恢复。") : "";
     if (out) out.innerHTML = `<div class="note n-bad">${m}${tail}</div>`;
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = "重新加载趋势"; }
+    if (btn) { btn.disabled = false; btn.textContent = i18n("重新加载趋势"); }
     renderTrend();
   }
 }
@@ -2797,9 +3601,7 @@ function renderTrend() {
   if (!box) return;
   const t = State.trend;
   if (!t || !t.rows) {
-    box.innerHTML = `<div class="hint">点上方按钮加载趋势（最长 ${TREND_DAYS} 天，具体天数受模式可预报范围限制）
-      —— 一次取数即可比较"哪天值得去"，不用一天天手动切。
-      （会额外发一轮约 ${2 * TREND_N} 个坐标的请求。）</div>`;
+    box.innerHTML = `<div class="hint">${i18n("点上方按钮加载趋势（最长 {n} 天，具体天数受模式可预报范围限制）—— 一次取数即可比较“哪天值得去”，不用一天天手动切。（会额外发一轮约 {c} 个坐标的请求。）", { n: TREND_DAYS, c: 2 * TREND_N })}</div>`;
     return;
   }
   const cell = (row, per) => {
@@ -2823,12 +3625,11 @@ function renderTrend() {
   if (!t.aqOK) miss.push("气溶胶");
   const inRange = t.rows.some(r => r.date === State.dateStr);
   box.innerHTML = `<div class="t-scroll"><table class="t-trend">
-      <thead><tr><th>日期</th><th>朝霞</th><th>晚霞</th></tr></thead><tbody>${body}</tbody></table></div>
+      <thead><tr><th>${i18n("日期")}</th><th>${i18n("朝霞")}</th><th>${i18n("晚霞")}</th></tr></thead><tbody>${body}</tbody></table></div>
     <div class="hint" style="margin-top:8px">
-      区间 ${t.sD} ~ ${t.eD}；一次取数 ${2 * TREND_N} 个坐标（朝/晚霞共用），样带方位按 ${t.sD} 构造，
-      其余日期有几公里量级的方位偏差；点任意格子可跳到该日期与该时段。
-      ${inRange ? "" : `<b>当前所选日期不在已加载区间内，点「重新加载趋势」更新。</b>`}
-      ${miss.length ? `<b>本次缺少 ${miss.join("、")} 数据，相应结论不确定性更高。</b>` : ""}
+      ${i18n("区间 {a} ~ {b}；一次取数 {n} 个坐标（朝/晚霞共用），样带方位按 {a} 构造，其余日期有几公里量级的方位偏差；点任意格子可跳到该日期与该时段。", { a: t.sD, b: t.eD, n: 2 * TREND_N })}
+      ${inRange ? "" : `<b>${i18n("当前所选日期不在已加载区间内，点「重新加载趋势」更新。")}</b>`}
+      ${miss.length ? `<b>${i18n("本次缺少 {v} 数据，相应结论不确定性更高。", { v: miss.join("、") })}</b>` : ""}
     </div>`;
   box.querySelectorAll("td.td-cell[data-date]").forEach(td => {
     const go = () => {
@@ -2904,36 +3705,36 @@ function renderAll(r) {
 
 /* 结论文案的唯一来源 —— 结论卡与分享卡共用，阈值只在这里出现一次 */
 function conclOf(P) {
-  if (P < 12) return "出现霞光的可能性很低";
-  if (P < 30) return "有一定机会，但条件不够理想";
-  if (P < 55) return "较可能出现，值得留意";
-  if (P < 78) return "很可能出现，建议安排观赏";
-  return "出现霞光的可能性很高";
+  if (P < 12) return i18n("出现霞光的可能性很低");
+  if (P < 30) return i18n("有一定机会，但条件不够理想");
+  if (P < 55) return i18n("较可能出现，值得留意");
+  if (P < 78) return i18n("很可能出现，建议安排观赏");
+  return i18n("出现霞光的可能性很高");
 }
 
 /* 可信度徽标（B2）：把原先散落在附注、因素表、地图维度里的"分歧"收敛成结论卡顶部的
    一枚徽标 —— 用户第一眼就能看到"这个结论该信到什么程度"，而不必翻到因素表最后一行。
    档位与配色唯一来自 ENS_CONF_BANDS；ΔI 与"一致性 %"同源（都取自 parts 的 I 极差）。 */
 function confBadge(r) {
-  const cf = r.conf || ensConfOf(r.dvI);
+  const cf = confText(r.conf || ensConfOf(r.dvI));
   const d = isNum(r.dvI) ? "ΔI " + Math.round(r.dvI) : "ΔI —";
   const pTxt = isNum(r.spread) && isNum(r.spreadQ)
     ? " · ΔP " + Math.round(r.spread) + " / ΔQ " + Math.round(r.spreadQ) : "";
   return `<span class="cfbadge" style="--cfb:${cf.color};--cfbg:${cf.bg};--cfbd:${cf.bd}" title="${cf.hint}">
-    <i></i>可信度 <b>${cf.lv}</b>
-    <span class="cfsm">${cf.txt} · ${d}${pTxt} · 一致性 ${Math.round(r.consist)}%</span>
+    <i></i>${i18n("可信度")} <b>${cf.lv}</b>
+    <span class="cfsm">${cf.txt} · ${d}${pTxt} · ${i18n("一致性 {v}%", { v: Math.round(r.consist) })}</span>
   </span>`;
 }
 
 function renderHero(r) {
   const grade = gradeOf(r.Q), col = gradeColor(grade);
   const isAM = r.period === "am";
-  const evName = isAM ? "日出" : "日落";
+  const evName = i18n(isAM ? "日出" : "日落");
   const evMs = isAM ? r.ev.riseMs : r.ev.setMs;
   const evLocal = isNum(evMs) ? uClock(((evMs + r.offsetS * 1000) / 3600000 % 24 + 24) % 24) : "—";
   const p = r.sRT.primary;
   const decks = r.sRT.decks;
-  const deckTxt = ["低云", "中云", "高云"].map((nm, i) => nm + " " + Math.round(decks[i].cover) + "%").join(" / ");
+  const deckTxt = ["低云", "中云", "高云"].map((nm, i) => i18n(nm) + " " + Math.round(decks[i].cover) + "%").join(" / ");
   /* B3：三套算法各自的综合指数 I 并列摊开 —— 此前只说"一致性 62%"，
      用户看不到究竟是哪一家把结论拉开了。I 与徽标里的 ΔI 同源（都由 mixedIndex(P,Q) 得来），
      所以两处可以直接对账。 */
@@ -2941,7 +3742,7 @@ function renderHero(r) {
 
   const concl = conclOf(r.P);
   /* 等级文案唯一取自 gradeOf / QUALITY_LABEL（阈值只在 QUALITY_BANDS 定义一次） */
-  const qualTxt = "观赏质量" + (QUALITY_LABEL[gradeOf(r.Q)] || "");
+  const qualTxt = i18n("观赏质量") + (QUALITY_LABEL[gradeOf(r.Q)] ? i18n(QUALITY_LABEL[gradeOf(r.Q)]) : "");
 
   const C = 2 * Math.PI * 54;
   $("#hero").innerHTML = `
@@ -2952,35 +3753,39 @@ function renderHero(r) {
         <circle cx="63" cy="63" r="54" fill="none" stroke="${col}" stroke-width="11" stroke-linecap="round"
           stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - clamp01(r.P / 100))).toFixed(1)}"/>
       </svg>
-      <div class="dv"><b>${Math.round(r.P)}<span style="font-size:15px">%</span></b><span>出现概率</span></div>
+      <div class="dv"><b>${Math.round(r.P)}<span style="font-size:15px">%</span></b><span>${i18n("出现概率")}</span></div>
     </div>
     <div class="hero-txt">
       ${confBadge(r)}
-      <div class="big">预计 ${esc(r.name)} ${r.dateStr} ${isAM ? "朝霞" : "晚霞"} <em>${concl}</em>（${pct(r.P)}），
-        <em>${Math.round(r.Q)} 分</em> · ${qualTxt} <span class="grade g-${grade}">${grade}</span></div>
+      <div class="big">${i18n("预计 {site} {date} {period}{concl}（{p}），{q} 分 · {qual} {grade}", {
+        site: esc(r.name), date: r.dateStr, period: i18n(isAM ? "朝霞" : "晚霞"),
+        concl: concl, p: pct(r.P), q: Math.round(r.Q), qual: qualTxt, grade: i18n(grade) })}</div>
       <div class="hint" style="margin-top:5px">
-        承载霞光的主要云层：<b>${p.type}</b>（${deckTxt}），云底约 ${uAlt(p.base * 1000)}；
-        ${r.sRT.geom.ok ? "火烧云三角几何条件成立" : "几何条件不成立或云边界过远"}，
-        等效云底 ${uAlt(r.sRT.hEff * 1000)}，云边界 ${isNum(r.sRT.d) ? uDist(r.sRT.d) : "无明显边界"}。
+        ${i18n("承载霞光的主要云层：{type}（{decks}），云底约 {base}；{geom}，等效云底 {heff}，云边界 {d}。", {
+          type: "<b>" + i18n(p.type) + "</b>", decks: deckTxt, base: uAlt(p.base * 1000),
+          geom: i18n(r.sRT.geom.ok ? "火烧云三角几何条件成立" : "几何条件不成立或云边界过远"),
+          heff: uAlt(r.sRT.hEff * 1000),
+          d: isNum(r.sRT.d) ? uDist(r.sRT.d) : i18n("无明显边界") })}
       </div>
       <div class="hint" style="margin-top:5px">
-        各算法综合指数 I（0–100，越高越好）：${partTxt} · 综合 <b>${Math.round(mixedIndex(r.P, r.Q))}</b>
+        ${i18n("各算法综合指数 I（0–100，越高越好）：{parts} · 综合 {mix}", {
+          parts: partTxt, mix: "<b>" + Math.round(mixedIndex(r.P, r.Q)) + "</b>" })}
       </div>
     </div>
   </div>
   <div class="kv" style="margin-top:14px">
-    <div class="it"><div class="k">${evName}时刻（本地）</div><div class="v">${evLocal}</div></div>
-    <div class="it"><div class="k">${evName}方位角</div><div class="v">${Math.round(r.az)}°</div></div>
-    <div class="it"><div class="k">日出日落线速度</div><div class="v">${r.vSpd.toFixed(1)} km/min</div></div>
-    <div class="it"><div class="k">太阳高度角变化率</div><div class="v">${r.omega.toFixed(3)} °/min</div></div>
-    <div class="it"><div class="k">霞光深入距离上限</div><div class="v">${uDist(r.sRT.geom.xMax)}</div></div>
-    <div class="it"><div class="k">云边界距离</div><div class="v">${isNum(r.sRT.d) ? uDist(r.sRT.d) : "—"}</div></div>
-    <div class="it"><div class="k">云底 / 等效云底</div><div class="v">${uAlt(r.sRT.primary.base * 1000)} / ${uAlt(r.sRT.hEff * 1000)}</div></div>
-    <div class="it"><div class="k">光学等效地表高度</div><div class="v">${uAlt(r.sRT.Heq * 1000)}</div></div>
+    <div class="it"><div class="k">${i18n("{ev}时刻（本地）", { ev: evName })}</div><div class="v">${evLocal}</div></div>
+    <div class="it"><div class="k">${i18n("{ev}方位角", { ev: evName })}</div><div class="v">${Math.round(r.az)}°</div></div>
+    <div class="it"><div class="k">${i18n("日出日落线速度")}</div><div class="v">${r.vSpd.toFixed(1)} km/min</div></div>
+    <div class="it"><div class="k">${i18n("太阳高度角变化率")}</div><div class="v">${r.omega.toFixed(3)} °/min</div></div>
+    <div class="it"><div class="k">${i18n("霞光深入距离上限")}</div><div class="v">${uDist(r.sRT.geom.xMax)}</div></div>
+    <div class="it"><div class="k">${i18n("云边界距离")}</div><div class="v">${isNum(r.sRT.d) ? uDist(r.sRT.d) : "—"}</div></div>
+    <div class="it"><div class="k">${i18n("云底 / 等效云底")}</div><div class="v">${uAlt(r.sRT.primary.base * 1000)} / ${uAlt(r.sRT.hEff * 1000)}</div></div>
+    <div class="it"><div class="k">${i18n("光学等效地表高度")}</div><div class="v">${uAlt(r.sRT.Heq * 1000)}</div></div>
     <div class="it"><div class="k">AOD(550nm)</div><div class="v">${n1(r.aodUse, 2)}</div></div>
-    <div class="it"><div class="k">550nm 透射率</div><div class="v">${r.sRT.peak.T550 < 0.01 ? r.sRT.peak.T550.toExponential(2) : r.sRT.peak.T550.toFixed(3)}</div></div>
-    <div class="it"><div class="k">预计持续时间（头顶）</div><div class="v">${fmtDur(r.sRT.geom.dur)}</div></div>
-    <div class="it"><div class="k">综合指数 I=0.55P+0.45Q</div><div class="v">${Math.round(mixedIndex(r.P, r.Q))}</div></div>
+    <div class="it"><div class="k">${i18n("550nm 透射率")}</div><div class="v">${r.sRT.peak.T550 < 0.01 ? r.sRT.peak.T550.toExponential(2) : r.sRT.peak.T550.toFixed(3)}</div></div>
+    <div class="it"><div class="k">${i18n("预计持续时间（头顶）")}</div><div class="v">${fmtDur(r.sRT.geom.dur)}</div></div>
+    <div class="it"><div class="k">${i18n("综合指数 I=0.55P+0.45Q")}</div><div class="v">${Math.round(mixedIndex(r.P, r.Q))}</div></div>
   </div>
   ${envStrip(r)}`;
 }
@@ -2991,14 +3796,14 @@ function envStrip(r) {
   const e = r.envM || r.envG || {};
   const it = (k, v) => `<div class="it"><div class="k">${k}</div><div class="v">${v}</div></div>`;
   return `<div class="envstrip">
-    <div class="esh">环境输入 · 评分所用的综合场（GFS 与 ECMWF-IFS 逐时平均）</div>
+    <div class="esh">${i18n("环境输入 · 评分所用的综合场（GFS 与 ECMWF-IFS 逐时平均）")}</div>
     <div class="kv">${[
-      it("2m 温度", uTemp(e.T)),
-      it("2m 露点", uTemp(e.Td)),
-      it("相对湿度", isNum(e.RH) ? Math.round(e.RH) + " %" : "—"),
-      it("10m 风速", uSpeed(e.ws)),
-      it("海平面气压", isNum(e.Pmsl) ? e.Pmsl.toFixed(1) + " hPa" : "—"),
-      it("能见度", isNum(e.vis) ? uDist(e.vis / 1000, 1) : "—")
+      it(i18n("2m 温度"), uTemp(e.T)),
+      it(i18n("2m 露点"), uTemp(e.Td)),
+      it(i18n("相对湿度"), isNum(e.RH) ? Math.round(e.RH) + " %" : "—"),
+      it(i18n("10m 风速"), uSpeed(e.ws)),
+      it(i18n("海平面气压"), isNum(e.Pmsl) ? e.Pmsl.toFixed(1) + " hPa" : "—"),
+      it(i18n("能见度"), isNum(e.vis) ? uDist(e.vis / 1000, 1) : "—")
     ].join("")}</div>
   </div>`;
 }
@@ -3035,14 +3840,14 @@ function rayCurve(s, omega) {
   for (let i = 1; i < sm.length; i++) if ((sm[i].lumRel || 0) > (sm[pk].lumRel || 0)) pk = i;
   return `<div class="rcwrap">
     <svg class="rcurve" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"
-      aria-label="霞光相对亮度与彩度随时间的演变曲线，横轴为事件后分钟数">
+      aria-label="${i18n("霞光相对亮度与彩度随时间的演变（横轴＝事件后分钟数，竖线＝各采样点的实际颜色）：")}">
       ${grid}${bars}
       <polyline class="rcL" points="${poly("lumRel", maxL)}" vector-effect="non-scaling-stroke"/>
       <polyline class="rcC" points="${poly("chroma", maxC)}" vector-effect="non-scaling-stroke"/>
     </svg>
-    <div class="rcaxis"><span>0 分</span><span>${fmtDur(mx / 2)}</span><span>${fmtDur(mx)}</span></div>
-    <div class="rcleg"><span><i class="rcLi"></i>相对亮度（峰值 +${mins[pk].toFixed(1)} 分）</span>
-      <span><i class="rcCi"></i>彩度 · OKLab（峰值 ${maxC.toFixed(3)}）</span></div>
+    <div class="rcaxis"><span>${i18n("0 分")}</span><span>${fmtDur(mx / 2)}</span><span>${fmtDur(mx)}</span></div>
+    <div class="rcleg"><span><i class="rcLi"></i>${i18n("相对亮度（峰值 +{v} 分）", { v: mins[pk].toFixed(1) })}</span>
+      <span><i class="rcCi"></i>${i18n("彩度 · OKLab（峰值 {v}）", { v: maxC.toFixed(3) })}</span></div>
   </div>`;
 }
 
@@ -3053,7 +3858,7 @@ function modelCard(title, sub, P, Q, facts, color, extraClass) {
       <span class="rt">${sub}</span></div>
     <div class="mrow">
       <div class="mnum" style="color:${color}">${Math.round(P)}<small>%</small></div>
-      <div class="mmeta"><span class="grade g-${grade}">质量 ${Math.round(Q)} 分 · ${grade}</span></div>
+      <div class="mmeta"><span class="grade g-${grade}">${i18n("质量 {q} 分 · {grade}", { q: Math.round(Q), grade: i18n(grade) })}</span></div>
     </div>
     <div class="bar"><i style="width:${clamp(P, 0, 100)}%;background:${gradeColor(grade)}"></i></div>
     <div class="mfacts">${facts}</div>
@@ -3064,45 +3869,47 @@ function renderModels(r) {
   const out = [];
   const mk = (s, tr, env, label) => {
     const p = s.primary, g = s.geom;
-    return `<span>云型 <b>${p.type}</b></span><span>主云量 <b>${Math.round(p.cover)}%</b></span>
-      <span>云底 <b>${Math.round(p.base * 1000)}m</b></span>
-      <span>云边界 <b>${isNum(s.d) ? Math.round(s.d) + "km" : "无"}</b></span>
-      <span>等效云底 <b>${n1(s.hEff)}km</b></span>
-      <span>持续 <b>${fmtDur(g.dur)}</b></span>
+    return `<span>${i18n("云型")} <b>${i18n(p.type)}</b></span><span>${i18n("主云量")} <b>${Math.round(p.cover)}%</b></span>
+      <span>${i18n("云底")} <b>${Math.round(p.base * 1000)}m</b></span>
+      <span>${i18n("云边界")} <b>${isNum(s.d) ? Math.round(s.d) + "km" : i18n("无")}</b></span>
+      <span>${i18n("等效云底")} <b>${n1(s.hEff)}km</b></span>
+      <span>${i18n("持续")} <b>${fmtDur(g.dur)}</b></span>
       <span>AOD <b>${n1(s.aodUp, 2)}</b></span>`;
   };
-  out.push(modelCard("GFS 模式", "NOAA 全球模式 · 1 小时分辨率", r.sG.P, r.sG.Q, mk(r.sG), "#2f6fd0"));
-  if (r.sE) out.push(modelCard("ECMWF-IFS 模式", "欧洲中心全球模式", r.sE.P, r.sE.Q, mk(r.sE), "#0f9c8a"));
-  else out.push(`<div class="mcard"><div class="mh"><span class="dot" style="background:#9aa4b2"></span><b>ECMWF-IFS 模式</b></div>
-    <div class="hint">该日期/点位未取到 ECMWF 数据，本次综合结果由 GFS 与光追算法构成。</div></div>`);
+  out.push(modelCard(i18n("GFS 模式"), i18n("NOAA 全球模式 · 1 小时分辨率"), r.sG.P, r.sG.Q, mk(r.sG), "#2f6fd0"));
+  if (r.sE) out.push(modelCard(i18n("ECMWF-IFS 模式"), i18n("欧洲中心全球模式"), r.sE.P, r.sE.Q, mk(r.sE), "#0f9c8a"));
+  else out.push(`<div class="mcard"><div class="mh"><span class="dot" style="background:#9aa4b2"></span><b>${i18n("ECMWF-IFS 模式")}</b></div>
+    <div class="hint">${i18n("该日期/点位未取到 ECMWF 数据，本次综合结果由 GFS 与光追算法构成。")}</div></div>`);
   const rt = r.sRT;
-  out.push(modelCard("光追算法", "纯物理：多波长光路积分 + CIE 色度", rt.P, rt.Q,
-    `<span>主云型 <b>${rt.primary.type}</b></span><span>等效地表 <b>${n1(rt.Heq, 2)}km</b></span>
-     <span>峰值透射 <b>${rt.peak.T550.toExponential(2)}</b></span>
-     <span>亮度 <b>${rt.bright.txt.split("（")[0]}</b></span>
-     <span>颜色 <b>${rt.peak.name}</b></span><span>饱和 <b>${(rt.peak.sat * 100).toFixed(0)}%</b></span>
-     <span>几何 <b>${rt.geom.ok ? "成立" : "不成立"}</b></span>`, "#c9501a"));
+  const brt = i18n(rt.bright.txt);
+  const brtShort = brt.split(/[（(]/)[0];
+  out.push(modelCard(i18n("光追算法"), i18n("纯物理：多波长光路积分 + CIE 色度"), rt.P, rt.Q,
+    `<span>${i18n("主云型")} <b>${i18n(rt.primary.type)}</b></span><span>${i18n("等效地表")} <b>${n1(rt.Heq, 2)}km</b></span>
+     <span>${i18n("峰值透射")} <b>${rt.peak.T550.toExponential(2)}</b></span>
+     <span>${i18n("亮度")} <b>${brtShort}</b></span>
+     <span>${i18n("颜色")} <b>${i18n(rt.peak.name)}</b></span><span>${i18n("饱和")} <b>${(rt.peak.sat * 100).toFixed(0)}%</b></span>
+     <span>${i18n("几何")} <b>${i18n(rt.geom.ok ? "成立" : "不成立")}</b></span>`, "#c9501a"));
   const g = gradeOf(r.Q);
   /* 分歧口径统一（B3）：主指标由"P 的极差"改为 ΔI —— 与地图「模型分歧」维度同一把尺子，
      也与结论卡徽标、因素表同源。ΔP / ΔQ 作为分解项一并给出，
      用户能看出这次分歧究竟是落在出现概率还是观赏质量上。 */
-  const cf = r.conf || ensConfOf(r.dvI);
+  const cfb = confText(r.conf || ensConfOf(r.dvI));
   const rn = (v) => isNum(v) ? Math.round(v) : "—";
-  out.push(modelCard("多模型综合", "GFS 30% + EC 34% + 光追 36%", r.P, r.Q,
-    `<span>可信度 <b style="color:${cf.color}">${cf.lv}</b></span>
-     <span>ΔI <b>${rn(r.dvI)}</b>（三算法综合指数极差）</span>
+  out.push(modelCard(i18n("多模型综合"), i18n("GFS 30% + EC 34% + 光追 36%"), r.P, r.Q,
+    `<span>${i18n("可信度")} <b style="color:${cfb.color}">${cfb.lv}</b></span>
+     <span>ΔI <b>${rn(r.dvI)}</b>${i18n("（三算法综合指数极差）")}</span>
      <span>ΔP <b>${rn(r.spread)}</b> · ΔQ <b>${rn(r.spreadQ)}</b></span>
-     <span>等级 <b>${g}</b></span>
-     <span>时效 <b>${r.leadH > 0 ? Math.round(r.leadH) + " 小时" : "实况/历史"}</b></span>
-     <span>综合指数 <b>${Math.round(mixedIndex(r.P, r.Q))}</b></span>`, "#e2601f", "ens"));
+     <span>${i18n("等级")} <b>${i18n(g)}</b></span>
+     <span>${i18n("时效")} <b>${r.leadH > 0 ? Math.round(r.leadH) + " " + i18n("小时") : i18n("实况/历史")}</b></span>
+     <span>${i18n("综合指数")} <b>${Math.round(mixedIndex(r.P, r.Q))}</b></span>`, "#e2601f", "ens"));
   $("#models").innerHTML = out.join("");
 }
 
 function pill(score) {
-  if (score == null) return `<span class="pill p-mid">数据缺失</span>`;
-  if (score >= 0.78) return `<span class="pill p-ok">有利</span>`;
-  if (score >= 0.5) return `<span class="pill p-mid">中性</span>`;
-  return `<span class="pill p-bad">不利</span>`;
+  if (score == null) return `<span class="pill p-mid">${i18n("数据缺失")}</span>`;
+  if (score >= 0.78) return `<span class="pill p-ok">${i18n("有利")}</span>`;
+  if (score >= 0.5) return `<span class="pill p-mid">${i18n("中性")}</span>`;
+  return `<span class="pill p-bad">${i18n("不利")}</span>`;
 }
 function renderFactors(r) {
   const env = r.envM, s = r.sRT, tr = r.aM, p = s.primary;
@@ -3110,33 +3917,33 @@ function renderFactors(r) {
   const add = (name, val, score, desc) => rows.push([name, val, score, desc]);
 
   const coverSc = trap(p.cover, [[0, 0], [8, 0.12], [22, 0.62], [38, 1], [75, 1], [88, 0.5], [100, 0.22]]);
-  add("云量类型与覆盖度", `${p.type} · ${Math.round(p.cover)}%`, coverSc,
+  add(i18n("云量类型与覆盖度"), `${p.type} · ${Math.round(p.cover)}%`, coverSc,
     p.type + "属" + (["低云 ", "中云 ", "高云"][p.level]) + "，云底约 " + uAlt(p.base * 1000) + "。" +
     (p.cover < 20 ? "云量偏少，可能没有足够云体承接霞光。" : p.cover > 90 ? "云量接近全覆盖，阳光难以穿透，易形成闷烧或无霞。" :
       "云量处于理想区间，云块之间既能透光又能承接低角度阳光。"));
 
   const baseSc = trap(p.base, [[0.1, 0.05], [0.6, 0.24], [1.2, 0.55], [2.0, 0.8], [3.0, 1], [9, 1], [13, 0.68]]);
-  add("云底高度", uAlt(p.base * 1000), baseSc,
+  add(i18n("云底高度"), uAlt(p.base * 1000), baseSc,
     "云底越高，霞光可出现的范围与色相变化越丰富；云底越低，霞光越局限于橘红且持续时间短。");
 
   const heqSc = trap(s.Heq, [[0, 1], [0.8, 1], [1.5, 0.8], [2.5, 0.5], [3.5, 0.3], [5, 0.12], [8, 0.03]]);
-  add("光学等效地表高度", uDist(s.Heq, 2), heqSc,
+  add(i18n("光学等效地表高度"), uDist(s.Heq, 2), heqSc,
     "气溶胶把光线“垫高”的等效地表高度，由 AOD 与气溶胶标高 Hs=" + n1(s.Hs, 2) + " km 计算（z=Hs·ln(AOD/(Hs·k₀))）。该值越大，等效云底越低，霞光越难形成。");
 
   const heffSc = trap(s.hEff, [[0, 0.03], [0.4, 0.25], [1, 0.6], [2, 0.85], [4, 1], [10, 1]]);
-  add("等效云底高度", uDist(s.hEff, 2), heffSc, "云底高度减去光学等效地表高度后的有效高度，是几何判定的真正输入。");
+  add(i18n("等效云底高度"), uDist(s.hEff, 2), heffSc, "云底高度减去光学等效地表高度后的有效高度，是几何判定的真正输入。");
 
   const dSc = s.geom.ok ? clamp(1 - s.d / s.geom.xMax, 0, 1) * 0.6 + 0.4 : 0.05;
-  add("云边界距离", isNum(s.d) ? `${uDist(s.d)}（上限 ${uDist(s.geom.xMax)}）` : "无明显云边界", dSc,
+  add(i18n("云边界距离"), isNum(s.d) ? uDist(s.d) + i18n("（上限 {v}）", { v: uDist(s.geom.xMax) }) : i18n("无明显云边界"), dSc,
     "沿日出/日落方位以 25 km 间隔采样（地图批量估算时以采样网格插值代替实地采样）得到的云盘外缘距离。必须小于霞光深入距离 2√(2Rh)，阳光才能从云底下方照进来；距离越远，颜色越红、开始越晚。");
 
   const blockSc = trap(isNum(tr.upstreamLowMax) ? tr.upstreamLowMax : (env.cLow || 0),
     [[0, 1], [25, 0.95], [45, 0.72], [65, 0.4], [85, 0.18], [100, 0.1]]);
-  add("光路上游低层云遮挡", `${Math.round(isNum(tr.upstreamLowMax) ? tr.upstreamLowMax : 0)}%`, blockSc,
+  add(i18n("光路上游低层云遮挡"), `${Math.round(isNum(tr.upstreamLowMax) ? tr.upstreamLowMax : 0)}%`, blockSc,
     "低云位于霞光光路下方，是最常见的“翻车”原因：低云量高会把阳光彻底挡住。");
 
   const aeroSc = trap(r.aodUse, [[0, 1], [0.1, 1], [0.2, 0.88], [0.3, 0.72], [0.5, 0.52], [0.8, 0.26], [1.2, 0.12], [3, 0.03]]);
-  add("气溶胶光学厚度 AOD", `${n1(r.aodUse, 2)}（550nm）`, aeroSc,
+  add(i18n("气溶胶光学厚度 AOD"), `${n1(r.aodUse, 2)}（550nm）`, aeroSc,
     r.aodUse < 0.2 ? "气溶胶很少，瑞利散射占主导，阳光颜色纯净、饱和度高，水晶天。" :
       r.aodUse < 0.5 ? "气溶胶一般，天空通透度普通，颜色饱和度会略降。" :
         r.aodUse < 0.8 ? "气溶胶较多，天空偏霾，会明显削弱霞光的亮度与饱和度。" :
@@ -3147,47 +3954,50 @@ function renderFactors(r) {
     "反映底层大气通透程度。能见度低于 5 km 时地面附近霾/雾显著，霞光的低角度部分会被遮挡。");
 
   const humSc = isNum(env.RH) ? trap(env.RH, [[5, 0.7], [20, 0.92], [40, 1], [75, 1], [88, 0.78], [95, 0.45], [100, 0.3]]) : null;
-  add("2m 相对湿度", isNum(env.RH) ? Math.round(env.RH) + "%" : "—", humSc,
+  add(i18n("2m 相对湿度"), isNum(env.RH) ? Math.round(env.RH) + "%" : "—", humSc,
     "湿度适中利于云的存在与散射；相对湿度过高（>90%）会形成雾并放大气溶胶消光，反而使天空浑浊；过低则可能没有云。");
 
   const dPv = r.trendVal;
   const stabSc = isNum(dPv) ? trap(dPv, [[0, 1], [0.6, 1], [1.2, 0.8], [2.5, 0.52], [6, 0.3]]) : null;
-  add("气压稳定性", isNum(dPv) ? "|ΔP/Δt| = " + dPv.toFixed(2) + " hPa/h" : "—", stabSc,
+  add(i18n("气压稳定性"), isNum(dPv) ? "|ΔP/Δt| = " + dPv.toFixed(2) + " hPa/h" : "—", stabSc,
     "气压稳定说明天气系统移动缓慢，云边界位置可预测；气压快速变化意味着云况随时可能改变，预报不确定性大。");
 
   const comp = alongComponent(env.ws, env.wd, r.az);
   const compSc = isNum(comp) ? trap(comp, [[0, 1], [8, 1], [15, 0.75], [22, 0.5], [32, 0.3], [50, 0.15]]) : null;
-  add("云边界风速分量", isNum(comp) ? uSpeed(comp) : "—", compSc,
+  add(i18n("云边界风速分量"), isNum(comp) ? uSpeed(comp) : "—", compSc,
     "云边界沿日出/日落方向的速度分量。经验上 <15 m/s 云边界位置不确定度小，>30 m/s 则很大（云边界会明显推移）。");
 
   const cape = env.cape, pr = env.precip;
   const convSc = isNum(cape) ? trap(cape, [[0, 1], [300, 1], [800, 0.8], [1500, 0.55], [3000, 0.32]]) : null;
-  add("对流活动", (isNum(cape) ? "CAPE " + Math.round(cape) + " J/kg" : "—") + (isNum(pr) ? " · 降水 " + pr.toFixed(1) + " mm" : ""), convSc,
+  add(i18n("对流活动"), (isNum(cape) ? "CAPE " + Math.round(cape) + " J/kg" : "—") + (isNum(pr) ? " · 降水 " + pr.toFixed(1) + " mm" : ""), convSc,
     "对流强时局地积云/积雨云发展，会随机遮挡光路；但积雨云云砧本身也可能形成漂亮的云砧晚霞。");
 
   /* 模式一致性（B2/B3）：档位、措辞一律来自 ENS_CONF_BANDS / ensConfDetail ——
      原先这里手写 18 / 35 两个阈值，措辞还只说"两套全球模式与光追"，
      等于在 _p4.js 之外又养了一份同义实现，阈值一改两处就会打架。
      判别量也统一成 ΔI（与地图「模型分歧」维度同源），ΔP / ΔQ 只作为分解项展示。 */
-  const fcf = r.conf || ensConfOf(r.dvI);
-  add("模式一致性",
+  const cfF = confText(r.conf || ensConfOf(r.dvI));
+  add(i18n("模式一致性"),
     isNum(r.dvI)
-      ? `${fcf.lv} · ΔI ${Math.round(r.dvI)}（ΔP ${Math.round(nz(r.spread, 0))} · ΔQ ${Math.round(nz(r.spreadQ, 0))}）`
-      : "数据不足",
+      ? `${cfF.lv} · ΔI ${Math.round(r.dvI)}（ΔP ${Math.round(nz(r.spread, 0))} · ΔQ ${Math.round(nz(r.spreadQ, 0))}）`
+      : i18n("数据不足"),
     clamp(r.consist / 100, 0, 1),
     isNum(r.dvI)
-      ? fcf.txt + "，" + ensConfDetail(r.spread, r.spreadQ) + "。" + fcf.hint
-      : "不足两套算法给出结果，无法评估模型一致性。");
+      ? cfF.txt + "，" + ensConfDetail(r.spread, r.spreadQ) + "。" + cfF.hint
+      : i18n("不足两套算法给出结果，无法评估模型一致性。"));
 
-  $("#fac").innerHTML = `<thead><tr><th style="width:170px">因素</th><th style="width:180px">数值</th>
-    <th style="width:62px">判定</th><th>对霞光的影响</th></tr></thead><tbody>` +
+  $("#fac").innerHTML = `<thead><tr><th style="width:170px">${i18n("因素")}</th><th style="width:180px">${i18n("数值")}</th>
+    <th style="width:62px">${i18n("判定")}</th><th>${i18n("对霞光的影响")}</th></tr></thead><tbody>` +
     rows.map(x => `<tr><td>${x[0]}</td><td class="v">${x[1]}</td><td>${pill(x[2])}</td><td class="d">${x[3]}</td></tr>`).join("") +
-    `</tbody>`;
+    `</tbody>` +
+    /* 非中文时给一行说明：因素的长篇解读属"全量"批次，此处明确告知而不是让用户
+       对着一列中文发呆。 */
+    (LANG === "zh" ? "" : `<tfoot><tr><td colspan="4" class="hint">${i18n("因素详细解读目前仅提供中文。")}</td></tr></tfoot>`);
 }
 
 function renderRay(r) {
   const s = r.sRT, g = s.geom;
-  const sw = s.samples.map(x => `<div class="swatch" style="background:${x.hex}">${x.name}</div>`).join("");
+  const sw = s.samples.map(x => `<div class="swatch" style="background:${x.hex}">${i18n(x.name)}</div>`).join("");
   const om = r.omega || 0.2;
   const t0 = g.thNearDeg / om, t1 = g.thFarDeg / om;
   const mx = Math.max(t1 * 1.12, 0.8);
@@ -3197,32 +4007,35 @@ function renderRay(r) {
       <div class="mk" style="left:0"></div>
       <div class="mk" style="left:${(t0 / mx * 100).toFixed(1)}%"></div>
       <div class="mk" style="left:${(t1 / mx * 100).toFixed(1)}%"></div>
-      <div class="lb3" style="left:${clamp(t0 / mx * 100, 6, 62)}%">开始 +${fmtDur(t0)}</div>
-      <div class="lb3" style="left:${clamp(t1 / mx * 100, 40, 94)}%">结束 +${fmtDur(t1)}</div>
-      <div class="lb2" style="left:6%">${r.period === "am" ? "日出" : "日落"}时刻</div>
-    </div>` : `<div class="note n-warn">几何条件不成立：${isNum(s.d) ? "云边界距离 " + Math.round(s.d) + " km 已超过霞光深入距离上限 " + Math.round(g.xMax) + " km（该云盘范围内阳光无法从云底下方射入）" : "日出/日落方向 400 km 内没有找到可承载霞光的云盘"}。光追结果按最接近的掠射情形估算，仅作参考。</div>`;
+      <div class="lb3" style="left:${clamp(t0 / mx * 100, 6, 62)}%">${i18n("开始 +{v}", { v: fmtDur(t0) })}</div>
+      <div class="lb3" style="left:${clamp(t1 / mx * 100, 40, 94)}%">${i18n("结束 +{v}", { v: fmtDur(t1) })}</div>
+      <div class="lb2" style="left:6%">${i18n("{ev}时刻", { ev: i18n(r.period === "am" ? "日出" : "日落") })}</div>
+    </div>` : `<div class="note n-warn">${i18n("几何条件不成立：{why}。光追结果按最接近的掠射情形估算，仅作参考。", { why: isNum(s.d)
+      ? i18n("云边界距离 {d} 已超过霞光深入距离上限 {m}（该云盘范围内阳光无法从云底下方射入）",
+          { d: Math.round(s.d) + " km", m: Math.round(g.xMax) + " km" })
+      : i18n("日出/日落方向 400 km 内没有找到可承载霞光的云盘") })}</div>`;
 
   $("#ray").innerHTML = `
   <div class="kv">
-    <div class="it"><div class="k">峰值透射率 T(550nm)</div><div class="v">${s.peak.T550.toExponential(2)}</div></div>
-    <div class="it"><div class="k">亮度等级</div><div class="v" style="font-size:13px">${s.bright.txt}</div></div>
-    <div class="it"><div class="k">峰值路径光学厚度 τ</div><div class="v">${s.peak.tau550.toFixed(1)}</div></div>
-    <div class="it"><div class="k">峰值颜色</div><div class="v" style="font-size:13px">${s.peak.name} · 饱和 ${(s.peak.sat * 100).toFixed(0)}%</div></div>
-    <div class="it"><div class="k">色相跨距（颜色丰富度）</div><div class="v">${s.hueSpread.toFixed(0)}°</div></div>
-    <div class="it"><div class="k">气溶胶标高 Hs</div><div class="v">${n1(s.Hs, 2)} km</div></div>
-    <div class="it"><div class="k">近边界角（云遮挡）</div><div class="v">${n1(g.thNearDeg, 2)}°</div></div>
-    <div class="it"><div class="k">远边界角（地球遮挡）</div><div class="v">${n1(g.thFarDeg, 2)}°</div></div>
+    <div class="it"><div class="k">${i18n("峰值透射率 T(550nm)")}</div><div class="v">${s.peak.T550.toExponential(2)}</div></div>
+    <div class="it"><div class="k">${i18n("亮度等级")}</div><div class="v" style="font-size:13px">${i18n(s.bright.txt)}</div></div>
+    <div class="it"><div class="k">${i18n("峰值路径光学厚度 τ")}</div><div class="v">${s.peak.tau550.toFixed(1)}</div></div>
+    <div class="it"><div class="k">${i18n("峰值颜色")}</div><div class="v" style="font-size:13px">${i18n(s.peak.name)} · ${i18n("饱和")} ${(s.peak.sat * 100).toFixed(0)}%</div></div>
+    <div class="it"><div class="k">${i18n("色相跨距（颜色丰富度）")}</div><div class="v">${s.hueSpread.toFixed(0)}°</div></div>
+    <div class="it"><div class="k">${i18n("气溶胶标高 Hs")}</div><div class="v">${n1(s.Hs, 2)} km</div></div>
+    <div class="it"><div class="k">${i18n("近边界角（云遮挡）")}</div><div class="v">${n1(g.thNearDeg, 2)}°</div></div>
+    <div class="it"><div class="k">${i18n("远边界角（地球遮挡）")}</div><div class="v">${n1(g.thFarDeg, 2)}°</div></div>
   </div>
   <div style="margin-top:13px">
-    <div class="hint" style="margin-bottom:6px">霞光强度与彩度随时间的演变（横轴＝事件后分钟数，竖线＝各采样点的实际颜色）：</div>
+    <div class="hint" style="margin-bottom:6px">${i18n("霞光强度与彩度随时间的演变（横轴＝事件后分钟数，竖线＝各采样点的实际颜色）：")}</div>
     ${rayCurve(s, r.omega)}
   </div>
   <div style="margin-top:12px">
-    <div class="hint" style="margin-bottom:6px">同一组采样时刻的光谱与颜色（左＝刚被照亮，右＝掠地最红）：</div>
+    <div class="hint" style="margin-bottom:6px">${i18n("同一组采样时刻的光谱与颜色（左＝刚被照亮，右＝掠地最红）：")}</div>
     <div class="ray">${sw}</div>
   </div>
   <div style="margin-top:14px">
-    <div class="hint" style="margin-bottom:2px">本地云底被照亮的时段（火烧云三角）：</div>
+    <div class="hint" style="margin-bottom:2px">${i18n("本地云底被照亮的时段（火烧云三角）：")}</div>
     ${tl}
   </div>
   <div class="hint" style="margin-top:4px">
@@ -3236,7 +4049,7 @@ function renderNotes(r) {
   const n = r.notes || [];
   $("#notes").innerHTML = n.length
     ? n.map(x => `<div class="note n-${x[0]}">${x[1]}</div>`).join("")
-    : `<div class="note n-ok">本时段各要素齐全，未发现明显缺失或异常。</div>`;
+    : `<div class="note n-ok">${i18n("本时段各要素齐全，未发现明显缺失或异常。")}</div>`;
 }
 
 /* ---------------------------------------------------------------------------
@@ -3274,7 +4087,7 @@ function cardFit(c, s, maxW) {
 
 function shareCard() {
   const r = State.result;
-  if (!r) { alert("请先完成一次预报，再保存图片。"); return; }
+  if (!r) { alert(i18n("请先完成一次预报，再保存图片。")); return; }
 
   const S = 2;
   const cv = document.createElement("canvas");
@@ -3288,7 +4101,7 @@ function shareCard() {
 
   const grade = gradeOf(r.Q), gc = gradeColor(grade);
   const isAM = r.period === "am";
-  const cf = r.conf || ensConfOf(r.dvI);
+  const cfb = confText(r.conf || ensConfOf(r.dvI));
 
   /* 背景与顶部等级色条 */
   const bg = c.createLinearGradient(0, 0, CARD_W, CARD_H);
@@ -3310,13 +4123,13 @@ function shareCard() {
   c.fillStyle = "#1f2733"; c.font = f(800, 40, true);
   c.fillText(Math.round(r.P) + "%", cx, cy - 9);
   c.fillStyle = "#8b96a5"; c.font = f(500, 13);
-  c.fillText("出现概率", cx, cy + 25);
+  c.fillText(i18n("出现概率"), cx, cy + 25);
 
   /* 右侧文字块 */
   const x0 = 232, maxW = CARD_W - x0 - 36;
   c.textAlign = "left";
   c.fillStyle = "#1f2733"; c.font = f(700, 25);
-  c.fillText(cardFit(c, r.name + " · " + r.dateStr + " " + (isAM ? "朝霞" : "晚霞"), maxW), x0, 84);
+  c.fillText(cardFit(c, r.name + " · " + r.dateStr + " " + i18n(isAM ? "朝霞" : "晚霞"), maxW), x0, 84);
 
   /* 分数 + 等级药丸。数字用等宽体（对齐好看），"分"单独用无衬线 ——
      等宽字体里中文占两倍宽度，写在一起会变成 "27  分" 那种夸张的字距。 */
@@ -3325,9 +4138,10 @@ function shareCard() {
   c.fillText(qNum, x0, 142);
   const qw = c.measureText(qNum).width;
   c.font = f(700, 19);
-  const uw = c.measureText("分").width;
-  c.fillText("分", x0 + qw + 7, 143);
-  const pillTxt = "观赏质量 " + grade;
+  const qUnit = i18n("分");
+  const uw = c.measureText(qUnit).width;
+  c.fillText(qUnit, x0 + qw + 7, 143);
+  const pillTxt = i18n("观赏质量") + " " + i18n(grade);
   c.font = f(700, 14);
   const pw = c.measureText(pillTxt).width + 26;
   const px = x0 + qw + 7 + uw + 16;
@@ -3340,22 +4154,24 @@ function shareCard() {
   /* 结论句 */
   c.textAlign = "left";
   c.fillStyle = "#1f2733"; c.font = f(700, 18);
-  c.fillText(cardFit(c, conclOf(r.P) + "（" + pct(r.P) + "）", maxW), x0, 190);
+  c.fillText(cardFit(c, conclOf(r.P) + i18n("（{v}）", { v: pct(r.P) }), maxW), x0, 190);
 
   /* 细节行 */
   const p = r.sRT.primary;
   const rows = [
-    "载霞云层 " + p.type + " · 覆盖 " + Math.round(p.cover) + "% · 云底 " + uAlt(p.base * 1000),
-    "云边界 " + (isNum(r.sRT.d) ? uDist(r.sRT.d) : "无明显边界") +
-      " · 等效云底 " + uAlt(r.sRT.hEff * 1000) + " · AOD " + n1(r.aodUse, 2),
-    "可信度 " + cf.lv + "（" + cf.txt + (isNum(r.dvI) ? "，ΔI " + Math.round(r.dvI) : "") + "）",
+    i18n("载霞云层 {v}", { v: i18n(p.type) }) + " · " +
+      i18n("覆盖 {v}", { v: Math.round(p.cover) + "%" }) + " · " +
+      i18n("云底") + " " + uAlt(p.base * 1000),
+    i18n("云边界") + " " + (isNum(r.sRT.d) ? uDist(r.sRT.d) : i18n("无明显边界")) +
+      " · " + i18n("等效云底") + " " + uAlt(r.sRT.hEff * 1000) + " · AOD " + n1(r.aodUse, 2),
+    i18n("可信度 {v}", { v: cfb.lv }) + i18n("（{v}）", { v: cfb.txt + (isNum(r.dvI) ? i18n("，ΔI {v}", { v: Math.round(r.dvI) }) : "") }),
     "GFS " + Math.round(r.parts[0].I) + " · " +
-      r.parts.slice(1).map(x => ({ ec: "EC ", rt: "光追 " }[x.k] + Math.round(x.I))).join(" · ") +
-      " · 综合 I " + Math.round(mixedIndex(r.P, r.Q))
+      r.parts.slice(1).map(x => ({ ec: "EC ", rt: i18n("光追 ") }[x.k] + Math.round(x.I))).join(" · ") +
+      " · " + i18n("综合 I {v}", { v: Math.round(mixedIndex(r.P, r.Q)) })
   ];
   c.font = f(500, 14);
   rows.forEach((s, i) => {
-    c.fillStyle = i === 2 ? cf.color : "#5b6675";
+    c.fillStyle = i === 2 ? cfb.color : "#5b6675";
     c.fillText(cardFit(c, s, maxW), x0, 228 + i * 26);
   });
 
@@ -3363,17 +4179,17 @@ function shareCard() {
   c.strokeStyle = "#e9edf3"; c.lineWidth = 1;
   c.beginPath(); c.moveTo(40, 344); c.lineTo(CARD_W - 40, 344); c.stroke();
   c.fillStyle = "#9aa4b2"; c.font = f(500, 12);
-  c.fillText("霞光预报 · 数据源 Open-Meteo（GFS / ECMWF-IFS / CAMS 气溶胶）· 结论仅供观赏参考", 40, 372);
+  c.fillText(cardFit(c, i18n("霞光预报 · 数据源 Open-Meteo（GFS / ECMWF-IFS / CAMS 气溶胶）· 结论仅供观赏参考"), CARD_W - 80), 40, 372);
   c.textAlign = "right";
-  c.fillText(r.leadH > 0 ? "预报时效约 " + Math.round(r.leadH) + " 小时" : "实况 / 历史分析场", CARD_W - 40, 372);
+  c.fillText(r.leadH > 0 ? i18n("预报时效约 {n} 小时", { n: Math.round(r.leadH) }) : i18n("实况 / 历史分析场"), CARD_W - 40, 372);
 
   /* 落地：toBlob + <a download>，对象 URL 用完即撤 */
   cv.toBlob(b => {
     if (!b) return;
-    const safe = String(r.name).replace(/[\\/:*?"<>|]/g, "").trim() || "点位";
+    const safe = String(r.name).replace(/[\\/:*?"<>|]/g, "").trim() || i18n("点位");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(b);
-    a.download = "霞光预报_" + safe + "_" + r.dateStr + "_" + (isAM ? "朝霞" : "晚霞") + ".png";
+    a.download = i18n("霞光预报") + "_" + safe + "_" + r.dateStr + "_" + i18n(isAM ? "朝霞" : "晚霞") + ".png";
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -3900,10 +4716,10 @@ function showMapIdle() {
   /* 别说成"不占用额度" —— 首屏的单点查询同样要计费，只是比地图那批小一个数量级。
      把两个数摆出来，用户才知道点与不点的差别到底在哪。
      同时报出覆盖半径：用户得知道这张图"看到多远"，才谈得上判断要不要点。 */
-  $("#mapLoadTxt").innerHTML = "地图数据尚未加载。一次取周边 " + MAP_RADIUS_KM + " km 内的 "
-    + n + " 个网格点 × 2 套模式 + 气溶胶，约 " + (3 * n) + " 个计费调用"
-    + "（首屏只取了单点结果，这部分等你要看时再取）。"
-    + ' <button class="mretry" type="button">加载周边地图</button>';
+  $("#mapLoadTxt").innerHTML = i18n("地图数据尚未加载。一次取周边 {r} km 内的 {n} 个网格点 × 2 套模式 + 气溶胶，约 {c} 个计费调用", { r: MAP_RADIUS_KM, n: n, c: 3 * n })
+    + i18n("（首屏只取了单点结果，这部分等你要看时再取）。")
+    + (n ? "" : i18n("（当前地点没有生成网格点）"))
+    + ' <button class="mretry" type="button">' + i18n("加载周边地图") + '</button>';
   const b = el.querySelector(".mretry");
   if (b) b.addEventListener("click", () => loadMapData(true));
 }
@@ -3982,7 +4798,7 @@ async function initMap() {
           （早期文案写的是"请在本应用预览/分享页里打开" —— 那会把自行部署的用户
           引到错误方向，任何一种部署方式都应该能靠 README 自己配好。）
        ③ 其它未知异常。 */
-    let detail = "地图组件未能加载（脚本被拦截或网络不可达）。<br>上方查询功能不依赖地图，仍可正常使用；地图在联网环境下会自动恢复。";
+    let detail = i18n("地图组件未能加载（脚本被拦截或网络不可达）。") + "<br>" + i18n("上方查询功能不依赖地图，仍可正常使用；地图在联网环境下会自动恢复。");
     try {
       const host = (window._TMapSecurityConfig && window._TMapSecurityConfig.serviceHost) || "";
       if (isMapProxyPlaceholder(host)) {
@@ -4738,6 +5554,8 @@ function provOf(lat, lon) {
   return null;
 }
 const DIM_TXT = { p: "出现概率", q: "观赏质量", mix: "综合指数", dv: "模型分歧" };
+/* 维度名的显示层：DIM_TXT 存中文键（它同时也是数据口径的标识），展示时才过 i18n */
+function dimText(d) { return i18n(DIM_TXT[d] || DIM_TXT.mix); }
 function renderDrill(provName) {
   const box = $("#drill");
   if (!box) return;
@@ -4759,16 +5577,16 @@ function renderDrill(provName) {
         <span class="dv">${isNum(v) ? Math.round(v) : "—"}</span>
         <span class="grade g-${gr}">${gr}</span></button>`;
     }).join("")
-    : `<div class="hint">该省在当前周边 ${mapPts().length} 个网格点里没有落点${total ? "" : "（采样点未覆盖）"}。</div>`;
+    : `<div class="hint">${i18n("该省在当前周边 {n} 个网格点里没有落点", { n: mapPts().length })}${total ? "" : i18n("（采样点未覆盖）")}。</div>`;
   /* 分歧维度下"当前用的哪个模型"是无意义的（它度量的就是模型之间），
      照抄模型名会读成"这是多模型综合的分歧"。 */
-  const dsub = `${rows.length} 个采样点 · 当前口径 ${DIM_TXT[dim]}` +
-    (dim === "dv" ? "（与所选模型无关）" : ` · ${mk === "ens" ? "多模型综合" : modelName(mk)}`);
+  const dsub = i18n("{n} 个采样点 · 当前口径 {dim}", { n: rows.length, dim: dimText(dim) }) +
+    (dim === "dv" ? i18n("（与所选模型无关）") : ` · ${mk === "ens" ? i18n("多模型综合") : modelName(mk)}`);
   box.innerHTML = `<div class="dhead"><b>${esc(provName)}</b>
       <span class="dsub">${dsub}</span>
-      <button class="dx" type="button" aria-label="收起省份清单">收起</button></div>
+      <button class="dx" type="button" aria-label="${i18n("收起")}">${i18n("收起")}</button></div>
     <div class="dlist">${html}</div>
-    <div class="hint" style="margin-top:6px">点城市可发起该点的单点精细查询（含 400 km 样带与光追模型）。</div>`;
+    <div class="hint" style="margin-top:6px">${i18n("点城市可发起该点的单点精细查询（含 400 km 样带与光追模型）。")}</div>`;
   box.classList.add("on");
   const x = box.querySelector(".dx");
   if (x) x.addEventListener("click", () => { box.classList.remove("on"); box.innerHTML = ""; });
@@ -6303,7 +7121,7 @@ async function loadMapData(force, cacheOnly) {
      这条路径**不动任何界面状态**（进度条/标签都保持在原来的样子）。 */
   if (cacheOnly) return false;
 
-  mapSetLoad(true, "正在取模式数据（周边 " + mapPts().length + " 个网格点，朝/晚霞共用）…");
+  mapSetLoad(true, i18n("正在取模式数据（周边 {n} 个网格点，朝/晚霞共用）…", { n: mapPts().length }));
   let box;
   try {
     const [Y, M, D] = dateS.split("-").map(Number);
@@ -6341,7 +7159,7 @@ async function loadMapData(force, cacheOnly) {
     load("正在取气溶胶数据…");
     const aD = await apiAQBatched(cityPts, sD, eD, MAP_TZ).catch(() => null);
     if (!cur()) return;
-    load("正在计算 " + ptList.length + " 个网格点…");
+    load(i18n("正在计算 {n} 个网格点…", { n: ptList.length }));
     const sG = gD.map(makeSeries);
     const sE = eD2 ? eD2.map(makeSeries) : null;
     const sA = aD ? aD.map(makeSeries) : null;
@@ -6480,8 +7298,8 @@ async function loadMapData(force, cacheOnly) {
         ? "气象接口响应超时，请检查网络后重试；若长期如此，可能是当前网络到接口的链路不稳定。"
         : st === 429
           ? "气象接口暂时限流（同一 IP 请求过于频繁），请稍候 1 分钟后重试。"
-          : "地图数据获取失败（" + (e && e.message ? e.message : "网络异常") + "）。";
-    mapShowError(head + (fatal ? "额度会在次日重置，之后即可恢复。" : ""), !fatal);
+          : i18n("地图数据获取失败（{m}）。", { m: (e && e.message ? e.message : i18n("网络异常")) });
+    mapShowError(head + (fatal ? i18n("额度会在次日重置，之后即可恢复。") : ""), !fatal);
     return;
   }
   /* 结果已过期：丢弃，不写缓存、不画图、不动遮罩（遮罩归最新一次请求管） */
@@ -6510,14 +7328,14 @@ const avgv = (a, b) => (isNum(a) && isNum(b)) ? (a + b) / 2 : (isNum(a) ? a : (i
    与"各模型独立结果"完全同源：同一次取数里三套模型都已经算好，切换模型只重绘、不重新请求。
    多模型综合＝ GFS / ECMWF / 光追 的空缺剔除后按 W_ENS 权重做加权几何平均（与单点结论同口径）。 */
 const MAP_MODELS = [
-  { k: "ens", name: "多模型综合", desc: "GFS / ECMWF / 光追 加权几何平均" },
+  { k: "ens", name: "多模型综合", desc: "GFS / ECMWF / 光追 加权几何平均" },  // desc 展示时过 i18n
   { k: "gfs", name: "GFS", desc: "NOAA 全球模式 · 云属/湿度统计评分" },
   { k: "ec", name: "ECMWF-IFS", desc: "欧洲中心全球模式 · 云属/湿度统计评分" },
   { k: "rt", name: "光追算法", desc: "纯物理：多波长光路积分 + CIE 色度" }
 ];
 function modelName(k) {
   const m = MAP_MODELS.find(x => x.k === k);
-  return m ? m.name : "多模型综合";
+  return i18n(m ? m.name : "多模型综合");
 }
 /* 某点在指定模型下的出现概率 / 观赏质量（该模型无结果时返回 null） */
 function modelP(o, mk) { return (o && o.p) ? (isNum(o.p[mk]) ? o.p[mk] : null) : null; }
@@ -6619,8 +7437,8 @@ function syncModelSel(d) {
   if (sel.dataset.sig !== sig) {
     sel.dataset.sig = sig;
     sel.innerHTML = MAP_MODELS.map((m, i) =>
-      `<option value="${m.k}"${ok[i] ? "" : " disabled"}>模型：${m.k === "ens" ? "多模型综合" : m.name}` +
-      `${ok[i] ? "" : "（本次无数据）"}</option>`).join("");
+      `<option value="${m.k}"${ok[i] ? "" : " disabled"}>${i18n("模型：{v}", { v: i18n(m.k === "ens" ? "多模型综合" : m.name) })}` +
+      `${ok[i] ? "" : i18n("（本次无数据）")}</option>`).join("");
   }
   sel.value = MAP_MODELS.some(m => m.k === cur) ? cur : "ens";
 }
@@ -6632,7 +7450,7 @@ function refreshModelNote(d) {
   if (fb) {
     /* 用户选了某模型，但本期没有它的结果 → 自动回退到综合，必须说清楚 */
     const others = miss.filter(n => n !== modelName(fb));
-    modelNote("bad", `<b>已自动切换为多模型综合</b>：所选模型「${modelName(fb)}」在本次取数中没有可用结果` +
+    modelNote("bad", `<b>${i18n("已自动切换为多模型综合")}</b>：${i18n("所选模型「{v}」在本次取数中没有可用结果", { v: modelName(fb) })}` +
       (d.note ? `（${d.note}）` : "") + "。" +
       (others.length ? `另外 ${others.join("、")} 也没有可用结果。` : "") +
       "多模型综合会自动剔除缺失模型后重新归一。可点「刷新地图」重试，或改选其它模型。");
@@ -6646,7 +7464,7 @@ function refreshModelNote(d) {
   if (mk !== "ens") {
     const n = modelCount(d, mk), tot = d.pts.length;
     if (n < tot) {
-      modelNote("warn", `当前模型（${modelName(mk)}）有 ${n}/${tot} 个点算出结果，色面按这些点插值。`);
+      modelNote("warn", i18n("当前模型（{v}）有 {n}/{t} 个点算出结果，色面按这些点插值。", { v: modelName(mk), n: n, t: tot }));
       return;
     }
   }
@@ -6765,18 +7583,18 @@ function updateLegend(R, mode, mk) {
   if (tick) tick.innerHTML = [0, 20, 40, 60, 80, 100]
     .map(v => `<span>${Math.round(lo + (hi - lo) * v / 100)}</span>`).join("");
   const dim = State.mapDim || "mix";
-  const dimTxt = dim === "p" ? "出现概率 P" : dim === "q" ? "观赏质量分 Q"
-    : dim === "dv" ? "模型分歧 ΔI" : "综合指数 I";
+  const dimTxt = dim === "p" ? i18n("出现概率 P") : dim === "q" ? i18n("观赏质量分 Q")
+    : dim === "dv" ? i18n("模型分歧 ΔI") : i18n("综合指数 I");
   /* 等级行：质量档直接由 QUALITY_BANDS 推导（区间文案 + 代表色位置），
      不再手抄一份阈值 —— 等级边界只有一处定义。概率档是 P 自己的区间，与质量等级无关。
      分歧档的边界是"分数"尺度（ΔI 就是综合指数的极差），所以也按分数区间写，
      但语义相反：越红＝模型之间越不一致。 */
   const lv = dim === "p"
-    ? [[90, "概率高（≥80%）"], [72, "概率较高（65–79%）"], [55, "概率一般（45–64%）"], [30, "概率低（&lt;45%）"]]
+    ? [[90, i18n("概率高（≥80%）")], [72, i18n("概率较高（65–79%）")], [55, i18n("概率一般（45–64%）")], [30, i18n("概率低（&lt;45%）")]]
     : dim === "dv"
-      ? [[88, "分歧大（ΔI ≥ 30 分）"], [70, "分歧较大（20–29 分）"],
-         [52, "分歧中等（10–19 分）"], [26, "分歧小（&lt;10 分）"]]
-      : QUALITY_BANDS.map(b => [bandMid(b), b.key + "（" + bandRangeHtml(b, "分") + "）"]);
+      ? [[88, i18n("分歧大（ΔI ≥ 30 分）")], [70, i18n("分歧较大（20–29 分）")],
+         [52, i18n("分歧中等（10–19 分）")], [26, i18n("分歧小（&lt;10 分）")]]
+      : QUALITY_BANDS.map(b => [bandMid(b), i18n(b.key) + "（" + bandRangeHtml(b, i18n("分")) + "）"]);
   $("#lgRows").innerHTML = lv.map(x =>
     `<span><i class="chipc" style="background:${bandColor(mode, 100 * scaleT(x[0], lo, hi))}"></i>${x[1]}</span>`).join("");
   /* 色阶与算法模型无关（白＝低、红＝高），变的是各模型的数值本身；
@@ -6950,15 +7768,15 @@ function showMapTip(ll, isClick) {
   /* 与地图同源：用当日该模型值域拉伸后的位置取色，色块颜色与地图上该处一致 */
   const R = mapRangeOf(d, dim, mk);
   const c = bandColor(d.period, 100 * scaleT(v, R.lo, R.hi));
-  const mkTxt = dim === "dv" ? "模型分歧" : (mk === "ens" ? "多模型综合" : modelName(mk));
+  const mkTxt = dim === "dv" ? i18n("模型分歧") : (mk === "ens" ? i18n("多模型综合") : modelName(mk));
   /* 首行＝当前着色依据对应的那个量，避免与下方参考行重复 */
   const mainRow = dim === "p"
-    ? `<div class="t3"><span>出现概率</span><b>${Math.round(isNum(P) ? P : v)}%</b></div>`
+    ? `<div class="t3"><span>${i18n("出现概率")}</span><b>${Math.round(isNum(P) ? P : v)}%</b></div>`
     : dim === "q"
-      ? `<div class="t3"><span>观赏质量</span><b>${Math.round(isNum(Q) ? Q : v)} 分 · ${grade}</b></div>`
+      ? `<div class="t3"><span>${i18n("观赏质量")}</span><b>${Math.round(isNum(Q) ? Q : v)} ${i18n("分")} · ${i18n(grade)}</b></div>`
       : dim === "dv"
-        ? `<div class="t3"><span>模型分歧 ΔI</span><b>${Math.round(v)} 分</b></div>`
-        : `<div class="t3"><span>综合指数</span><b>${Math.round(v)}</b></div>`;
+        ? `<div class="t3"><span>${i18n("模型分歧 ΔI")}</span><b>${Math.round(v)} ${i18n("分")}</b></div>`
+        : `<div class="t3"><span>${i18n("综合指数")}</span><b>${Math.round(v)}</b></div>`;
   let extra = "";
   if (dim === "dv") {
     /* 分歧只有一个数字，光看它无法判断"是谁跟谁不一致"。
@@ -6968,12 +7786,12 @@ function showMapTip(ll, isClick) {
       const Pk = modelP(o, k), Qk = modelQ(o, k);
       extra += isNum(Pk) && isNum(Qk)
         ? `<div class="t3"><span>${modelName(k)}</span><b>${Math.round(mixedIndex(Pk, Qk))}</b></div>`
-        : `<div class="t3"><span>${modelName(k)}</span><b class="cf-lo">本次无数据</b></div>`;
+        : `<div class="t3"><span>${modelName(k)}</span><b class="cf-lo">${i18n("本次无数据")}</b></div>`;
     }
-    if (isNum(Q)) extra += `<div class="t3"><span>综合观赏质量</span><b>${Math.round(Q)} 分 · ${grade}</b></div>`;
+    if (isNum(Q)) extra += `<div class="t3"><span>${i18n("综合观赏质量")}</span><b>${Math.round(Q)} ${i18n("分")} · ${i18n(grade)}</b></div>`;
   } else {
-    if (dim !== "p" && isNum(P)) extra += `<div class="t3"><span>出现概率</span><b>${Math.round(P)}%</b></div>`;
-    if (dim !== "q" && isNum(Q)) extra += `<div class="t3"><span>观赏质量</span><b>${Math.round(Q)} 分 · ${grade}</b></div>`;
+    if (dim !== "p" && isNum(P)) extra += `<div class="t3"><span>${i18n("出现概率")}</span><b>${Math.round(P)}%</b></div>`;
+    if (dim !== "q" && isNum(Q)) extra += `<div class="t3"><span>${i18n("观赏质量")}</span><b>${Math.round(Q)} ${i18n("分")} · ${i18n(grade)}</b></div>`;
   }
   /* M1 · 方向与距离。此前 8 条里没有一条说得出"这一点在查询点的哪个方向、多远"，
      而提示卡又会写"云边界 425 km" —— 不说往哪边量，这个数字读不出意义
@@ -6984,8 +7802,8 @@ function showMapTip(ll, isClick) {
   const brg = (isNum(dq) && dq >= 0.5) ? bearingOf(State.lat, State.lon, ll.lat, ll.lon) : null;
   const azEv = azimEventOf(d.dateS, d.period, State.lat, State.lon);
   const dirRow = brg === null
-    ? `<div class="t3"><span>距离 / 方位</span><b>查询点本身</b></div>`
-    : `<div class="t3"><span>距离 / 方位</span><b>${Math.round(dq)} km · ${dirWordOf(brg)}</b></div>`;
+    ? `<div class="t3"><span>${i18n("距离 / 方位")}</span><b>${i18n("查询点本身")}</b></div>`
+    : `<div class="t3"><span>${i18n("距离 / 方位")}</span><b>${Math.round(dq)} km · ${dirWordOf(brg)}</b></div>`;
   /* 样带长度直接引用 MAP_AZ_KM，不写死 400 —— 它是"云边界距离"这把尺子的量程，
      与 TRANSECT 末点同源，两处一旦不同口径就会给出不同的云边界（见硬约束 24）。 */
   const azRow = isNum(azEv)
@@ -7124,10 +7942,12 @@ function renderRank(fld) {
      如果不换文案，会读成"多模型综合最高的地点"，与榜单里的数字对不上。 */
   const dv = dim === "dv";
   const rt = $("#rankTitle");
-  if (rt) rt.textContent = dv ? "模型分歧最大的地区" : "当日数值最高的地区";
-  if (sc) sc.textContent = (dv ? "模型分歧 ΔI" : (mk === "ens" ? "多模型综合" : modelName(mk)))
-    + " · " + shown.length + " 点可见"
-    + (shown.length < all.length ? "（另有 " + (all.length - shown.length) + " 点不在显示范围内）" : "");
+  if (rt) rt.textContent = dv ? i18n("模型分歧最大的地区") : i18n("当日数值最高的地区");
+  if (sc) sc.textContent = (dv ? i18n("模型分歧 ΔI") : (mk === "ens" ? i18n("多模型综合") : modelName(mk)))
+    + " · " + i18n("{n} 点可见", { n: shown.length })
+    + (shown.length < all.length ? i18n("（另有 {n} 点不在显示范围内）", { n: all.length - shown.length }) : "");
+  const rtop = $("#rankTop");
+  if (rtop) rtop.textContent = i18n("（前 {n}）", { n: 8 });
   const host = $("#rank");
   if (!list.length) {
     /* 分歧维度下"没有可用结果"的含义完全不同：不是"这套模型没算出来"，
@@ -7173,6 +7993,39 @@ function renderRank(fld) {
       <span class="grade g-${o.grade}" style="transform:scale(.92)">${o.grade}</span></div>`;
   }).join("");
   MapMod.rankSig = sig;
+}
+
+/* =========================================================================
+   语言切换后的重渲染入口（i18n）
+   -------------------------------------------------------------------------
+   `setLang()` 只负责换 LANG 与铺静态 DOM；**动态区域要重跑一遍**，
+   否则会出现"一半英文一半中文"的界面 —— 多语言最典型的坏法之一。
+   本函数是所有"由 JS 生成的文案"的收口处：
+     · 由 JS 建的控件内容（日期下拉、语言分段、趋势标题按钮、顶栏徽标）
+     · 结果卡 / 趋势 / 图例 / 榜单（有数据时重渲，没数据时是引导文案）
+     · 地图卡里的引导与状态文案
+   `setLang()` 用 `typeof relang === "function"` 探测后调用，所以本函数
+   定义在最后一个片段里也不会出现"没加载到就抛错"。
+   ========================================================================= */
+function relang() {
+  applyI18nDom(document);
+  try {
+    if (typeof refreshDateSelect === "function") refreshDateSelect();
+    if (typeof refreshTrendLabels === "function") refreshTrendLabels();
+    if (typeof refreshBadge === "function") refreshBadge();
+    if (typeof refreshLocHint === "function") refreshLocHint();
+    if (typeof markCachedDates === "function") markCachedDates();
+    /* 结果卡与趋势：没算过时这两块本来就是引导文案，renderTrend 会自己处理 */
+    if (typeof State !== "undefined" && State.result && typeof renderAll === "function") renderAll(State.result);
+    if (typeof renderTrend === "function") renderTrend();
+    if (typeof updateLegend === "function") updateLegend();
+    /* 地图侧：引导/错误文案 + 模型下拉 + 榜单口径。
+       mapShowGuide 与 applyModelOptions 都是幂等的；错误态文案不追（罕见路径）。 */
+    if (typeof mapShowGuide === "function" && MapMod.ok && !mapSet()) mapShowGuide();
+    if (typeof applyModelOptions === "function") applyModelOptions();
+    if (typeof renderRank === "function" && mapSet()) renderRank(MapMod.field);
+    if (typeof hideMapTip === "function") hideMapTip();
+  } catch (e) { softWarn("语言切换后的重渲染失败", e); }
 }
 
 /* ---- 启动 ---- */

@@ -78,7 +78,10 @@ const PREF_BOOL = ["numLabels", "showPts", "showConf", "showGrid", "dimBase", "h
 const PREF_STR = {
   units: ["metric", "imperial"],
   mapDim: ["mix", "p", "q", "dv"],
-  mapModel: ["ens", "gfs", "ec", "rt"]
+  mapModel: ["ens", "gfs", "ec", "rt"],
+  /* 语言：与其它枚举同一套白名单。坏值/未知码降级为"没有偏好"，
+     下一步 detectLang() 自然回落（URL > 偏好 > 浏览器 > 简体）。 */
+  lang: ["zh", "zhHant", "en"]
 };
 /* 读：不存在 / 解析失败 / 字段类型不对 一律静默降级为"没有偏好"。
    版本号写在键里 —— 升 `v2` 即隔离，旧值自然作废（与 `MAP_CACHE_PREFIX` 同一惯例），
@@ -128,8 +131,61 @@ function applyMapLayerPrefs() {
   setGratUser(!!(g && g.checked));
 }
 
+/* ---------- 三处"由 JS 生成的静态文案" ----------
+   抽成函数是为了多语言：它们原本内联在 initUI 里，切语言时没法重跑。
+   内容一字未改，只是从"初始化时跑一次"变成"可重入"。 */
+/* 日期下拉的选项：（今天）/（明天）那套文案只在这里定义一次 */
+function refreshDateSelect() {
+  const sel = $("#mapDateSel");
+  if (!sel) return;
+  const keep = sel.value;
+  sel.innerHTML = "";
+  for (let k = -7; k <= 10; k++) {
+    const d = new Date(Date.now() + k * 86400000);
+    const v = ymd(new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())));
+    const o = document.createElement("option");
+    o.value = v;
+    o.textContent = v + (k === 0 ? i18n("（今天）") : (k === 1 ? i18n("（明天）") : ""));
+    /* 基础文案存进 dataset：「已缓存」标记要反复拼在它后面，
+       而（今天）/（明天）那套判断只该有一处定义（见 markCachedDates）。 */
+    o.dataset.base = o.textContent;
+    sel.appendChild(o);
+  }
+  sel.value = keep || State.dateStr;
+}
+/* 趋势卡的标题与按钮：天数一律从 TREND_DAYS 取，模板里不留数字。
+   原先标题 / 按钮 / 提示三处各写死一个 7，改窗口长度时全靠 grep 才不会漏 ——
+   漏一处就会出现"标题写 10 天、按钮写 7 日"这种自相矛盾的界面。
+   文案里刻意不含"周"：窗口不一定是 7 天（现在是 10 天）。 */
+function refreshTrendLabels() {
+  const tTitle = $("#trendTitle"), tBtn = $("#trendGo");
+  if (tTitle) tTitle.textContent = i18n("未来 {n} 天趋势", { n: TREND_DAYS });
+  if (tBtn && !tBtn.disabled) tBtn.textContent = i18n("加载 {n} 日趋势", { n: TREND_DAYS });
+}
+/* 顶栏徽标：等待 / 结果摘要 / 失败三态，文案都随语言走 */
+function refreshBadge() {
+  const el = $("#topBadge");
+  if (!el) return;
+  const r = State.result;
+  el.textContent = r
+    ? r.name + " · " + r.dateStr + " · " + i18n(r.period === "am" ? "朝霞" : "晚霞")
+    : i18n("等待计算");
+}
+/* 当前地点的提示行（定位状态也写在这里，切语言时只重铺这一句） */
+function refreshLocHint() {
+  const el = $("#locHint");
+  if (!el) return;
+  el.textContent = i18n("当前：{v}", { v: State.name + "（" + State.lat.toFixed(3) + "°, " + State.lon.toFixed(3) + "°）" });
+}
+
 /* ---------- 初始化界面 ---------- */
 function initUI() {
+  /* 语言最先定：它是**所有静态文案的渲染前提**（data-i18n 那批）。
+     这里传 silent=true —— 此刻页面还没算过任何东西，不需要重渲染结果卡，
+     只把 DOM 文案铺好即可（relang() 会做的事此刻无事可做）。
+     它与下面的 applyPrefs() 不冲突：这里动的是文案，那边动的是控件值。
+     优先级由 detectLang() 决定：URL 参数 > 偏好存储 > 浏览器语言 > 简体。 */
+  setLang(detectLang(), true);
   /* 先读地址栏状态（F4）：分享链接、刷新、后退都靠它把"地区 / 日期 / 时段"带回来。
      必须在下面写默认值之前调用，否则会被默认值覆盖。 */
   readUrl();
@@ -142,28 +198,8 @@ function initUI() {
   $("#date").min = ymd(new Date(Date.now() - 7 * 86400000));
   $("#date").max = ymd(new Date(Date.now() + 10 * 86400000));
 
-  /* 趋势卡里的天数一律从 TREND_DAYS 取，模板里不留数字。
-     原先标题 / 按钮 / 提示三处各写死一个 7，改窗口长度时全靠 grep 才不会漏 ——
-     漏一处就会出现"标题写 10 天、按钮写 7 日"这种自相矛盾的界面。
-     文案里刻意不含"周"：窗口不一定是 7 天（现在是 10 天）。 */
-  const tTitle = $("#trendTitle"), tBtn = $("#trendGo");
-  if (tTitle) tTitle.textContent = "⑧ 未来 " + TREND_DAYS + " 天趋势";
-  if (tBtn) tBtn.textContent = "加载 " + TREND_DAYS + " 日趋势";
-
-  const sel = $("#mapDateSel");
-  sel.innerHTML = "";
-  for (let k = -7; k <= 10; k++) {
-    const d = new Date(Date.now() + k * 86400000);
-    const v = ymd(new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())));
-    const o = document.createElement("option");
-    o.value = v;
-    o.textContent = v + (k === 0 ? "（今天）" : (k === 1 ? "（明天）" : ""));
-    /* 基础文案存进 dataset：「已缓存」标记要反复拼在它后面，
-       而（今天）/（明天）那套判断只该有一处定义（见 markCachedDates）。 */
-    o.dataset.base = o.textContent;
-    sel.appendChild(o);
-  }
-  sel.value = State.dateStr;
+  refreshTrendLabels();
+  refreshDateSelect();
   /* 打开页面就把"哪些日期是免费的"标出来（只读 localStorage，不取数） */
   markCachedDates();
 
@@ -257,6 +293,23 @@ function initUI() {
   bindSeg("#unitSeg", d => { State.units = d.u; prefWrite({ units: State.units }); });
   bindSeg("#clockSeg", d => { State.hour12 = (d.c === "12"); prefWrite({ hour12: State.hour12 }); });
 
+  /* 语言切换：按钮由 LANGS 生成（模板里不写死，加一种语言不必改 HTML）。
+     与其它分段控件同款 —— setSegActive 负责视觉态与 aria-pressed 同步。
+     切换后三件事：setLang 重渲全部动态区（relang）、落盘、把语言写进地址栏
+     （分享链接带走语言；URL 参数在 detectLang 里是最高优先级）。 */
+  const lseg = $("#langSeg");
+  if (lseg) {
+    lseg.innerHTML = LANGS.map(l =>
+      `<button type="button" data-lang="${l.k}" aria-pressed="${l.k === LANG}">${l.name}</button>`).join("");
+    setSegActive("#langSeg", lseg.querySelector('button[data-lang="' + LANG + '"]'));
+    $$("#langSeg button").forEach(b => b.addEventListener("click", () => {
+      setSegActive("#langSeg", b);
+      setLang(b.getAttribute("data-lang"));
+      prefWrite({ lang: LANG });
+      syncUrl();
+    }));
+  }
+
   /* 图层开关（F6 第二编码 / C1）：纯重绘或只切叠加层显隐，都不取数。
      五个开关一律"先应用、再落盘" —— 落盘失败（隐私模式）不影响本次生效。 */
   const nl = $("#numLabels");
@@ -280,7 +333,7 @@ function initUI() {
   /* 首屏定位：**唯一来源是 `State`** —— 它的初值就是默认城市，地址栏带了参数时
      已在上面的 readUrl() 里覆盖。这里绝不能再另写一份写死的城市名：那样改默认城市
      要改两处，漏一处就会出现"标题写着上海、数据却是广州"这种自相矛盾的首屏。 */
-  setLocation(State.lat, State.lon, State.name || "我的位置", State.region || "");
+  setLocation(State.lat, State.lon, State.name || i18n("我的位置"), State.region || "");
   syncUrl();
   renderTrend();
   /* 趋势也"有缓存就直接画出来"（B2，与地图 B14 同构）：
@@ -310,7 +363,7 @@ function setLocation(lat, lon, name, region) {
   State.name = name; State.region = region || "";
   $("#lat").value = State.lat.toFixed(4);
   $("#lon").value = State.lon.toFixed(4);
-  $("#locHint").textContent = "当前：" + name + "（" + State.lat.toFixed(3) + "°, " + State.lon.toFixed(3) + "°）";
+  refreshLocHint();
   /* 换了地方，已加载的趋势数据不再成立（它是按位置取的 34 个坐标） */
   if (moved && State.trend) { State.trend = null; renderTrend(); }
   /* 地图同理，而且更彻底：局部网格是围绕查询点生成的（B13），
@@ -321,8 +374,8 @@ function setLocation(lat, lon, name, region) {
 function useGeo() {
   /* 用页面内的提示条代替 alert()：alert 会阻塞主线程、样式与整体 UI 不一致，
      在移动端还会打断用户操作（F6）。 */
-  if (!navigator.geolocation) { $("#locHint").textContent = "当前浏览器不支持定位，请手动输入经纬度"; return; }
-  $("#locHint").textContent = "正在获取定位…";
+  if (!navigator.geolocation) { $("#locHint").textContent = i18n("当前浏览器不支持定位，请手动输入经纬度"); return; }
+  $("#locHint").textContent = i18n("正在获取定位…");
   navigator.geolocation.getCurrentPosition(pos => {
     const la = pos.coords.latitude, lo = pos.coords.longitude;
     const nc = nearestCity(la, lo, ALL_CITIES);
@@ -330,7 +383,7 @@ function useGeo() {
     runForecast(true);
   }, err => {
     const why = (err && err.code === 1) ? "定位权限被拒绝" : "定位失败";
-    $("#locHint").textContent = why + "，请手动输入经纬度或搜索城市。";
+    $("#locHint").textContent = i18n("{why}，请手动输入经纬度或搜索城市。", { why: why });
   }, { timeout: 8000 });
 }
 function onSearch() {
@@ -340,7 +393,7 @@ function onSearch() {
   const m = q.match(/^\s*(-?\d+(?:\.\d+)?)\s*[,，\s]+\s*(-?\d+(?:\.\d+)?)\s*$/);
   if (m) {
     const a = parseFloat(m[1]), b = parseFloat(m[2]);
-    box.innerHTML = `<div data-lat="${a}" data-lon="${b}" data-nm="自定义坐标"><div class="s1">使用坐标：${a.toFixed(4)}, ${b.toFixed(4)}</div><div class="s2">直接定位</div></div>`;
+    box.innerHTML = `<div data-lat="${a}" data-lon="${b}" data-nm="${i18n("自定义坐标")}"><div class="s1">${i18n("使用坐标：{v}", { v: a.toFixed(4) + ", " + b.toFixed(4) })}</div><div class="s2">${i18n("直接定位")}</div></div>`;
     box.classList.add("on");
     return;
   }
@@ -373,13 +426,13 @@ async function runForecast(scroll) {
      当前这轮结束后自动补跑 —— 最终结果一定是最后一次操作的输入。 */
   if (State.busy) {
     State.pending = true;
-    $("#topBadge").textContent = "上一次计算仍在进行，完成后将按最新条件自动重算…";
+    $("#topBadge").textContent = i18n("上一次计算仍在进行，完成后将按最新条件自动重算…");
     return;
   }
   State.busy = true;
   const btn = $("#go");
-  btn.disabled = true; btn.textContent = "计算中…";
-  $("#topBadge").textContent = "正在获取数据…";
+  btn.disabled = true; btn.textContent = i18n("计算中…");
+  $("#topBadge").textContent = i18n("正在获取数据…");
   const lat = parseFloat($("#lat").value), lon = parseFloat($("#lon").value);
   State.lat = clamp(isNum(lat) ? lat : State.lat, -90, 90);
   State.lon = clamp(isNum(lon) ? lon : State.lon, -180, 180);
@@ -392,7 +445,7 @@ async function runForecast(scroll) {
     const res = await computeAll(State.lat, State.lon, dateStr, period, name);
     State.result = res;
     renderAll(res);
-    $("#topBadge").textContent = res.name + " · " + res.dateStr + " · " + (res.period === "am" ? "朝霞" : "晚霞");
+    refreshBadge();
     if (scroll && window.innerWidth < 900) $("#cardHero").scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (e) {
     console.warn("预报失败", e);
@@ -403,21 +456,20 @@ async function runForecast(scroll) {
     const head = (e && e.friendly)
       ? e.friendly
       : e && e.timeout
-        ? "气象接口响应超时（超过 12 秒），请检查网络后重试。"
+        ? i18n("气象接口响应超时（超过 12 秒），请检查网络后重试。")
         : st === 429
-          ? "气象接口暂时限流（同一 IP 请求过于频繁），请稍候约 1 分钟后重试。"
-          : "数据获取失败：" + String(e.message || e);
+          ? i18n("气象接口暂时限流（同一 IP 请求过于频繁），请稍候约 1 分钟后重试。")
+          : i18n("数据获取失败：{v}", { v: String(e.message || e) });
     const tail = (e && e.fatal)
-      ? "额度会在次日重置，之后即可恢复。想继续使用的话：地图数据占单次首屏约 88% 的调用量，"
-        + "不点「加载周边地图」就不会消耗；也可以改用付费计划或自建实例。"
-      : "请检查网络连接或稍后重试；也可能是该日期超出模式可提供的范围（可预报范围约 今天−7 天 ~ 今天+10 天）。";
+      ? i18n("额度会在次日重置，之后即可恢复。想继续使用的话：地图数据占单次首屏约 88% 的调用量，不点「加载周边地图」就不会消耗；也可以改用付费计划或自建实例。")
+      : i18n("请检查网络连接或稍后重试；也可能是该日期超出模式可提供的范围（可预报范围约 今天−7 天 ~ 今天+10 天）。");
     $("#hero").innerHTML = `<div class="note n-bad">${head}<br>${tail}</div>`;
     $("#models").innerHTML = ""; $("#fac").innerHTML = ""; $("#ray").innerHTML = "";
-    $("#notes").innerHTML = `<div class="note n-bad">请求未完成，无结果可展示。</div>`;
-    $("#topBadge").textContent = "获取失败";
+    $("#notes").innerHTML = `<div class="note n-bad">${i18n("请求未完成，无结果可展示。")}</div>`;
+    $("#topBadge").textContent = i18n("获取失败");
   } finally {
     State.busy = false;
-    btn.disabled = false; btn.textContent = "开始预报";
+    btn.disabled = false; btn.textContent = i18n("开始预报");
     if (State.pending) { State.pending = false; runForecast(scroll); }
   }
 }
@@ -648,7 +700,10 @@ function syncUrl() {
     const q = "?lat=" + State.lat.toFixed(4) + "&lon=" + State.lon.toFixed(4) +
       "&date=" + encodeURIComponent(State.dateStr) + "&period=" + State.period +
       (State.name ? "&name=" + encodeURIComponent(State.name) : "") +
-      (State.region ? "&region=" + encodeURIComponent(State.region) : "");
+      (State.region ? "&region=" + encodeURIComponent(State.region) : "") +
+      /* 语言也进地址栏：分享链接要能固定语言（否则对方按浏览器语言看到另一种）。
+         它同时是 detectLang() 里的最高优先级来源。 */
+      "&lang=" + encodeURIComponent(LANG);
     window.history.replaceState(null, "", location.pathname + q);
   } catch (e) { softWarn("地址栏状态同步失败", e); }
 }
@@ -758,8 +813,8 @@ async function loadTrend(cacheOnly) {
   const sD = ymd(new Date(day0));
   const nDay = trendWindow(day0);
   const eD = ymd(new Date(day0 + (nDay - 1) * 86400000));
-  if (btn) { btn.disabled = true; btn.textContent = "取数中…"; }
-  if (out) out.innerHTML = `<div class="hint">正在取 ${nDay} 天数据（${all.length} 个坐标 × 3 路，朝/晚霞共用一次取数）…</div>`;
+  if (btn) { btn.disabled = true; btn.textContent = i18n("取数中…"); }
+  if (out) out.innerHTML = `<div class="hint">${i18n("正在取 {n} 天数据（{c} 个坐标 × 3 路，朝/晚霞共用一次取数）…", { n: nDay, c: all.length })}</div>`;
   try {
     /* 不请求 daily：趋势只需要逐时要素；daily 也会计入变量权重，且其日出日落
        只对应窗口第一天，对后续日期反而会算出无意义的"天文-模式时刻偏差"提示。 */
@@ -790,12 +845,12 @@ async function loadTrend(cacheOnly) {
        趋势取数同样会撞上日额度耗尽，甩一句"稍候 1 分钟重试"会把人引到错误方向。 */
     const m = (e && e.friendly) ? e.friendly
       : e && e.timeout ? "气象接口响应超时（超过 12 秒无响应），请检查网络后重试。"
-        : st === 429 ? "气象接口暂时限流（同一 IP 请求过于频繁），请稍候约 1 分钟后重试。"
-          : "趋势数据获取失败：" + (e && e.message ? e.message : "网络异常");
-    const tail = (e && e.fatal) ? "<br>额度会在次日重置，之后即可恢复。" : "";
+        : st === 429 ? i18n("气象接口暂时限流（同一 IP 请求过于频繁），请稍候约 1 分钟后重试。")
+          : i18n("趋势数据获取失败：{m}", { m: (e && e.message ? e.message : i18n("网络异常")) });
+    const tail = (e && e.fatal) ? "<br>" + i18n("额度会在次日重置，之后即可恢复。") : "";
     if (out) out.innerHTML = `<div class="note n-bad">${m}${tail}</div>`;
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = "重新加载趋势"; }
+    if (btn) { btn.disabled = false; btn.textContent = i18n("重新加载趋势"); }
     renderTrend();
   }
 }
@@ -831,9 +886,7 @@ function renderTrend() {
   if (!box) return;
   const t = State.trend;
   if (!t || !t.rows) {
-    box.innerHTML = `<div class="hint">点上方按钮加载趋势（最长 ${TREND_DAYS} 天，具体天数受模式可预报范围限制）
-      —— 一次取数即可比较"哪天值得去"，不用一天天手动切。
-      （会额外发一轮约 ${2 * TREND_N} 个坐标的请求。）</div>`;
+    box.innerHTML = `<div class="hint">${i18n("点上方按钮加载趋势（最长 {n} 天，具体天数受模式可预报范围限制）—— 一次取数即可比较“哪天值得去”，不用一天天手动切。（会额外发一轮约 {c} 个坐标的请求。）", { n: TREND_DAYS, c: 2 * TREND_N })}</div>`;
     return;
   }
   const cell = (row, per) => {
@@ -857,12 +910,11 @@ function renderTrend() {
   if (!t.aqOK) miss.push("气溶胶");
   const inRange = t.rows.some(r => r.date === State.dateStr);
   box.innerHTML = `<div class="t-scroll"><table class="t-trend">
-      <thead><tr><th>日期</th><th>朝霞</th><th>晚霞</th></tr></thead><tbody>${body}</tbody></table></div>
+      <thead><tr><th>${i18n("日期")}</th><th>${i18n("朝霞")}</th><th>${i18n("晚霞")}</th></tr></thead><tbody>${body}</tbody></table></div>
     <div class="hint" style="margin-top:8px">
-      区间 ${t.sD} ~ ${t.eD}；一次取数 ${2 * TREND_N} 个坐标（朝/晚霞共用），样带方位按 ${t.sD} 构造，
-      其余日期有几公里量级的方位偏差；点任意格子可跳到该日期与该时段。
-      ${inRange ? "" : `<b>当前所选日期不在已加载区间内，点「重新加载趋势」更新。</b>`}
-      ${miss.length ? `<b>本次缺少 ${miss.join("、")} 数据，相应结论不确定性更高。</b>` : ""}
+      ${i18n("区间 {a} ~ {b}；一次取数 {n} 个坐标（朝/晚霞共用），样带方位按 {a} 构造，其余日期有几公里量级的方位偏差；点任意格子可跳到该日期与该时段。", { a: t.sD, b: t.eD, n: 2 * TREND_N })}
+      ${inRange ? "" : `<b>${i18n("当前所选日期不在已加载区间内，点「重新加载趋势」更新。")}</b>`}
+      ${miss.length ? `<b>${i18n("本次缺少 {v} 数据，相应结论不确定性更高。", { v: miss.join("、") })}</b>` : ""}
     </div>`;
   box.querySelectorAll("td.td-cell[data-date]").forEach(td => {
     const go = () => {

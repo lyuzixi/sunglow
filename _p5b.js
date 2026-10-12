@@ -56,36 +56,36 @@ function renderAll(r) {
 
 /* 结论文案的唯一来源 —— 结论卡与分享卡共用，阈值只在这里出现一次 */
 function conclOf(P) {
-  if (P < 12) return "出现霞光的可能性很低";
-  if (P < 30) return "有一定机会，但条件不够理想";
-  if (P < 55) return "较可能出现，值得留意";
-  if (P < 78) return "很可能出现，建议安排观赏";
-  return "出现霞光的可能性很高";
+  if (P < 12) return i18n("出现霞光的可能性很低");
+  if (P < 30) return i18n("有一定机会，但条件不够理想");
+  if (P < 55) return i18n("较可能出现，值得留意");
+  if (P < 78) return i18n("很可能出现，建议安排观赏");
+  return i18n("出现霞光的可能性很高");
 }
 
 /* 可信度徽标（B2）：把原先散落在附注、因素表、地图维度里的"分歧"收敛成结论卡顶部的
    一枚徽标 —— 用户第一眼就能看到"这个结论该信到什么程度"，而不必翻到因素表最后一行。
    档位与配色唯一来自 ENS_CONF_BANDS；ΔI 与"一致性 %"同源（都取自 parts 的 I 极差）。 */
 function confBadge(r) {
-  const cf = r.conf || ensConfOf(r.dvI);
+  const cf = confText(r.conf || ensConfOf(r.dvI));
   const d = isNum(r.dvI) ? "ΔI " + Math.round(r.dvI) : "ΔI —";
   const pTxt = isNum(r.spread) && isNum(r.spreadQ)
     ? " · ΔP " + Math.round(r.spread) + " / ΔQ " + Math.round(r.spreadQ) : "";
   return `<span class="cfbadge" style="--cfb:${cf.color};--cfbg:${cf.bg};--cfbd:${cf.bd}" title="${cf.hint}">
-    <i></i>可信度 <b>${cf.lv}</b>
-    <span class="cfsm">${cf.txt} · ${d}${pTxt} · 一致性 ${Math.round(r.consist)}%</span>
+    <i></i>${i18n("可信度")} <b>${cf.lv}</b>
+    <span class="cfsm">${cf.txt} · ${d}${pTxt} · ${i18n("一致性 {v}%", { v: Math.round(r.consist) })}</span>
   </span>`;
 }
 
 function renderHero(r) {
   const grade = gradeOf(r.Q), col = gradeColor(grade);
   const isAM = r.period === "am";
-  const evName = isAM ? "日出" : "日落";
+  const evName = i18n(isAM ? "日出" : "日落");
   const evMs = isAM ? r.ev.riseMs : r.ev.setMs;
   const evLocal = isNum(evMs) ? uClock(((evMs + r.offsetS * 1000) / 3600000 % 24 + 24) % 24) : "—";
   const p = r.sRT.primary;
   const decks = r.sRT.decks;
-  const deckTxt = ["低云", "中云", "高云"].map((nm, i) => nm + " " + Math.round(decks[i].cover) + "%").join(" / ");
+  const deckTxt = ["低云", "中云", "高云"].map((nm, i) => i18n(nm) + " " + Math.round(decks[i].cover) + "%").join(" / ");
   /* B3：三套算法各自的综合指数 I 并列摊开 —— 此前只说"一致性 62%"，
      用户看不到究竟是哪一家把结论拉开了。I 与徽标里的 ΔI 同源（都由 mixedIndex(P,Q) 得来），
      所以两处可以直接对账。 */
@@ -93,7 +93,7 @@ function renderHero(r) {
 
   const concl = conclOf(r.P);
   /* 等级文案唯一取自 gradeOf / QUALITY_LABEL（阈值只在 QUALITY_BANDS 定义一次） */
-  const qualTxt = "观赏质量" + (QUALITY_LABEL[gradeOf(r.Q)] || "");
+  const qualTxt = i18n("观赏质量") + (QUALITY_LABEL[gradeOf(r.Q)] ? i18n(QUALITY_LABEL[gradeOf(r.Q)]) : "");
 
   const C = 2 * Math.PI * 54;
   $("#hero").innerHTML = `
@@ -104,35 +104,39 @@ function renderHero(r) {
         <circle cx="63" cy="63" r="54" fill="none" stroke="${col}" stroke-width="11" stroke-linecap="round"
           stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - clamp01(r.P / 100))).toFixed(1)}"/>
       </svg>
-      <div class="dv"><b>${Math.round(r.P)}<span style="font-size:15px">%</span></b><span>出现概率</span></div>
+      <div class="dv"><b>${Math.round(r.P)}<span style="font-size:15px">%</span></b><span>${i18n("出现概率")}</span></div>
     </div>
     <div class="hero-txt">
       ${confBadge(r)}
-      <div class="big">预计 ${esc(r.name)} ${r.dateStr} ${isAM ? "朝霞" : "晚霞"} <em>${concl}</em>（${pct(r.P)}），
-        <em>${Math.round(r.Q)} 分</em> · ${qualTxt} <span class="grade g-${grade}">${grade}</span></div>
+      <div class="big">${i18n("预计 {site} {date} {period}{concl}（{p}），{q} 分 · {qual} {grade}", {
+        site: esc(r.name), date: r.dateStr, period: i18n(isAM ? "朝霞" : "晚霞"),
+        concl: concl, p: pct(r.P), q: Math.round(r.Q), qual: qualTxt, grade: i18n(grade) })}</div>
       <div class="hint" style="margin-top:5px">
-        承载霞光的主要云层：<b>${p.type}</b>（${deckTxt}），云底约 ${uAlt(p.base * 1000)}；
-        ${r.sRT.geom.ok ? "火烧云三角几何条件成立" : "几何条件不成立或云边界过远"}，
-        等效云底 ${uAlt(r.sRT.hEff * 1000)}，云边界 ${isNum(r.sRT.d) ? uDist(r.sRT.d) : "无明显边界"}。
+        ${i18n("承载霞光的主要云层：{type}（{decks}），云底约 {base}；{geom}，等效云底 {heff}，云边界 {d}。", {
+          type: "<b>" + i18n(p.type) + "</b>", decks: deckTxt, base: uAlt(p.base * 1000),
+          geom: i18n(r.sRT.geom.ok ? "火烧云三角几何条件成立" : "几何条件不成立或云边界过远"),
+          heff: uAlt(r.sRT.hEff * 1000),
+          d: isNum(r.sRT.d) ? uDist(r.sRT.d) : i18n("无明显边界") })}
       </div>
       <div class="hint" style="margin-top:5px">
-        各算法综合指数 I（0–100，越高越好）：${partTxt} · 综合 <b>${Math.round(mixedIndex(r.P, r.Q))}</b>
+        ${i18n("各算法综合指数 I（0–100，越高越好）：{parts} · 综合 {mix}", {
+          parts: partTxt, mix: "<b>" + Math.round(mixedIndex(r.P, r.Q)) + "</b>" })}
       </div>
     </div>
   </div>
   <div class="kv" style="margin-top:14px">
-    <div class="it"><div class="k">${evName}时刻（本地）</div><div class="v">${evLocal}</div></div>
-    <div class="it"><div class="k">${evName}方位角</div><div class="v">${Math.round(r.az)}°</div></div>
-    <div class="it"><div class="k">日出日落线速度</div><div class="v">${r.vSpd.toFixed(1)} km/min</div></div>
-    <div class="it"><div class="k">太阳高度角变化率</div><div class="v">${r.omega.toFixed(3)} °/min</div></div>
-    <div class="it"><div class="k">霞光深入距离上限</div><div class="v">${uDist(r.sRT.geom.xMax)}</div></div>
-    <div class="it"><div class="k">云边界距离</div><div class="v">${isNum(r.sRT.d) ? uDist(r.sRT.d) : "—"}</div></div>
-    <div class="it"><div class="k">云底 / 等效云底</div><div class="v">${uAlt(r.sRT.primary.base * 1000)} / ${uAlt(r.sRT.hEff * 1000)}</div></div>
-    <div class="it"><div class="k">光学等效地表高度</div><div class="v">${uAlt(r.sRT.Heq * 1000)}</div></div>
+    <div class="it"><div class="k">${i18n("{ev}时刻（本地）", { ev: evName })}</div><div class="v">${evLocal}</div></div>
+    <div class="it"><div class="k">${i18n("{ev}方位角", { ev: evName })}</div><div class="v">${Math.round(r.az)}°</div></div>
+    <div class="it"><div class="k">${i18n("日出日落线速度")}</div><div class="v">${r.vSpd.toFixed(1)} km/min</div></div>
+    <div class="it"><div class="k">${i18n("太阳高度角变化率")}</div><div class="v">${r.omega.toFixed(3)} °/min</div></div>
+    <div class="it"><div class="k">${i18n("霞光深入距离上限")}</div><div class="v">${uDist(r.sRT.geom.xMax)}</div></div>
+    <div class="it"><div class="k">${i18n("云边界距离")}</div><div class="v">${isNum(r.sRT.d) ? uDist(r.sRT.d) : "—"}</div></div>
+    <div class="it"><div class="k">${i18n("云底 / 等效云底")}</div><div class="v">${uAlt(r.sRT.primary.base * 1000)} / ${uAlt(r.sRT.hEff * 1000)}</div></div>
+    <div class="it"><div class="k">${i18n("光学等效地表高度")}</div><div class="v">${uAlt(r.sRT.Heq * 1000)}</div></div>
     <div class="it"><div class="k">AOD(550nm)</div><div class="v">${n1(r.aodUse, 2)}</div></div>
-    <div class="it"><div class="k">550nm 透射率</div><div class="v">${r.sRT.peak.T550 < 0.01 ? r.sRT.peak.T550.toExponential(2) : r.sRT.peak.T550.toFixed(3)}</div></div>
-    <div class="it"><div class="k">预计持续时间（头顶）</div><div class="v">${fmtDur(r.sRT.geom.dur)}</div></div>
-    <div class="it"><div class="k">综合指数 I=0.55P+0.45Q</div><div class="v">${Math.round(mixedIndex(r.P, r.Q))}</div></div>
+    <div class="it"><div class="k">${i18n("550nm 透射率")}</div><div class="v">${r.sRT.peak.T550 < 0.01 ? r.sRT.peak.T550.toExponential(2) : r.sRT.peak.T550.toFixed(3)}</div></div>
+    <div class="it"><div class="k">${i18n("预计持续时间（头顶）")}</div><div class="v">${fmtDur(r.sRT.geom.dur)}</div></div>
+    <div class="it"><div class="k">${i18n("综合指数 I=0.55P+0.45Q")}</div><div class="v">${Math.round(mixedIndex(r.P, r.Q))}</div></div>
   </div>
   ${envStrip(r)}`;
 }
@@ -143,14 +147,14 @@ function envStrip(r) {
   const e = r.envM || r.envG || {};
   const it = (k, v) => `<div class="it"><div class="k">${k}</div><div class="v">${v}</div></div>`;
   return `<div class="envstrip">
-    <div class="esh">环境输入 · 评分所用的综合场（GFS 与 ECMWF-IFS 逐时平均）</div>
+    <div class="esh">${i18n("环境输入 · 评分所用的综合场（GFS 与 ECMWF-IFS 逐时平均）")}</div>
     <div class="kv">${[
-      it("2m 温度", uTemp(e.T)),
-      it("2m 露点", uTemp(e.Td)),
-      it("相对湿度", isNum(e.RH) ? Math.round(e.RH) + " %" : "—"),
-      it("10m 风速", uSpeed(e.ws)),
-      it("海平面气压", isNum(e.Pmsl) ? e.Pmsl.toFixed(1) + " hPa" : "—"),
-      it("能见度", isNum(e.vis) ? uDist(e.vis / 1000, 1) : "—")
+      it(i18n("2m 温度"), uTemp(e.T)),
+      it(i18n("2m 露点"), uTemp(e.Td)),
+      it(i18n("相对湿度"), isNum(e.RH) ? Math.round(e.RH) + " %" : "—"),
+      it(i18n("10m 风速"), uSpeed(e.ws)),
+      it(i18n("海平面气压"), isNum(e.Pmsl) ? e.Pmsl.toFixed(1) + " hPa" : "—"),
+      it(i18n("能见度"), isNum(e.vis) ? uDist(e.vis / 1000, 1) : "—")
     ].join("")}</div>
   </div>`;
 }
@@ -187,14 +191,14 @@ function rayCurve(s, omega) {
   for (let i = 1; i < sm.length; i++) if ((sm[i].lumRel || 0) > (sm[pk].lumRel || 0)) pk = i;
   return `<div class="rcwrap">
     <svg class="rcurve" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"
-      aria-label="霞光相对亮度与彩度随时间的演变曲线，横轴为事件后分钟数">
+      aria-label="${i18n("霞光相对亮度与彩度随时间的演变（横轴＝事件后分钟数，竖线＝各采样点的实际颜色）：")}">
       ${grid}${bars}
       <polyline class="rcL" points="${poly("lumRel", maxL)}" vector-effect="non-scaling-stroke"/>
       <polyline class="rcC" points="${poly("chroma", maxC)}" vector-effect="non-scaling-stroke"/>
     </svg>
-    <div class="rcaxis"><span>0 分</span><span>${fmtDur(mx / 2)}</span><span>${fmtDur(mx)}</span></div>
-    <div class="rcleg"><span><i class="rcLi"></i>相对亮度（峰值 +${mins[pk].toFixed(1)} 分）</span>
-      <span><i class="rcCi"></i>彩度 · OKLab（峰值 ${maxC.toFixed(3)}）</span></div>
+    <div class="rcaxis"><span>${i18n("0 分")}</span><span>${fmtDur(mx / 2)}</span><span>${fmtDur(mx)}</span></div>
+    <div class="rcleg"><span><i class="rcLi"></i>${i18n("相对亮度（峰值 +{v} 分）", { v: mins[pk].toFixed(1) })}</span>
+      <span><i class="rcCi"></i>${i18n("彩度 · OKLab（峰值 {v}）", { v: maxC.toFixed(3) })}</span></div>
   </div>`;
 }
 
@@ -205,7 +209,7 @@ function modelCard(title, sub, P, Q, facts, color, extraClass) {
       <span class="rt">${sub}</span></div>
     <div class="mrow">
       <div class="mnum" style="color:${color}">${Math.round(P)}<small>%</small></div>
-      <div class="mmeta"><span class="grade g-${grade}">质量 ${Math.round(Q)} 分 · ${grade}</span></div>
+      <div class="mmeta"><span class="grade g-${grade}">${i18n("质量 {q} 分 · {grade}", { q: Math.round(Q), grade: i18n(grade) })}</span></div>
     </div>
     <div class="bar"><i style="width:${clamp(P, 0, 100)}%;background:${gradeColor(grade)}"></i></div>
     <div class="mfacts">${facts}</div>
@@ -216,45 +220,47 @@ function renderModels(r) {
   const out = [];
   const mk = (s, tr, env, label) => {
     const p = s.primary, g = s.geom;
-    return `<span>云型 <b>${p.type}</b></span><span>主云量 <b>${Math.round(p.cover)}%</b></span>
-      <span>云底 <b>${Math.round(p.base * 1000)}m</b></span>
-      <span>云边界 <b>${isNum(s.d) ? Math.round(s.d) + "km" : "无"}</b></span>
-      <span>等效云底 <b>${n1(s.hEff)}km</b></span>
-      <span>持续 <b>${fmtDur(g.dur)}</b></span>
+    return `<span>${i18n("云型")} <b>${i18n(p.type)}</b></span><span>${i18n("主云量")} <b>${Math.round(p.cover)}%</b></span>
+      <span>${i18n("云底")} <b>${Math.round(p.base * 1000)}m</b></span>
+      <span>${i18n("云边界")} <b>${isNum(s.d) ? Math.round(s.d) + "km" : i18n("无")}</b></span>
+      <span>${i18n("等效云底")} <b>${n1(s.hEff)}km</b></span>
+      <span>${i18n("持续")} <b>${fmtDur(g.dur)}</b></span>
       <span>AOD <b>${n1(s.aodUp, 2)}</b></span>`;
   };
-  out.push(modelCard("GFS 模式", "NOAA 全球模式 · 1 小时分辨率", r.sG.P, r.sG.Q, mk(r.sG), "#2f6fd0"));
-  if (r.sE) out.push(modelCard("ECMWF-IFS 模式", "欧洲中心全球模式", r.sE.P, r.sE.Q, mk(r.sE), "#0f9c8a"));
-  else out.push(`<div class="mcard"><div class="mh"><span class="dot" style="background:#9aa4b2"></span><b>ECMWF-IFS 模式</b></div>
-    <div class="hint">该日期/点位未取到 ECMWF 数据，本次综合结果由 GFS 与光追算法构成。</div></div>`);
+  out.push(modelCard(i18n("GFS 模式"), i18n("NOAA 全球模式 · 1 小时分辨率"), r.sG.P, r.sG.Q, mk(r.sG), "#2f6fd0"));
+  if (r.sE) out.push(modelCard(i18n("ECMWF-IFS 模式"), i18n("欧洲中心全球模式"), r.sE.P, r.sE.Q, mk(r.sE), "#0f9c8a"));
+  else out.push(`<div class="mcard"><div class="mh"><span class="dot" style="background:#9aa4b2"></span><b>${i18n("ECMWF-IFS 模式")}</b></div>
+    <div class="hint">${i18n("该日期/点位未取到 ECMWF 数据，本次综合结果由 GFS 与光追算法构成。")}</div></div>`);
   const rt = r.sRT;
-  out.push(modelCard("光追算法", "纯物理：多波长光路积分 + CIE 色度", rt.P, rt.Q,
-    `<span>主云型 <b>${rt.primary.type}</b></span><span>等效地表 <b>${n1(rt.Heq, 2)}km</b></span>
-     <span>峰值透射 <b>${rt.peak.T550.toExponential(2)}</b></span>
-     <span>亮度 <b>${rt.bright.txt.split("（")[0]}</b></span>
-     <span>颜色 <b>${rt.peak.name}</b></span><span>饱和 <b>${(rt.peak.sat * 100).toFixed(0)}%</b></span>
-     <span>几何 <b>${rt.geom.ok ? "成立" : "不成立"}</b></span>`, "#c9501a"));
+  const brt = i18n(rt.bright.txt);
+  const brtShort = brt.split(/[（(]/)[0];
+  out.push(modelCard(i18n("光追算法"), i18n("纯物理：多波长光路积分 + CIE 色度"), rt.P, rt.Q,
+    `<span>${i18n("主云型")} <b>${i18n(rt.primary.type)}</b></span><span>${i18n("等效地表")} <b>${n1(rt.Heq, 2)}km</b></span>
+     <span>${i18n("峰值透射")} <b>${rt.peak.T550.toExponential(2)}</b></span>
+     <span>${i18n("亮度")} <b>${brtShort}</b></span>
+     <span>${i18n("颜色")} <b>${i18n(rt.peak.name)}</b></span><span>${i18n("饱和")} <b>${(rt.peak.sat * 100).toFixed(0)}%</b></span>
+     <span>${i18n("几何")} <b>${i18n(rt.geom.ok ? "成立" : "不成立")}</b></span>`, "#c9501a"));
   const g = gradeOf(r.Q);
   /* 分歧口径统一（B3）：主指标由"P 的极差"改为 ΔI —— 与地图「模型分歧」维度同一把尺子，
      也与结论卡徽标、因素表同源。ΔP / ΔQ 作为分解项一并给出，
      用户能看出这次分歧究竟是落在出现概率还是观赏质量上。 */
-  const cf = r.conf || ensConfOf(r.dvI);
+  const cfb = confText(r.conf || ensConfOf(r.dvI));
   const rn = (v) => isNum(v) ? Math.round(v) : "—";
-  out.push(modelCard("多模型综合", "GFS 30% + EC 34% + 光追 36%", r.P, r.Q,
-    `<span>可信度 <b style="color:${cf.color}">${cf.lv}</b></span>
-     <span>ΔI <b>${rn(r.dvI)}</b>（三算法综合指数极差）</span>
+  out.push(modelCard(i18n("多模型综合"), i18n("GFS 30% + EC 34% + 光追 36%"), r.P, r.Q,
+    `<span>${i18n("可信度")} <b style="color:${cfb.color}">${cfb.lv}</b></span>
+     <span>ΔI <b>${rn(r.dvI)}</b>${i18n("（三算法综合指数极差）")}</span>
      <span>ΔP <b>${rn(r.spread)}</b> · ΔQ <b>${rn(r.spreadQ)}</b></span>
-     <span>等级 <b>${g}</b></span>
-     <span>时效 <b>${r.leadH > 0 ? Math.round(r.leadH) + " 小时" : "实况/历史"}</b></span>
-     <span>综合指数 <b>${Math.round(mixedIndex(r.P, r.Q))}</b></span>`, "#e2601f", "ens"));
+     <span>${i18n("等级")} <b>${i18n(g)}</b></span>
+     <span>${i18n("时效")} <b>${r.leadH > 0 ? Math.round(r.leadH) + " " + i18n("小时") : i18n("实况/历史")}</b></span>
+     <span>${i18n("综合指数")} <b>${Math.round(mixedIndex(r.P, r.Q))}</b></span>`, "#e2601f", "ens"));
   $("#models").innerHTML = out.join("");
 }
 
 function pill(score) {
-  if (score == null) return `<span class="pill p-mid">数据缺失</span>`;
-  if (score >= 0.78) return `<span class="pill p-ok">有利</span>`;
-  if (score >= 0.5) return `<span class="pill p-mid">中性</span>`;
-  return `<span class="pill p-bad">不利</span>`;
+  if (score == null) return `<span class="pill p-mid">${i18n("数据缺失")}</span>`;
+  if (score >= 0.78) return `<span class="pill p-ok">${i18n("有利")}</span>`;
+  if (score >= 0.5) return `<span class="pill p-mid">${i18n("中性")}</span>`;
+  return `<span class="pill p-bad">${i18n("不利")}</span>`;
 }
 function renderFactors(r) {
   const env = r.envM, s = r.sRT, tr = r.aM, p = s.primary;
@@ -262,33 +268,33 @@ function renderFactors(r) {
   const add = (name, val, score, desc) => rows.push([name, val, score, desc]);
 
   const coverSc = trap(p.cover, [[0, 0], [8, 0.12], [22, 0.62], [38, 1], [75, 1], [88, 0.5], [100, 0.22]]);
-  add("云量类型与覆盖度", `${p.type} · ${Math.round(p.cover)}%`, coverSc,
+  add(i18n("云量类型与覆盖度"), `${p.type} · ${Math.round(p.cover)}%`, coverSc,
     p.type + "属" + (["低云 ", "中云 ", "高云"][p.level]) + "，云底约 " + uAlt(p.base * 1000) + "。" +
     (p.cover < 20 ? "云量偏少，可能没有足够云体承接霞光。" : p.cover > 90 ? "云量接近全覆盖，阳光难以穿透，易形成闷烧或无霞。" :
       "云量处于理想区间，云块之间既能透光又能承接低角度阳光。"));
 
   const baseSc = trap(p.base, [[0.1, 0.05], [0.6, 0.24], [1.2, 0.55], [2.0, 0.8], [3.0, 1], [9, 1], [13, 0.68]]);
-  add("云底高度", uAlt(p.base * 1000), baseSc,
+  add(i18n("云底高度"), uAlt(p.base * 1000), baseSc,
     "云底越高，霞光可出现的范围与色相变化越丰富；云底越低，霞光越局限于橘红且持续时间短。");
 
   const heqSc = trap(s.Heq, [[0, 1], [0.8, 1], [1.5, 0.8], [2.5, 0.5], [3.5, 0.3], [5, 0.12], [8, 0.03]]);
-  add("光学等效地表高度", uDist(s.Heq, 2), heqSc,
+  add(i18n("光学等效地表高度"), uDist(s.Heq, 2), heqSc,
     "气溶胶把光线“垫高”的等效地表高度，由 AOD 与气溶胶标高 Hs=" + n1(s.Hs, 2) + " km 计算（z=Hs·ln(AOD/(Hs·k₀))）。该值越大，等效云底越低，霞光越难形成。");
 
   const heffSc = trap(s.hEff, [[0, 0.03], [0.4, 0.25], [1, 0.6], [2, 0.85], [4, 1], [10, 1]]);
-  add("等效云底高度", uDist(s.hEff, 2), heffSc, "云底高度减去光学等效地表高度后的有效高度，是几何判定的真正输入。");
+  add(i18n("等效云底高度"), uDist(s.hEff, 2), heffSc, "云底高度减去光学等效地表高度后的有效高度，是几何判定的真正输入。");
 
   const dSc = s.geom.ok ? clamp(1 - s.d / s.geom.xMax, 0, 1) * 0.6 + 0.4 : 0.05;
-  add("云边界距离", isNum(s.d) ? `${uDist(s.d)}（上限 ${uDist(s.geom.xMax)}）` : "无明显云边界", dSc,
+  add(i18n("云边界距离"), isNum(s.d) ? uDist(s.d) + i18n("（上限 {v}）", { v: uDist(s.geom.xMax) }) : i18n("无明显云边界"), dSc,
     "沿日出/日落方位以 25 km 间隔采样（地图批量估算时以采样网格插值代替实地采样）得到的云盘外缘距离。必须小于霞光深入距离 2√(2Rh)，阳光才能从云底下方照进来；距离越远，颜色越红、开始越晚。");
 
   const blockSc = trap(isNum(tr.upstreamLowMax) ? tr.upstreamLowMax : (env.cLow || 0),
     [[0, 1], [25, 0.95], [45, 0.72], [65, 0.4], [85, 0.18], [100, 0.1]]);
-  add("光路上游低层云遮挡", `${Math.round(isNum(tr.upstreamLowMax) ? tr.upstreamLowMax : 0)}%`, blockSc,
+  add(i18n("光路上游低层云遮挡"), `${Math.round(isNum(tr.upstreamLowMax) ? tr.upstreamLowMax : 0)}%`, blockSc,
     "低云位于霞光光路下方，是最常见的“翻车”原因：低云量高会把阳光彻底挡住。");
 
   const aeroSc = trap(r.aodUse, [[0, 1], [0.1, 1], [0.2, 0.88], [0.3, 0.72], [0.5, 0.52], [0.8, 0.26], [1.2, 0.12], [3, 0.03]]);
-  add("气溶胶光学厚度 AOD", `${n1(r.aodUse, 2)}（550nm）`, aeroSc,
+  add(i18n("气溶胶光学厚度 AOD"), `${n1(r.aodUse, 2)}（550nm）`, aeroSc,
     r.aodUse < 0.2 ? "气溶胶很少，瑞利散射占主导，阳光颜色纯净、饱和度高，水晶天。" :
       r.aodUse < 0.5 ? "气溶胶一般，天空通透度普通，颜色饱和度会略降。" :
         r.aodUse < 0.8 ? "气溶胶较多，天空偏霾，会明显削弱霞光的亮度与饱和度。" :
@@ -299,47 +305,50 @@ function renderFactors(r) {
     "反映底层大气通透程度。能见度低于 5 km 时地面附近霾/雾显著，霞光的低角度部分会被遮挡。");
 
   const humSc = isNum(env.RH) ? trap(env.RH, [[5, 0.7], [20, 0.92], [40, 1], [75, 1], [88, 0.78], [95, 0.45], [100, 0.3]]) : null;
-  add("2m 相对湿度", isNum(env.RH) ? Math.round(env.RH) + "%" : "—", humSc,
+  add(i18n("2m 相对湿度"), isNum(env.RH) ? Math.round(env.RH) + "%" : "—", humSc,
     "湿度适中利于云的存在与散射；相对湿度过高（>90%）会形成雾并放大气溶胶消光，反而使天空浑浊；过低则可能没有云。");
 
   const dPv = r.trendVal;
   const stabSc = isNum(dPv) ? trap(dPv, [[0, 1], [0.6, 1], [1.2, 0.8], [2.5, 0.52], [6, 0.3]]) : null;
-  add("气压稳定性", isNum(dPv) ? "|ΔP/Δt| = " + dPv.toFixed(2) + " hPa/h" : "—", stabSc,
+  add(i18n("气压稳定性"), isNum(dPv) ? "|ΔP/Δt| = " + dPv.toFixed(2) + " hPa/h" : "—", stabSc,
     "气压稳定说明天气系统移动缓慢，云边界位置可预测；气压快速变化意味着云况随时可能改变，预报不确定性大。");
 
   const comp = alongComponent(env.ws, env.wd, r.az);
   const compSc = isNum(comp) ? trap(comp, [[0, 1], [8, 1], [15, 0.75], [22, 0.5], [32, 0.3], [50, 0.15]]) : null;
-  add("云边界风速分量", isNum(comp) ? uSpeed(comp) : "—", compSc,
+  add(i18n("云边界风速分量"), isNum(comp) ? uSpeed(comp) : "—", compSc,
     "云边界沿日出/日落方向的速度分量。经验上 <15 m/s 云边界位置不确定度小，>30 m/s 则很大（云边界会明显推移）。");
 
   const cape = env.cape, pr = env.precip;
   const convSc = isNum(cape) ? trap(cape, [[0, 1], [300, 1], [800, 0.8], [1500, 0.55], [3000, 0.32]]) : null;
-  add("对流活动", (isNum(cape) ? "CAPE " + Math.round(cape) + " J/kg" : "—") + (isNum(pr) ? " · 降水 " + pr.toFixed(1) + " mm" : ""), convSc,
+  add(i18n("对流活动"), (isNum(cape) ? "CAPE " + Math.round(cape) + " J/kg" : "—") + (isNum(pr) ? " · 降水 " + pr.toFixed(1) + " mm" : ""), convSc,
     "对流强时局地积云/积雨云发展，会随机遮挡光路；但积雨云云砧本身也可能形成漂亮的云砧晚霞。");
 
   /* 模式一致性（B2/B3）：档位、措辞一律来自 ENS_CONF_BANDS / ensConfDetail ——
      原先这里手写 18 / 35 两个阈值，措辞还只说"两套全球模式与光追"，
      等于在 _p4.js 之外又养了一份同义实现，阈值一改两处就会打架。
      判别量也统一成 ΔI（与地图「模型分歧」维度同源），ΔP / ΔQ 只作为分解项展示。 */
-  const fcf = r.conf || ensConfOf(r.dvI);
-  add("模式一致性",
+  const cfF = confText(r.conf || ensConfOf(r.dvI));
+  add(i18n("模式一致性"),
     isNum(r.dvI)
-      ? `${fcf.lv} · ΔI ${Math.round(r.dvI)}（ΔP ${Math.round(nz(r.spread, 0))} · ΔQ ${Math.round(nz(r.spreadQ, 0))}）`
-      : "数据不足",
+      ? `${cfF.lv} · ΔI ${Math.round(r.dvI)}（ΔP ${Math.round(nz(r.spread, 0))} · ΔQ ${Math.round(nz(r.spreadQ, 0))}）`
+      : i18n("数据不足"),
     clamp(r.consist / 100, 0, 1),
     isNum(r.dvI)
-      ? fcf.txt + "，" + ensConfDetail(r.spread, r.spreadQ) + "。" + fcf.hint
-      : "不足两套算法给出结果，无法评估模型一致性。");
+      ? cfF.txt + "，" + ensConfDetail(r.spread, r.spreadQ) + "。" + cfF.hint
+      : i18n("不足两套算法给出结果，无法评估模型一致性。"));
 
-  $("#fac").innerHTML = `<thead><tr><th style="width:170px">因素</th><th style="width:180px">数值</th>
-    <th style="width:62px">判定</th><th>对霞光的影响</th></tr></thead><tbody>` +
+  $("#fac").innerHTML = `<thead><tr><th style="width:170px">${i18n("因素")}</th><th style="width:180px">${i18n("数值")}</th>
+    <th style="width:62px">${i18n("判定")}</th><th>${i18n("对霞光的影响")}</th></tr></thead><tbody>` +
     rows.map(x => `<tr><td>${x[0]}</td><td class="v">${x[1]}</td><td>${pill(x[2])}</td><td class="d">${x[3]}</td></tr>`).join("") +
-    `</tbody>`;
+    `</tbody>` +
+    /* 非中文时给一行说明：因素的长篇解读属"全量"批次，此处明确告知而不是让用户
+       对着一列中文发呆。 */
+    (LANG === "zh" ? "" : `<tfoot><tr><td colspan="4" class="hint">${i18n("因素详细解读目前仅提供中文。")}</td></tr></tfoot>`);
 }
 
 function renderRay(r) {
   const s = r.sRT, g = s.geom;
-  const sw = s.samples.map(x => `<div class="swatch" style="background:${x.hex}">${x.name}</div>`).join("");
+  const sw = s.samples.map(x => `<div class="swatch" style="background:${x.hex}">${i18n(x.name)}</div>`).join("");
   const om = r.omega || 0.2;
   const t0 = g.thNearDeg / om, t1 = g.thFarDeg / om;
   const mx = Math.max(t1 * 1.12, 0.8);
@@ -349,32 +358,35 @@ function renderRay(r) {
       <div class="mk" style="left:0"></div>
       <div class="mk" style="left:${(t0 / mx * 100).toFixed(1)}%"></div>
       <div class="mk" style="left:${(t1 / mx * 100).toFixed(1)}%"></div>
-      <div class="lb3" style="left:${clamp(t0 / mx * 100, 6, 62)}%">开始 +${fmtDur(t0)}</div>
-      <div class="lb3" style="left:${clamp(t1 / mx * 100, 40, 94)}%">结束 +${fmtDur(t1)}</div>
-      <div class="lb2" style="left:6%">${r.period === "am" ? "日出" : "日落"}时刻</div>
-    </div>` : `<div class="note n-warn">几何条件不成立：${isNum(s.d) ? "云边界距离 " + Math.round(s.d) + " km 已超过霞光深入距离上限 " + Math.round(g.xMax) + " km（该云盘范围内阳光无法从云底下方射入）" : "日出/日落方向 400 km 内没有找到可承载霞光的云盘"}。光追结果按最接近的掠射情形估算，仅作参考。</div>`;
+      <div class="lb3" style="left:${clamp(t0 / mx * 100, 6, 62)}%">${i18n("开始 +{v}", { v: fmtDur(t0) })}</div>
+      <div class="lb3" style="left:${clamp(t1 / mx * 100, 40, 94)}%">${i18n("结束 +{v}", { v: fmtDur(t1) })}</div>
+      <div class="lb2" style="left:6%">${i18n("{ev}时刻", { ev: i18n(r.period === "am" ? "日出" : "日落") })}</div>
+    </div>` : `<div class="note n-warn">${i18n("几何条件不成立：{why}。光追结果按最接近的掠射情形估算，仅作参考。", { why: isNum(s.d)
+      ? i18n("云边界距离 {d} 已超过霞光深入距离上限 {m}（该云盘范围内阳光无法从云底下方射入）",
+          { d: Math.round(s.d) + " km", m: Math.round(g.xMax) + " km" })
+      : i18n("日出/日落方向 400 km 内没有找到可承载霞光的云盘") })}</div>`;
 
   $("#ray").innerHTML = `
   <div class="kv">
-    <div class="it"><div class="k">峰值透射率 T(550nm)</div><div class="v">${s.peak.T550.toExponential(2)}</div></div>
-    <div class="it"><div class="k">亮度等级</div><div class="v" style="font-size:13px">${s.bright.txt}</div></div>
-    <div class="it"><div class="k">峰值路径光学厚度 τ</div><div class="v">${s.peak.tau550.toFixed(1)}</div></div>
-    <div class="it"><div class="k">峰值颜色</div><div class="v" style="font-size:13px">${s.peak.name} · 饱和 ${(s.peak.sat * 100).toFixed(0)}%</div></div>
-    <div class="it"><div class="k">色相跨距（颜色丰富度）</div><div class="v">${s.hueSpread.toFixed(0)}°</div></div>
-    <div class="it"><div class="k">气溶胶标高 Hs</div><div class="v">${n1(s.Hs, 2)} km</div></div>
-    <div class="it"><div class="k">近边界角（云遮挡）</div><div class="v">${n1(g.thNearDeg, 2)}°</div></div>
-    <div class="it"><div class="k">远边界角（地球遮挡）</div><div class="v">${n1(g.thFarDeg, 2)}°</div></div>
+    <div class="it"><div class="k">${i18n("峰值透射率 T(550nm)")}</div><div class="v">${s.peak.T550.toExponential(2)}</div></div>
+    <div class="it"><div class="k">${i18n("亮度等级")}</div><div class="v" style="font-size:13px">${i18n(s.bright.txt)}</div></div>
+    <div class="it"><div class="k">${i18n("峰值路径光学厚度 τ")}</div><div class="v">${s.peak.tau550.toFixed(1)}</div></div>
+    <div class="it"><div class="k">${i18n("峰值颜色")}</div><div class="v" style="font-size:13px">${i18n(s.peak.name)} · ${i18n("饱和")} ${(s.peak.sat * 100).toFixed(0)}%</div></div>
+    <div class="it"><div class="k">${i18n("色相跨距（颜色丰富度）")}</div><div class="v">${s.hueSpread.toFixed(0)}°</div></div>
+    <div class="it"><div class="k">${i18n("气溶胶标高 Hs")}</div><div class="v">${n1(s.Hs, 2)} km</div></div>
+    <div class="it"><div class="k">${i18n("近边界角（云遮挡）")}</div><div class="v">${n1(g.thNearDeg, 2)}°</div></div>
+    <div class="it"><div class="k">${i18n("远边界角（地球遮挡）")}</div><div class="v">${n1(g.thFarDeg, 2)}°</div></div>
   </div>
   <div style="margin-top:13px">
-    <div class="hint" style="margin-bottom:6px">霞光强度与彩度随时间的演变（横轴＝事件后分钟数，竖线＝各采样点的实际颜色）：</div>
+    <div class="hint" style="margin-bottom:6px">${i18n("霞光强度与彩度随时间的演变（横轴＝事件后分钟数，竖线＝各采样点的实际颜色）：")}</div>
     ${rayCurve(s, r.omega)}
   </div>
   <div style="margin-top:12px">
-    <div class="hint" style="margin-bottom:6px">同一组采样时刻的光谱与颜色（左＝刚被照亮，右＝掠地最红）：</div>
+    <div class="hint" style="margin-bottom:6px">${i18n("同一组采样时刻的光谱与颜色（左＝刚被照亮，右＝掠地最红）：")}</div>
     <div class="ray">${sw}</div>
   </div>
   <div style="margin-top:14px">
-    <div class="hint" style="margin-bottom:2px">本地云底被照亮的时段（火烧云三角）：</div>
+    <div class="hint" style="margin-bottom:2px">${i18n("本地云底被照亮的时段（火烧云三角）：")}</div>
     ${tl}
   </div>
   <div class="hint" style="margin-top:4px">
@@ -388,7 +400,7 @@ function renderNotes(r) {
   const n = r.notes || [];
   $("#notes").innerHTML = n.length
     ? n.map(x => `<div class="note n-${x[0]}">${x[1]}</div>`).join("")
-    : `<div class="note n-ok">本时段各要素齐全，未发现明显缺失或异常。</div>`;
+    : `<div class="note n-ok">${i18n("本时段各要素齐全，未发现明显缺失或异常。")}</div>`;
 }
 
 /* ---------------------------------------------------------------------------
@@ -426,7 +438,7 @@ function cardFit(c, s, maxW) {
 
 function shareCard() {
   const r = State.result;
-  if (!r) { alert("请先完成一次预报，再保存图片。"); return; }
+  if (!r) { alert(i18n("请先完成一次预报，再保存图片。")); return; }
 
   const S = 2;
   const cv = document.createElement("canvas");
@@ -440,7 +452,7 @@ function shareCard() {
 
   const grade = gradeOf(r.Q), gc = gradeColor(grade);
   const isAM = r.period === "am";
-  const cf = r.conf || ensConfOf(r.dvI);
+  const cfb = confText(r.conf || ensConfOf(r.dvI));
 
   /* 背景与顶部等级色条 */
   const bg = c.createLinearGradient(0, 0, CARD_W, CARD_H);
@@ -462,13 +474,13 @@ function shareCard() {
   c.fillStyle = "#1f2733"; c.font = f(800, 40, true);
   c.fillText(Math.round(r.P) + "%", cx, cy - 9);
   c.fillStyle = "#8b96a5"; c.font = f(500, 13);
-  c.fillText("出现概率", cx, cy + 25);
+  c.fillText(i18n("出现概率"), cx, cy + 25);
 
   /* 右侧文字块 */
   const x0 = 232, maxW = CARD_W - x0 - 36;
   c.textAlign = "left";
   c.fillStyle = "#1f2733"; c.font = f(700, 25);
-  c.fillText(cardFit(c, r.name + " · " + r.dateStr + " " + (isAM ? "朝霞" : "晚霞"), maxW), x0, 84);
+  c.fillText(cardFit(c, r.name + " · " + r.dateStr + " " + i18n(isAM ? "朝霞" : "晚霞"), maxW), x0, 84);
 
   /* 分数 + 等级药丸。数字用等宽体（对齐好看），"分"单独用无衬线 ——
      等宽字体里中文占两倍宽度，写在一起会变成 "27  分" 那种夸张的字距。 */
@@ -477,9 +489,10 @@ function shareCard() {
   c.fillText(qNum, x0, 142);
   const qw = c.measureText(qNum).width;
   c.font = f(700, 19);
-  const uw = c.measureText("分").width;
-  c.fillText("分", x0 + qw + 7, 143);
-  const pillTxt = "观赏质量 " + grade;
+  const qUnit = i18n("分");
+  const uw = c.measureText(qUnit).width;
+  c.fillText(qUnit, x0 + qw + 7, 143);
+  const pillTxt = i18n("观赏质量") + " " + i18n(grade);
   c.font = f(700, 14);
   const pw = c.measureText(pillTxt).width + 26;
   const px = x0 + qw + 7 + uw + 16;
@@ -492,22 +505,24 @@ function shareCard() {
   /* 结论句 */
   c.textAlign = "left";
   c.fillStyle = "#1f2733"; c.font = f(700, 18);
-  c.fillText(cardFit(c, conclOf(r.P) + "（" + pct(r.P) + "）", maxW), x0, 190);
+  c.fillText(cardFit(c, conclOf(r.P) + i18n("（{v}）", { v: pct(r.P) }), maxW), x0, 190);
 
   /* 细节行 */
   const p = r.sRT.primary;
   const rows = [
-    "载霞云层 " + p.type + " · 覆盖 " + Math.round(p.cover) + "% · 云底 " + uAlt(p.base * 1000),
-    "云边界 " + (isNum(r.sRT.d) ? uDist(r.sRT.d) : "无明显边界") +
-      " · 等效云底 " + uAlt(r.sRT.hEff * 1000) + " · AOD " + n1(r.aodUse, 2),
-    "可信度 " + cf.lv + "（" + cf.txt + (isNum(r.dvI) ? "，ΔI " + Math.round(r.dvI) : "") + "）",
+    i18n("载霞云层 {v}", { v: i18n(p.type) }) + " · " +
+      i18n("覆盖 {v}", { v: Math.round(p.cover) + "%" }) + " · " +
+      i18n("云底") + " " + uAlt(p.base * 1000),
+    i18n("云边界") + " " + (isNum(r.sRT.d) ? uDist(r.sRT.d) : i18n("无明显边界")) +
+      " · " + i18n("等效云底") + " " + uAlt(r.sRT.hEff * 1000) + " · AOD " + n1(r.aodUse, 2),
+    i18n("可信度 {v}", { v: cfb.lv }) + i18n("（{v}）", { v: cfb.txt + (isNum(r.dvI) ? i18n("，ΔI {v}", { v: Math.round(r.dvI) }) : "") }),
     "GFS " + Math.round(r.parts[0].I) + " · " +
-      r.parts.slice(1).map(x => ({ ec: "EC ", rt: "光追 " }[x.k] + Math.round(x.I))).join(" · ") +
-      " · 综合 I " + Math.round(mixedIndex(r.P, r.Q))
+      r.parts.slice(1).map(x => ({ ec: "EC ", rt: i18n("光追 ") }[x.k] + Math.round(x.I))).join(" · ") +
+      " · " + i18n("综合 I {v}", { v: Math.round(mixedIndex(r.P, r.Q)) })
   ];
   c.font = f(500, 14);
   rows.forEach((s, i) => {
-    c.fillStyle = i === 2 ? cf.color : "#5b6675";
+    c.fillStyle = i === 2 ? cfb.color : "#5b6675";
     c.fillText(cardFit(c, s, maxW), x0, 228 + i * 26);
   });
 
@@ -515,17 +530,17 @@ function shareCard() {
   c.strokeStyle = "#e9edf3"; c.lineWidth = 1;
   c.beginPath(); c.moveTo(40, 344); c.lineTo(CARD_W - 40, 344); c.stroke();
   c.fillStyle = "#9aa4b2"; c.font = f(500, 12);
-  c.fillText("霞光预报 · 数据源 Open-Meteo（GFS / ECMWF-IFS / CAMS 气溶胶）· 结论仅供观赏参考", 40, 372);
+  c.fillText(cardFit(c, i18n("霞光预报 · 数据源 Open-Meteo（GFS / ECMWF-IFS / CAMS 气溶胶）· 结论仅供观赏参考"), CARD_W - 80), 40, 372);
   c.textAlign = "right";
-  c.fillText(r.leadH > 0 ? "预报时效约 " + Math.round(r.leadH) + " 小时" : "实况 / 历史分析场", CARD_W - 40, 372);
+  c.fillText(r.leadH > 0 ? i18n("预报时效约 {n} 小时", { n: Math.round(r.leadH) }) : i18n("实况 / 历史分析场"), CARD_W - 40, 372);
 
   /* 落地：toBlob + <a download>，对象 URL 用完即撤 */
   cv.toBlob(b => {
     if (!b) return;
-    const safe = String(r.name).replace(/[\\/:*?"<>|]/g, "").trim() || "点位";
+    const safe = String(r.name).replace(/[\\/:*?"<>|]/g, "").trim() || i18n("点位");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(b);
-    a.download = "霞光预报_" + safe + "_" + r.dateStr + "_" + (isAM ? "朝霞" : "晚霞") + ".png";
+    a.download = i18n("霞光预报") + "_" + safe + "_" + r.dateStr + "_" + i18n(isAM ? "朝霞" : "晚霞") + ".png";
     document.body.appendChild(a);
     a.click();
     a.remove();

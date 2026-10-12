@@ -580,9 +580,9 @@ footer li{margin:3px 0}
 
 <noscript>
   <div class="wrap"><div class="noscript">
-    <b>本页的计算全部在浏览器内完成，需要启用 JavaScript。</b><br>
-    启用后即可离线检索 363 个中国地级市与 116 个全球主要城市，并在联网时获取气象数据；
-    地图底图由腾讯地图提供，需要联网。
+    <b data-i18n="本页的计算全部在浏览器内完成，需要启用 JavaScript。">本页的计算全部在浏览器内完成，需要启用 JavaScript。</b><br>
+    <span data-i18n="启用后即可离线检索 363 个中国地级市与 116 个全球主要城市，并在联网时获取气象数据；地图底图由腾讯地图提供，需要联网。">启用后即可离线检索 363 个中国地级市与 116 个全球主要城市，并在联网时获取气象数据；
+    地图底图由腾讯地图提供，需要联网。</span>
   </div></div>
 </noscript>
 
@@ -590,8 +590,8 @@ footer li{margin:3px 0}
   <div class="top-in">
     <div class="logo"></div>
     <div class="top-tx">
-      <h1>霞光预报 · 朝霞 / 晚霞 概率与观赏质量</h1>
-      <div class="sub">多模型融合（GFS · ECMWF-IFS · 光追算法）+ 火烧云三角几何模型 + 大气消光光谱计算</div>
+      <h1 data-i18n="霞光预报 · 朝霞 / 晚霞 概率与观赏质量">霞光预报 · 朝霞 / 晚霞 概率与观赏质量</h1>
+      <div class="sub" data-i18n="多模型融合（GFS · ECMWF-IFS · 光追算法）+ 火烧云三角几何模型 + 大气消光光谱计算">多模型融合（GFS · ECMWF-IFS · 光追算法）+ 火烧云三角几何模型 + 大气消光光谱计算</div>
     </div>
     <div class="spacer"></div>
     <div class="badge" id="topBadge">等待计算</div>
@@ -603,51 +603,57 @@ footer li{margin:3px 0}
   <!-- ============ 控制面板 ============ -->
   <div class="card" style="margin-top:14px">
     <div class="card-h">
-      <h2>① 查询条件</h2>
-      <span class="tag">支持全国所有城市、全球主要城市，或直接输入经纬度 · 修改地区后重新计算即可</span>
+      <h2 data-i18n="① 查询条件">① 查询条件</h2>
+      <span class="tag" data-i18n="支持全国所有城市、全球主要城市，或直接输入经纬度 · 修改地区后重新计算即可">支持全国所有城市、全球主要城市，或直接输入经纬度 · 修改地区后重新计算即可</span>
     </div>
 
     <div class="ctrl-grid">
       <div class="field full">
-        <label class="lb" for="q">地区搜索（输入城市名 / 拼音首字母 / 「纬度,经度」）</label>
-        <input type="text" id="q" placeholder="例如：广州、shenzhen、拉萨、东京、23.13,113.26" autocomplete="off"
+        <label class="lb" for="q" data-i18n="地区搜索（输入城市名 / 拼音首字母 / 「纬度,经度」）">地区搜索（输入城市名 / 拼音首字母 / 「纬度,经度」）</label>
+        <input type="text" id="q" placeholder="例如：广州、shenzhen、拉萨、东京、23.13,113.26" data-i18n-ph="例如：广州、shenzhen、拉萨、东京、23.13,113.26" autocomplete="off"
           role="combobox" aria-expanded="false" aria-controls="sug" aria-autocomplete="list">
         <div class="sug" id="sug" role="listbox"></div>
       </div>
       <div class="field">
-        <label class="lb" for="lat">纬度（-90 ~ 90）</label>
-        <input type="number" id="lat" step="0.0001" value="31.2304" aria-label="纬度">
+        <label class="lb" for="lat" data-i18n="纬度（-90 ~ 90）">纬度（-90 ~ 90）</label>
+        <input type="number" id="lat" step="0.0001" value="31.2304" aria-label="纬度" data-i18n-aria="纬度">
       </div>
       <div class="field">
-        <label class="lb" for="lon">经度（-180 ~ 180）</label>
-        <input type="number" id="lon" step="0.0001" value="121.4737" aria-label="经度">
+        <label class="lb" for="lon" data-i18n="经度（-180 ~ 180）">经度（-180 ~ 180）</label>
+        <input type="number" id="lon" step="0.0001" value="121.4737" aria-label="经度" data-i18n-aria="经度">
       </div>
       <div class="field">
-        <label class="lb" for="date">日期</label>
-        <input type="date" id="date" aria-label="日期">
+        <label class="lb" for="date" data-i18n="日期">日期</label>
+        <input type="date" id="date" aria-label="日期" data-i18n-aria="日期">
       </div>
       <div class="field">
-        <span class="lb" id="goLbl">计算</span>
-        <button class="primary" id="go" style="width:100%" aria-describedby="goLbl">开始预报</button>
+        <span class="lb" id="goLbl" data-i18n="计算">计算</span>
+        <button class="primary" id="go" style="width:100%" aria-describedby="goLbl" data-i18n="开始预报">开始预报</button>
       </div>
     </div>
 
     <div class="rowline">
-      <div class="seg" id="periodSeg" role="group" aria-label="时段：朝霞（日出）或晚霞（日落）">
-        <button data-p="am" aria-pressed="false">朝霞（日出）</button>
-        <button data-p="pm" class="on" aria-pressed="true">晚霞（日落）</button>
+      <div class="seg" id="periodSeg" role="group" aria-label="时段：朝霞（日出）或晚霞（日落）" data-i18n-aria="时段：朝霞（日出）或晚霞（日落）">
+        <button data-p="am" aria-pressed="false" data-i18n="朝霞（日出）">朝霞（日出）</button>
+        <button data-p="pm" class="on" aria-pressed="true" data-i18n="晚霞（日落）">晚霞（日落）</button>
       </div>
-      <button class="sm" id="geoBtn">使用我的定位</button>
-      <button class="sm" id="nowBtn">回到今天</button>
-      <label class="chk"><input type="checkbox" id="autoMap"> 地图跟随查询自动刷新（已有缓存直接用，无缓存才额外取数）</label>
-      <div class="unitseg" id="unitSeg" role="group" aria-label="单位制">
-        <button data-u="metric" class="on" aria-pressed="true">公制</button>
-        <button data-u="imperial" aria-pressed="false">英制</button>
+      <button class="sm" id="geoBtn" data-i18n="使用我的定位">使用我的定位</button>
+      <button class="sm" id="nowBtn" data-i18n="回到今天">回到今天</button>
+      <label class="chk"><input type="checkbox" id="autoMap"> <span data-i18n="地图跟随查询自动刷新（已有缓存直接用，无缓存才额外取数）">地图跟随查询自动刷新（已有缓存直接用，无缓存才额外取数）</span></label>
+      <div class="unitseg" id="unitSeg" role="group" aria-label="单位制" data-i18n-aria="单位制">
+        <button data-u="metric" class="on" aria-pressed="true" data-i18n="公制">公制</button>
+        <button data-u="imperial" aria-pressed="false" data-i18n="英制">英制</button>
       </div>
-      <div class="unitseg" id="clockSeg" role="group" aria-label="时间制">
-        <button data-c="24" class="on" aria-pressed="true">24 时</button>
-        <button data-c="12" aria-pressed="false">12 时</button>
+      <div class="unitseg" id="clockSeg" role="group" aria-label="时间制" data-i18n-aria="时间制">
+        <button data-c="24" class="on" aria-pressed="true" data-i18n="24 时">24 时</button>
+        <button data-c="12" aria-pressed="false" data-i18n="12 时">12 时</button>
       </div>
+      <!-- 语言切换（i18n）：与时段/单位同款分段控件。
+           **刻意不放顶栏** —— 窄屏顶部条有"必须收成一行（≤43 px）"的硬约束
+           （见 44 号约束与 mobileprobe 的断言），多一个三按钮的分段控件必然把它顶成两行。
+           这一行本来就 flex-wrap，加一个控件不影响任何现有断言。
+           按钮文字用各语言自己的写法（中文 / 繁體 / English），不参与翻译。 -->
+      <div class="unitseg" id="langSeg" role="group" aria-label="语言" data-i18n-aria="语言"></div>
       <span class="hint" id="locHint" style="margin-left:auto"></span>
     </div>
 
@@ -661,13 +667,13 @@ footer li{margin:3px 0}
     <div class="col">
 
       <div class="card" id="cardHero">
-        <div class="card-h"><h2>② 预报结论</h2><span class="tag" id="heroTag">多模型综合</span>
-          <span class="right"><button class="sm" id="shareCard" disabled>保存为图片</button></span></div>
+        <div class="card-h"><h2 data-i18n="② 预报结论">② 预报结论</h2><span class="tag" id="heroTag" data-i18n="多模型综合">多模型综合</span>
+          <span class="right"><button class="sm" id="shareCard" disabled data-i18n="保存为图片">保存为图片</button></span></div>
         <div id="hero"></div>
       </div>
 
       <div class="card">
-        <div class="card-h"><h2>③ 各模型独立结果</h2><span class="tag">每种模型单独给出概率与质量，末尾为多模型综合</span></div>
+        <div class="card-h"><h2 data-i18n="③ 各模型独立结果">③ 各模型独立结果</h2><span class="tag" data-i18n="每种模型单独给出概率与质量，末尾为多模型综合">每种模型单独给出概率与质量，末尾为多模型综合</span></div>
         <div class="models" id="models"></div>
         <div class="hint" style="margin-top:11px">
           概率 P = 该模型输入场下「出现可观赏霞光」的置信度（0–100%）；质量 Q = 观赏质量评分（0–100 分）→ 优 ≥80 / 良 65–79 / 一般 45–64 / 差 &lt;45。
@@ -675,24 +681,24 @@ footer li{margin:3px 0}
       </div>
 
       <div class="card">
-        <div class="card-h"><h2>④ 主要影响因素分析</h2><span class="tag" id="facTag">按影响权重排序</span></div>
+        <div class="card-h"><h2 data-i18n="④ 主要影响因素分析">④ 主要影响因素分析</h2><span class="tag" id="facTag" data-i18n="按影响权重排序">按影响权重排序</span></div>
         <div class="t-scroll"><table class="ftab" id="fac"></table></div>
       </div>
 
       <div class="card">
-        <div class="card-h"><h2>⑤ 光追算法细节</h2><span class="tag">沿真实光路的消光积分 + CIE 色度换算</span></div>
+        <div class="card-h"><h2 data-i18n="⑤ 光追算法细节">⑤ 光追算法细节</h2><span class="tag" data-i18n="沿真实光路的消光积分 + CIE 色度换算">沿真实光路的消光积分 + CIE 色度换算</span></div>
         <div id="ray"></div>
       </div>
 
       <div class="card">
-        <div class="card-h"><h2>⑥ 数据质量与提示</h2><span class="tag">缺失值、异常值与不确定性来源</span></div>
+        <div class="card-h"><h2 data-i18n="⑥ 数据质量与提示">⑥ 数据质量与提示</h2><span class="tag" data-i18n="缺失值、异常值与不确定性来源">缺失值、异常值与不确定性来源</span></div>
         <div class="notes" id="notes"></div>
       </div>
 
       <div class="card">
         <div class="card-h">
           <h2 id="trendTitle">⑧ 未来趋势</h2>
-          <span class="tag">同一点位的逐日对比，一次取数看完整窗口（点格子可跳转）</span>
+          <span class="tag" data-i18n="同一点位的逐日对比，一次取数看完整窗口（点格子可跳转）">同一点位的逐日对比，一次取数看完整窗口（点格子可跳转）</span>
           <span class="right"><button class="sm" id="trendGo">加载趋势</button></span>
         </div>
         <div id="trendBody"></div>
@@ -704,37 +710,37 @@ footer li{margin:3px 0}
     <div class="col">
       <div class="card" style="position:sticky;top:64px">
         <div class="card-h">
-          <h2>⑦ 周边霞光热力图</h2>
+          <h2 data-i18n="⑦ 周边霞光热力图">⑦ 周边霞光热力图</h2>
           <span class="tag" id="mapTag"></span>
         </div>
         <div class="maptool">
-          <div class="seg" id="mapPeriod" role="group" aria-label="地图时段：朝霞或晚霞">
-            <button data-p="am" aria-pressed="false">朝霞</button>
-            <button data-p="pm" class="on" aria-pressed="true">晚霞</button>
+          <div class="seg" id="mapPeriod" role="group" aria-label="时段：朝霞（日出）或晚霞（日落）" data-i18n-aria="时段：朝霞（日出）或晚霞（日落）">
+            <button data-p="am" aria-pressed="false" data-i18n="朝霞">朝霞</button>
+            <button data-p="pm" class="on" aria-pressed="true" data-i18n="晚霞">晚霞</button>
           </div>
-          <select id="mapDateSel" title="日期" aria-label="地图日期"></select>
-          <select id="mapModel" title="算法模型" aria-label="算法模型">
+          <select id="mapDateSel" title="日期" aria-label="日期" data-i18n-title="日期" data-i18n-aria="日期"></select>
+          <select id="mapModel" title="算法模型" aria-label="算法模型" data-i18n-title="算法模型" data-i18n-aria="算法模型">
             <option value="ens">模型：多模型综合</option>
             <option value="gfs">模型：GFS</option>
             <option value="ec">模型：ECMWF-IFS</option>
             <option value="rt">模型：光追算法</option>
           </select>
-          <select id="mapDim" title="着色依据" aria-label="着色依据">
-            <option value="mix">着色：综合指数（概率+质量）</option>
-            <option value="p">着色：仅出现概率</option>
-            <option value="q">着色：仅观赏质量</option>
-            <option value="dv">着色：模型分歧（三模型不一致度）</option>
+          <select id="mapDim" title="着色依据" aria-label="着色依据" data-i18n-title="着色依据" data-i18n-aria="着色依据">
+            <option value="mix" data-i18n="着色：综合指数（概率+质量）">着色：综合指数（概率+质量）</option>
+            <option value="p" data-i18n="着色：仅出现概率">着色：仅出现概率</option>
+            <option value="q" data-i18n="着色：仅观赏质量">着色：仅观赏质量</option>
+            <option value="dv" data-i18n="着色：模型分歧（三模型不一致度）">着色：模型分歧（三模型不一致度）</option>
           </select>
-          <button class="sm primary" id="mapGo">刷新地图</button>
-          <label class="chk"><input type="checkbox" id="numLabels"> 数值直标</label>
-          <label class="chk"><input type="checkbox" id="showPts"> 采样点</label>
-          <label class="chk"><input type="checkbox" id="showConf"> 可信度</label>
-          <label class="chk"><input type="checkbox" id="showGrid" checked> 经纬网</label>
-          <label class="chk"><input type="checkbox" id="dimBase"> 深色底图</label>
+          <button class="sm primary" id="mapGo" data-i18n="刷新地图">刷新地图</button>
+          <label class="chk"><input type="checkbox" id="numLabels"> <span data-i18n="数值直标">数值直标</span></label>
+          <label class="chk"><input type="checkbox" id="showPts"> <span data-i18n="采样点">采样点</span></label>
+          <label class="chk"><input type="checkbox" id="showConf"> <span data-i18n="可信度">可信度</span></label>
+          <label class="chk"><input type="checkbox" id="showGrid" checked> <span data-i18n="经纬网">经纬网</span></label>
+          <label class="chk"><input type="checkbox" id="dimBase"> <span data-i18n="深色底图">深色底图</span></label>
         </div>
         <div class="hint" id="modelNote" style="display:none;margin:-2px 0 9px"></div>
         <div class="mapwrap">
-          <div id="map" role="application" aria-label="周边霞光热力图，可用方向键移动、Enter 查看该处数值"></div>
+          <div id="map" role="application" aria-label="周边霞光热力图" data-i18n-aria="⑦ 周边霞光热力图"></div>
           <div class="mload" id="mapLoad"><div class="spin"></div><span id="mapLoadTxt">地图资源加载中…</span></div>
           <div class="tip" id="tip" role="tooltip"></div>
           <div class="mlayer" id="mapLabels" aria-hidden="true"></div>
@@ -750,12 +756,12 @@ footer li{margin:3px 0}
                实测它单独占了 480 px（整张地图卡片 1713 px），折进 <details> 默认收起。 -->
           <div class="hint" style="margin-top:9px" id="lgNote"></div>
           <details class="lgmore">
-            <summary>色面与叠加层的细节说明</summary>
+            <summary data-i18n="色面与叠加层的细节说明">色面与叠加层的细节说明</summary>
             <div class="hint" id="lgMore"></div>
           </details>
         </div>
         <div class="rank">
-          <h4><span id="rankTitle">当日数值最高的地区</span>（前 8）<span class="tag" id="rankScope" style="margin-left:6px"></span></h4>
+          <h4><span id="rankTitle">当日数值最高的地区</span><span id="rankTop">（前 8）</span><span class="tag" id="rankScope" style="margin-left:6px"></span></h4>
           <div id="rank"></div>
         </div>
       </div>

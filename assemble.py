@@ -3,7 +3,10 @@
 
 S1：模板与产物彻底分离 ——
   · 模板   tpl/template.html   只有 HTML + CSS + 3 个内联 <script> 占位块
-  · 片段   _p2.js … _p6.js     按顺序填进第 0 / 第 2 个脚本块
+  · 片段   _pi18n.js + _p2.js … _p6.js   按顺序填进第 0 / 第 2 个脚本块
+    （`_pi18n.js` 必须排在最前：它声明全局 `i18n()` 与 `LANGS`，
+      后面每个片段都可能在自己的顶层语句里用到？不 —— 顶层的 `const` 初始化
+      确实会用到，见 `_p4.js` 的 QUALITY_LABEL 之类；放在首位可避免 TDZ。）
   · 数据   refs/*.txt          内联进第 0 个脚本块的占位符
   · 产物   index.html
 
@@ -41,7 +44,7 @@ OUT = os.path.join(BASE, "index.html")
 TPL404 = os.path.join(BASE, "tpl", "404.html")
 OUT404 = os.path.join(BASE, "404.html")
 
-PARTS = ["_p2.js", "_p3.js", "_p4.js", "_p5.js", "_p5b.js", "_p6.js"]
+PARTS = ["_pi18n.js", "_p2.js", "_p3.js", "_p4.js", "_p5.js", "_p5b.js", "_p6.js"]
 DATA = ["refs/CN_CITIES_RAW.txt", "refs/MAP_CITIES_RAW.txt",
         "refs/GLOBAL_CITIES_RAW.txt", "refs/GL_ALIAS_RAW.txt"]
 HOLES = ["/*__CN_CITIES__*/", "/*__MAP_CITIES__*/", "/*__GLOBAL_CITIES__*/", "/*__GL_ALIAS__*/"]
@@ -171,8 +174,22 @@ def main():
     tpl = rd("tpl/template.html")
     parts = {p: rd(p) for p in PARTS}
 
+    # ---- 脚本块归属：**除 _p6.js 之外的全部片段进块 0，_p6.js 单独进块 2**。
+    # 这里原来写的是 `PARTS[:5]`（按"当时正好 5 个片段"硬编码）—— 加 `_pi18n.js`
+    # 变 7 个之后，`_p5b.js` 被**静默丢在产物之外**：结果卡整块消失，而构建照常
+    # 报 OK、语法检查照常通过（少一个片段不会报错，只会少东西）。
+    # 抓到它的是 `xssprobe` 里那条"热点已转义：esc(r.name)" —— 它断言的字符串
+    # 就在 _p5b.js 里。所以下面既改成语义切片，又加一条**结构性守卫**：
+    # 块 0 的片段集合必须正好等于 PARTS 去掉最后一个。
+    BLOCK2 = ["_p6.js"]
+    block0_files = [p for p in PARTS if p not in BLOCK2]
+    if block0_files != PARTS[:-1] or PARTS[-1] not in BLOCK2:
+        print("脚本块归属异常：块 2 = %s，但 PARTS 的最后一个是 %s"
+              % (BLOCK2, PARTS[-1]), file=sys.stderr)
+        return 1
+
     # ---- 内联数据：四个占位符必须各出现一次，多了少了都说明数据文件与片段对不上
-    block0 = "\n".join(parts[p] for p in PARTS[:5])
+    block0 = "\n".join(parts[p] for p in block0_files)
     for hole, path in zip(HOLES, DATA):
         n = block0.count(hole)
         if n != 1:

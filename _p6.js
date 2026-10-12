@@ -500,10 +500,10 @@ function showMapIdle() {
   /* 别说成"不占用额度" —— 首屏的单点查询同样要计费，只是比地图那批小一个数量级。
      把两个数摆出来，用户才知道点与不点的差别到底在哪。
      同时报出覆盖半径：用户得知道这张图"看到多远"，才谈得上判断要不要点。 */
-  $("#mapLoadTxt").innerHTML = "地图数据尚未加载。一次取周边 " + MAP_RADIUS_KM + " km 内的 "
-    + n + " 个网格点 × 2 套模式 + 气溶胶，约 " + (3 * n) + " 个计费调用"
-    + "（首屏只取了单点结果，这部分等你要看时再取）。"
-    + ' <button class="mretry" type="button">加载周边地图</button>';
+  $("#mapLoadTxt").innerHTML = i18n("地图数据尚未加载。一次取周边 {r} km 内的 {n} 个网格点 × 2 套模式 + 气溶胶，约 {c} 个计费调用", { r: MAP_RADIUS_KM, n: n, c: 3 * n })
+    + i18n("（首屏只取了单点结果，这部分等你要看时再取）。")
+    + (n ? "" : i18n("（当前地点没有生成网格点）"))
+    + ' <button class="mretry" type="button">' + i18n("加载周边地图") + '</button>';
   const b = el.querySelector(".mretry");
   if (b) b.addEventListener("click", () => loadMapData(true));
 }
@@ -582,7 +582,7 @@ async function initMap() {
           （早期文案写的是"请在本应用预览/分享页里打开" —— 那会把自行部署的用户
           引到错误方向，任何一种部署方式都应该能靠 README 自己配好。）
        ③ 其它未知异常。 */
-    let detail = "地图组件未能加载（脚本被拦截或网络不可达）。<br>上方查询功能不依赖地图，仍可正常使用；地图在联网环境下会自动恢复。";
+    let detail = i18n("地图组件未能加载（脚本被拦截或网络不可达）。") + "<br>" + i18n("上方查询功能不依赖地图，仍可正常使用；地图在联网环境下会自动恢复。");
     try {
       const host = (window._TMapSecurityConfig && window._TMapSecurityConfig.serviceHost) || "";
       if (isMapProxyPlaceholder(host)) {
@@ -1338,6 +1338,8 @@ function provOf(lat, lon) {
   return null;
 }
 const DIM_TXT = { p: "出现概率", q: "观赏质量", mix: "综合指数", dv: "模型分歧" };
+/* 维度名的显示层：DIM_TXT 存中文键（它同时也是数据口径的标识），展示时才过 i18n */
+function dimText(d) { return i18n(DIM_TXT[d] || DIM_TXT.mix); }
 function renderDrill(provName) {
   const box = $("#drill");
   if (!box) return;
@@ -1359,16 +1361,16 @@ function renderDrill(provName) {
         <span class="dv">${isNum(v) ? Math.round(v) : "—"}</span>
         <span class="grade g-${gr}">${gr}</span></button>`;
     }).join("")
-    : `<div class="hint">该省在当前周边 ${mapPts().length} 个网格点里没有落点${total ? "" : "（采样点未覆盖）"}。</div>`;
+    : `<div class="hint">${i18n("该省在当前周边 {n} 个网格点里没有落点", { n: mapPts().length })}${total ? "" : i18n("（采样点未覆盖）")}。</div>`;
   /* 分歧维度下"当前用的哪个模型"是无意义的（它度量的就是模型之间），
      照抄模型名会读成"这是多模型综合的分歧"。 */
-  const dsub = `${rows.length} 个采样点 · 当前口径 ${DIM_TXT[dim]}` +
-    (dim === "dv" ? "（与所选模型无关）" : ` · ${mk === "ens" ? "多模型综合" : modelName(mk)}`);
+  const dsub = i18n("{n} 个采样点 · 当前口径 {dim}", { n: rows.length, dim: dimText(dim) }) +
+    (dim === "dv" ? i18n("（与所选模型无关）") : ` · ${mk === "ens" ? i18n("多模型综合") : modelName(mk)}`);
   box.innerHTML = `<div class="dhead"><b>${esc(provName)}</b>
       <span class="dsub">${dsub}</span>
-      <button class="dx" type="button" aria-label="收起省份清单">收起</button></div>
+      <button class="dx" type="button" aria-label="${i18n("收起")}">${i18n("收起")}</button></div>
     <div class="dlist">${html}</div>
-    <div class="hint" style="margin-top:6px">点城市可发起该点的单点精细查询（含 400 km 样带与光追模型）。</div>`;
+    <div class="hint" style="margin-top:6px">${i18n("点城市可发起该点的单点精细查询（含 400 km 样带与光追模型）。")}</div>`;
   box.classList.add("on");
   const x = box.querySelector(".dx");
   if (x) x.addEventListener("click", () => { box.classList.remove("on"); box.innerHTML = ""; });
@@ -2903,7 +2905,7 @@ async function loadMapData(force, cacheOnly) {
      这条路径**不动任何界面状态**（进度条/标签都保持在原来的样子）。 */
   if (cacheOnly) return false;
 
-  mapSetLoad(true, "正在取模式数据（周边 " + mapPts().length + " 个网格点，朝/晚霞共用）…");
+  mapSetLoad(true, i18n("正在取模式数据（周边 {n} 个网格点，朝/晚霞共用）…", { n: mapPts().length }));
   let box;
   try {
     const [Y, M, D] = dateS.split("-").map(Number);
@@ -2941,7 +2943,7 @@ async function loadMapData(force, cacheOnly) {
     load("正在取气溶胶数据…");
     const aD = await apiAQBatched(cityPts, sD, eD, MAP_TZ).catch(() => null);
     if (!cur()) return;
-    load("正在计算 " + ptList.length + " 个网格点…");
+    load(i18n("正在计算 {n} 个网格点…", { n: ptList.length }));
     const sG = gD.map(makeSeries);
     const sE = eD2 ? eD2.map(makeSeries) : null;
     const sA = aD ? aD.map(makeSeries) : null;
@@ -3080,8 +3082,8 @@ async function loadMapData(force, cacheOnly) {
         ? "气象接口响应超时，请检查网络后重试；若长期如此，可能是当前网络到接口的链路不稳定。"
         : st === 429
           ? "气象接口暂时限流（同一 IP 请求过于频繁），请稍候 1 分钟后重试。"
-          : "地图数据获取失败（" + (e && e.message ? e.message : "网络异常") + "）。";
-    mapShowError(head + (fatal ? "额度会在次日重置，之后即可恢复。" : ""), !fatal);
+          : i18n("地图数据获取失败（{m}）。", { m: (e && e.message ? e.message : i18n("网络异常")) });
+    mapShowError(head + (fatal ? i18n("额度会在次日重置，之后即可恢复。") : ""), !fatal);
     return;
   }
   /* 结果已过期：丢弃，不写缓存、不画图、不动遮罩（遮罩归最新一次请求管） */
@@ -3110,14 +3112,14 @@ const avgv = (a, b) => (isNum(a) && isNum(b)) ? (a + b) / 2 : (isNum(a) ? a : (i
    与"各模型独立结果"完全同源：同一次取数里三套模型都已经算好，切换模型只重绘、不重新请求。
    多模型综合＝ GFS / ECMWF / 光追 的空缺剔除后按 W_ENS 权重做加权几何平均（与单点结论同口径）。 */
 const MAP_MODELS = [
-  { k: "ens", name: "多模型综合", desc: "GFS / ECMWF / 光追 加权几何平均" },
+  { k: "ens", name: "多模型综合", desc: "GFS / ECMWF / 光追 加权几何平均" },  // desc 展示时过 i18n
   { k: "gfs", name: "GFS", desc: "NOAA 全球模式 · 云属/湿度统计评分" },
   { k: "ec", name: "ECMWF-IFS", desc: "欧洲中心全球模式 · 云属/湿度统计评分" },
   { k: "rt", name: "光追算法", desc: "纯物理：多波长光路积分 + CIE 色度" }
 ];
 function modelName(k) {
   const m = MAP_MODELS.find(x => x.k === k);
-  return m ? m.name : "多模型综合";
+  return i18n(m ? m.name : "多模型综合");
 }
 /* 某点在指定模型下的出现概率 / 观赏质量（该模型无结果时返回 null） */
 function modelP(o, mk) { return (o && o.p) ? (isNum(o.p[mk]) ? o.p[mk] : null) : null; }
@@ -3219,8 +3221,8 @@ function syncModelSel(d) {
   if (sel.dataset.sig !== sig) {
     sel.dataset.sig = sig;
     sel.innerHTML = MAP_MODELS.map((m, i) =>
-      `<option value="${m.k}"${ok[i] ? "" : " disabled"}>模型：${m.k === "ens" ? "多模型综合" : m.name}` +
-      `${ok[i] ? "" : "（本次无数据）"}</option>`).join("");
+      `<option value="${m.k}"${ok[i] ? "" : " disabled"}>${i18n("模型：{v}", { v: i18n(m.k === "ens" ? "多模型综合" : m.name) })}` +
+      `${ok[i] ? "" : i18n("（本次无数据）")}</option>`).join("");
   }
   sel.value = MAP_MODELS.some(m => m.k === cur) ? cur : "ens";
 }
@@ -3232,7 +3234,7 @@ function refreshModelNote(d) {
   if (fb) {
     /* 用户选了某模型，但本期没有它的结果 → 自动回退到综合，必须说清楚 */
     const others = miss.filter(n => n !== modelName(fb));
-    modelNote("bad", `<b>已自动切换为多模型综合</b>：所选模型「${modelName(fb)}」在本次取数中没有可用结果` +
+    modelNote("bad", `<b>${i18n("已自动切换为多模型综合")}</b>：${i18n("所选模型「{v}」在本次取数中没有可用结果", { v: modelName(fb) })}` +
       (d.note ? `（${d.note}）` : "") + "。" +
       (others.length ? `另外 ${others.join("、")} 也没有可用结果。` : "") +
       "多模型综合会自动剔除缺失模型后重新归一。可点「刷新地图」重试，或改选其它模型。");
@@ -3246,7 +3248,7 @@ function refreshModelNote(d) {
   if (mk !== "ens") {
     const n = modelCount(d, mk), tot = d.pts.length;
     if (n < tot) {
-      modelNote("warn", `当前模型（${modelName(mk)}）有 ${n}/${tot} 个点算出结果，色面按这些点插值。`);
+      modelNote("warn", i18n("当前模型（{v}）有 {n}/{t} 个点算出结果，色面按这些点插值。", { v: modelName(mk), n: n, t: tot }));
       return;
     }
   }
@@ -3365,18 +3367,18 @@ function updateLegend(R, mode, mk) {
   if (tick) tick.innerHTML = [0, 20, 40, 60, 80, 100]
     .map(v => `<span>${Math.round(lo + (hi - lo) * v / 100)}</span>`).join("");
   const dim = State.mapDim || "mix";
-  const dimTxt = dim === "p" ? "出现概率 P" : dim === "q" ? "观赏质量分 Q"
-    : dim === "dv" ? "模型分歧 ΔI" : "综合指数 I";
+  const dimTxt = dim === "p" ? i18n("出现概率 P") : dim === "q" ? i18n("观赏质量分 Q")
+    : dim === "dv" ? i18n("模型分歧 ΔI") : i18n("综合指数 I");
   /* 等级行：质量档直接由 QUALITY_BANDS 推导（区间文案 + 代表色位置），
      不再手抄一份阈值 —— 等级边界只有一处定义。概率档是 P 自己的区间，与质量等级无关。
      分歧档的边界是"分数"尺度（ΔI 就是综合指数的极差），所以也按分数区间写，
      但语义相反：越红＝模型之间越不一致。 */
   const lv = dim === "p"
-    ? [[90, "概率高（≥80%）"], [72, "概率较高（65–79%）"], [55, "概率一般（45–64%）"], [30, "概率低（&lt;45%）"]]
+    ? [[90, i18n("概率高（≥80%）")], [72, i18n("概率较高（65–79%）")], [55, i18n("概率一般（45–64%）")], [30, i18n("概率低（&lt;45%）")]]
     : dim === "dv"
-      ? [[88, "分歧大（ΔI ≥ 30 分）"], [70, "分歧较大（20–29 分）"],
-         [52, "分歧中等（10–19 分）"], [26, "分歧小（&lt;10 分）"]]
-      : QUALITY_BANDS.map(b => [bandMid(b), b.key + "（" + bandRangeHtml(b, "分") + "）"]);
+      ? [[88, i18n("分歧大（ΔI ≥ 30 分）")], [70, i18n("分歧较大（20–29 分）")],
+         [52, i18n("分歧中等（10–19 分）")], [26, i18n("分歧小（&lt;10 分）")]]
+      : QUALITY_BANDS.map(b => [bandMid(b), i18n(b.key) + "（" + bandRangeHtml(b, i18n("分")) + "）"]);
   $("#lgRows").innerHTML = lv.map(x =>
     `<span><i class="chipc" style="background:${bandColor(mode, 100 * scaleT(x[0], lo, hi))}"></i>${x[1]}</span>`).join("");
   /* 色阶与算法模型无关（白＝低、红＝高），变的是各模型的数值本身；
@@ -3550,15 +3552,15 @@ function showMapTip(ll, isClick) {
   /* 与地图同源：用当日该模型值域拉伸后的位置取色，色块颜色与地图上该处一致 */
   const R = mapRangeOf(d, dim, mk);
   const c = bandColor(d.period, 100 * scaleT(v, R.lo, R.hi));
-  const mkTxt = dim === "dv" ? "模型分歧" : (mk === "ens" ? "多模型综合" : modelName(mk));
+  const mkTxt = dim === "dv" ? i18n("模型分歧") : (mk === "ens" ? i18n("多模型综合") : modelName(mk));
   /* 首行＝当前着色依据对应的那个量，避免与下方参考行重复 */
   const mainRow = dim === "p"
-    ? `<div class="t3"><span>出现概率</span><b>${Math.round(isNum(P) ? P : v)}%</b></div>`
+    ? `<div class="t3"><span>${i18n("出现概率")}</span><b>${Math.round(isNum(P) ? P : v)}%</b></div>`
     : dim === "q"
-      ? `<div class="t3"><span>观赏质量</span><b>${Math.round(isNum(Q) ? Q : v)} 分 · ${grade}</b></div>`
+      ? `<div class="t3"><span>${i18n("观赏质量")}</span><b>${Math.round(isNum(Q) ? Q : v)} ${i18n("分")} · ${i18n(grade)}</b></div>`
       : dim === "dv"
-        ? `<div class="t3"><span>模型分歧 ΔI</span><b>${Math.round(v)} 分</b></div>`
-        : `<div class="t3"><span>综合指数</span><b>${Math.round(v)}</b></div>`;
+        ? `<div class="t3"><span>${i18n("模型分歧 ΔI")}</span><b>${Math.round(v)} ${i18n("分")}</b></div>`
+        : `<div class="t3"><span>${i18n("综合指数")}</span><b>${Math.round(v)}</b></div>`;
   let extra = "";
   if (dim === "dv") {
     /* 分歧只有一个数字，光看它无法判断"是谁跟谁不一致"。
@@ -3568,12 +3570,12 @@ function showMapTip(ll, isClick) {
       const Pk = modelP(o, k), Qk = modelQ(o, k);
       extra += isNum(Pk) && isNum(Qk)
         ? `<div class="t3"><span>${modelName(k)}</span><b>${Math.round(mixedIndex(Pk, Qk))}</b></div>`
-        : `<div class="t3"><span>${modelName(k)}</span><b class="cf-lo">本次无数据</b></div>`;
+        : `<div class="t3"><span>${modelName(k)}</span><b class="cf-lo">${i18n("本次无数据")}</b></div>`;
     }
-    if (isNum(Q)) extra += `<div class="t3"><span>综合观赏质量</span><b>${Math.round(Q)} 分 · ${grade}</b></div>`;
+    if (isNum(Q)) extra += `<div class="t3"><span>${i18n("综合观赏质量")}</span><b>${Math.round(Q)} ${i18n("分")} · ${i18n(grade)}</b></div>`;
   } else {
-    if (dim !== "p" && isNum(P)) extra += `<div class="t3"><span>出现概率</span><b>${Math.round(P)}%</b></div>`;
-    if (dim !== "q" && isNum(Q)) extra += `<div class="t3"><span>观赏质量</span><b>${Math.round(Q)} 分 · ${grade}</b></div>`;
+    if (dim !== "p" && isNum(P)) extra += `<div class="t3"><span>${i18n("出现概率")}</span><b>${Math.round(P)}%</b></div>`;
+    if (dim !== "q" && isNum(Q)) extra += `<div class="t3"><span>${i18n("观赏质量")}</span><b>${Math.round(Q)} ${i18n("分")} · ${i18n(grade)}</b></div>`;
   }
   /* M1 · 方向与距离。此前 8 条里没有一条说得出"这一点在查询点的哪个方向、多远"，
      而提示卡又会写"云边界 425 km" —— 不说往哪边量，这个数字读不出意义
@@ -3584,8 +3586,8 @@ function showMapTip(ll, isClick) {
   const brg = (isNum(dq) && dq >= 0.5) ? bearingOf(State.lat, State.lon, ll.lat, ll.lon) : null;
   const azEv = azimEventOf(d.dateS, d.period, State.lat, State.lon);
   const dirRow = brg === null
-    ? `<div class="t3"><span>距离 / 方位</span><b>查询点本身</b></div>`
-    : `<div class="t3"><span>距离 / 方位</span><b>${Math.round(dq)} km · ${dirWordOf(brg)}</b></div>`;
+    ? `<div class="t3"><span>${i18n("距离 / 方位")}</span><b>${i18n("查询点本身")}</b></div>`
+    : `<div class="t3"><span>${i18n("距离 / 方位")}</span><b>${Math.round(dq)} km · ${dirWordOf(brg)}</b></div>`;
   /* 样带长度直接引用 MAP_AZ_KM，不写死 400 —— 它是"云边界距离"这把尺子的量程，
      与 TRANSECT 末点同源，两处一旦不同口径就会给出不同的云边界（见硬约束 24）。 */
   const azRow = isNum(azEv)
@@ -3724,10 +3726,12 @@ function renderRank(fld) {
      如果不换文案，会读成"多模型综合最高的地点"，与榜单里的数字对不上。 */
   const dv = dim === "dv";
   const rt = $("#rankTitle");
-  if (rt) rt.textContent = dv ? "模型分歧最大的地区" : "当日数值最高的地区";
-  if (sc) sc.textContent = (dv ? "模型分歧 ΔI" : (mk === "ens" ? "多模型综合" : modelName(mk)))
-    + " · " + shown.length + " 点可见"
-    + (shown.length < all.length ? "（另有 " + (all.length - shown.length) + " 点不在显示范围内）" : "");
+  if (rt) rt.textContent = dv ? i18n("模型分歧最大的地区") : i18n("当日数值最高的地区");
+  if (sc) sc.textContent = (dv ? i18n("模型分歧 ΔI") : (mk === "ens" ? i18n("多模型综合") : modelName(mk)))
+    + " · " + i18n("{n} 点可见", { n: shown.length })
+    + (shown.length < all.length ? i18n("（另有 {n} 点不在显示范围内）", { n: all.length - shown.length }) : "");
+  const rtop = $("#rankTop");
+  if (rtop) rtop.textContent = i18n("（前 {n}）", { n: 8 });
   const host = $("#rank");
   if (!list.length) {
     /* 分歧维度下"没有可用结果"的含义完全不同：不是"这套模型没算出来"，
@@ -3773,6 +3777,39 @@ function renderRank(fld) {
       <span class="grade g-${o.grade}" style="transform:scale(.92)">${o.grade}</span></div>`;
   }).join("");
   MapMod.rankSig = sig;
+}
+
+/* =========================================================================
+   语言切换后的重渲染入口（i18n）
+   -------------------------------------------------------------------------
+   `setLang()` 只负责换 LANG 与铺静态 DOM；**动态区域要重跑一遍**，
+   否则会出现"一半英文一半中文"的界面 —— 多语言最典型的坏法之一。
+   本函数是所有"由 JS 生成的文案"的收口处：
+     · 由 JS 建的控件内容（日期下拉、语言分段、趋势标题按钮、顶栏徽标）
+     · 结果卡 / 趋势 / 图例 / 榜单（有数据时重渲，没数据时是引导文案）
+     · 地图卡里的引导与状态文案
+   `setLang()` 用 `typeof relang === "function"` 探测后调用，所以本函数
+   定义在最后一个片段里也不会出现"没加载到就抛错"。
+   ========================================================================= */
+function relang() {
+  applyI18nDom(document);
+  try {
+    if (typeof refreshDateSelect === "function") refreshDateSelect();
+    if (typeof refreshTrendLabels === "function") refreshTrendLabels();
+    if (typeof refreshBadge === "function") refreshBadge();
+    if (typeof refreshLocHint === "function") refreshLocHint();
+    if (typeof markCachedDates === "function") markCachedDates();
+    /* 结果卡与趋势：没算过时这两块本来就是引导文案，renderTrend 会自己处理 */
+    if (typeof State !== "undefined" && State.result && typeof renderAll === "function") renderAll(State.result);
+    if (typeof renderTrend === "function") renderTrend();
+    if (typeof updateLegend === "function") updateLegend();
+    /* 地图侧：引导/错误文案 + 模型下拉 + 榜单口径。
+       mapShowGuide 与 applyModelOptions 都是幂等的；错误态文案不追（罕见路径）。 */
+    if (typeof mapShowGuide === "function" && MapMod.ok && !mapSet()) mapShowGuide();
+    if (typeof applyModelOptions === "function") applyModelOptions();
+    if (typeof renderRank === "function" && mapSet()) renderRank(MapMod.field);
+    if (typeof hideMapTip === "function") hideMapTip();
+  } catch (e) { softWarn("语言切换后的重渲染失败", e); }
 }
 
 /* ---- 启动 ---- */

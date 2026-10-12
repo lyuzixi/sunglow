@@ -2,7 +2,7 @@
    =========================================================================
    为什么需要这个探针：
      单文件产物里有 3 个内联 <script>，其中
-       块 0 = _p2.js + _p3.js + _p4.js + _p5.js + _p5b.js
+       块 0 = _pi18n.js + _p2.js + _p3.js + _p4.js + _p5.js + _p5b.js
        块 1 = _TMapSecurityConfig（124 字符，无声明）
        块 2 = _p6.js
      三个块**共享同一个全局作用域**，于是：
@@ -33,7 +33,7 @@ const BASE = path.resolve(__dirname, "..");
 
 /* 块划分必须与 assemble.py 的 PARTS / 注入方式保持一致。
    改 assemble.py 的 PARTS 顺序或块归属时，这里要同步改。 */
-const BLOCK0_FILES = ["_p2.js", "_p3.js", "_p4.js", "_p5.js", "_p5b.js"];
+const BLOCK0_FILES = ["_pi18n.js", "_p2.js", "_p3.js", "_p4.js", "_p5.js", "_p5b.js"];
 const BLOCK2_FILES = ["_p6.js"];
 
 /* 顶层声明。项目约定顶格写（列 0），块内嵌套声明有缩进，因此 ^ 锚定足够。

@@ -160,14 +160,14 @@ td code{background:transparent;padding:0}
       探针输出、<code>docfacts</code> 事实表），不是模板化的清单。所有数字都可在文末「核对方式」里复现。
     </p>
     <div class="facts">
-      <div class="fact"><b>7,182</b><span>源码总行数（6 个 JS 片段 + 2 个模板）</span></div>
-      <div class="fact"><b>475 KB</b><span>主产物 index.html（单文件、自包含）</span></div>
+      <div class="fact"><b>8,034</b><span>源码总行数（含 i18n 词典 742 行）</span></div>
+      <div class="fact"><b>522 KB</b><span>主产物 index.html（单文件、自包含）</span></div>
       <div class="fact"><b>52.7%</b><span>_p6.js 地图模块占源码比重</span></div>
-      <div class="fact"><b>18 / 298</b><span>一键序列项数 / 已登记具名断言</span></div>
+      <div class="fact"><b>19 / 321</b><span>一键序列项数 / 已登记具名断言</span></div>
       <div class="fact"><b>49</b><span>innerHTML 动态插值处（已收口 5 处热点）</span></div>
       <div class="fact"><b>4</b><span>外部依赖域（气象 2 / 省界 1 / 地图 1）</span></div>
       <div class="fact"><b>65</b><span>首屏加权调用（地图 171 需显式触发）</span></div>
-      <div class="fact"><b>1</b><span>git 仓库（S0 已落地，替代手工快照）</span></div>
+      <div class="fact"><b>3</b><span>界面语言（简体 / 繁體 / English）</span></div>
     </div>
     <div class="warn">
       <b>三条最该先看的结论：</b>
@@ -184,6 +184,10 @@ td code{background:transparent;padding:0}
       5 个热点转义、URL 地名走白名单（<code>_p5.js</code>）；
       ③ 新增 <code>_check/xssprobe.js</code>（<b>18 条断言</b>，含"39 字符真实载荷走分享链接路径"的端到端），
       一键序列 17 → <b>18 项</b>；④ 产物 472,141 → <b>475,019 字节</b>（+2,878），全文 18 项全绿。
+      <b>更新 · 2026-10-12 18:40（多语言落地）：</b>
+      新增 <code>_pi18n.js</code>（742 行，含中英·中繁两份词典共 300 条）与 <code>i18nprobe.js</code>
+      （<b>23 条断言</b>），一键序列 18 → <b>19 项</b>；界面层（顶栏 / 查询控件 / 结果卡 / 地图 UI /
+      错误与额度文案 / 趋势 / 分享卡 canvas / 404 页）已三语，产物 475 → <b>522 KB</b>。
       下表与「事实面板」已按最新代码更新，其余章节的结论不受影响。
     </div>
   </div>
@@ -494,7 +498,7 @@ td code{background:transparent;padding:0}
       </tr>
       <tr>
         <td><span class="tag t-p3">P3</span></td>
-        <td><b>多语言</b>：把 <code>_p5b</code> / <code>_p6</code> 的模板串抽成 <code>t(key)</code> 词典，先中/英两档</td>
+        <td><b>多语言</b>：<span class="tag t-ok">界面层已落地</span>把 <code>_p5b</code> / <code>_p6</code> 的模板串抽成 <code>i18n(中文原文)</code> 词典，三档中/英/繁</td>
         <td><span class="tag t-file">_p5b.js</span> <span class="tag t-file">_p6.js</span> <span class="tag t-file">tpl/</span></td>
         <td>1–2 周</td>
         <td>霞光摄影是跨国爱好；<b>触发条件：出现非中文访客</b>。注意会与分享卡的画布绘制耦合</td>
