@@ -71,6 +71,10 @@
 45. **「藏提示卡」统一走 `hideMapTip()`**（7 处散落的 `remove("on")` 已收口）。只藏卡片会留三个不一致：`pinLL` 残留 / 悬停帧未取消 / **`.dock` 残留（最严重）** —— 那块 326×302 的**隐形热区仍扣在地图上**（拖不动 + 双指触发整页缩放），这是"关掉卡片后地图再也滑不动"的真根因。它一次做四件事：`remove("on")`+`remove("dock")`+`pinLL=null`+`cancelHover()`。**判据取端到端**：关闭后 `elementFromPoint(原卡片中心)` 必须落回 `#map`（探针已断）。
 46. **`overflow-x:auto` 容器必须显式 `min-width:0`**（`.t-scroll`），否则把页面 `scrollWidth` 顶出去 ⇒ 移动端放大布局视口、**整页被缩小**。姊妹坑：**`.top-tx` 也必须 `min-width:0`**（h1 是 nowrap，缺它把 badge 顶出容器 61 px＝390 视口 scrollWidth 451 的唯一来源）。**只写 min-width:0 别写 flex:1**。
     **探针判越界的参照必须用 `documentElement.clientWidth`，绝不能用 `innerWidth`**（溢出会把布局视口等比放大 390→451，用 innerWidth 当参照**永远抓不到自己制造的溢出**）。
+46b. **产物现在有 4 个内联脚本块**（0＝`<head>` 主题引导 / 1＝业务 / 2＝地图代理配置 / 3＝`_p6.js`）。
+    **取块一律按内容找（含 `function jget` 的那一块），不许按序号** —— `timeoutprobe` / `run_self` / `aodscale`
+    原来都是 `findall(tpl)[0]`，加第 4 块后取到引导脚本（用 document）⇒ `run_self` **静默假绿**
+    （脚本崩了 stdout 为空，而判据是"数 FAIL 行" ⇒ 数成 0）。**凡"数 FAIL 行"的判据都要同时看退出码。**
 47. **偏好持久化：「应用顺序」就是正确性**（键 `sunsetbot.pref.v1`，单键 + 白名单 + 先读后合并）。`applyPrefs()` 必须在 `initUI` 里任何"控件初值/派生状态"赋值**之前**调用（否则"控件写着 A、State 是 B"的静默错位）。依赖地图 DOM 的两项走 `applyMapLayerPrefs()`，挂 `initMap` 末尾且**必须早于** `autoLoadMapFromCache()`。坏值一律降级不抛错。**刻意不存**：位置与日期（URL 已承载）、`mapPeriod`（派生值）。本条**作废**了旧结论"图层开关一律不持久化"。
 48. **趋势缓存只存「算好的 rows」，绝不存原始响应**（原始 ≈ **5 MB** 会撑爆配额使**所有**缓存静默失效；rows ≈ **1.9 KB**）。动权重/阈值**必须升 `TREND_CACHE_PREFIX`**；上限 3 条。入闸门位置与 B14 同构（`cacheOnly` 的 `return false` 在缓存快路径后、网络调用前）。**三键族共用 `mapCacheSweep`，「豁免当前地点」恰好相反**：地图 `true` / 单点 `false` / 趋势 `false`。
 49. **`docfacts` 三纪律**：① 只校验**可机读事实**；② **失配必须响**（找不到声明报 STALE，**绝不静默通过**）；③ **只断「等于」**（约数/范围进排除清单）。事实源＝文件系统 + 源码正则 + `_check/.facts.json`（**含探针源码 sha1**，源码改了没重跑 ⇒ STALE）⇒ **改探针后先跑 `all.py` 再跑 docfacts**。

@@ -78,7 +78,7 @@ function loadDicts() {
    **404 页不在这张表里** —— 它是独立产物、自带最小词典，由 check404Dict() 单独核对。 */
 /* 出现在 i18n(...) 参数里、但**不是翻译键**的字面量：
    它们是判据（`i18n(period === "am" ? … : …)`），扫到了也不能当键。 */
-const NOT_KEYS = ["am", "pm", "ens", "dv", ""];
+const NOT_KEYS = ["am", "pm", "ens", "dv", "auto", "light", "dark", ""];
 
 function usedKeys() {
   const keys = new Set();

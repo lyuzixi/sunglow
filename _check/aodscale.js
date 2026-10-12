@@ -22,7 +22,11 @@ const path = require("path");
 
 const ROOT = path.resolve(__dirname, "..");
 const tpl = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
-const b0 = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/.exec(tpl)[1];
+/* **按内容取块，而不是按序号**：产物现在有 4 个内联块，第 0 块是 <head> 里的主题引导脚本（它要用 document，在 Node 里求值必然 ReferenceError）。
+   序号取块在加块时会**静默错位** —— 更坏的是 run_self 那类"拼起来交给 node 跑"的用法：脚本一抛错，stdout 里什么都没有，
+   而判据是"数 FAIL 行"，于是空输出被数成 0 个 FAIL = 假绿。 */
+const BLOCKS = [...tpl.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]);
+const b0 = BLOCKS.find(b => b.indexOf("function jget") >= 0);
 
 const p4 = fs.readFileSync(path.join(ROOT, "_p4.js"), "utf8");
 const mA = /const aeroF = isNum\(aodUp\) \? trap\(aodUp, (\[\[[\s\S]*?\]\])\)/.exec(p4);

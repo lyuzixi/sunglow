@@ -79,6 +79,9 @@ const PREF_STR = {
   units: ["metric", "imperial"],
   mapDim: ["mix", "p", "q", "dv"],
   mapModel: ["ens", "gfs", "ec", "rt"],
+  /* 主题（F8）：三态。与其它枚举同一套白名单 —— 坏值降级为"没有偏好"，
+     下一步 themePref() 自然回落到 auto。 */
+  theme: ["auto", "light", "dark"],
   /* 语言：与其它枚举同一套白名单。坏值/未知码降级为"没有偏好"，
      下一步 detectLang() 自然回落（URL > 偏好 > 浏览器 > 简体）。 */
   lang: ["zh", "zhHant", "en"]
@@ -178,6 +181,90 @@ function refreshLocHint() {
   el.textContent = i18n("当前：{v}", { v: State.name + "（" + State.lat.toFixed(3) + "°, " + State.lon.toFixed(3) + "°）" });
 }
 
+/* =========================================================================
+   深色模式（F8）
+   -------------------------------------------------------------------------
+   三态：跟随系统 / 浅色 / 深色。偏好写进同一个 `sunsetbot.pref.v1`（白名单 theme）。
+
+   **无闪烁**是设计目标：`<head>` 里那段引导脚本在 CSS 解析**之前**就把
+   `data-theme` 设好了，所以刷新时不会先闪一帧浅色。本文件只负责两件事：
+     ① 用户点分段控件时切换并落盘；
+     ② 偏好是"跟随系统"时，响应系统主题变化（matchMedia 的 change）。
+   也就是说：**主题的初值不在这里定**，这里只是"改"。
+
+   与 i18n 的关系：两者都是"渲染前提"，都在 initUI 最前面应用，但互不依赖 ——
+   主题换的是 CSS 令牌，语言换的是文案。语言进 URL（分享链接要带内容语言），
+   **主题刻意不进 URL**：它是设备偏好，别人发的链接不该强制你的界面变黑。
+
+   颜色为什么能只改令牌就行：`<head>` 里那份 `html[data-theme="dark"]` 只重新定义
+   令牌，组件 CSS 一律走令牌（见 :root 那段的说明）。唯一的例外是**写进 DOM 的
+   语义色**（等级徽标、可信度档色、仪表盘弧色）—— 它们是 JS 按主题取值的，
+   所以切主题后要重画一次（rerenderForTheme，定义在 _p6.js）。
+   ========================================================================= */
+const THEMES = ["auto", "light", "dark"];
+const THEME_COLOR = { light: "#f4f6fa", dark: "#11151c" };   // 与模板里两条 meta 的 content 一致
+function themePref() {
+  const p = prefRead();
+  return (p.theme && THEMES.indexOf(p.theme) >= 0) ? p.theme : "auto";
+}
+function systemDark() {
+  return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+}
+/* 注意：这个判断会被**纯函数层**间接用到（gradeColor → 等级色），
+   而 _check/run_self.py 是在 **Node 里**把业务块 eval 出来跑物理断言的
+   （没有 document）。所以这里必须容忍无 DOM 环境 —— 否则整个自测会中途崩掉，
+   而它的判据是"数 FAIL 行"，崩溃不产生 FAIL 行 ⇒ 静默假绿。 */
+function isDarkTheme() {
+  return typeof document !== "undefined" &&
+    document.documentElement.getAttribute("data-theme") === "dark";
+}
+/* 应用主题。返回实际生效的 "dark" / "light"。 */
+function applyTheme(pref) {
+  const k = THEMES.indexOf(pref) >= 0 ? pref : "auto";
+  const dark = k === "dark" || (k === "auto" && systemDark());
+  const eff = dark ? "dark" : "light";
+  const root = document.documentElement;
+  root.setAttribute("data-theme", eff);
+  root.setAttribute("data-theme-pref", k);      // 引脚本也写这一位，两处口径一致
+  /* color-scheme 决定**原生控件**（select / 滚动条 / 日期选择器 / 自动填充）的底色。
+     漏了它，深色页面里会冒出一排惨白的原生下拉与滚动条。 */
+  root.style.colorScheme = eff;
+  /* theme-color（移动端地址栏）：模板里两条 meta 各带 media，
+     这里把与当前主题匹配的那条放行、另一条屏蔽 —— 用 media 而不是改 content，
+     因为"改 content"绕不开 media 的判定，改了也不生效。 */
+  const want = THEME_COLOR[eff];
+  const metas = document.querySelectorAll('meta[name="theme-color"]');
+  for (let i = 0; i < metas.length; i++) {
+    metas[i].setAttribute("media", metas[i].getAttribute("content") === want ? "all" : "not all");
+  }
+  /* 写进 DOM 的语义色要重画（等级徽标 / 可信度档色 / 地图榜单条形的取色基准） */
+  if (typeof rerenderForTheme === "function") {
+    try { rerenderForTheme(); } catch (e) { softWarn("主题切换后的重渲染失败", e); }
+  }
+  return eff;
+}
+function setTheme(pref) {
+  applyTheme(pref);
+  prefWrite({ theme: document.documentElement.getAttribute("data-theme-pref") });
+}
+/* 跟随系统时响应系统切换。只装一次（initUI 里调用）。 */
+function initThemeWatcher() {
+  if (!window.matchMedia) return;
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+  const on = () => { if (themePref() === "auto") applyTheme("auto"); };
+  if (mq.addEventListener) mq.addEventListener("change", on);
+  else if (mq.addListener) mq.addListener(on);   // 老 Safari
+}
+/* 主题分段控件：按钮由代码生成（文案要跟语言走，见 relang()） */
+function refreshThemeSeg() {
+  const seg = $("#themeSeg");
+  if (!seg) return;
+  const cur = themePref();
+  seg.innerHTML = THEMES.map(k =>
+    `<button type="button" data-theme-k="${k}" aria-pressed="${k === cur}">${i18n(k === "auto" ? "跟随系统" : k === "light" ? "浅色" : "深色")}</button>`).join("");
+  setSegActive("#themeSeg", seg.querySelector('button[data-theme-k="' + cur + '"]'));
+}
+
 /* ---------- 初始化界面 ---------- */
 function initUI() {
   /* 语言最先定：它是**所有静态文案的渲染前提**（data-i18n 那批）。
@@ -185,6 +272,11 @@ function initUI() {
      只把 DOM 文案铺好即可（relang() 会做的事此刻无事可做）。
      它与下面的 applyPrefs() 不冲突：这里动的是文案，那边动的是控件值。
      优先级由 detectLang() 决定：URL 参数 > 偏好存储 > 浏览器语言 > 简体。 */
+  /* 主题先于语言：它是 CSS 令牌，越早应用越少无谓的重绘。
+     （<head> 里的引导脚本已经把初值设好了，这里再算一次是为了
+       "偏好读盘失败/被别的路径改过"这类情况下也能对齐。） */
+  applyTheme(themePref());
+  initThemeWatcher();
   setLang(detectLang(), true);
   /* 先读地址栏状态（F4）：分享链接、刷新、后退都靠它把"地区 / 日期 / 时段"带回来。
      必须在下面写默认值之前调用，否则会被默认值覆盖。 */
@@ -292,6 +384,16 @@ function initUI() {
 
   bindSeg("#unitSeg", d => { State.units = d.u; prefWrite({ units: State.units }); });
   bindSeg("#clockSeg", d => { State.hour12 = (d.c === "12"); prefWrite({ hour12: State.hour12 }); });
+
+  /* 主题切换（F8）：与语言控件同一套模式（.unitseg + aria-pressed）。
+     切完只改 CSS 令牌 + 重画语义色，不取数、不重算场。 */
+  refreshThemeSeg();
+  if ($("#themeSeg")) {
+    $$("#themeSeg button").forEach(b => b.addEventListener("click", () => {
+      setSegActive("#themeSeg", b);
+      setTheme(b.getAttribute("data-theme-k"));
+    }));
+  }
 
   /* 语言切换：按钮由 LANGS 生成（模板里不写死，加一种语言不必改 HTML）。
      与其它分段控件同款 —— setSegActive 负责视觉态与 aria-pressed 同步。

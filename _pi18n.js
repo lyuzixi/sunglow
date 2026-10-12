@@ -462,6 +462,10 @@ const I18N_ZH_HANT = {
   "霞光对云的三维分布极为敏感。教程明确指出：短期预报时效不建议超过 36 小时；超过时效或模式间分歧较大时，结论仅作参考，应以临近时刻的卫星云图与实况外推为准。": "霞光對雲的三維分布極為敏感。教程明確指出：短期預報時效不建議超過 36 小時；超過時效或模式間分歧較大時，結論僅供參考，應以臨近時刻的衛星雲圖與實況外推為準。",
   "本程序为科普与辅助决策工具，不构成任何形式的专业气象预报或出行承诺。": "本程式為科普與輔助決策工具，不構成任何形式的專業氣象預報或出行承諾。",
   "霞光预报单文件版 · 全部计算在浏览器本地完成 · 数据经 Open-Meteo / CAMS 实时获取": "霞光預報單檔案版 · 全部計算在瀏覽器本機完成 · 資料經 Open-Meteo / CAMS 即時取得",
+  "主题": "主題",
+  "跟随系统": "跟隨系統",
+  "浅色": "淺色",
+  "深色": "深色",
 };
 
 /* ---- English ---- */
@@ -899,6 +903,10 @@ const I18N_EN = {
   "霞光对云的三维分布极为敏感。教程明确指出：短期预报时效不建议超过 36 小时；超过时效或模式间分歧较大时，结论仅作参考，应以临近时刻的卫星云图与实况外推为准。": "Glow is extremely sensitive to the three-dimensional cloud field. The tutorial is explicit: short-range lead times beyond 36 hours are discouraged, and beyond that — or when models disagree — treat the result as indicative only and rely on recent satellite imagery and observed trends.",
   "本程序为科普与辅助决策工具，不构成任何形式的专业气象预报或出行承诺。": "This app is an educational and decision-support tool; it is not a professional weather forecast and carries no promise about your trip.",
   "霞光预报单文件版 · 全部计算在浏览器本地完成 · 数据经 Open-Meteo / CAMS 实时获取": "Glowcast, single-file edition · everything is computed in your browser · data fetched live from Open-Meteo / CAMS",
+  "主题": "Theme",
+  "跟随系统": "System",
+  "浅色": "Light",
+  "深色": "Dark",
 };
 
 const I18N = { zh: null, zhHant: I18N_ZH_HANT, en: I18N_EN };
@@ -984,8 +992,11 @@ function applyI18nDom(root) {
 function listJoin(arr) { return (arr || []).join(LANG === "en" ? ", " : "、"); }
 
 function confText(cf) {
+  /* 颜色也在这里挑（按主题）—— 四个使用点（结论卡徽标 / 模型卡 / 因素表 / 悬停卡）
+     都走它，所以"深色下用哪套色"只有这一处判断。 */
+  const d = (typeof isDarkTheme === "function" && isDarkTheme() && cf.dark) ? cf.dark : null;
   return {
     lv: i18n(cf.lv), txt: i18n(cf.txt), hint: i18n(cf.hint),
-    color: cf.color, bg: cf.bg, bd: cf.bd, key: cf.key
+    color: d ? d.color : cf.color, bg: d ? d.bg : cf.bg, bd: d ? d.bd : cf.bd, key: cf.key
   };
 }

@@ -7,7 +7,7 @@
    这两类的正确处置完全相反 —— 只钉住其中一类，等于放任另一类被误处置：
    要么把"明天才恢复"当"稍等一分钟"，要么把"稍等一分钟"当"今天别试了"。
 
-   实现说明：把产物里的第 0 个内联脚本块（含 jget 及其依赖）用 new Function 在同一进程里求值后跑断言。
+   实现说明：把产物里**含 jget 的那个**内联脚本块用 new Function 在同一进程里求值后跑断言。
    不另起子进程 —— 在 Windows 上从 node 里再 spawn 同一个 node.exe 会 EBUSY。
    用法: node _check/timeoutprobe.js        （约 16 秒）
 */
@@ -18,7 +18,12 @@ const http = require("http");
 
 const ROOT = path.resolve(__dirname, "..");
 const tpl = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
-const b0 = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/.exec(tpl)[1];
+/* **按内容取块，而不是按序号**：产物现在有 4 个内联块，第 0 块是 <head> 里的主题引导脚本（它要用 document，在 Node 里求值必然 ReferenceError）。
+   序号取块在加块时会**静默错位** —— 更坏的是 run_self 那类"拼起来交给 node 跑"的用法：脚本一抛错，stdout 里什么都没有，
+   而判据是"数 FAIL 行"，于是空输出被数成 0 个 FAIL = 假绿。 */
+const BLOCKS = [...tpl.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]);
+const b0 = BLOCKS.find(b => b.indexOf("function jget") >= 0);
+if (!b0) { console.log("抽不到含 jget 的脚本块"); process.exit(1); }
 
 const TEST = `
 (async function () {

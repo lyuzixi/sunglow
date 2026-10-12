@@ -8,12 +8,32 @@
 <!-- 404 页**必须** noindex：它会被托管平台拿去应答**任意**未知路径（包括爬虫顺着
      外链摸过来的各种拼错地址），放进索引等于给站点造出一批空壳收录。 -->
 <meta name="robots" content="noindex">
-<meta name="color-scheme" content="light">
-<meta name="theme-color" content="#f4f6fa">
+<meta name="color-scheme" content="light dark">
+<!-- 浅/深各一条，由浏览器按当前 color-scheme 选（比 JS 改 meta 更早生效） -->
+<meta name="theme-color" content="#f4f6fa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#11151c" media="(prefers-color-scheme: dark)">
 <!-- 图标两个占位符由 assemble.py 注入，与主页同一枚图标（SVG 给浏览器，
      PNG 给 iOS —— iOS 不支持 SVG 格式的 apple-touch-icon）。 -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%23ffcf6b'/><stop offset='.55' stop-color='%23f4791f'/><stop offset='1' stop-color='%23a8200d'/></linearGradient></defs><rect width='64' height='64' fill='url(%23g)'/><path d='M22 40A18 18 0 0 1 58 40z' fill='%23fff2cc'/></svg>">
 <link rel="apple-touch-icon" sizes="180x180" href="data:image/png;base64,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">
+<script>
+/* 主题引导：**必须在 CSS 解析之前**跑完，否则上次选了深色的用户刷新时会先闪一帧浅色。
+   404 页是独立产物，所以它自带一份（与主页那份逻辑相同、键相同），
+   不依赖任何其它脚本 —— 这一页会被各种奇怪客户端打开，越自包含越好。 */
+(function () {
+  var root = document.documentElement, pref = "auto";
+  try {
+    var raw = localStorage.getItem("sunsetbot.pref.v1");
+    var p = raw ? JSON.parse(raw) : null;
+    if (p && (p.theme === "dark" || p.theme === "light" || p.theme === "auto")) pref = p.theme;
+  } catch (e) { }
+  root.setAttribute("data-theme-pref", pref);
+  var dark = pref === "dark" ||
+    (pref === "auto" && !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches));
+  root.setAttribute("data-theme", dark ? "dark" : "light");
+  root.style.colorScheme = dark ? "dark" : "light";
+})();
+</script>
 <style>
 /* ---- 设计令牌：与 tpl/template.html 的 :root **逐字一致** ----
    404 页会被套在任意路径下返回，但它看上去必须跟主页是同一个站点。
@@ -29,13 +49,84 @@
   --r:14px; --r2:10px;
   --sh:0 1px 2px rgba(16,24,40,.04), 0 6px 20px -8px rgba(16,24,40,.10);
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+
+  /* ---------- 深色模式（F8）追加的令牌 ----------
+     为什么要有这一层：原来全站只有 10 个令牌，**132 处颜色是硬编码的**。
+     硬编码的值没有"名字"，深色模式就只能按选择器一条条覆盖 —— 那样每加一个新组件
+     都可能漏掉。现在把"表面 / 文字 / 边框 / 语义底"收进令牌，深色只需重新定义
+     :root 的这几十个变量，组件 CSS 一行都不用改（**浅色值逐字保持不变**，
+     所以这次令牌化对浅色模式是零视觉变化）。
+     命名规则：--xxx 是颜色本身；--xxxbd 是它的边框色；--xxxbg 是它的浅底。 */
+  --hover:#fafbfd;        /* 次级按钮/条目 hover 底、.kv .it、.tl 的底 */
+  --rowalt:#fcfdff;       /* 表格偶数行 */
+  --hoverline:#d6dbe4;
+  --panel:#f1f4f9;        /* 分段控件（.seg）底 */
+  --sug:#ffffff;          /* 下拉/浮层底（比卡片再"浮"一层） */
+  --topbg:rgba(255,255,255,.86);
+  --tipbg:rgba(255,255,255,.98);
+  --tipbgSolid:#ffffff;   /* 手机端贴底卡片要求不透明 */
+  --loadbg:rgba(255,255,255,.9);
+  --azibg:rgba(255,255,255,.72);
+  --azitx:#6b7486;
+  --spinbd:#f0d8c8;
+  --focusbd:#f0b189; --focusring:#ffe6d6;
+  --accbd:#ffd9c2; --okbd:#bfe7d2; --warnbd:#f2ddba; --badbd:#f5cdc9; --bluebd:#d9e3fb;
+  --track:#eef1f6;        /* 进度条/环形底、图表网格、地图未加载时的底 */
+  --track2:#e3e8f0;       /* 排行榜条形底 */
+  --grad1:#ffeede; --grad2:#e9f0ff;            /* body 那两团径向光 */
+  --grad1t:rgba(255,238,222,0); --grad2t:rgba(233,240,255,0);
+  --ensbd:#f3c9ab; --ensgrad:#fff8f4;          /* 「多模型综合」卡的边框与渐变顶 */
+  --soft:#fbfcfe;         /* 内嵌面板（环境输入条 / 省份下钻） */
+  --tint:#fff8f2; --tint2:#fdf6f1; --tint3:#ffe6d8;   /* 品牌橙的三种淡底 */
+  --hole:rgba(0,0,0,.09); /* 色卡/图例色块的描边 */
+  --gp1:#2f6fd0; --gp2:#e2601f;                /* 曲线图的两条线（蓝/橙） */
+  /* 四路模型标识色（模型卡上的小圆点与数字）：深色下要提亮，
+     否则 #2f6fd0 这类中蓝压在深底上几乎看不见 */
+  --mc-gfs:#2f6fd0; --mc-ec:#0f9c8a; --mc-rt:#c9501a; --mc-ens:#e2601f;
+  /* 四级等级色（.g-优/良/一般/差 与 pill）：**必须成套**，
+     深色下不能只换底色 —— 文字色 #178a52 之类在深底上对比度只有 2.6，读不出来 */
+  --g1bg:#e9f7ef; --g1tx:#12734a; --g1bd:#bfe7d2;
+  --g2bg:#eef6e8; --g2tx:#4c7a16; --g2bd:#d5e9c0;
+  --g3bg:#fdf3e3; --g3tx:#9a5b06; --g3bd:#f2ddba;
+  --g4bg:#fdeceb; --g4tx:#a93226; --g4bd:#f5cdc9;
 }
+
+html[data-theme="dark"]{
+  --bg:#11151c; --card:#171d26; --line:#2b333f; --line2:#222932;
+  --tx:#e7ecf3; --tx2:#aab5c3; --tx3:#919dac;
+  --ok:#5fce97; --okbg:#122a20; --okbd:#1f4735;
+  --warn:#e2b45e; --warnbg:#2a2314; --warnbd:#463a1e;
+  --bad:#f2796a; --badbg:#2d1a18; --badbd:#4d2a26;
+  --acc:#f4791f; --acc2:#ff9d52; --accbg:#2c1e13; --accbd:#4d3520;
+  --blue:#7fadff; --bluebg:#141e33; --bluebd:#28395c;
+  /* 深色下阴影要更重才有层次：浅色那套（4% 黑）在深底上完全看不见 */
+  --sh:0 1px 2px rgba(0,0,0,.5), 0 8px 24px -10px rgba(0,0,0,.65);
+  --hover:#1e242e; --rowalt:#1a2029; --hoverline:#3a4450; --panel:#1c232c; --sug:#1f2630;
+  --topbg:rgba(18,23,30,.9); --tipbg:rgba(23,29,38,.98); --tipbgSolid:#171d26;
+  --loadbg:rgba(20,26,34,.92); --azibg:rgba(20,25,33,.72); --azitx:#a9b4c2;
+  --spinbd:#3a2a20;
+  --focusbd:#a9663a; --focusring:#4a2f1e;
+  --track:#232b35; --track2:#2b333f;
+  /* 那两团径向光在深色下改成"暖橙 + 冷蓝"的低亮度版本，保留品牌感但不刺眼 */
+  --grad1:#231708; --grad2:#0f1a2b;
+  --grad1t:rgba(35,23,8,0); --grad2t:rgba(15,26,43,0);
+  --ensbd:#5a3f2a; --ensgrad:#241d19;
+  --soft:#1b2129; --tint:#231d18; --tint2:#221c17; --tint3:#2a2018;
+  --hole:rgba(255,255,255,.10);
+  --gp1:#6f9dea; --gp2:#f4791f;
+  --mc-gfs:#6f9dea; --mc-ec:#3fc3b0; --mc-rt:#e8783a; --mc-ens:#f4791f;
+  --g1bg:#122a20; --g1tx:#5fce97; --g1bd:#1f4735;
+  --g2bg:#1c2a17; --g2tx:#9ac765; --g2bd:#2f4526;
+  --g3bg:#2a2314; --g3tx:#e2b45e; --g3bd:#463a1e;
+  --g4bg:#2d1a18; --g4tx:#f2796a; --g4bd:#4d2a26;
+}
+
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
 body{
   background:
-    radial-gradient(1200px 380px at 12% -8%, #ffeede 0%, rgba(255,238,222,0) 62%),
-    radial-gradient(1000px 340px at 92% -6%, #e9f0ff 0%, rgba(233,240,255,0) 60%),
+    radial-gradient(1200px 380px at 12% -8%, var(--grad1) 0%, var(--grad1t) 62%),
+    radial-gradient(1000px 340px at 92% -6%, var(--grad2) 0%, var(--grad2t) 60%),
     var(--bg);
   color:var(--tx);
   font:15px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
@@ -48,7 +139,7 @@ a{color:var(--blue)}
 
 /* ---------- 顶部（与主页同一段，逐字复用） ---------- */
 .top{position:sticky;top:0;z-index:60;backdrop-filter:saturate(1.4) blur(10px);
-  background:rgba(255,255,255,.86);border-bottom:1px solid var(--line)}
+  background:var(--topbg);border-bottom:1px solid var(--line)}
 .top-in{max-width:1560px;margin:0 auto;padding:11px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .logo{width:34px;height:34px;border-radius:11px;flex:0 0 auto;
   background:linear-gradient(150deg,#ffd08a,#f08a3c 46%,#c9501a);box-shadow:0 4px 12px -4px rgba(201,80,26,.55)}
@@ -58,7 +149,7 @@ a{color:var(--blue)}
    整行标题宽，缺它标题列不许收缩，会把 badge 顶出容器右缘 → 页面 scrollWidth 变大。 */
 .top-tx{min-width:0}
 .top .spacer{flex:1 1 auto}
-.badge{font-size:11.5px;padding:4px 9px;border-radius:999px;background:var(--accbg);color:var(--acc2);border:1px solid #ffd9c2;white-space:nowrap}
+.badge{font-size:11.5px;padding:4px 9px;border-radius:999px;background:var(--accbg);color:var(--acc2);border:1px solid var(--accbd);white-space:nowrap}
 
 /* ---------- 通用卡片（同主页 .card） ---------- */
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px}
@@ -82,9 +173,9 @@ a{color:var(--blue)}
 .acts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:20px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
   min-height:42px;padding:10px 18px;border-radius:var(--r2);border:1px solid var(--line);
-  background:#fff;color:var(--tx);font-weight:600;font-size:15px;text-decoration:none;
+  background:var(--card);color:var(--tx);font-weight:600;font-size:15px;text-decoration:none;
   transition:.15s;cursor:pointer;font-family:inherit}
-.btn:hover{border-color:#d6dbe4;background:#fafbfd}
+.btn:hover{border-color:var(--hoverline);background:var(--hover)}
 /* 主按钮白字压在 --acc2 上 ≈ 5.06（≥4.5）；压在 --acc 上只有 ≈3.4，不够。 */
 .btn.pri{background:var(--acc2);border-color:var(--acc2);color:#fff}
 .btn.pri:hover{background:#a63f12;border-color:#a63f12;color:#fff}
@@ -93,11 +184,11 @@ a{color:var(--blue)}
 [hidden]{display:none!important}
 .nf-foot{margin:16px 0 0}
 /* 语言切换：与主页同款分段控件（这里自带最小实现，不共用主页的 CSS 类） */
-.nf-lang{display:flex;gap:6px;justify-content:center;margin-top:16px;background:#f1f4f9;
+.nf-lang{display:flex;gap:6px;justify-content:center;margin-top:16px;background:var(--panel);
   border:1px solid var(--line);padding:4px;border-radius:12px;width:max-content;margin-left:auto;margin-right:auto}
 .nf-lang button{border:0;background:transparent;padding:6px 11px;border-radius:8px;font-size:13px;
   color:var(--tx2);cursor:pointer;font-family:inherit}
-.nf-lang button.on{background:#fff;color:var(--acc2);box-shadow:0 2px 8px -3px rgba(16,24,40,.22)}
+.nf-lang button.on{background:var(--sug);color:var(--acc2);box-shadow:0 2px 8px -3px rgba(16,24,40,.22)}
 .nf-lang button:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
 
 /* ---------- 手机端（断点与主页同为 760px，三处之一） ----------

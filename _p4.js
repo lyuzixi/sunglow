@@ -459,11 +459,15 @@ const W_ENS = { gfs: 0.30, ec: 0.34, rt: 0.36 };
    min 是**唯一**的落档边界（与改造前的 if/else 链逐点等价）；max 只用于区间文案。
    注意分数保留一位小数，所以 79.5 属于「良」而不是「优」—— 与旧实现完全一致，
    区间文案也只承诺整数分。 */
+/* 等级色：`dark` 是深色模式的变体。
+   为什么不能共用一套：这些色既做**文字**（等级徽章的 color）又做**细线**
+   （仪表盘弧、条形），浅色那套（#178a52 等）压在深底上对比度只有 ~2.6，读不出来。
+   取值口径与 CSS 里的 --g1tx..--g4tx 保持一致（同一档位、同一个色）。 */
 const QUALITY_BANDS = [
-  { key: "优", min: 80, max: 100, color: "#178a52" },
-  { key: "良", min: 65, max: 79, color: "#5f9a1b" },
-  { key: "一般", min: 45, max: 64, color: "#c07a10" },
-  { key: "差", min: 0, max: 44, color: "#c0392b" }
+  { key: "优", min: 80, max: 100, color: "#178a52", dark: "#5fce97" },
+  { key: "良", min: 65, max: 79, color: "#5f9a1b", dark: "#9ac765" },
+  { key: "一般", min: 45, max: 64, color: "#c07a10", dark: "#e2b45e" },
+  { key: "差", min: 0, max: 44, color: "#c0392b", dark: "#f2796a" }
 ];
 const QUALITY_LABEL = { "优": "优秀", "良": "良好", "一般": "一般", "差": "较差" };
 function gradeOf(q) {
@@ -473,7 +477,10 @@ function gradeOf(q) {
 }
 function gradeColor(g) {
   const b = QUALITY_BANDS.find(x => x.key === g);
-  return b ? b.color : "#8892a0";
+  if (!b) return "#8892a0";
+  /* 主题相关取色：这是**唯一入口**（仪表盘弧、等级徽章、分享卡、地图色阶都用它），
+     所以深色变体只在这里挑一次，别在调用点各判一次主题。 */
+  return (isDarkTheme() && b.dark) ? b.dark : b.color;
 }
 /* ---- 模式一致性（可信度）档位：**全应用唯一来源** ----
    阈值 18 / 35 不是新造的 —— 它们此前已经硬写在结论卡的附注文案里，只是没有名字。
@@ -493,10 +500,12 @@ function gradeColor(g) {
    "可信度 较高 / 距最近采样点 11 km，插值可信 / undefined"，分歧提示的档位也全都
    fallback 成了 warn。是 `cdp.js` 新增的徽标断言把它抓出来的。
    **凡是在 `_p4/_p5/_p5b` 里新增的全局函数，先 grep 一遍 `_p6.js` 再命名。** */
+/* 可信度的三档配色：同样成套给深色变体（文字/底/边一起换）。
+   注意这里的阈值（18 / 35）仍然**只此一处**，深色变体只是颜色。 */
 const ENS_CONF_BANDS = [
-  { key: "hi", max: 18, lv: "高", color: "#178a52", bg: "#e9f7ef", bd: "#bfe7d2", txt: "三套算法结论接近", hint: "可信度较高，可直接据此安排。" },
-  { key: "mid", max: 35, lv: "中", color: "#c07a10", bg: "#fdf3e3", bd: "#f2ddba", txt: "三套算法存在一定分歧", hint: "分歧在可接受范围内，建议结合临近云图复核。" },
-  { key: "lo", max: Infinity, lv: "低", color: "#c0392b", bg: "#fdeceb", bd: "#f5cdc9", txt: "三套算法分歧较大", hint: "请谨慎采信，临近日再确认一次。" }
+  { key: "hi", max: 18, lv: "高", color: "#178a52", bg: "#e9f7ef", bd: "#bfe7d2", dark: { color: "#5fce97", bg: "#122a20", bd: "#1f4735" }, txt: "三套算法结论接近", hint: "可信度较高，可直接据此安排。" },
+  { key: "mid", max: 35, lv: "中", color: "#c07a10", bg: "#fdf3e3", bd: "#f2ddba", dark: { color: "#e2b45e", bg: "#2a2314", bd: "#463a1e" }, txt: "三套算法存在一定分歧", hint: "分歧在可接受范围内，建议结合临近云图复核。" },
+  { key: "lo", max: Infinity, lv: "低", color: "#c0392b", bg: "#fdeceb", bd: "#f5cdc9", dark: { color: "#f2796a", bg: "#2d1a18", bd: "#4d2a26" }, txt: "三套算法分歧较大", hint: "请谨慎采信，临近日再确认一次。" }
 ];
 /* 取不到分歧（不足两套算法有值）时给「中」—— 既不假装可信，也不无端恐吓 */
 function ensConfOf(dv) {

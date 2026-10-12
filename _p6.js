@@ -1208,14 +1208,14 @@ function drawAzimuthLayer() {
   for (const p of paths) {
     const t = P(destPoint(State.lat, State.lon, az, p.R).lat, destPoint(State.lat, State.lon, az, p.R).lon);
     if (!t) continue;
-    inner += `<text x="${Math.round(t.x + 6)}" y="${Math.round(t.y - 4)}" fill="#6b7486"` +
+    inner += `<text x="${Math.round(t.x + 6)}" y="${Math.round(t.y - 4)}" style="fill:var(--azitx)"` +
       ` font-size="10.5" font-family="ui-monospace,Menlo,Consolas,monospace">${p.R} km</text>`;
   }
   if (tip) {
     /* 方位词要按**该时段**取：朝霞看东、晚霞看西，同一个地点两条线差 180° 左右。
        不写这两个字，用户很容易忘了自己看的是朝还是晚。 */
     const hd = (per === "am" ? "朝霞方位 " : "晚霞方位 ") + dirWordOf(az) + " " + Math.round(az) + "°";
-    inner += `<text x="${Math.round(tip.x + 8)}" y="${Math.round(tip.y + 14)}" fill="#8a5306"` +
+    inner += `<text x="${Math.round(tip.x + 8)}" y="${Math.round(tip.y + 14)}" style="fill:var(--warn)"` +
       ` font-size="11" font-weight="700">${hd}</text>`;
   }
   svg.innerHTML = inner;
@@ -3747,8 +3747,23 @@ function renderRank(fld) {
    `setLang()` 用 `typeof relang === "function"` 探测后调用，所以本函数
    定义在最后一个片段里也不会出现"没加载到就抛错"。
    ========================================================================= */
+/* 主题切换后的重画入口（F8）：
+   CSS 令牌换了之后，**凡是把颜色写进 DOM / canvas 的地方都要重来一遍** ——
+   等级徽标与可信度档色是按主题取值的（gradeColor / confText），
+   仪表盘弧、结论卡、地图榜单条形、图例行都用它们。纯 CSS 的组件不用管（令牌自动生效）。 */
+function rerenderForTheme() {
+  if (typeof State !== "undefined" && State.result && typeof renderAll === "function") renderAll(State.result);
+  if (typeof renderTrend === "function") renderTrend();
+  if (typeof updateLegend === "function") updateLegend();
+  if (typeof renderRank === "function" && mapSet()) renderRank(MapMod.field);
+  if (typeof hideMapTip === "function") hideMapTip();
+  if (typeof refreshThemeSeg === "function") refreshThemeSeg();
+}
+
 function relang() {
   applyI18nDom(document);
+  /* 主题分段控件的按钮文案是翻译过的，切语言要重建（含 aria-pressed 同步） */
+  if (typeof refreshThemeSeg === "function") refreshThemeSeg();
   try {
     if (typeof refreshDateSelect === "function") refreshDateSelect();
     if (typeof refreshTrendLabels === "function") refreshTrendLabels();

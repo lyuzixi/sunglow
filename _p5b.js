@@ -100,7 +100,7 @@ function renderHero(r) {
   <div class="hero">
     <div class="dial">
       <svg width="126" height="126" viewBox="0 0 126 126">
-        <circle cx="63" cy="63" r="54" fill="none" stroke="#eef1f6" stroke-width="11"/>
+        <circle class="dialbg" cx="63" cy="63" r="54" fill="none" stroke-width="11"/>
         <circle cx="63" cy="63" r="54" fill="none" stroke="${col}" stroke-width="11" stroke-linecap="round"
           stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - clamp01(r.P / 100))).toFixed(1)}"/>
       </svg>
@@ -227,8 +227,8 @@ function renderModels(r) {
       <span>${i18n("持续")} <b>${fmtDur(g.dur)}</b></span>
       <span>AOD <b>${n1(s.aodUp, 2)}</b></span>`;
   };
-  out.push(modelCard(i18n("GFS 模式"), i18n("NOAA 全球模式 · 1 小时分辨率"), r.sG.P, r.sG.Q, mk(r.sG), "#2f6fd0"));
-  if (r.sE) out.push(modelCard(i18n("ECMWF-IFS 模式"), i18n("欧洲中心全球模式"), r.sE.P, r.sE.Q, mk(r.sE), "#0f9c8a"));
+  out.push(modelCard(i18n("GFS 模式"), i18n("NOAA 全球模式 · 1 小时分辨率"), r.sG.P, r.sG.Q, mk(r.sG), "var(--mc-gfs)"));
+  if (r.sE) out.push(modelCard(i18n("ECMWF-IFS 模式"), i18n("欧洲中心全球模式"), r.sE.P, r.sE.Q, mk(r.sE), "var(--mc-ec)"));
   else out.push(`<div class="mcard"><div class="mh"><span class="dot" style="background:#9aa4b2"></span><b>${i18n("ECMWF-IFS 模式")}</b></div>
     <div class="hint">${i18n("该日期/点位未取到 ECMWF 数据，本次综合结果由 GFS 与光追算法构成。")}</div></div>`);
   const rt = r.sRT;
@@ -239,7 +239,7 @@ function renderModels(r) {
      <span>${i18n("峰值透射")} <b>${rt.peak.T550.toExponential(2)}</b></span>
      <span>${i18n("亮度")} <b>${brtShort}</b></span>
      <span>${i18n("颜色")} <b>${i18n(rt.peak.name)}</b></span><span>${i18n("饱和")} <b>${(rt.peak.sat * 100).toFixed(0)}%</b></span>
-     <span>${i18n("几何")} <b>${i18n(rt.geom.ok ? "成立" : "不成立")}</b></span>`, "#c9501a"));
+     <span>${i18n("几何")} <b>${i18n(rt.geom.ok ? "成立" : "不成立")}</b></span>`, "var(--mc-rt)"));
   const g = gradeOf(r.Q);
   /* 分歧口径统一（B3）：主指标由"P 的极差"改为 ΔI —— 与地图「模型分歧」维度同一把尺子，
      也与结论卡徽标、因素表同源。ΔP / ΔQ 作为分解项一并给出，
@@ -252,7 +252,7 @@ function renderModels(r) {
      <span>ΔP <b>${rn(r.spread)}</b> · ΔQ <b>${rn(r.spreadQ)}</b></span>
      <span>${i18n("等级")} <b>${i18n(g)}</b></span>
      <span>${i18n("时效")} <b>${r.leadH > 0 ? Math.round(r.leadH) + " " + i18n("小时") : i18n("实况/历史")}</b></span>
-     <span>${i18n("综合指数")} <b>${Math.round(mixedIndex(r.P, r.Q))}</b></span>`, "#e2601f", "ens"));
+     <span>${i18n("综合指数")} <b>${Math.round(mixedIndex(r.P, r.Q))}</b></span>`, "var(--mc-ens)", "ens"));
   $("#models").innerHTML = out.join("");
 }
 

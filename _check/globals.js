@@ -1,11 +1,12 @@
 /* 跨脚本块命名冲突扫描
    =========================================================================
    为什么需要这个探针：
-     单文件产物里有 3 个内联 <script>，其中
-       块 0 = _pi18n.js + _p2.js + _p3.js + _p4.js + _p5.js + _p5b.js
-       块 1 = _TMapSecurityConfig（124 字符，无声明）
-       块 2 = _p6.js
-     三个块**共享同一个全局作用域**，于是：
+     单文件产物里有 4 个内联 <script>：
+       块 0 = 主题引导（F8，在 <head> 里，只读 localStorage 设 data-theme，无声明）
+       块 1 = _pi18n.js + _p2.js + _p3.js + _p4.js + _p5.js + _p5b.js（业务代码）
+       块 2 = _TMapSecurityConfig（无声明）
+       块 3 = _p6.js（地图模块）
+     四个块**共享同一个全局作用域**，于是：
 
        · 两个块声明同名 `function`  → 后执行的块**静默顶掉**前者。
                                      不报错、不警告，调用点照旧通过，
@@ -31,10 +32,12 @@ const path = require("path");
 
 const BASE = path.resolve(__dirname, "..");
 
-/* 块划分必须与 assemble.py 的 PARTS / 注入方式保持一致。
-   改 assemble.py 的 PARTS 顺序或块归属时，这里要同步改。 */
-const BLOCK0_FILES = ["_pi18n.js", "_p2.js", "_p3.js", "_p4.js", "_p5.js", "_p5b.js"];
-const BLOCK2_FILES = ["_p6.js"];
+/* 内容划分必须与 assemble.py 的 PARTS / 脚本块归属保持一致。
+   改 assemble.py 的 PARTS 顺序或块归属时，这里要同步改。
+   （变量名沿用 block0/block2 是为了少改代码，它们指的是**内容**：
+     业务代码段与地图模块段，与模板里的块序号 1 / 3 对应。） */
+const APP_FILES = ["_pi18n.js", "_p2.js", "_p3.js", "_p4.js", "_p5.js", "_p5b.js"];   // 块 1
+const MAP_FILES = ["_p6.js"];   // 块 3
 
 /* 顶层声明。项目约定顶格写（列 0），块内嵌套声明有缩进，因此 ^ 锚定足够。
    刻意匹配 `async function` / `export` 之外的常见形态即可，不追求完整解析。 */
@@ -70,8 +73,8 @@ const BUILTINS = new Set([
   "Worker", "WebSocket", "IntersectionObserver", "ResizeObserver", "MutationObserver",
 ]);
 
-const block0 = BLOCK0_FILES.flatMap(readDecls);
-const block2 = BLOCK2_FILES.flatMap(readDecls);
+const block0 = APP_FILES.flatMap(readDecls);
+const block2 = MAP_FILES.flatMap(readDecls);
 
 const fails = [];
 const warns = [];
@@ -110,7 +113,7 @@ function crossBlock(a, b, labelA, labelB) {
     }
   }
 }
-crossBlock(block0, block2, "块 0", "块 2");
+crossBlock(block0, block2, "业务代码（块 1）", "地图模块（块 3）");
 
 /* ---- ② 块内重复（同一块里的 const 重复同样致命） ---------------------- */
 function withinBlock(list, label) {
@@ -129,8 +132,8 @@ function withinBlock(list, label) {
     else warns.push(`[块内重复] ${msg}`);
   }
 }
-withinBlock(block0, "块 0");
-withinBlock(block2, "块 2");
+withinBlock(block0, "业务代码（块 1）");
+withinBlock(block2, "地图模块（块 3）");
 
 /* ---- ③ 遮蔽内置全局 --------------------------------------------------- */
 for (const d of block0.concat(block2)) {

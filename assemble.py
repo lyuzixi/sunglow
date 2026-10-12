@@ -217,10 +217,12 @@ def main():
         print("%s：%d 字符（内联 data-URI）" % (what, len(val)))
 
     blocks = list(SCRIPT_RE.finditer(tpl))
-    if len(blocks) != 3:
-        print("模板里的内联脚本块数量异常：%d（应为 3）" % len(blocks), file=sys.stderr)
+    # 4 个内联块：0 = <head> 里的主题引导（F8，必须在 CSS 前跑，见模板注释）、
+    #             1 = 业务代码（_pi18n + _p2.._p5b）、2 = 地图代理配置、3 = 地图模块（_p6）。
+    if len(blocks) != 4:
+        print("模板里的内联脚本块数量异常：%d（应为 4）" % len(blocks), file=sys.stderr)
         return 1
-    if "/*__BLOCK0__*/" not in blocks[0].group(1) or "/*__BLOCK2__*/" not in blocks[2].group(1):
+    if "/*__BLOCK0__*/" not in blocks[1].group(1) or "/*__BLOCK2__*/" not in blocks[3].group(1):
         print("模板里的脚本占位标记缺失，可能被误编辑过", file=sys.stderr)
         return 1
 
@@ -238,8 +240,8 @@ def main():
     else:
         print("提示：%s 尚不存在，高程网格未注入（前端自动退化为整行单段）" % ELEV_FILE)
 
-    out = fill(tpl, 2, "\n" + p6 + "\n")
-    out = fill(out, 0, "\n" + block0 + "\n")
+    out = fill(tpl, 3, "\n" + p6 + "\n")
+    out = fill(out, 1, "\n" + block0 + "\n")
     # 注入失败的兜底：**配置那一行**绝不能留下占位符 —— 留着会被前端当成"部署没配"，
     # 而它其实只是构建脚本漏了替换。宁可在这里失败，也不要让产物静默带病出厂。
     # 注意判据只盯 `serviceHost: '<占位符>'` 这一处，不能在全文档里搜这个字符串：

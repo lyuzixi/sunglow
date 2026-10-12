@@ -5,10 +5,38 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>霞光预报 · 朝霞与晚霞概率与观赏质量</title>
 <meta name="description" content="基于气象数据预测朝霞与晚霞（火烧云）的出现概率与观赏质量。GFS / ECMWF / 光追三路模型合成评分，含逐日趋势与周边热力图。">
-<meta name="color-scheme" content="light">
+<meta name="color-scheme" content="light dark">
 <!-- theme-color 取页面底色而不是品牌橙：它控制的是移动端浏览器地址栏的配色，
-     跟页面融为一体才不突兀。 -->
-<meta name="theme-color" content="#f4f6fa">
+     跟页面融为一体才不突兀。
+     两条分开写：浅色/深色各一条，由浏览器按**当前 color-scheme** 选 ——
+     比用 JS 改 meta 更早生效（JS 还没跑，地址栏就已经是对的）。
+     用户手动选的主题由 JS 在切换时同步（见 _p5.js 的 applyTheme）。 -->
+<meta name="theme-color" content="#f4f6fa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#11151c" media="(prefers-color-scheme: dark)">
+<!-- 主题引导：**必须在 CSS 解析之前跑完**，否则用户上次选了深色时，
+     刷新页面会先按默认渲染一帧浅色再跳成深色（FOUC）—— 深色模式最典型的丑陋瞬间。
+     这是它单独成块、且放在 <head> 里的**唯一**理由（其余脚本都在 body 末尾）。
+     ⚠️ 它使"内联脚本块"从 3 变 4：`_check/syntax.py`（块数断言）、
+     `assemble.py`（blocks != 3 的检查）、`_check/globals.js`（块划分）都要同步。
+     它只读 localStorage 里的一个字符串，不依赖任何其它脚本，所以必须自包含。 -->
+<script>
+(function () {
+  var root = document.documentElement, pref = "auto";
+  try {
+    var raw = localStorage.getItem("sunsetbot.pref.v1");
+    var p = raw ? JSON.parse(raw) : null;
+    if (p && (p.theme === "dark" || p.theme === "light" || p.theme === "auto")) pref = p.theme;
+  } catch (e) { /* 隐私模式 / 坏 JSON：按跟随系统处理，不抛错 */ }
+  root.setAttribute("data-theme-pref", pref);
+  var dark = pref === "dark" ||
+    (pref === "auto" && !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches));
+  var eff = dark ? "dark" : "light";
+  root.setAttribute("data-theme", eff);
+  /* color-scheme 决定原生控件（select / 滚动条 / 日期选择器）的底色，
+     漏了它深色页面里会冒出一排惨白的原生控件。 */
+  root.style.colorScheme = eff;
+})();
+</script>
 <!-- 图标全部内联：产物必须是单文件，引外部图片文件就破坏了这一点。
      两个占位符由 assemble.py 注入（SVG 给浏览器，PNG 给 iOS —— iOS 不支持
      SVG 格式的 apple-touch-icon）。 -->
@@ -36,13 +64,88 @@
   --r:14px; --r2:10px;
   --sh:0 1px 2px rgba(16,24,40,.04), 0 6px 20px -8px rgba(16,24,40,.10);
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+
+  /* ---------- 深色模式（F8）追加的令牌 ----------
+     为什么要有这一层：原来全站只有 10 个令牌，**132 处颜色是硬编码的**。
+     硬编码的值没有"名字"，深色模式就只能按选择器一条条覆盖 —— 那样每加一个新组件
+     都可能漏掉。现在把"表面 / 文字 / 边框 / 语义底"收进令牌，深色只需重新定义
+     :root 的这几十个变量，组件 CSS 一行都不用改（**浅色值逐字保持不变**，
+     所以这次令牌化对浅色模式是零视觉变化）。
+     命名规则：--xxx 是颜色本身；--xxxbd 是它的边框色；--xxxbg 是它的浅底。 */
+  --hover:#fafbfd;        /* 次级按钮/条目 hover 底、.kv .it、.tl 的底 */
+  --rowalt:#fcfdff;       /* 表格偶数行 */
+  --hoverline:#d6dbe4;
+  --panel:#f1f4f9;        /* 分段控件（.seg）底 */
+  --sug:#ffffff;          /* 下拉/浮层底（比卡片再"浮"一层） */
+  --topbg:rgba(255,255,255,.86);
+  --tipbg:rgba(255,255,255,.98);
+  --tipbgSolid:#ffffff;   /* 手机端贴底卡片要求不透明 */
+  --loadbg:rgba(255,255,255,.9);
+  --azibg:rgba(255,255,255,.72);
+  --azitx:#6b7486;
+  --spinbd:#f0d8c8;
+  --focusbd:#f0b189; --focusring:#ffe6d6;
+  --accbd:#ffd9c2; --okbd:#bfe7d2; --warnbd:#f2ddba; --badbd:#f5cdc9; --bluebd:#d9e3fb;
+  --track:#eef1f6;        /* 进度条/环形底、图表网格、地图未加载时的底 */
+  --track2:#e3e8f0;       /* 排行榜条形底 */
+  --grad1:#ffeede; --grad2:#e9f0ff;            /* body 那两团径向光 */
+  --grad1t:rgba(255,238,222,0); --grad2t:rgba(233,240,255,0);
+  --ensbd:#f3c9ab; --ensgrad:#fff8f4;          /* 「多模型综合」卡的边框与渐变顶 */
+  --soft:#fbfcfe;         /* 内嵌面板（环境输入条 / 省份下钻） */
+  --tint:#fff8f2; --tint2:#fdf6f1; --tint3:#ffe6d8;   /* 品牌橙的三种淡底 */
+  --hole:rgba(0,0,0,.09); /* 色卡/图例色块的描边 */
+  --gp1:#2f6fd0; --gp2:#e2601f;                /* 曲线图的两条线（蓝/橙） */
+  /* 四路模型标识色（模型卡上的小圆点与数字）：深色下要提亮，
+     否则 #2f6fd0 这类中蓝压在深底上几乎看不见 */
+  --mc-gfs:#2f6fd0; --mc-ec:#0f9c8a; --mc-rt:#c9501a; --mc-ens:#e2601f;
+  /* 四级等级色（.g-优/良/一般/差 与 pill）：**必须成套**，
+     深色下不能只换底色 —— 文字色 #178a52 之类在深底上对比度只有 2.6，读不出来 */
+  --g1bg:#e9f7ef; --g1tx:#12734a; --g1bd:#bfe7d2;
+  --g2bg:#eef6e8; --g2tx:#4c7a16; --g2bd:#d5e9c0;
+  --g3bg:#fdf3e3; --g3tx:#9a5b06; --g3bd:#f2ddba;
+  --g4bg:#fdeceb; --g4tx:#a93226; --g4bd:#f5cdc9;
+}
+
+/* ---------- 深色（F8）----------
+   只在 html[data-theme="dark"] 下生效。`data-theme` 由 <head> 里那段引导脚本
+   在 CSS 解析前设好（避免刷新时闪一帧浅色）；"跟随系统"也在这里就被解析成
+   light/dark 两个具体值，所以**不需要**再写一份 @media (prefers-color-scheme)。
+   系统性取舍：**只改令牌**，不在这里逐个组件覆盖 —— 组件的取值全都走令牌了。 */
+html[data-theme="dark"]{
+  --bg:#11151c; --card:#171d26; --line:#2b333f; --line2:#222932;
+  --tx:#e7ecf3; --tx2:#aab5c3; --tx3:#919dac;
+  --ok:#5fce97; --okbg:#122a20; --okbd:#1f4735;
+  --warn:#e2b45e; --warnbg:#2a2314; --warnbd:#463a1e;
+  --bad:#f2796a; --badbg:#2d1a18; --badbd:#4d2a26;
+  --acc:#f4791f; --acc2:#ff9d52; --accbg:#2c1e13; --accbd:#4d3520;
+  --blue:#7fadff; --bluebg:#141e33; --bluebd:#28395c;
+  /* 深色下阴影要更重才有层次：浅色那套（4% 黑）在深底上完全看不见 */
+  --sh:0 1px 2px rgba(0,0,0,.5), 0 8px 24px -10px rgba(0,0,0,.65);
+  --hover:#1e242e; --rowalt:#1a2029; --hoverline:#3a4450; --panel:#1c232c; --sug:#1f2630;
+  --topbg:rgba(18,23,30,.9); --tipbg:rgba(23,29,38,.98); --tipbgSolid:#171d26;
+  --loadbg:rgba(20,26,34,.92); --azibg:rgba(20,25,33,.72); --azitx:#a9b4c2;
+  --spinbd:#3a2a20;
+  --focusbd:#a9663a; --focusring:#4a2f1e;
+  --track:#232b35; --track2:#2b333f;
+  /* 那两团径向光在深色下改成"暖橙 + 冷蓝"的低亮度版本，保留品牌感但不刺眼 */
+  --grad1:#231708; --grad2:#0f1a2b;
+  --grad1t:rgba(35,23,8,0); --grad2t:rgba(15,26,43,0);
+  --ensbd:#5a3f2a; --ensgrad:#241d19;
+  --soft:#1b2129; --tint:#231d18; --tint2:#221c17; --tint3:#2a2018;
+  --hole:rgba(255,255,255,.10);
+  --gp1:#6f9dea; --gp2:#f4791f;
+  --mc-gfs:#6f9dea; --mc-ec:#3fc3b0; --mc-rt:#e8783a; --mc-ens:#f4791f;
+  --g1bg:#122a20; --g1tx:#5fce97; --g1bd:#1f4735;
+  --g2bg:#1c2a17; --g2tx:#9ac765; --g2bd:#2f4526;
+  --g3bg:#2a2314; --g3tx:#e2b45e; --g3bd:#463a1e;
+  --g4bg:#2d1a18; --g4tx:#f2796a; --g4bd:#4d2a26;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
 body{
   background:
-    radial-gradient(1200px 380px at 12% -8%, #ffeede 0%, rgba(255,238,222,0) 62%),
-    radial-gradient(1000px 340px at 92% -6%, #e9f0ff 0%, rgba(233,240,255,0) 60%),
+    radial-gradient(1200px 380px at 12% -8%, var(--grad1) 0%, var(--grad1t) 62%),
+    radial-gradient(1000px 340px at 92% -6%, var(--grad2) 0%, var(--grad2t) 60%),
     var(--bg);
   color:var(--tx);
   font:15px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
@@ -55,7 +158,7 @@ a{color:var(--blue)}
 
 /* ---------- 顶部 ---------- */
 .top{position:sticky;top:0;z-index:60;backdrop-filter:saturate(1.4) blur(10px);
-  background:rgba(255,255,255,.86);border-bottom:1px solid var(--line)}
+  background:var(--topbg);border-bottom:1px solid var(--line)}
 .top-in{max-width:1560px;margin:0 auto;padding:11px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .logo{width:34px;height:34px;border-radius:11px;flex:0 0 auto;
   background:linear-gradient(150deg,#ffd08a,#f08a3c 46%,#c9501a);box-shadow:0 4px 12px -4px rgba(201,80,26,.55)}
@@ -72,7 +175,7 @@ a{color:var(--blue)}
    空间，badge 不再贴右。 */
 .top-tx{min-width:0}
 .top .spacer{flex:1 1 auto}
-.badge{font-size:11.5px;padding:4px 9px;border-radius:999px;background:var(--accbg);color:var(--acc2);border:1px solid #ffd9c2;white-space:nowrap}
+.badge{font-size:11.5px;padding:4px 9px;border-radius:999px;background:var(--accbg);color:var(--acc2);border:1px solid var(--accbd);white-space:nowrap}
 /* 手机端：顶部整块在窄屏下会**换行摊开** —— .top-in 是 flex-wrap:wrap，而中间的
    文字列没有 min-width:0，于是 h1 与 sub 先各自撑成整行，badge 再被挤到第三行。
    实测 390×844 下占掉视口高度的 20.8%（175 px、摊成 3 行），而这一屏里
@@ -128,11 +231,11 @@ label.lb{display:block;font-size:12.5px;color:var(--tx2);font-weight:600;margin-
 input,select,button{font:inherit;color:inherit}
 input[type=text],input[type=date],input[type=number],select{
   width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:var(--r2);
-  background:#fff;outline:none;transition:border-color .15s,box-shadow .15s}
-input:focus,select:focus{border-color:#f0b189;box-shadow:0 0 0 3px #ffe6d6}
-button{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:var(--r2);
+  background:var(--card);outline:none;transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus{border-color:var(--focusbd);box-shadow:0 0 0 3px var(--focusring)}
+button{cursor:pointer;border:1px solid var(--line);background:var(--card);border-radius:var(--r2);
   padding:9px 14px;font-weight:600;transition:.15s}
-button:hover{border-color:#d6dbe4;background:#fafbfd}
+button:hover{border-color:var(--hoverline);background:var(--hover)}
 button.primary{background:linear-gradient(180deg,#f0763a,#dd5a1d);border-color:#d0521a;color:#fff;
   box-shadow:0 6px 14px -6px rgba(221,90,29,.7)}
 button.primary:hover{filter:brightness(1.05);background:linear-gradient(180deg,#f0763a,#dd5a1d)}
@@ -152,7 +255,7 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 .seg button:focus-visible,.unitseg button:focus-visible,.presets button:focus-visible{outline-offset:1px}
 
 /* 搜索下拉 */
-.sug{position:absolute;left:0;right:0;top:calc(100% + 5px);background:#fff;border:1px solid var(--line);
+.sug{position:absolute;left:0;right:0;top:calc(100% + 5px);background:var(--sug);border:1px solid var(--line);
   border-radius:var(--r2);box-shadow:0 14px 34px -12px rgba(16,24,40,.34);max-height:296px;overflow:auto;z-index:70;display:none}
 .sug.on{display:block}
 .sug div{padding:9px 12px;font-size:13.5px;cursor:pointer;display:flex;gap:8px;align-items:baseline}
@@ -162,9 +265,9 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 
 /* ---------- 控制面板 ---------- */
 .ctrl-grid{display:grid;grid-template-columns:minmax(240px,1.5fr) 150px 150px 128px auto;gap:12px;align-items:end}
-.seg{display:flex;gap:6px;background:#f1f4f9;border:1px solid var(--line);padding:4px;border-radius:12px}
+.seg{display:flex;gap:6px;background:var(--panel);border:1px solid var(--line);padding:4px;border-radius:12px}
 .seg button{border:0;background:transparent;padding:7px 12px;border-radius:8px;font-size:13.5px;color:var(--tx2)}
-.seg button.on{background:#fff;color:var(--acc2);box-shadow:0 2px 8px -3px rgba(16,24,40,.22)}
+.seg button.on{background:var(--sug);color:var(--acc2);box-shadow:0 2px 8px -3px rgba(16,24,40,.22)}
 .rowline{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
 .chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--tx2);cursor:pointer;user-select:none}
 .presets{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
@@ -207,22 +310,24 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 /* 窄屏不再整段隐藏：宁可让它换行，也不要把 ΔI / 一致性 这些判断依据丢掉 */
 @media (max-width:520px){.cfbadge .cfsm{flex:1 1 100%;padding-left:13px}}
 .grade{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12.5px;font-weight:700;border:1px solid}
-.g-优{background:#e9f7ef;color:#12734a;border-color:#bfe7d2}
-.g-良{background:#eef6e8;color:#4c7a16;border-color:#d5e9c0}
-.g-一般{background:#fdf3e3;color:#9a5b06;border-color:#f2ddba}
-.g-差{background:#fdeceb;color:#a93226;border-color:#f5cdc9}
+/* 结论卡的概率环底：走令牌，深色下才是深灰而不是一道白圈 */
+.dialbg{stroke:var(--track)}
+.g-优{background:var(--g1bg);color:var(--g1tx);border-color:var(--g1bd)}
+.g-良{background:var(--g2bg);color:var(--g2tx);border-color:var(--g2bd)}
+.g-一般{background:var(--g3bg);color:var(--g3tx);border-color:var(--g3bd)}
+.g-差{background:var(--g4bg);color:var(--g4tx);border-color:var(--g4bd)}
 
 /* ---------- 概览小格 ---------- */
 .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:9px}
-.kv .it{background:#fafbfd;border:1px solid var(--line2);border-radius:var(--r2);padding:8px 10px}
+.kv .it{background:var(--hover);border:1px solid var(--line2);border-radius:var(--r2);padding:8px 10px}
 .kv .k{font-size:11.5px;color:var(--tx3)}
 .kv .v{font-size:14.5px;font-weight:700;margin-top:2px;font-family:var(--mono);word-break:break-all}
 
 /* ---------- 模型卡 ---------- */
 .models{display:grid;grid-template-columns:1fr 1fr;gap:11px}
 @media (max-width:640px){.models{grid-template-columns:1fr}}
-.mcard{border:1px solid var(--line);border-radius:var(--r2);padding:12px;background:#fff;position:relative;overflow:hidden}
-.mcard.ens{border-color:#f3c9ab;background:linear-gradient(180deg,#fff8f4,#fff)}
+.mcard{border:1px solid var(--line);border-radius:var(--r2);padding:12px;background:var(--card);position:relative;overflow:hidden}
+.mcard.ens{border-color:var(--ensbd);background:linear-gradient(180deg,var(--ensgrad),var(--card))}
 .mcard .mh{display:flex;align-items:center;gap:7px;margin-bottom:9px}
 .mcard .mh b{font-size:14px}
 .mcard .mh .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
@@ -231,7 +336,7 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 .mnum{font-size:30px;font-weight:800;line-height:1;letter-spacing:-1px;font-family:var(--mono)}
 .mnum small{font-size:14px;font-weight:700;margin-left:1px}
 .mmeta{display:flex;flex-direction:column;gap:3px;padding-bottom:2px}
-.bar{height:7px;border-radius:99px;background:#eef1f6;overflow:hidden;margin-top:9px}
+.bar{height:7px;border-radius:99px;background:var(--track);overflow:hidden;margin-top:9px}
 .bar i{display:block;height:100%;border-radius:99px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
 .mfacts{margin-top:9px;font-size:12.2px;color:var(--tx2);line-height:1.75}
 .mfacts span{display:inline-block;margin-right:10px;white-space:nowrap}
@@ -245,9 +350,9 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 .ftab td.v{font-family:var(--mono);font-weight:700;white-space:nowrap}
 .ftab td.d{color:var(--tx2);font-size:12.3px;line-height:1.6}
 .pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:700;border:1px solid;white-space:nowrap}
-.p-ok{background:var(--okbg);color:var(--ok);border-color:#bfe7d2}
-.p-mid{background:var(--warnbg);color:var(--warn);border-color:#f2ddba}
-.p-bad{background:var(--badbg);color:var(--bad);border-color:#f5cdc9}
+.p-ok{background:var(--okbg);color:var(--ok);border-color:var(--okbd)}
+.p-mid{background:var(--warnbg);color:var(--warn);border-color:var(--warnbd)}
+.p-bad{background:var(--badbg);color:var(--bad);border-color:var(--badbd)}
 /* 滚动容器的宽度必须显式封顶。`overflow-x:auto` 本身**不**封顶：作为
    flex/grid 子项时它带着 `min-width:auto`，会被内容（本例是 table#fac.ftab）
    一起撑开。手机上这不是"某个表格有点宽"，而是把整页的 scrollWidth 从 390
@@ -258,9 +363,9 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 
 /* ---------- 光追 ---------- */
 .ray{display:grid;grid-template-columns:repeat(auto-fit,minmax(146px,1fr));gap:9px}
-.swatch{height:42px;border-radius:9px;border:1px solid rgba(0,0,0,.09);display:flex;align-items:flex-end;
+.swatch{height:42px;border-radius:9px;border:1px solid var(--hole);display:flex;align-items:flex-end;
   justify-content:flex-end;padding:3px 7px;font-size:11px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5)}
-.tl{position:relative;height:56px;margin:12px 0 4px;border-radius:9px;background:#fafbfd;border:1px solid var(--line2);overflow:hidden}
+.tl{position:relative;height:56px;margin:12px 0 4px;border-radius:9px;background:var(--hover);border:1px solid var(--line2);overflow:hidden}
 .tl .seg2{position:absolute;top:0;bottom:0;background:linear-gradient(180deg,#ffd9a8,#f08a3c);opacity:.32}
 .tl .mk{position:absolute;top:0;bottom:0;width:1px;background:#94a3b8}
 .tl .lb2{position:absolute;font-size:10.5px;color:var(--tx3);bottom:4px;transform:translateX(-50%);white-space:nowrap}
@@ -270,13 +375,13 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 .notes{display:flex;flex-direction:column;gap:7px}
 .note{display:flex;gap:9px;font-size:12.7px;line-height:1.6;padding:8px 11px;border-radius:var(--r2);border:1px solid}
 .note b{font-weight:700}
-.n-ok{background:var(--okbg);border-color:#d3ecdf;color:#14603f}
-.n-warn{background:var(--warnbg);border-color:#f2ddba;color:#8a5306}
-.n-bad{background:var(--badbg);border-color:#f5cdc9;color:#8f2b21}
-.n-info{background:var(--bluebg);border-color:#d9e3fb;color:#1d4ed8}
+.n-ok{background:var(--okbg);border-color:var(--okbd);color:var(--ok)}
+.n-warn{background:var(--warnbg);border-color:var(--warnbd);color:var(--warn)}
+.n-bad{background:var(--badbg);border-color:var(--badbd);color:var(--bad)}
+.n-info{background:var(--bluebg);border-color:var(--bluebd);color:var(--blue)}
 
 /* ---------- 地图 ---------- */
-.mapwrap{position:relative;border-radius:var(--r2);overflow:hidden;border:1px solid var(--line);background:#eef1f5}
+.mapwrap{position:relative;border-radius:var(--r2);overflow:hidden;border:1px solid var(--line);background:var(--track)}
 #map{width:100%;height:600px;touch-action:none}
 /* touch-action:none：真机上"地图无法左右滑"的另一半根因 —— 页面一旦有横向
    溢出（见 .top-tx），浏览器的横向平移手势会跟地图拖动竞争，单指横滑被
@@ -333,16 +438,16 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 .azilayer .aziray{position:absolute;left:0;top:0;height:0;transform-origin:0 50%;border-top:1.5px dashed rgba(192,122,16,.85)}
 .azilayer .aziring{position:absolute;left:0;top:0;border-radius:50%;border:1px dashed rgba(120,132,150,.45)}
 .azilayer .azilab{position:absolute;transform:translate(-50%,-50%);font-family:var(--mono);font-size:10.5px;
-  color:#6b7486;background:rgba(255,255,255,.72);padding:0 3px;border-radius:4px;white-space:nowrap}
+  color:var(--azitx);background:var(--azibg);padding:0 3px;border-radius:4px;white-space:nowrap}
 .azilayer .azilab.hd{color:#8a5306;font-weight:700}
 /* 地图整体不可用时的兜底说明（离线 / 代理占位符未替换） */
 .mapfail{padding:22px;font-size:13.5px;color:var(--tx2);line-height:1.8}
 .mapfail code{font-family:var(--mono);font-size:12px;background:var(--line2);padding:1px 5px;border-radius:5px}
 .mload{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;
-  background:rgba(255,255,255,.9);z-index:7;font-size:13.5px;color:var(--tx2)}
-.spin{width:26px;height:26px;border-radius:50%;border:3px solid #f0d8c8;border-top-color:var(--acc);animation:sp .8s linear infinite}
+  background:var(--loadbg);z-index:7;font-size:13.5px;color:var(--tx2)}
+.spin{width:26px;height:26px;border-radius:50%;border:3px solid var(--spinbd);border-top-color:var(--acc);animation:sp .8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
-.mload.err{padding:20px 18px;text-align:center;line-height:1.75;background:rgba(255,255,255,.96)}
+.mload.err{padding:20px 18px;text-align:center;line-height:1.75;background:var(--tipbg)}
 .mload.err .spin{display:none}
 .mretry{margin-left:6px;padding:4px 12px;border:1px solid var(--acc);background:transparent;color:var(--acc);
   border-radius:8px;font-size:12.5px;cursor:pointer;font-family:inherit}
@@ -357,7 +462,7 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
    overflow:hidden —— 溢出部分直接被裁掉（真机截图里"郴州市附近"上面那行
    的开头就是这样没的）。窄屏改走 .dock（贴底通栏）后这条更是必须。 */
 .tip .tclose{margin-left:auto;flex:0 0 auto;width:20px;height:20px;border-radius:50%;
-  border:1px solid var(--line);background:#fff;color:var(--tx2);font:inherit;font-size:12px;line-height:1;
+  border:1px solid var(--line);background:var(--card);color:var(--tx2);font:inherit;font-size:12px;line-height:1;
   cursor:pointer;pointer-events:auto;display:none;align-items:center;justify-content:center;padding:0}
 .tip .tclose:hover{background:var(--accbg);color:var(--acc2);border-color:var(--acc)}
 /* 桌面端不需要它：`.tip` 是 pointer-events:none，指针能穿过去 ⇒ mouseleave 照常触发。
@@ -387,7 +492,7 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
        "查询点"图钉、数值直标、色面，那 2% 会让它们整片透上来变成脏点
        （实拍里"郴州市附近"四个字清晰浮在卡片中间）。层序是对的（tip z=20 >
        pinlayer z=6），问题纯粹在 alpha。 */
-    background:#fff;
+    background:var(--tipbgSolid);
     /* z=2000 而不是 20：腾讯地图 SDK 会在**触屏真机**上自动加缩放（+/−）与
        罗盘控件，z-index 是 SDK 内部值、无从约定 —— 真机实测它们整只压在
        z=20 的卡片上，连卡片右上角的 × 都被盖住（第二批真机反馈）。
@@ -419,7 +524,7 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 .lgmore summary{cursor:pointer;font-weight:600;color:var(--tx3);font-size:12.3px;padding:3px 0}
 .lgmore summary:hover{color:var(--acc)}
 .lgmore .hint{margin-top:7px}
-.chipc{width:13px;height:13px;border-radius:4px;border:1px solid rgba(0,0,0,.12);flex:0 0 auto}
+.chipc{width:13px;height:13px;border-radius:4px;border:1px solid var(--hole);flex:0 0 auto}
 
 /* ---------- 地图工具条 ---------- */
 .maptool{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:11px}
@@ -444,43 +549,43 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 .rank .rr:active{background:var(--line2)}
 .rank .rr .nm{min-width:86px;font-weight:600}
 /* 条形底色比色阶最低端（白）略深一档，否则"低值"的白色条会融进轨道里看不出长度 */
-.rank .rr .b3{flex:1;height:8px;border-radius:99px;background:#e3e8f0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.05);overflow:hidden}
+.rank .rr .b3{flex:1;height:8px;border-radius:99px;background:var(--track2);box-shadow:inset 0 0 0 1px rgba(0,0,0,.05);overflow:hidden}
 .rank .rr .b3 i{display:block;height:100%}
 .rank .rr .vv{font-family:var(--mono);font-weight:700;min-width:42px;text-align:right}
 
 /* ---------- 页脚 ---------- */
 footer{margin-top:20px;font-size:12.3px;color:var(--tx3);line-height:1.75}
-footer details{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:10px}
+footer details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:10px}
 footer summary{cursor:pointer;font-weight:700;color:var(--tx);font-size:13.5px}
 footer .body{padding-top:9px}
 footer ul{margin:7px 0;padding-left:19px}
 footer li{margin:3px 0}
 
 /* ---------- 环境输入条（F7：让单位切换落到实处，也让结论可复核） ---------- */
-.envstrip{margin-top:12px;border:1px dashed var(--line);border-radius:var(--r2);padding:9px 11px;background:#fbfcfe}
+.envstrip{margin-top:12px;border:1px dashed var(--line);border-radius:var(--r2);padding:9px 11px;background:var(--soft)}
 .envstrip .esh{font-size:12.5px;color:var(--tx3);margin-bottom:7px}
 
 /* ---------- 霞光强度/彩度演变曲线（F3） ---------- */
 .rcwrap{margin:2px 0 4px}
 .rcurve{display:block;width:100%;height:96px}
 .rcg{stroke:var(--line2);stroke-width:1}
-.rcL{fill:none;stroke:#2f6fd0;stroke-width:1.8}
-.rcC{fill:none;stroke:#e2601f;stroke-width:1.8;stroke-dasharray:4 3}
+.rcL{fill:none;stroke:var(--gp1);stroke-width:1.8}
+.rcC{fill:none;stroke:var(--gp2);stroke-width:1.8;stroke-dasharray:4 3}
 .rcaxis{display:flex;justify-content:space-between;font-size:11.5px;color:var(--tx3);margin-top:2px}
 .rcleg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--tx2);margin-top:6px}
 .rcleg i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
-.rcleg .rcLi{background:#2f6fd0}
-.rcleg .rcCi{background:#e2601f}
+.rcleg .rcLi{background:var(--gp1)}
+.rcleg .rcCi{background:var(--gp2)}
 
 /* ---------- 七日趋势（F5） ---------- */
 .t-trend{width:100%;border-collapse:collapse;font-size:13px}
 .t-trend th,.t-trend td{border-bottom:1px solid var(--line2);padding:6px 8px;text-align:left;vertical-align:middle}
 .t-trend th{font-size:12px;color:var(--tx3);font-weight:600}
-.t-trend tr.cur td{background:#fff8f2}
+.t-trend tr.cur td{background:var(--tint)}
 .td-date{white-space:nowrap;color:var(--tx2);font-family:var(--mono);font-size:12.5px}
 .td-date i{color:var(--acc);font-style:normal;font-size:11px;margin-left:4px}
 .td-cell{cursor:pointer;border-radius:6px}
-.td-cell:hover{background:#fdf6f1}
+.td-cell:hover{background:var(--tint2)}
 .td-cell.on{outline:2px solid var(--acc);outline-offset:-2px}
 .td-cell:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
 .td-cell.empty{color:var(--tx3);cursor:default}
@@ -495,7 +600,7 @@ footer li{margin:3px 0}
 .tgo{display:block;width:100%;margin-top:8px;padding:6px 8px;border:1px solid var(--acc);
   background:var(--accbg);color:var(--acc2);border-radius:8px;font:inherit;font-size:12.5px;cursor:pointer;
   pointer-events:auto}
-.tgo:hover{background:#ffe6d8}
+.tgo:hover{background:var(--tint3)}
 
 /* ---------- 数值直标：第二编码（F6） ---------- */
 .mlayer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;display:none;z-index:5;overflow:hidden}
@@ -549,21 +654,21 @@ footer li{margin:3px 0}
 .mapwrap.dark .pinlayer{filter:invert(1) hue-rotate(180deg)}
 
 /* ---------- 省份下钻（F4） ---------- */
-.drill{display:none;margin-top:10px;border:1px solid var(--line);border-radius:var(--r2);background:#fbfcfe;padding:9px 11px}
+.drill{display:none;margin-top:10px;border:1px solid var(--line);border-radius:var(--r2);background:var(--soft);padding:9px 11px}
 .drill.on{display:block}
 .dhead{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin-bottom:7px}
 .dhead .dsub{font-size:11.5px;color:var(--tx3)}
-.dhead .dx{margin-left:auto;border:1px solid var(--line);background:#fff;border-radius:7px;
+.dhead .dx{margin-left:auto;border:1px solid var(--line);background:var(--card);border-radius:7px;
   padding:2px 9px;font:inherit;font-size:12px;color:var(--tx2);cursor:pointer}
 .dlist{display:flex;flex-wrap:wrap;gap:6px}
-.dcity{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:#fff;
+.dcity{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--card);
   border-radius:9px;padding:4px 9px;font:inherit;font-size:12.5px;cursor:pointer}
-.dcity:hover{border-color:var(--acc);background:#fff8f2}
+.dcity:hover{border-color:var(--acc);background:var(--tint)}
 .dcity .dv{font-family:var(--mono);font-weight:700;color:var(--acc2)}
 .dcity .grade{transform:scale(.9)}
 
 /* ---------- 单位 / 时间制切换（F7） ---------- */
-.unitseg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff}
+.unitseg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--card)}
 .unitseg button{border:0;background:transparent;padding:4px 10px;font:inherit;font-size:12.5px;
   color:var(--tx2);cursor:pointer}
 .unitseg button.on{background:var(--accbg);color:var(--acc2);font-weight:600}
@@ -654,6 +759,8 @@ footer li{margin:3px 0}
            这一行本来就 flex-wrap，加一个控件不影响任何现有断言。
            按钮文字用各语言自己的写法（中文 / 繁體 / English），不参与翻译。 -->
       <div class="unitseg" id="langSeg" role="group" aria-label="语言" data-i18n-aria="语言"></div>
+      <!-- 主题（F8）：三态分段控件。**同样不放顶栏** —— 窄屏顶部条有"必须一行"的硬约束。 -->
+      <div class="unitseg" id="themeSeg" role="group" aria-label="主题" data-i18n-aria="主题"></div>
       <span class="hint" id="locHint" style="margin-left:auto"></span>
     </div>
 

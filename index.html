@@ -5,10 +5,38 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>霞光预报 · 朝霞与晚霞概率与观赏质量</title>
 <meta name="description" content="基于气象数据预测朝霞与晚霞（火烧云）的出现概率与观赏质量。GFS / ECMWF / 光追三路模型合成评分，含逐日趋势与周边热力图。">
-<meta name="color-scheme" content="light">
+<meta name="color-scheme" content="light dark">
 <!-- theme-color 取页面底色而不是品牌橙：它控制的是移动端浏览器地址栏的配色，
-     跟页面融为一体才不突兀。 -->
-<meta name="theme-color" content="#f4f6fa">
+     跟页面融为一体才不突兀。
+     两条分开写：浅色/深色各一条，由浏览器按**当前 color-scheme** 选 ——
+     比用 JS 改 meta 更早生效（JS 还没跑，地址栏就已经是对的）。
+     用户手动选的主题由 JS 在切换时同步（见 _p5.js 的 applyTheme）。 -->
+<meta name="theme-color" content="#f4f6fa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#11151c" media="(prefers-color-scheme: dark)">
+<!-- 主题引导：**必须在 CSS 解析之前跑完**，否则用户上次选了深色时，
+     刷新页面会先按默认渲染一帧浅色再跳成深色（FOUC）—— 深色模式最典型的丑陋瞬间。
+     这是它单独成块、且放在 <head> 里的**唯一**理由（其余脚本都在 body 末尾）。
+     ⚠️ 它使"内联脚本块"从 3 变 4：`_check/syntax.py`（块数断言）、
+     `assemble.py`（blocks != 3 的检查）、`_check/globals.js`（块划分）都要同步。
+     它只读 localStorage 里的一个字符串，不依赖任何其它脚本，所以必须自包含。 -->
+<script>
+(function () {
+  var root = document.documentElement, pref = "auto";
+  try {
+    var raw = localStorage.getItem("sunsetbot.pref.v1");
+    var p = raw ? JSON.parse(raw) : null;
+    if (p && (p.theme === "dark" || p.theme === "light" || p.theme === "auto")) pref = p.theme;
+  } catch (e) { /* 隐私模式 / 坏 JSON：按跟随系统处理，不抛错 */ }
+  root.setAttribute("data-theme-pref", pref);
+  var dark = pref === "dark" ||
+    (pref === "auto" && !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches));
+  var eff = dark ? "dark" : "light";
+  root.setAttribute("data-theme", eff);
+  /* color-scheme 决定原生控件（select / 滚动条 / 日期选择器）的底色，
+     漏了它深色页面里会冒出一排惨白的原生控件。 */
+  root.style.colorScheme = eff;
+})();
+</script>
 <!-- 图标全部内联：产物必须是单文件，引外部图片文件就破坏了这一点。
      两个占位符由 assemble.py 注入（SVG 给浏览器，PNG 给 iOS —— iOS 不支持
      SVG 格式的 apple-touch-icon）。 -->
@@ -36,13 +64,88 @@
   --r:14px; --r2:10px;
   --sh:0 1px 2px rgba(16,24,40,.04), 0 6px 20px -8px rgba(16,24,40,.10);
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+
+  /* ---------- 深色模式（F8）追加的令牌 ----------
+     为什么要有这一层：原来全站只有 10 个令牌，**132 处颜色是硬编码的**。
+     硬编码的值没有"名字"，深色模式就只能按选择器一条条覆盖 —— 那样每加一个新组件
+     都可能漏掉。现在把"表面 / 文字 / 边框 / 语义底"收进令牌，深色只需重新定义
+     :root 的这几十个变量，组件 CSS 一行都不用改（**浅色值逐字保持不变**，
+     所以这次令牌化对浅色模式是零视觉变化）。
+     命名规则：--xxx 是颜色本身；--xxxbd 是它的边框色；--xxxbg 是它的浅底。 */
+  --hover:#fafbfd;        /* 次级按钮/条目 hover 底、.kv .it、.tl 的底 */
+  --rowalt:#fcfdff;       /* 表格偶数行 */
+  --hoverline:#d6dbe4;
+  --panel:#f1f4f9;        /* 分段控件（.seg）底 */
+  --sug:#ffffff;          /* 下拉/浮层底（比卡片再"浮"一层） */
+  --topbg:rgba(255,255,255,.86);
+  --tipbg:rgba(255,255,255,.98);
+  --tipbgSolid:#ffffff;   /* 手机端贴底卡片要求不透明 */
+  --loadbg:rgba(255,255,255,.9);
+  --azibg:rgba(255,255,255,.72);
+  --azitx:#6b7486;
+  --spinbd:#f0d8c8;
+  --focusbd:#f0b189; --focusring:#ffe6d6;
+  --accbd:#ffd9c2; --okbd:#bfe7d2; --warnbd:#f2ddba; --badbd:#f5cdc9; --bluebd:#d9e3fb;
+  --track:#eef1f6;        /* 进度条/环形底、图表网格、地图未加载时的底 */
+  --track2:#e3e8f0;       /* 排行榜条形底 */
+  --grad1:#ffeede; --grad2:#e9f0ff;            /* body 那两团径向光 */
+  --grad1t:rgba(255,238,222,0); --grad2t:rgba(233,240,255,0);
+  --ensbd:#f3c9ab; --ensgrad:#fff8f4;          /* 「多模型综合」卡的边框与渐变顶 */
+  --soft:#fbfcfe;         /* 内嵌面板（环境输入条 / 省份下钻） */
+  --tint:#fff8f2; --tint2:#fdf6f1; --tint3:#ffe6d8;   /* 品牌橙的三种淡底 */
+  --hole:rgba(0,0,0,.09); /* 色卡/图例色块的描边 */
+  --gp1:#2f6fd0; --gp2:#e2601f;                /* 曲线图的两条线（蓝/橙） */
+  /* 四路模型标识色（模型卡上的小圆点与数字）：深色下要提亮，
+     否则 #2f6fd0 这类中蓝压在深底上几乎看不见 */
+  --mc-gfs:#2f6fd0; --mc-ec:#0f9c8a; --mc-rt:#c9501a; --mc-ens:#e2601f;
+  /* 四级等级色（.g-优/良/一般/差 与 pill）：**必须成套**，
+     深色下不能只换底色 —— 文字色 #178a52 之类在深底上对比度只有 2.6，读不出来 */
+  --g1bg:#e9f7ef; --g1tx:#12734a; --g1bd:#bfe7d2;
+  --g2bg:#eef6e8; --g2tx:#4c7a16; --g2bd:#d5e9c0;
+  --g3bg:#fdf3e3; --g3tx:#9a5b06; --g3bd:#f2ddba;
+  --g4bg:#fdeceb; --g4tx:#a93226; --g4bd:#f5cdc9;
+}
+
+/* ---------- 深色（F8）----------
+   只在 html[data-theme="dark"] 下生效。`data-theme` 由 <head> 里那段引导脚本
+   在 CSS 解析前设好（避免刷新时闪一帧浅色）；"跟随系统"也在这里就被解析成
+   light/dark 两个具体值，所以**不需要**再写一份 @media (prefers-color-scheme)。
+   系统性取舍：**只改令牌**，不在这里逐个组件覆盖 —— 组件的取值全都走令牌了。 */
+html[data-theme="dark"]{
+  --bg:#11151c; --card:#171d26; --line:#2b333f; --line2:#222932;
+  --tx:#e7ecf3; --tx2:#aab5c3; --tx3:#919dac;
+  --ok:#5fce97; --okbg:#122a20; --okbd:#1f4735;
+  --warn:#e2b45e; --warnbg:#2a2314; --warnbd:#463a1e;
+  --bad:#f2796a; --badbg:#2d1a18; --badbd:#4d2a26;
+  --acc:#f4791f; --acc2:#ff9d52; --accbg:#2c1e13; --accbd:#4d3520;
+  --blue:#7fadff; --bluebg:#141e33; --bluebd:#28395c;
+  /* 深色下阴影要更重才有层次：浅色那套（4% 黑）在深底上完全看不见 */
+  --sh:0 1px 2px rgba(0,0,0,.5), 0 8px 24px -10px rgba(0,0,0,.65);
+  --hover:#1e242e; --rowalt:#1a2029; --hoverline:#3a4450; --panel:#1c232c; --sug:#1f2630;
+  --topbg:rgba(18,23,30,.9); --tipbg:rgba(23,29,38,.98); --tipbgSolid:#171d26;
+  --loadbg:rgba(20,26,34,.92); --azibg:rgba(20,25,33,.72); --azitx:#a9b4c2;
+  --spinbd:#3a2a20;
+  --focusbd:#a9663a; --focusring:#4a2f1e;
+  --track:#232b35; --track2:#2b333f;
+  /* 那两团径向光在深色下改成"暖橙 + 冷蓝"的低亮度版本，保留品牌感但不刺眼 */
+  --grad1:#231708; --grad2:#0f1a2b;
+  --grad1t:rgba(35,23,8,0); --grad2t:rgba(15,26,43,0);
+  --ensbd:#5a3f2a; --ensgrad:#241d19;
+  --soft:#1b2129; --tint:#231d18; --tint2:#221c17; --tint3:#2a2018;
+  --hole:rgba(255,255,255,.10);
+  --gp1:#6f9dea; --gp2:#f4791f;
+  --mc-gfs:#6f9dea; --mc-ec:#3fc3b0; --mc-rt:#e8783a; --mc-ens:#f4791f;
+  --g1bg:#122a20; --g1tx:#5fce97; --g1bd:#1f4735;
+  --g2bg:#1c2a17; --g2tx:#9ac765; --g2bd:#2f4526;
+  --g3bg:#2a2314; --g3tx:#e2b45e; --g3bd:#463a1e;
+  --g4bg:#2d1a18; --g4tx:#f2796a; --g4bd:#4d2a26;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
 body{
   background:
-    radial-gradient(1200px 380px at 12% -8%, #ffeede 0%, rgba(255,238,222,0) 62%),
-    radial-gradient(1000px 340px at 92% -6%, #e9f0ff 0%, rgba(233,240,255,0) 60%),
+    radial-gradient(1200px 380px at 12% -8%, var(--grad1) 0%, var(--grad1t) 62%),
+    radial-gradient(1000px 340px at 92% -6%, var(--grad2) 0%, var(--grad2t) 60%),
     var(--bg);
   color:var(--tx);
   font:15px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
@@ -55,7 +158,7 @@ a{color:var(--blue)}
 
 /* ---------- 顶部 ---------- */
 .top{position:sticky;top:0;z-index:60;backdrop-filter:saturate(1.4) blur(10px);
-  background:rgba(255,255,255,.86);border-bottom:1px solid var(--line)}
+  background:var(--topbg);border-bottom:1px solid var(--line)}
 .top-in{max-width:1560px;margin:0 auto;padding:11px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .logo{width:34px;height:34px;border-radius:11px;flex:0 0 auto;
   background:linear-gradient(150deg,#ffd08a,#f08a3c 46%,#c9501a);box-shadow:0 4px 12px -4px rgba(201,80,26,.55)}
@@ -72,7 +175,7 @@ a{color:var(--blue)}
    空间，badge 不再贴右。 */
 .top-tx{min-width:0}
 .top .spacer{flex:1 1 auto}
-.badge{font-size:11.5px;padding:4px 9px;border-radius:999px;background:var(--accbg);color:var(--acc2);border:1px solid #ffd9c2;white-space:nowrap}
+.badge{font-size:11.5px;padding:4px 9px;border-radius:999px;background:var(--accbg);color:var(--acc2);border:1px solid var(--accbd);white-space:nowrap}
 /* 手机端：顶部整块在窄屏下会**换行摊开** —— .top-in 是 flex-wrap:wrap，而中间的
    文字列没有 min-width:0，于是 h1 与 sub 先各自撑成整行，badge 再被挤到第三行。
    实测 390×844 下占掉视口高度的 20.8%（175 px、摊成 3 行），而这一屏里
@@ -128,11 +231,11 @@ label.lb{display:block;font-size:12.5px;color:var(--tx2);font-weight:600;margin-
 input,select,button{font:inherit;color:inherit}
 input[type=text],input[type=date],input[type=number],select{
   width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:var(--r2);
-  background:#fff;outline:none;transition:border-color .15s,box-shadow .15s}
-input:focus,select:focus{border-color:#f0b189;box-shadow:0 0 0 3px #ffe6d6}
-button{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:var(--r2);
+  background:var(--card);outline:none;transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus{border-color:var(--focusbd);box-shadow:0 0 0 3px var(--focusring)}
+button{cursor:pointer;border:1px solid var(--line);background:var(--card);border-radius:var(--r2);
   padding:9px 14px;font-weight:600;transition:.15s}
-button:hover{border-color:#d6dbe4;background:#fafbfd}
+button:hover{border-color:var(--hoverline);background:var(--hover)}
 button.primary{background:linear-gradient(180deg,#f0763a,#dd5a1d);border-color:#d0521a;color:#fff;
   box-shadow:0 6px 14px -6px rgba(221,90,29,.7)}
 button.primary:hover{filter:brightness(1.05);background:linear-gradient(180deg,#f0763a,#dd5a1d)}
@@ -152,7 +255,7 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 .seg button:focus-visible,.unitseg button:focus-visible,.presets button:focus-visible{outline-offset:1px}
 
 /* 搜索下拉 */
-.sug{position:absolute;left:0;right:0;top:calc(100% + 5px);background:#fff;border:1px solid var(--line);
+.sug{position:absolute;left:0;right:0;top:calc(100% + 5px);background:var(--sug);border:1px solid var(--line);
   border-radius:var(--r2);box-shadow:0 14px 34px -12px rgba(16,24,40,.34);max-height:296px;overflow:auto;z-index:70;display:none}
 .sug.on{display:block}
 .sug div{padding:9px 12px;font-size:13.5px;cursor:pointer;display:flex;gap:8px;align-items:baseline}
@@ -162,9 +265,9 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 
 /* ---------- 控制面板 ---------- */
 .ctrl-grid{display:grid;grid-template-columns:minmax(240px,1.5fr) 150px 150px 128px auto;gap:12px;align-items:end}
-.seg{display:flex;gap:6px;background:#f1f4f9;border:1px solid var(--line);padding:4px;border-radius:12px}
+.seg{display:flex;gap:6px;background:var(--panel);border:1px solid var(--line);padding:4px;border-radius:12px}
 .seg button{border:0;background:transparent;padding:7px 12px;border-radius:8px;font-size:13.5px;color:var(--tx2)}
-.seg button.on{background:#fff;color:var(--acc2);box-shadow:0 2px 8px -3px rgba(16,24,40,.22)}
+.seg button.on{background:var(--sug);color:var(--acc2);box-shadow:0 2px 8px -3px rgba(16,24,40,.22)}
 .rowline{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
 .chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--tx2);cursor:pointer;user-select:none}
 .presets{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
@@ -207,22 +310,24 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 /* 窄屏不再整段隐藏：宁可让它换行，也不要把 ΔI / 一致性 这些判断依据丢掉 */
 @media (max-width:520px){.cfbadge .cfsm{flex:1 1 100%;padding-left:13px}}
 .grade{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12.5px;font-weight:700;border:1px solid}
-.g-优{background:#e9f7ef;color:#12734a;border-color:#bfe7d2}
-.g-良{background:#eef6e8;color:#4c7a16;border-color:#d5e9c0}
-.g-一般{background:#fdf3e3;color:#9a5b06;border-color:#f2ddba}
-.g-差{background:#fdeceb;color:#a93226;border-color:#f5cdc9}
+/* 结论卡的概率环底：走令牌，深色下才是深灰而不是一道白圈 */
+.dialbg{stroke:var(--track)}
+.g-优{background:var(--g1bg);color:var(--g1tx);border-color:var(--g1bd)}
+.g-良{background:var(--g2bg);color:var(--g2tx);border-color:var(--g2bd)}
+.g-一般{background:var(--g3bg);color:var(--g3tx);border-color:var(--g3bd)}
+.g-差{background:var(--g4bg);color:var(--g4tx);border-color:var(--g4bd)}
 
 /* ---------- 概览小格 ---------- */
 .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:9px}
-.kv .it{background:#fafbfd;border:1px solid var(--line2);border-radius:var(--r2);padding:8px 10px}
+.kv .it{background:var(--hover);border:1px solid var(--line2);border-radius:var(--r2);padding:8px 10px}
 .kv .k{font-size:11.5px;color:var(--tx3)}
 .kv .v{font-size:14.5px;font-weight:700;margin-top:2px;font-family:var(--mono);word-break:break-all}
 
 /* ---------- 模型卡 ---------- */
 .models{display:grid;grid-template-columns:1fr 1fr;gap:11px}
 @media (max-width:640px){.models{grid-template-columns:1fr}}
-.mcard{border:1px solid var(--line);border-radius:var(--r2);padding:12px;background:#fff;position:relative;overflow:hidden}
-.mcard.ens{border-color:#f3c9ab;background:linear-gradient(180deg,#fff8f4,#fff)}
+.mcard{border:1px solid var(--line);border-radius:var(--r2);padding:12px;background:var(--card);position:relative;overflow:hidden}
+.mcard.ens{border-color:var(--ensbd);background:linear-gradient(180deg,var(--ensgrad),var(--card))}
 .mcard .mh{display:flex;align-items:center;gap:7px;margin-bottom:9px}
 .mcard .mh b{font-size:14px}
 .mcard .mh .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
@@ -231,7 +336,7 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 .mnum{font-size:30px;font-weight:800;line-height:1;letter-spacing:-1px;font-family:var(--mono)}
 .mnum small{font-size:14px;font-weight:700;margin-left:1px}
 .mmeta{display:flex;flex-direction:column;gap:3px;padding-bottom:2px}
-.bar{height:7px;border-radius:99px;background:#eef1f6;overflow:hidden;margin-top:9px}
+.bar{height:7px;border-radius:99px;background:var(--track);overflow:hidden;margin-top:9px}
 .bar i{display:block;height:100%;border-radius:99px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
 .mfacts{margin-top:9px;font-size:12.2px;color:var(--tx2);line-height:1.75}
 .mfacts span{display:inline-block;margin-right:10px;white-space:nowrap}
@@ -245,9 +350,9 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 .ftab td.v{font-family:var(--mono);font-weight:700;white-space:nowrap}
 .ftab td.d{color:var(--tx2);font-size:12.3px;line-height:1.6}
 .pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:700;border:1px solid;white-space:nowrap}
-.p-ok{background:var(--okbg);color:var(--ok);border-color:#bfe7d2}
-.p-mid{background:var(--warnbg);color:var(--warn);border-color:#f2ddba}
-.p-bad{background:var(--badbg);color:var(--bad);border-color:#f5cdc9}
+.p-ok{background:var(--okbg);color:var(--ok);border-color:var(--okbd)}
+.p-mid{background:var(--warnbg);color:var(--warn);border-color:var(--warnbd)}
+.p-bad{background:var(--badbg);color:var(--bad);border-color:var(--badbd)}
 /* 滚动容器的宽度必须显式封顶。`overflow-x:auto` 本身**不**封顶：作为
    flex/grid 子项时它带着 `min-width:auto`，会被内容（本例是 table#fac.ftab）
    一起撑开。手机上这不是"某个表格有点宽"，而是把整页的 scrollWidth 从 390
@@ -258,9 +363,9 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 
 /* ---------- 光追 ---------- */
 .ray{display:grid;grid-template-columns:repeat(auto-fit,minmax(146px,1fr));gap:9px}
-.swatch{height:42px;border-radius:9px;border:1px solid rgba(0,0,0,.09);display:flex;align-items:flex-end;
+.swatch{height:42px;border-radius:9px;border:1px solid var(--hole);display:flex;align-items:flex-end;
   justify-content:flex-end;padding:3px 7px;font-size:11px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5)}
-.tl{position:relative;height:56px;margin:12px 0 4px;border-radius:9px;background:#fafbfd;border:1px solid var(--line2);overflow:hidden}
+.tl{position:relative;height:56px;margin:12px 0 4px;border-radius:9px;background:var(--hover);border:1px solid var(--line2);overflow:hidden}
 .tl .seg2{position:absolute;top:0;bottom:0;background:linear-gradient(180deg,#ffd9a8,#f08a3c);opacity:.32}
 .tl .mk{position:absolute;top:0;bottom:0;width:1px;background:#94a3b8}
 .tl .lb2{position:absolute;font-size:10.5px;color:var(--tx3);bottom:4px;transform:translateX(-50%);white-space:nowrap}
@@ -270,13 +375,13 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 .notes{display:flex;flex-direction:column;gap:7px}
 .note{display:flex;gap:9px;font-size:12.7px;line-height:1.6;padding:8px 11px;border-radius:var(--r2);border:1px solid}
 .note b{font-weight:700}
-.n-ok{background:var(--okbg);border-color:#d3ecdf;color:#14603f}
-.n-warn{background:var(--warnbg);border-color:#f2ddba;color:#8a5306}
-.n-bad{background:var(--badbg);border-color:#f5cdc9;color:#8f2b21}
-.n-info{background:var(--bluebg);border-color:#d9e3fb;color:#1d4ed8}
+.n-ok{background:var(--okbg);border-color:var(--okbd);color:var(--ok)}
+.n-warn{background:var(--warnbg);border-color:var(--warnbd);color:var(--warn)}
+.n-bad{background:var(--badbg);border-color:var(--badbd);color:var(--bad)}
+.n-info{background:var(--bluebg);border-color:var(--bluebd);color:var(--blue)}
 
 /* ---------- 地图 ---------- */
-.mapwrap{position:relative;border-radius:var(--r2);overflow:hidden;border:1px solid var(--line);background:#eef1f5}
+.mapwrap{position:relative;border-radius:var(--r2);overflow:hidden;border:1px solid var(--line);background:var(--track)}
 #map{width:100%;height:600px;touch-action:none}
 /* touch-action:none：真机上"地图无法左右滑"的另一半根因 —— 页面一旦有横向
    溢出（见 .top-tx），浏览器的横向平移手势会跟地图拖动竞争，单指横滑被
@@ -333,16 +438,16 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 .azilayer .aziray{position:absolute;left:0;top:0;height:0;transform-origin:0 50%;border-top:1.5px dashed rgba(192,122,16,.85)}
 .azilayer .aziring{position:absolute;left:0;top:0;border-radius:50%;border:1px dashed rgba(120,132,150,.45)}
 .azilayer .azilab{position:absolute;transform:translate(-50%,-50%);font-family:var(--mono);font-size:10.5px;
-  color:#6b7486;background:rgba(255,255,255,.72);padding:0 3px;border-radius:4px;white-space:nowrap}
+  color:var(--azitx);background:var(--azibg);padding:0 3px;border-radius:4px;white-space:nowrap}
 .azilayer .azilab.hd{color:#8a5306;font-weight:700}
 /* 地图整体不可用时的兜底说明（离线 / 代理占位符未替换） */
 .mapfail{padding:22px;font-size:13.5px;color:var(--tx2);line-height:1.8}
 .mapfail code{font-family:var(--mono);font-size:12px;background:var(--line2);padding:1px 5px;border-radius:5px}
 .mload{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;
-  background:rgba(255,255,255,.9);z-index:7;font-size:13.5px;color:var(--tx2)}
-.spin{width:26px;height:26px;border-radius:50%;border:3px solid #f0d8c8;border-top-color:var(--acc);animation:sp .8s linear infinite}
+  background:var(--loadbg);z-index:7;font-size:13.5px;color:var(--tx2)}
+.spin{width:26px;height:26px;border-radius:50%;border:3px solid var(--spinbd);border-top-color:var(--acc);animation:sp .8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
-.mload.err{padding:20px 18px;text-align:center;line-height:1.75;background:rgba(255,255,255,.96)}
+.mload.err{padding:20px 18px;text-align:center;line-height:1.75;background:var(--tipbg)}
 .mload.err .spin{display:none}
 .mretry{margin-left:6px;padding:4px 12px;border:1px solid var(--acc);background:transparent;color:var(--acc);
   border-radius:8px;font-size:12.5px;cursor:pointer;font-family:inherit}
@@ -357,7 +462,7 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
    overflow:hidden —— 溢出部分直接被裁掉（真机截图里"郴州市附近"上面那行
    的开头就是这样没的）。窄屏改走 .dock（贴底通栏）后这条更是必须。 */
 .tip .tclose{margin-left:auto;flex:0 0 auto;width:20px;height:20px;border-radius:50%;
-  border:1px solid var(--line);background:#fff;color:var(--tx2);font:inherit;font-size:12px;line-height:1;
+  border:1px solid var(--line);background:var(--card);color:var(--tx2);font:inherit;font-size:12px;line-height:1;
   cursor:pointer;pointer-events:auto;display:none;align-items:center;justify-content:center;padding:0}
 .tip .tclose:hover{background:var(--accbg);color:var(--acc2);border-color:var(--acc)}
 /* 桌面端不需要它：`.tip` 是 pointer-events:none，指针能穿过去 ⇒ mouseleave 照常触发。
@@ -387,7 +492,7 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
        "查询点"图钉、数值直标、色面，那 2% 会让它们整片透上来变成脏点
        （实拍里"郴州市附近"四个字清晰浮在卡片中间）。层序是对的（tip z=20 >
        pinlayer z=6），问题纯粹在 alpha。 */
-    background:#fff;
+    background:var(--tipbgSolid);
     /* z=2000 而不是 20：腾讯地图 SDK 会在**触屏真机**上自动加缩放（+/−）与
        罗盘控件，z-index 是 SDK 内部值、无从约定 —— 真机实测它们整只压在
        z=20 的卡片上，连卡片右上角的 × 都被盖住（第二批真机反馈）。
@@ -419,7 +524,7 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 .lgmore summary{cursor:pointer;font-weight:600;color:var(--tx3);font-size:12.3px;padding:3px 0}
 .lgmore summary:hover{color:var(--acc)}
 .lgmore .hint{margin-top:7px}
-.chipc{width:13px;height:13px;border-radius:4px;border:1px solid rgba(0,0,0,.12);flex:0 0 auto}
+.chipc{width:13px;height:13px;border-radius:4px;border:1px solid var(--hole);flex:0 0 auto}
 
 /* ---------- 地图工具条 ---------- */
 .maptool{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:11px}
@@ -444,43 +549,43 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 .rank .rr:active{background:var(--line2)}
 .rank .rr .nm{min-width:86px;font-weight:600}
 /* 条形底色比色阶最低端（白）略深一档，否则"低值"的白色条会融进轨道里看不出长度 */
-.rank .rr .b3{flex:1;height:8px;border-radius:99px;background:#e3e8f0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.05);overflow:hidden}
+.rank .rr .b3{flex:1;height:8px;border-radius:99px;background:var(--track2);box-shadow:inset 0 0 0 1px rgba(0,0,0,.05);overflow:hidden}
 .rank .rr .b3 i{display:block;height:100%}
 .rank .rr .vv{font-family:var(--mono);font-weight:700;min-width:42px;text-align:right}
 
 /* ---------- 页脚 ---------- */
 footer{margin-top:20px;font-size:12.3px;color:var(--tx3);line-height:1.75}
-footer details{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:10px}
+footer details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:10px}
 footer summary{cursor:pointer;font-weight:700;color:var(--tx);font-size:13.5px}
 footer .body{padding-top:9px}
 footer ul{margin:7px 0;padding-left:19px}
 footer li{margin:3px 0}
 
 /* ---------- 环境输入条（F7：让单位切换落到实处，也让结论可复核） ---------- */
-.envstrip{margin-top:12px;border:1px dashed var(--line);border-radius:var(--r2);padding:9px 11px;background:#fbfcfe}
+.envstrip{margin-top:12px;border:1px dashed var(--line);border-radius:var(--r2);padding:9px 11px;background:var(--soft)}
 .envstrip .esh{font-size:12.5px;color:var(--tx3);margin-bottom:7px}
 
 /* ---------- 霞光强度/彩度演变曲线（F3） ---------- */
 .rcwrap{margin:2px 0 4px}
 .rcurve{display:block;width:100%;height:96px}
 .rcg{stroke:var(--line2);stroke-width:1}
-.rcL{fill:none;stroke:#2f6fd0;stroke-width:1.8}
-.rcC{fill:none;stroke:#e2601f;stroke-width:1.8;stroke-dasharray:4 3}
+.rcL{fill:none;stroke:var(--gp1);stroke-width:1.8}
+.rcC{fill:none;stroke:var(--gp2);stroke-width:1.8;stroke-dasharray:4 3}
 .rcaxis{display:flex;justify-content:space-between;font-size:11.5px;color:var(--tx3);margin-top:2px}
 .rcleg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--tx2);margin-top:6px}
 .rcleg i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
-.rcleg .rcLi{background:#2f6fd0}
-.rcleg .rcCi{background:#e2601f}
+.rcleg .rcLi{background:var(--gp1)}
+.rcleg .rcCi{background:var(--gp2)}
 
 /* ---------- 七日趋势（F5） ---------- */
 .t-trend{width:100%;border-collapse:collapse;font-size:13px}
 .t-trend th,.t-trend td{border-bottom:1px solid var(--line2);padding:6px 8px;text-align:left;vertical-align:middle}
 .t-trend th{font-size:12px;color:var(--tx3);font-weight:600}
-.t-trend tr.cur td{background:#fff8f2}
+.t-trend tr.cur td{background:var(--tint)}
 .td-date{white-space:nowrap;color:var(--tx2);font-family:var(--mono);font-size:12.5px}
 .td-date i{color:var(--acc);font-style:normal;font-size:11px;margin-left:4px}
 .td-cell{cursor:pointer;border-radius:6px}
-.td-cell:hover{background:#fdf6f1}
+.td-cell:hover{background:var(--tint2)}
 .td-cell.on{outline:2px solid var(--acc);outline-offset:-2px}
 .td-cell:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
 .td-cell.empty{color:var(--tx3);cursor:default}
@@ -495,7 +600,7 @@ footer li{margin:3px 0}
 .tgo{display:block;width:100%;margin-top:8px;padding:6px 8px;border:1px solid var(--acc);
   background:var(--accbg);color:var(--acc2);border-radius:8px;font:inherit;font-size:12.5px;cursor:pointer;
   pointer-events:auto}
-.tgo:hover{background:#ffe6d8}
+.tgo:hover{background:var(--tint3)}
 
 /* ---------- 数值直标：第二编码（F6） ---------- */
 .mlayer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;display:none;z-index:5;overflow:hidden}
@@ -549,21 +654,21 @@ footer li{margin:3px 0}
 .mapwrap.dark .pinlayer{filter:invert(1) hue-rotate(180deg)}
 
 /* ---------- 省份下钻（F4） ---------- */
-.drill{display:none;margin-top:10px;border:1px solid var(--line);border-radius:var(--r2);background:#fbfcfe;padding:9px 11px}
+.drill{display:none;margin-top:10px;border:1px solid var(--line);border-radius:var(--r2);background:var(--soft);padding:9px 11px}
 .drill.on{display:block}
 .dhead{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin-bottom:7px}
 .dhead .dsub{font-size:11.5px;color:var(--tx3)}
-.dhead .dx{margin-left:auto;border:1px solid var(--line);background:#fff;border-radius:7px;
+.dhead .dx{margin-left:auto;border:1px solid var(--line);background:var(--card);border-radius:7px;
   padding:2px 9px;font:inherit;font-size:12px;color:var(--tx2);cursor:pointer}
 .dlist{display:flex;flex-wrap:wrap;gap:6px}
-.dcity{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:#fff;
+.dcity{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--card);
   border-radius:9px;padding:4px 9px;font:inherit;font-size:12.5px;cursor:pointer}
-.dcity:hover{border-color:var(--acc);background:#fff8f2}
+.dcity:hover{border-color:var(--acc);background:var(--tint)}
 .dcity .dv{font-family:var(--mono);font-weight:700;color:var(--acc2)}
 .dcity .grade{transform:scale(.9)}
 
 /* ---------- 单位 / 时间制切换（F7） ---------- */
-.unitseg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff}
+.unitseg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--card)}
 .unitseg button{border:0;background:transparent;padding:4px 10px;font:inherit;font-size:12.5px;
   color:var(--tx2);cursor:pointer}
 .unitseg button.on{background:var(--accbg);color:var(--acc2);font-weight:600}
@@ -654,6 +759,8 @@ footer li{margin:3px 0}
            这一行本来就 flex-wrap，加一个控件不影响任何现有断言。
            按钮文字用各语言自己的写法（中文 / 繁體 / English），不参与翻译。 -->
       <div class="unitseg" id="langSeg" role="group" aria-label="语言" data-i18n-aria="语言"></div>
+      <!-- 主题（F8）：三态分段控件。**同样不放顶栏** —— 窄屏顶部条有"必须一行"的硬约束。 -->
+      <div class="unitseg" id="themeSeg" role="group" aria-label="主题" data-i18n-aria="主题"></div>
       <span class="hint" id="locHint" style="margin-left:auto"></span>
     </div>
 
@@ -1265,6 +1372,10 @@ const I18N_ZH_HANT = {
   "霞光对云的三维分布极为敏感。教程明确指出：短期预报时效不建议超过 36 小时；超过时效或模式间分歧较大时，结论仅作参考，应以临近时刻的卫星云图与实况外推为准。": "霞光對雲的三維分布極為敏感。教程明確指出：短期預報時效不建議超過 36 小時；超過時效或模式間分歧較大時，結論僅供參考，應以臨近時刻的衛星雲圖與實況外推為準。",
   "本程序为科普与辅助决策工具，不构成任何形式的专业气象预报或出行承诺。": "本程式為科普與輔助決策工具，不構成任何形式的專業氣象預報或出行承諾。",
   "霞光预报单文件版 · 全部计算在浏览器本地完成 · 数据经 Open-Meteo / CAMS 实时获取": "霞光預報單檔案版 · 全部計算在瀏覽器本機完成 · 資料經 Open-Meteo / CAMS 即時取得",
+  "主题": "主題",
+  "跟随系统": "跟隨系統",
+  "浅色": "淺色",
+  "深色": "深色",
 };
 
 /* ---- English ---- */
@@ -1702,6 +1813,10 @@ const I18N_EN = {
   "霞光对云的三维分布极为敏感。教程明确指出：短期预报时效不建议超过 36 小时；超过时效或模式间分歧较大时，结论仅作参考，应以临近时刻的卫星云图与实况外推为准。": "Glow is extremely sensitive to the three-dimensional cloud field. The tutorial is explicit: short-range lead times beyond 36 hours are discouraged, and beyond that — or when models disagree — treat the result as indicative only and rely on recent satellite imagery and observed trends.",
   "本程序为科普与辅助决策工具，不构成任何形式的专业气象预报或出行承诺。": "This app is an educational and decision-support tool; it is not a professional weather forecast and carries no promise about your trip.",
   "霞光预报单文件版 · 全部计算在浏览器本地完成 · 数据经 Open-Meteo / CAMS 实时获取": "Glowcast, single-file edition · everything is computed in your browser · data fetched live from Open-Meteo / CAMS",
+  "主题": "Theme",
+  "跟随系统": "System",
+  "浅色": "Light",
+  "深色": "Dark",
 };
 
 const I18N = { zh: null, zhHant: I18N_ZH_HANT, en: I18N_EN };
@@ -1787,9 +1902,12 @@ function applyI18nDom(root) {
 function listJoin(arr) { return (arr || []).join(LANG === "en" ? ", " : "、"); }
 
 function confText(cf) {
+  /* 颜色也在这里挑（按主题）—— 四个使用点（结论卡徽标 / 模型卡 / 因素表 / 悬停卡）
+     都走它，所以"深色下用哪套色"只有这一处判断。 */
+  const d = (typeof isDarkTheme === "function" && isDarkTheme() && cf.dark) ? cf.dark : null;
   return {
     lv: i18n(cf.lv), txt: i18n(cf.txt), hint: i18n(cf.hint),
-    color: cf.color, bg: cf.bg, bd: cf.bd, key: cf.key
+    color: d ? d.color : cf.color, bg: d ? d.bg : cf.bg, bd: d ? d.bd : cf.bd, key: cf.key
   };
 }
 
@@ -2837,11 +2955,15 @@ const W_ENS = { gfs: 0.30, ec: 0.34, rt: 0.36 };
    min 是**唯一**的落档边界（与改造前的 if/else 链逐点等价）；max 只用于区间文案。
    注意分数保留一位小数，所以 79.5 属于「良」而不是「优」—— 与旧实现完全一致，
    区间文案也只承诺整数分。 */
+/* 等级色：`dark` 是深色模式的变体。
+   为什么不能共用一套：这些色既做**文字**（等级徽章的 color）又做**细线**
+   （仪表盘弧、条形），浅色那套（#178a52 等）压在深底上对比度只有 ~2.6，读不出来。
+   取值口径与 CSS 里的 --g1tx..--g4tx 保持一致（同一档位、同一个色）。 */
 const QUALITY_BANDS = [
-  { key: "优", min: 80, max: 100, color: "#178a52" },
-  { key: "良", min: 65, max: 79, color: "#5f9a1b" },
-  { key: "一般", min: 45, max: 64, color: "#c07a10" },
-  { key: "差", min: 0, max: 44, color: "#c0392b" }
+  { key: "优", min: 80, max: 100, color: "#178a52", dark: "#5fce97" },
+  { key: "良", min: 65, max: 79, color: "#5f9a1b", dark: "#9ac765" },
+  { key: "一般", min: 45, max: 64, color: "#c07a10", dark: "#e2b45e" },
+  { key: "差", min: 0, max: 44, color: "#c0392b", dark: "#f2796a" }
 ];
 const QUALITY_LABEL = { "优": "优秀", "良": "良好", "一般": "一般", "差": "较差" };
 function gradeOf(q) {
@@ -2851,7 +2973,10 @@ function gradeOf(q) {
 }
 function gradeColor(g) {
   const b = QUALITY_BANDS.find(x => x.key === g);
-  return b ? b.color : "#8892a0";
+  if (!b) return "#8892a0";
+  /* 主题相关取色：这是**唯一入口**（仪表盘弧、等级徽章、分享卡、地图色阶都用它），
+     所以深色变体只在这里挑一次，别在调用点各判一次主题。 */
+  return (isDarkTheme() && b.dark) ? b.dark : b.color;
 }
 /* ---- 模式一致性（可信度）档位：**全应用唯一来源** ----
    阈值 18 / 35 不是新造的 —— 它们此前已经硬写在结论卡的附注文案里，只是没有名字。
@@ -2871,10 +2996,12 @@ function gradeColor(g) {
    "可信度 较高 / 距最近采样点 11 km，插值可信 / undefined"，分歧提示的档位也全都
    fallback 成了 warn。是 `cdp.js` 新增的徽标断言把它抓出来的。
    **凡是在 `_p4/_p5/_p5b` 里新增的全局函数，先 grep 一遍 `_p6.js` 再命名。** */
+/* 可信度的三档配色：同样成套给深色变体（文字/底/边一起换）。
+   注意这里的阈值（18 / 35）仍然**只此一处**，深色变体只是颜色。 */
 const ENS_CONF_BANDS = [
-  { key: "hi", max: 18, lv: "高", color: "#178a52", bg: "#e9f7ef", bd: "#bfe7d2", txt: "三套算法结论接近", hint: "可信度较高，可直接据此安排。" },
-  { key: "mid", max: 35, lv: "中", color: "#c07a10", bg: "#fdf3e3", bd: "#f2ddba", txt: "三套算法存在一定分歧", hint: "分歧在可接受范围内，建议结合临近云图复核。" },
-  { key: "lo", max: Infinity, lv: "低", color: "#c0392b", bg: "#fdeceb", bd: "#f5cdc9", txt: "三套算法分歧较大", hint: "请谨慎采信，临近日再确认一次。" }
+  { key: "hi", max: 18, lv: "高", color: "#178a52", bg: "#e9f7ef", bd: "#bfe7d2", dark: { color: "#5fce97", bg: "#122a20", bd: "#1f4735" }, txt: "三套算法结论接近", hint: "可信度较高，可直接据此安排。" },
+  { key: "mid", max: 35, lv: "中", color: "#c07a10", bg: "#fdf3e3", bd: "#f2ddba", dark: { color: "#e2b45e", bg: "#2a2314", bd: "#463a1e" }, txt: "三套算法存在一定分歧", hint: "分歧在可接受范围内，建议结合临近云图复核。" },
+  { key: "lo", max: Infinity, lv: "低", color: "#c0392b", bg: "#fdeceb", bd: "#f5cdc9", dark: { color: "#f2796a", bg: "#2d1a18", bd: "#4d2a26" }, txt: "三套算法分歧较大", hint: "请谨慎采信，临近日再确认一次。" }
 ];
 /* 取不到分歧（不足两套算法有值）时给「中」—— 既不假装可信，也不无端恐吓 */
 function ensConfOf(dv) {
@@ -3044,6 +3171,9 @@ const PREF_STR = {
   units: ["metric", "imperial"],
   mapDim: ["mix", "p", "q", "dv"],
   mapModel: ["ens", "gfs", "ec", "rt"],
+  /* 主题（F8）：三态。与其它枚举同一套白名单 —— 坏值降级为"没有偏好"，
+     下一步 themePref() 自然回落到 auto。 */
+  theme: ["auto", "light", "dark"],
   /* 语言：与其它枚举同一套白名单。坏值/未知码降级为"没有偏好"，
      下一步 detectLang() 自然回落（URL > 偏好 > 浏览器 > 简体）。 */
   lang: ["zh", "zhHant", "en"]
@@ -3143,6 +3273,90 @@ function refreshLocHint() {
   el.textContent = i18n("当前：{v}", { v: State.name + "（" + State.lat.toFixed(3) + "°, " + State.lon.toFixed(3) + "°）" });
 }
 
+/* =========================================================================
+   深色模式（F8）
+   -------------------------------------------------------------------------
+   三态：跟随系统 / 浅色 / 深色。偏好写进同一个 `sunsetbot.pref.v1`（白名单 theme）。
+
+   **无闪烁**是设计目标：`<head>` 里那段引导脚本在 CSS 解析**之前**就把
+   `data-theme` 设好了，所以刷新时不会先闪一帧浅色。本文件只负责两件事：
+     ① 用户点分段控件时切换并落盘；
+     ② 偏好是"跟随系统"时，响应系统主题变化（matchMedia 的 change）。
+   也就是说：**主题的初值不在这里定**，这里只是"改"。
+
+   与 i18n 的关系：两者都是"渲染前提"，都在 initUI 最前面应用，但互不依赖 ——
+   主题换的是 CSS 令牌，语言换的是文案。语言进 URL（分享链接要带内容语言），
+   **主题刻意不进 URL**：它是设备偏好，别人发的链接不该强制你的界面变黑。
+
+   颜色为什么能只改令牌就行：`<head>` 里那份 `html[data-theme="dark"]` 只重新定义
+   令牌，组件 CSS 一律走令牌（见 :root 那段的说明）。唯一的例外是**写进 DOM 的
+   语义色**（等级徽标、可信度档色、仪表盘弧色）—— 它们是 JS 按主题取值的，
+   所以切主题后要重画一次（rerenderForTheme，定义在 _p6.js）。
+   ========================================================================= */
+const THEMES = ["auto", "light", "dark"];
+const THEME_COLOR = { light: "#f4f6fa", dark: "#11151c" };   // 与模板里两条 meta 的 content 一致
+function themePref() {
+  const p = prefRead();
+  return (p.theme && THEMES.indexOf(p.theme) >= 0) ? p.theme : "auto";
+}
+function systemDark() {
+  return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+}
+/* 注意：这个判断会被**纯函数层**间接用到（gradeColor → 等级色），
+   而 _check/run_self.py 是在 **Node 里**把业务块 eval 出来跑物理断言的
+   （没有 document）。所以这里必须容忍无 DOM 环境 —— 否则整个自测会中途崩掉，
+   而它的判据是"数 FAIL 行"，崩溃不产生 FAIL 行 ⇒ 静默假绿。 */
+function isDarkTheme() {
+  return typeof document !== "undefined" &&
+    document.documentElement.getAttribute("data-theme") === "dark";
+}
+/* 应用主题。返回实际生效的 "dark" / "light"。 */
+function applyTheme(pref) {
+  const k = THEMES.indexOf(pref) >= 0 ? pref : "auto";
+  const dark = k === "dark" || (k === "auto" && systemDark());
+  const eff = dark ? "dark" : "light";
+  const root = document.documentElement;
+  root.setAttribute("data-theme", eff);
+  root.setAttribute("data-theme-pref", k);      // 引脚本也写这一位，两处口径一致
+  /* color-scheme 决定**原生控件**（select / 滚动条 / 日期选择器 / 自动填充）的底色。
+     漏了它，深色页面里会冒出一排惨白的原生下拉与滚动条。 */
+  root.style.colorScheme = eff;
+  /* theme-color（移动端地址栏）：模板里两条 meta 各带 media，
+     这里把与当前主题匹配的那条放行、另一条屏蔽 —— 用 media 而不是改 content，
+     因为"改 content"绕不开 media 的判定，改了也不生效。 */
+  const want = THEME_COLOR[eff];
+  const metas = document.querySelectorAll('meta[name="theme-color"]');
+  for (let i = 0; i < metas.length; i++) {
+    metas[i].setAttribute("media", metas[i].getAttribute("content") === want ? "all" : "not all");
+  }
+  /* 写进 DOM 的语义色要重画（等级徽标 / 可信度档色 / 地图榜单条形的取色基准） */
+  if (typeof rerenderForTheme === "function") {
+    try { rerenderForTheme(); } catch (e) { softWarn("主题切换后的重渲染失败", e); }
+  }
+  return eff;
+}
+function setTheme(pref) {
+  applyTheme(pref);
+  prefWrite({ theme: document.documentElement.getAttribute("data-theme-pref") });
+}
+/* 跟随系统时响应系统切换。只装一次（initUI 里调用）。 */
+function initThemeWatcher() {
+  if (!window.matchMedia) return;
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+  const on = () => { if (themePref() === "auto") applyTheme("auto"); };
+  if (mq.addEventListener) mq.addEventListener("change", on);
+  else if (mq.addListener) mq.addListener(on);   // 老 Safari
+}
+/* 主题分段控件：按钮由代码生成（文案要跟语言走，见 relang()） */
+function refreshThemeSeg() {
+  const seg = $("#themeSeg");
+  if (!seg) return;
+  const cur = themePref();
+  seg.innerHTML = THEMES.map(k =>
+    `<button type="button" data-theme-k="${k}" aria-pressed="${k === cur}">${i18n(k === "auto" ? "跟随系统" : k === "light" ? "浅色" : "深色")}</button>`).join("");
+  setSegActive("#themeSeg", seg.querySelector('button[data-theme-k="' + cur + '"]'));
+}
+
 /* ---------- 初始化界面 ---------- */
 function initUI() {
   /* 语言最先定：它是**所有静态文案的渲染前提**（data-i18n 那批）。
@@ -3150,6 +3364,11 @@ function initUI() {
      只把 DOM 文案铺好即可（relang() 会做的事此刻无事可做）。
      它与下面的 applyPrefs() 不冲突：这里动的是文案，那边动的是控件值。
      优先级由 detectLang() 决定：URL 参数 > 偏好存储 > 浏览器语言 > 简体。 */
+  /* 主题先于语言：它是 CSS 令牌，越早应用越少无谓的重绘。
+     （<head> 里的引导脚本已经把初值设好了，这里再算一次是为了
+       "偏好读盘失败/被别的路径改过"这类情况下也能对齐。） */
+  applyTheme(themePref());
+  initThemeWatcher();
   setLang(detectLang(), true);
   /* 先读地址栏状态（F4）：分享链接、刷新、后退都靠它把"地区 / 日期 / 时段"带回来。
      必须在下面写默认值之前调用，否则会被默认值覆盖。 */
@@ -3257,6 +3476,16 @@ function initUI() {
 
   bindSeg("#unitSeg", d => { State.units = d.u; prefWrite({ units: State.units }); });
   bindSeg("#clockSeg", d => { State.hour12 = (d.c === "12"); prefWrite({ hour12: State.hour12 }); });
+
+  /* 主题切换（F8）：与语言控件同一套模式（.unitseg + aria-pressed）。
+     切完只改 CSS 令牌 + 重画语义色，不取数、不重算场。 */
+  refreshThemeSeg();
+  if ($("#themeSeg")) {
+    $$("#themeSeg button").forEach(b => b.addEventListener("click", () => {
+      setSegActive("#themeSeg", b);
+      setTheme(b.getAttribute("data-theme-k"));
+    }));
+  }
 
   /* 语言切换：按钮由 LANGS 生成（模板里不写死，加一种语言不必改 HTML）。
      与其它分段控件同款 —— setSegActive 负责视觉态与 aria-pressed 同步。
@@ -4001,7 +4230,7 @@ function renderHero(r) {
   <div class="hero">
     <div class="dial">
       <svg width="126" height="126" viewBox="0 0 126 126">
-        <circle cx="63" cy="63" r="54" fill="none" stroke="#eef1f6" stroke-width="11"/>
+        <circle class="dialbg" cx="63" cy="63" r="54" fill="none" stroke-width="11"/>
         <circle cx="63" cy="63" r="54" fill="none" stroke="${col}" stroke-width="11" stroke-linecap="round"
           stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - clamp01(r.P / 100))).toFixed(1)}"/>
       </svg>
@@ -4128,8 +4357,8 @@ function renderModels(r) {
       <span>${i18n("持续")} <b>${fmtDur(g.dur)}</b></span>
       <span>AOD <b>${n1(s.aodUp, 2)}</b></span>`;
   };
-  out.push(modelCard(i18n("GFS 模式"), i18n("NOAA 全球模式 · 1 小时分辨率"), r.sG.P, r.sG.Q, mk(r.sG), "#2f6fd0"));
-  if (r.sE) out.push(modelCard(i18n("ECMWF-IFS 模式"), i18n("欧洲中心全球模式"), r.sE.P, r.sE.Q, mk(r.sE), "#0f9c8a"));
+  out.push(modelCard(i18n("GFS 模式"), i18n("NOAA 全球模式 · 1 小时分辨率"), r.sG.P, r.sG.Q, mk(r.sG), "var(--mc-gfs)"));
+  if (r.sE) out.push(modelCard(i18n("ECMWF-IFS 模式"), i18n("欧洲中心全球模式"), r.sE.P, r.sE.Q, mk(r.sE), "var(--mc-ec)"));
   else out.push(`<div class="mcard"><div class="mh"><span class="dot" style="background:#9aa4b2"></span><b>${i18n("ECMWF-IFS 模式")}</b></div>
     <div class="hint">${i18n("该日期/点位未取到 ECMWF 数据，本次综合结果由 GFS 与光追算法构成。")}</div></div>`);
   const rt = r.sRT;
@@ -4140,7 +4369,7 @@ function renderModels(r) {
      <span>${i18n("峰值透射")} <b>${rt.peak.T550.toExponential(2)}</b></span>
      <span>${i18n("亮度")} <b>${brtShort}</b></span>
      <span>${i18n("颜色")} <b>${i18n(rt.peak.name)}</b></span><span>${i18n("饱和")} <b>${(rt.peak.sat * 100).toFixed(0)}%</b></span>
-     <span>${i18n("几何")} <b>${i18n(rt.geom.ok ? "成立" : "不成立")}</b></span>`, "#c9501a"));
+     <span>${i18n("几何")} <b>${i18n(rt.geom.ok ? "成立" : "不成立")}</b></span>`, "var(--mc-rt)"));
   const g = gradeOf(r.Q);
   /* 分歧口径统一（B3）：主指标由"P 的极差"改为 ΔI —— 与地图「模型分歧」维度同一把尺子，
      也与结论卡徽标、因素表同源。ΔP / ΔQ 作为分解项一并给出，
@@ -4153,7 +4382,7 @@ function renderModels(r) {
      <span>ΔP <b>${rn(r.spread)}</b> · ΔQ <b>${rn(r.spreadQ)}</b></span>
      <span>${i18n("等级")} <b>${i18n(g)}</b></span>
      <span>${i18n("时效")} <b>${r.leadH > 0 ? Math.round(r.leadH) + " " + i18n("小时") : i18n("实况/历史")}</b></span>
-     <span>${i18n("综合指数")} <b>${Math.round(mixedIndex(r.P, r.Q))}</b></span>`, "#e2601f", "ens"));
+     <span>${i18n("综合指数")} <b>${Math.round(mixedIndex(r.P, r.Q))}</b></span>`, "var(--mc-ens)", "ens"));
   $("#models").innerHTML = out.join("");
 }
 
@@ -5680,14 +5909,14 @@ function drawAzimuthLayer() {
   for (const p of paths) {
     const t = P(destPoint(State.lat, State.lon, az, p.R).lat, destPoint(State.lat, State.lon, az, p.R).lon);
     if (!t) continue;
-    inner += `<text x="${Math.round(t.x + 6)}" y="${Math.round(t.y - 4)}" fill="#6b7486"` +
+    inner += `<text x="${Math.round(t.x + 6)}" y="${Math.round(t.y - 4)}" style="fill:var(--azitx)"` +
       ` font-size="10.5" font-family="ui-monospace,Menlo,Consolas,monospace">${p.R} km</text>`;
   }
   if (tip) {
     /* 方位词要按**该时段**取：朝霞看东、晚霞看西，同一个地点两条线差 180° 左右。
        不写这两个字，用户很容易忘了自己看的是朝还是晚。 */
     const hd = (per === "am" ? "朝霞方位 " : "晚霞方位 ") + dirWordOf(az) + " " + Math.round(az) + "°";
-    inner += `<text x="${Math.round(tip.x + 8)}" y="${Math.round(tip.y + 14)}" fill="#8a5306"` +
+    inner += `<text x="${Math.round(tip.x + 8)}" y="${Math.round(tip.y + 14)}" style="fill:var(--warn)"` +
       ` font-size="11" font-weight="700">${hd}</text>`;
   }
   svg.innerHTML = inner;
@@ -8219,8 +8448,23 @@ function renderRank(fld) {
    `setLang()` 用 `typeof relang === "function"` 探测后调用，所以本函数
    定义在最后一个片段里也不会出现"没加载到就抛错"。
    ========================================================================= */
+/* 主题切换后的重画入口（F8）：
+   CSS 令牌换了之后，**凡是把颜色写进 DOM / canvas 的地方都要重来一遍** ——
+   等级徽标与可信度档色是按主题取值的（gradeColor / confText），
+   仪表盘弧、结论卡、地图榜单条形、图例行都用它们。纯 CSS 的组件不用管（令牌自动生效）。 */
+function rerenderForTheme() {
+  if (typeof State !== "undefined" && State.result && typeof renderAll === "function") renderAll(State.result);
+  if (typeof renderTrend === "function") renderTrend();
+  if (typeof updateLegend === "function") updateLegend();
+  if (typeof renderRank === "function" && mapSet()) renderRank(MapMod.field);
+  if (typeof hideMapTip === "function") hideMapTip();
+  if (typeof refreshThemeSeg === "function") refreshThemeSeg();
+}
+
 function relang() {
   applyI18nDom(document);
+  /* 主题分段控件的按钮文案是翻译过的，切语言要重建（含 aria-pressed 同步） */
+  if (typeof refreshThemeSeg === "function") refreshThemeSeg();
   try {
     if (typeof refreshDateSelect === "function") refreshDateSelect();
     if (typeof refreshTrendLabels === "function") refreshTrendLabels();
