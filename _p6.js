@@ -3774,7 +3774,11 @@ function relang() {
     if (typeof refreshLocHint === "function") refreshLocHint();
     if (typeof markCachedDates === "function") markCachedDates();
     /* 结果卡与趋势：没算过时这两块本来就是引导文案，renderTrend 会自己处理 */
-    if (typeof State !== "undefined" && State.result && typeof renderAll === "function") renderAll(State.result);
+    /* F5 快照：快照卡里“云型 / 因素名”是**渲染时**才过 i18n 的（链接里只存键），
+       所以切语言必须重画 —— 这正是“同一条链接切英文就是英文”的落点。
+       快照与完整结果互斥，用 else 串起来。 */
+    if (typeof State !== "undefined" && State.snap && typeof renderSnap === "function") renderSnap(State.snap);
+    else if (typeof State !== "undefined" && State.result && typeof renderAll === "function") renderAll(State.result);
     if (typeof renderTrend === "function") renderTrend();
     if (typeof updateLegend === "function") updateLegend();
     /* F3/F2：日历与对比表都要重画（等级色、星期名、按钮文案都随语言走） */

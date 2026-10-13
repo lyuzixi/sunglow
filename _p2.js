@@ -53,6 +53,30 @@ function safeLabel(s, max) {
   return s.replace(/[^\p{L}\p{N} ·・.\-()（）]/gu, "").slice(0, max || 40);
 }
 
+/* ---- base64url：给快照链接（F5）用 ----
+   为什么非要这一层：查询串里能安全裸奔的只有 A–Z a–z 0–9 - _ . ~，
+   而快照串里有中文地名，还有内部用的 `|` 分隔符。两条路都不好走：
+     · 直接 encodeURIComponent：一个汉字变成 9 个字符（%E5%B9%BF），
+       地名一长 URL 就难看且容易顶到长度上限；
+     · base64：出来的 `+` `/` `=` 在查询串里会被再转义一次，白涨三成。
+   所以走 base64url —— 编码后把 + → -、/ → _、去掉尾部 =，整串可以直接进查询串。
+   解码侧刻意放宽：先把非法字符剔掉再补 =，这样"手抄漏一个字符"不会抛异常，
+   而是解出一段对不上的文本，由上层 snapDecode 的字段校验统一判死。 */
+function b64uEnc(s) {
+  const bytes = new TextEncoder().encode(String(s));
+  let bin = "";
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function b64uDec(s) {
+  let t = String(s == null ? "" : s).replace(/-/g, "+").replace(/_/g, "/").replace(/[^A-Za-z0-9+/]/g, "");
+  while (t.length % 4) t += "=";
+  const bin = atob(t);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
 /* 梯形隶属函数：pts = [[x0,y0],[x1,y1],...] 线性插值，两端外推为首尾值 */
 function trap(x, pts) {
   if (!isNum(x)) return null;

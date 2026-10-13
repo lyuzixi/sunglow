@@ -195,6 +195,8 @@ DECL = [
      [("README.md", r"`persistprobe\.js`[^\n]*?\*\*(\d+) 条", [1])]),
     ("probe.a11yprobe", "`a11yprobe` 断言条数",
      [("README.md", r"`a11yprobe\.js`[^\n]*?\*\*(\d+) 条", [1])]),
+    ("probe.snapprobe", "`snapprobe` 断言条数",
+     [("README.md", r"`snapprobe\.js`[^\n]*?\*\*(\d+) 条", [1])]),
 
     # ---- 一键序列规模 ----
     ("suite.size", "`all.py` 序列项数",
@@ -233,6 +235,7 @@ def build_truth(pf):
     t["probe.mobileprobe"] = _probe(pf, "mobileprobe")
     t["probe.persistprobe"] = _probe(pf, "persistprobe")
     t["probe.a11yprobe"] = _probe(pf, "a11yprobe")
+    t["probe.snapprobe"] = _probe(pf, "snapprobe")
     t["suite.size"] = suite_size()
     return t
 

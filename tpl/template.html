@@ -635,6 +635,28 @@ footer li{margin:3px 0}
 .t-spot td.nm{white-space:nowrap}
 .t-spot td.nm i{font-style:normal;color:var(--tx3);font-size:11px}
 
+/* ---------- F5 结果快照 ---------- */
+/* 快照模式：③④⑤⑥ 这几张卡依赖**完整结果对象**，而快照只带了摘要。
+   与其铺四张空卡，不如收起来 —— 页面仍然保留输入区、结论卡、趋势、地图与对比，
+   它依然是一个能用的应用，只是"这一页没有完整分析"，点「按当前条件重新计算」即可补齐。 */
+body.snapmode [data-snaphide]{display:none}
+.snapnote{align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.snapnote .snt{flex:1 1 240px;min-width:0;display:flex;flex-direction:column;gap:2px}
+.snapnote .snt b{font-weight:700}
+.snapnote .snt span{opacity:.92}
+/* 手动复制的兜底输入框。宽给 100%：一条快照链接两百字符上下，
+   让它自己截断比把卡片撑破好。 */
+.snapurl{display:block;width:100%;margin-top:7px;padding:6px 8px;font-size:12px;
+  font-family:var(--mono);color:var(--tx);background:var(--bg);
+  border:1px solid var(--line);border-radius:var(--r2)}
+.snapfac{margin-top:13px}
+.snapfac .sfh{font-size:12.5px;color:var(--tx3);margin-bottom:7px}
+.snapfac .sfl{display:flex;flex-wrap:wrap;gap:7px}
+.snapfac .sf{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;
+  border:1px solid var(--line);border-radius:var(--r2);padding:4px 8px;
+  background:var(--hover);color:var(--tx2)}
+.snapfac .sf b{font-weight:700;color:var(--tx);font-family:var(--mono);font-size:12px}
+
 /* ---------- 数值直标：第二编码（F6） ---------- */
 .mlayer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;display:none;z-index:5;overflow:hidden}
 .mlayer.on{display:block}
@@ -808,11 +830,14 @@ footer li{margin:3px 0}
 
       <div class="card" id="cardHero">
         <div class="card-h"><h2 data-i18n="② 预报结论">② 预报结论</h2><span class="tag" id="heroTag" data-i18n="多模型综合">多模型综合</span>
-          <span class="right"><button class="sm" id="shareCard" disabled data-i18n="保存为图片">保存为图片</button></span></div>
+          <span class="right"><button class="sm" id="snapUrl" disabled data-i18n="复制快照链接">复制快照链接</button><button class="sm" id="shareCard" disabled data-i18n="保存为图片">保存为图片</button></span></div>
+        <!-- F5：快照区的唯一落点（复制失败时把链接摊在这里让人手动复制）。
+             平时 hidden，只有需要时才由 snapMsg() 打开。 -->
+        <div id="snapOut" hidden></div>
         <div id="hero"></div>
       </div>
 
-      <div class="card">
+      <div class="card" data-snaphide>
         <div class="card-h"><h2 data-i18n="③ 各模型独立结果">③ 各模型独立结果</h2><span class="tag" data-i18n="每种模型单独给出概率与质量，末尾为多模型综合">每种模型单独给出概率与质量，末尾为多模型综合</span></div>
         <div class="models" id="models"></div>
         <div class="hint" style="margin-top:11px">
@@ -820,17 +845,17 @@ footer li{margin:3px 0}
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" data-snaphide>
         <div class="card-h"><h2 data-i18n="④ 主要影响因素分析">④ 主要影响因素分析</h2><span class="tag" id="facTag" data-i18n="按影响权重排序">按影响权重排序</span></div>
         <div class="t-scroll"><table class="ftab" id="fac"></table></div>
       </div>
 
-      <div class="card">
+      <div class="card" data-snaphide>
         <div class="card-h"><h2 data-i18n="⑤ 光追算法细节">⑤ 光追算法细节</h2><span class="tag" data-i18n="沿真实光路的消光积分 + CIE 色度换算">沿真实光路的消光积分 + CIE 色度换算</span></div>
         <div id="ray"></div>
       </div>
 
-      <div class="card">
+      <div class="card" data-snaphide>
         <div class="card-h"><h2 data-i18n="⑥ 数据质量与提示">⑥ 数据质量与提示</h2><span class="tag" data-i18n="缺失值、异常值与不确定性来源">缺失值、异常值与不确定性来源</span></div>
         <div class="notes" id="notes"></div>
       </div>

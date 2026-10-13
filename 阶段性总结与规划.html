@@ -163,7 +163,7 @@ td code{background:transparent;padding:0}
       <div class="fact"><b>8,867</b><span>源码总行数（含 i18n 词典 1060 行）</span></div>
       <div class="fact"><b>627 KB</b><span>主产物 index.html（单文件、自包含）</span></div>
       <div class="fact"><b>52.7%</b><span>_p6.js 地图模块占源码比重</span></div>
-      <div class="fact"><b>21 / 361</b><span>一键序列项数 / 已登记具名断言</span></div>
+      <div class="fact"><b>22 / 385</b><span>一键序列项数 / 已登记具名断言</span></div>
       <div class="fact"><b>49</b><span>innerHTML 动态插值处（已收口 5 处热点）</span></div>
       <div class="fact"><b>4</b><span>外部依赖域（气象 2 / 省界 1 / 地图 1）</span></div>
       <div class="fact"><b>65</b><span>首屏加权调用（地图 171 需显式触发）</span></div>
@@ -189,6 +189,11 @@ td code{background:transparent;padding:0}
       （<b>23 条断言</b>），一键序列 18 → <b>19 项</b>；界面层（顶栏 / 查询控件 / 结果卡 / 地图 UI /
       错误与额度文案 / 趋势 / 分享卡 canvas / 404 页）已三语，产物 475 → <b>590 KB</b>。
       下表与「事实面板」已按最新代码更新，其余章节的结论不受影响。
+      <b>更新 · 2026-10-13（F5 结果快照落地）：</b>
+      新增 <code>_check/snapprobe.js</code>（<b>24 条断言</b>），一键序列 21 → <b>22 项</b>、具名断言
+      361 → <b>385</b>；产物 <b>671,972 字节</b>；源码 8,867 → <b>9,346 行</b>。<code>snap=</code>
+      参数承载结论摘要（base64url，187 字符），带它的链接<b>零取数</b>即出结论卡，并明确标注
+      "这是 X 时的计算结果"与过期提示。22 项全绿。
     </div>
   </div>
 
@@ -569,7 +574,7 @@ td code{background:transparent;padding:0}
   </div>
 
   <div class="feat">
-    <div class="feat-h"><h3>F5 · 结果快照分享链接</h3><span class="tag t-phase">中期</span></div>
+    <div class="feat-h"><h3>F5 · 结果快照分享链接</h3><span class="tag t-phase">中期</span><span class="tag t-ok">已落地</span></div>
     <p>把当前结论（概率/等级/主要因素/日期/地点）压缩进 URL，对方点开即可看到结果卡片，无需重新取数。</p>
     <dl>
       <dt>用户价值</dt><dd>现在分享链接只能传递"查询条件"，对方还得自己点一次计算（并消耗他自己的额度）；快照链接是<b>零额度、零等待</b>的。</dd>
@@ -577,6 +582,7 @@ td code{background:transparent;padding:0}
       <dt>依赖条件</dt><dd><b>安全前置：必须先完成第 1 级的 <code>esc()</code> 与 URL 白名单清洗</b>——本功能等于把更多用户可控数据塞进 URL 再渲染进 DOM，不先堵住 XSS 就是主动扩大攻击面。另需处理"快照过期"提示。</dd>
       <dt>涉及模块</dt><dd><span class="tag t-file">_p5.js:643-690</span> <span class="tag t-file">_p5b.js（快照渲染分支）</span> <span class="tag t-file">_check/cdp.js + 新增断言</span></dd>
       <dt>成本 / 风险</dt><dd>4–6 天。URL 长度上限约 2000 字符需实测；<b>顺序上必须排在 F1–F3 之后</b>。</dd>
+      <dt>实测（2026-10-13）</dt><dd>快照串 <b>187 字符</b>、整条链接 <b>343 字符</b>（远低于 2000 的顾虑）；打开快照链接 <b>0 次气象请求</b>。安全侧按前置要求收口：链接里只存"键 + 数"，云型与因素名走白名单、展示时才过 <code>i18n()</code>，地名过 <code>safeLabel()</code>；<code>snapprobe</code> 用 <code>&lt;img src=1 onerror=…&gt;</code> 走真实渲染，结果只作为<b>纯文本</b>落地（0 个元素、0 个 on* 属性）。新增 <code>_check/snapprobe.js</code>（<b>24 条断言</b>），一键序列 21 → <b>22 项</b>。</dd>
     </dl>
   </div>
 

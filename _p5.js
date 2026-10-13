@@ -30,7 +30,18 @@ const State = {
   spots: [], spotRows: null, spotMsg: "",
   /* 地图端的选择（与单点查询相互独立）：
      mapPeriod 朝/晚霞、mapDim 着色依据、mapModel 算法模型 */
-  mapPeriod: "pm", mapDim: "mix", mapModel: "ens"
+  mapPeriod: "pm", mapDim: "mix", mapModel: "ens",
+  /* F5 结果快照：
+     · snapRaw —— 地址栏里那条 `snap=` 原文（已通过校验）。它单独留一份，是为了让
+       syncUrl() 能原样带回去，不必"重新编码"—— 重新编码就等于允许链接在自己
+       不知情的情况下变内容。
+     · snap     —— 解出来的对象。非空即"当前处于快照模式"。
+     · factorRows —— renderFactors 顺手记下的 [键, 原始数值, 得分]，快照挑"最决定性
+       的几个因素"时读它（阈值不另抄一份）。 */
+  snapRaw: null, snap: null, factorRows: [],
+  /* initUI 期间置位。此时 setLocation() 会被调用一次（把 State 铺进输入框），
+     那一次**不算**"用户改了地点" —— 否则首屏就会把刚从 URL 读进来的快照抹掉。 */
+  booting: false
 };
 const PRESETS = [
   ["北京", 39.9042, 116.4074], ["上海", 31.2304, 121.4737], ["广州", 23.1291, 113.2644],
@@ -271,6 +282,9 @@ function refreshThemeSeg() {
 
 /* ---------- 初始化界面 ---------- */
 function initUI() {
+  /* initUI 期间 setLocation() 会跑一次（那是"把 State 铺进输入框"，不是用户改地点），
+     不能让它把刚从地址栏读进来的快照判死。见 State.booting 的注释。 */
+  State.booting = true;
   /* 语言最先定：它是**所有静态文案的渲染前提**（data-i18n 那批）。
      这里传 silent=true —— 此刻页面还没算过任何东西，不需要重渲染结果卡，
      只把 DOM 文案铺好即可（relang() 会做的事此刻无事可做）。
@@ -314,6 +328,10 @@ function initUI() {
      点出一个空白的 PNG。 */
   const scb = $("#shareCard");
   if (scb) scb.addEventListener("click", shareCard);
+  /* F5 快照链接：与分享卡同样"有结果才可用"，初始 disabled 写在模板里。
+     它**不取数** —— 只把已算好的结论压进 URL。 */
+  const spb = $("#snapUrl");
+  if (spb) spb.addEventListener("click", copySnap);
   $("#geoBtn").addEventListener("click", useGeo);
   $("#nowBtn").addEventListener("click", () => { $("#date").value = State.dateStr; saveDate(); });
   $("#date").addEventListener("change", saveDate);
@@ -321,6 +339,7 @@ function initUI() {
     setSegActive("#periodSeg", b);
     State.period = b.dataset.p; updateLegend(); renderTrend(); runForecast(true);
     invalidateSpotRows();      /* 对比结果按 (日期, 时段) 取 ⇒ 切时段即作废 */
+    invalidateSnap();          /* 快照同理：它是"某时段"的结论 */
   }));
   $("#presets").addEventListener("click", e => {
     const b = e.target.closest("button"); if (!b) return;
@@ -448,13 +467,20 @@ function initUI() {
      已在上面的 readUrl() 里覆盖。这里绝不能再另写一份写死的城市名：那样改默认城市
      要改两处，漏一处就会出现"标题写着上海、数据却是广州"这种自相矛盾的首屏。 */
   setLocation(State.lat, State.lon, State.name || i18n("我的位置"), State.region || "");
+  /* 到这一行为止 initUI 的"铺初值"阶段结束，此后 setLocation 再被调用就是用户行为。 */
+  State.booting = false;
   syncUrl();
   renderTrend();
   /* 趋势也"有缓存就直接画出来"（B2，与地图 B14 同构）：
      命中零请求，未命中**什么都不做**（loadTrend 在 cacheOnly 模式下会在任何
      网络调用之前 return false，连按钮文案都不碰）—— 所以这里不必再判一次。 */
   loadTrend(true);
-  runForecast(true);
+  /* 快照模式（F5）：有快照就**只画快照**，不跑 runForecast —— 这正是它存在的意义
+     （零额度、零等待）。没有快照才走原来的首屏自动预报。
+     注意这里不是"少一步优化"：首屏自动预报是本项目**唯一一处被动取数**，
+     有快照还照跑，等于把"分享链接不花对方额度"这个承诺作废掉。 */
+  if (State.snap) applySnap(State.snap);
+  else runForecast(true);
   /* 地图数据由 initMap() 统一加载，避免重复请求 */
 }
 
@@ -467,6 +493,7 @@ function saveDate() {
   if (v > $("#date").max) $("#date").value = $("#date").max;
   State.dateStr = $("#date").value;
   invalidateSpotRows();          /* 日期变 ⇒ 对比结果作废 */
+  invalidateSnap();              /* 日期变 ⇒ 链接里的快照也不再对应当前页面 */
   $("#mapDateSel").value = State.dateStr;
   syncUrl();
   /* 已加载的趋势区间内换日期无需重新取数，只需把高亮挪过去 */
@@ -478,6 +505,8 @@ function setLocation(lat, lon, name, region) {
   const moved = (Math.abs(lat - State.lat) > 1e-6) || (Math.abs(lon - State.lon) > 1e-6);
   State.lat = clamp(lat, -90, 90); State.lon = clamp(lon, -180, 180);
   State.name = name; State.region = region || "";
+  /* 换了地方：链接里那条快照记的是**别处**的结论，必须作废 */
+  invalidateSnap();
   $("#lat").value = State.lat.toFixed(4);
   $("#lon").value = State.lon.toFixed(4);
   refreshLocHint();
@@ -566,10 +595,14 @@ async function runForecast(scroll) {
     const res = await computeAll(State.lat, State.lon, dateStr, period, name);
     State.result = res;
     renderAll(res);
+    /* 算出了真正的结论 ⇒ 链接里的快照不再需要（它只是"没额度时的替代品"） */
+    invalidateSnap();
+    const sb2 = $("#snapUrl"); if (sb2) sb2.disabled = false;
     refreshBadge();
     if (scroll && window.innerWidth < 900) $("#cardHero").scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (e) {
     console.warn("预报失败", e);
+    invalidateSnap();          /* 本次跑完（哪怕失败）⇒ 快照模式结束，错误要能看见 */
     const st = e && e.status;
     /* friendly 优先：它是取数层对「为什么失败、该怎么办」给出的针对性说明。
        尤其是 429 的两种情况（短时限流 vs 日额度耗尽）处置方式完全相反，
@@ -814,22 +847,28 @@ const fieldName = k => FIELD_CN[k] || k;
    每点一次城市就压一条历史记录会让浏览器的后退键变得难以预期
    （用户以为会回到上一个页面，实际只是回到上一个城市）。
    ========================================================================= */
+/* 查询串的唯一拼装处。syncUrl 与快照链接（F5）共用，避免"两条链接长得不一样"。 */
+function baseQuery() {
+  return "?lat=" + State.lat.toFixed(4) + "&lon=" + State.lon.toFixed(4) +
+    "&date=" + encodeURIComponent(State.dateStr) + "&period=" + State.period +
+    (State.name ? "&name=" + encodeURIComponent(State.name) : "") +
+    (State.region ? "&region=" + encodeURIComponent(State.region) : "") +
+    /* 语言也进地址栏：分享链接要能固定语言（否则对方按浏览器语言看到另一种）。
+       它同时是 detectLang() 里的最高优先级来源。 */
+    "&lang=" + encodeURIComponent(LANG);
+}
 function syncUrl() {
   try {
     if (!window.history || !window.history.replaceState) return;
     /* 只认 http/https：内联预览、file:// 或 about:blank 下改地址没有意义，
        也可能直接抛异常（不同内核行为不一致）。 */
     if (!/^https?:$/.test(location.protocol)) return;
-    const q = "?lat=" + State.lat.toFixed(4) + "&lon=" + State.lon.toFixed(4) +
-      "&date=" + encodeURIComponent(State.dateStr) + "&period=" + State.period +
-      (State.name ? "&name=" + encodeURIComponent(State.name) : "") +
-      (State.region ? "&region=" + encodeURIComponent(State.region) : "") +
-      /* 语言也进地址栏：分享链接要能固定语言（否则对方按浏览器语言看到另一种）。
-         它同时是 detectLang() 里的最高优先级来源。 */
-      "&lang=" + encodeURIComponent(LANG);
-    window.history.replaceState(null, "", location.pathname + q);
+    window.history.replaceState(null, "", location.pathname + baseQuery() + snapParam());
   } catch (e) { softWarn("地址栏状态同步失败", e); }
 }
+/* 地址栏里的 `snap=` 片段。由 State.snapRaw 原样带出 —— 见 State 里那段注释。 */
+function snapParam() { return State.snapRaw ? "&snap=" + State.snapRaw : ""; }
+
 /* 从地址栏恢复状态。返回是否读到了有效坐标 —— 没读到就沿用默认的广州市。 */
 function readUrl() {
   let got = false;
@@ -851,9 +890,228 @@ function readUrl() {
     if (nm) State.name = safeLabel(nm);
     const rg = p.get("region");
     if (rg) State.region = safeLabel(rg);
+    /* 快照（F5）：先解，解出来才认。解不出来就当这条链接没有 snap，
+       而不是"给个半截状态" —— 半截状态比没有更糟（界面会显示一堆 —）。 */
+    State.snapRaw = null; State.snap = null;
+    const sp = p.get("snap");
+    if (sp) {
+      const s = snapDecode(sp);
+      if (s) {
+        State.snapRaw = sp; State.snap = s;
+        /* 快照本身就是"地点 + 日期 + 时段"的权威来源：它记的是**生成这份结论时**
+           的条件。若让 lat/lon/date/period 各走各的，就会出现"卡上写 A 地、
+           上面输入框是 B 地"的自相矛盾。 */
+        State.lat = s.lat; State.lon = s.lon;
+        State.dateStr = s.date; State.period = s.period;
+        if (s.name) State.name = s.name;
+        if (s.region) State.region = s.region;
+        got = true;
+      } else {
+        console.warn("快照参数无法解析，已按普通链接处理");
+      }
+    }
   } catch (e) { softWarn("地址栏状态读取失败", e); }
   return got;
 }
+/* =========================================================================
+   结果快照分享链接（F5）
+   -------------------------------------------------------------------------
+   问题：此前分享链接只带"查询条件"（lat / lon / date / period）。对方打开后还得
+   自己点一次「开始预报」—— 花的是**他自己的**额度，还要等一整轮取数。而分享的
+   真实场景是"今晚要不要去看"，对方要的是**结论**，不是"再算一次的资格"。
+
+   做法：把结论摘要（概率 / 质量 / 可信度 / 云况 / 主要因素 / 日期地点）压进一个
+   `snap=` 参数。带 snap 的链接打开后**零取数、零等待**直接显示结论卡。
+
+   四条硬纪律（改这里之前先读完）：
+     ① **只存"键"和"数"，不存"文案"**。云型、因素名一律存**内部键**，展示名在渲染
+        时才过 i18n()。两个收益：同一条快照链接切到英文界面就是英文；URL 里压根
+        塞不进任何会被当成 HTML 的东西。
+     ② **解码即校验**。snap 是完全用户可控的输入，而它要被渲染进 innerHTML。所以
+        每个字段都过类型闸门（日期正则 / 时段白名单 / 云型白名单取下标 /
+        数值 parseFloat + isNum / 字符串 safeLabel），任一不合格整条作废。
+     ③ **解码前先量长度**（SNAP_MAX）。不设闸门的话，一条几 MB 的 snap= 会让人
+        白跑一次 base64 解码与字符串切分 —— 而这只需要一次比较就能挡掉。
+     ④ **日出日落时刻与方位角不进链接**。它们由 (lat, lon, date, 时区偏移) 纯天文
+        重算得到（sunEvents / solarPosition 都是零取数的本地函数），存下来纯属浪费，
+        还多一个可被篡改的字段。
+
+   刻意不做的事：不做"完整结果对象序列化"。那要塞进 env / 三套模型 / 光追采样等
+   几百个数字，URL 长度直接爆表；而快照卡要回答的只有一个问题 —— 值不值得去。
+   ========================================================================= */
+const SNAP_VER = "1";
+const SNAP_MAX = 2000;                 /* snap= 的字符上限（解码**前**的闸门） */
+const SNAP_N_FAC = 4;                  /* 只带最"决定性"的 4 个因素 */
+/* 云型白名单：与 _p3.js 的 DECK_TYPE_SCORE 同一组词，顺序即编码下标。
+   改这里的顺序等于改快照的语义 ⇒ 必须升 SNAP_VER。 */
+const SNAP_TYPES = ["层云/雾", "层积云", "积云", "高积云", "高层云", "卷层云", "卷云"];
+const SNAP_DECKS = ["低云", "中云", "高云"];
+
+/* 由一次计算结果生成快照串。没有可分享的结果时返回 null。
+   字段顺序即协议 —— 改动必须同步 snapDecode 并升 SNAP_VER。 */
+function snapEncode(r) {
+  if (!r || !isNum(r.P) || !isNum(r.Q)) return null;
+  /* SNAP_KEYS 是同块（_p5b.js）里的顶层 const，DOMContentLoaded 之后才可能被用到，
+     不存在 TDZ 问题 —— 这里刻意**不做** typeof 探测：那种探测对 TDZ 无效
+     （typeof 一个尚未初始化的 const 照样抛 ReferenceError），只会把"词典没加载"
+     伪装成"快照里没有因素"这种静默降级。 */
+  const fac = (State.factorRows || [])
+    .filter(x => SNAP_KEYS.indexOf(x[0]) >= 0 && isNum(x[1]) && isNum(x[2]))
+    /* "最决定性"＝离中性 0.5 最远。取绝对值：否则只会挑出一堆"有利"，
+       而"明显不利"恰恰是分享时最该让对方看到的。 */
+    .sort((a, b) => Math.abs(b[2] - 0.5) - Math.abs(a[2] - 0.5))
+    .slice(0, SNAP_N_FAC)
+    .map(x => x[0] + "~" + (+x[1].toFixed(3)) + "~" + (+x[2].toFixed(2)));
+  const pr = (r.sRT && r.sRT.primary) ? r.sRT.primary : null;
+  const tIdx = pr ? SNAP_TYPES.indexOf(pr.type) : -1;
+  const f = [
+    SNAP_VER,
+    Math.round(Date.now() / 1000).toString(36),      /* 生成时刻，base36 只要 7 个字符 */
+    r.dateStr, r.period,
+    (+r.lat).toFixed(4), (+r.lon).toFixed(4),
+    safeLabel(r.name || "", 24), safeLabel(r.region || "", 16),
+    Math.round(clamp(r.P, 0, 100)), Math.round(clamp(r.Q, 0, 100)),
+    Math.round(clamp(isNum(r.consist) ? r.consist : 0, 0, 100)),
+    isNum(r.dvI) ? r.dvI.toFixed(1) : "",
+    isNum(r.spread) ? Math.round(r.spread) : "",
+    isNum(r.spreadQ) ? Math.round(r.spreadQ) : "",
+    Math.round(isNum(r.offsetS) ? r.offsetS / 60 : 480),   /* 时区偏移，分钟 */
+    pr ? String(clamp(pr.level | 0, 0, 2)) : "",
+    tIdx >= 0 ? String(tIdx) : "",
+    pr && isNum(pr.base) ? pr.base.toFixed(2) : "",
+    r.sRT && isNum(r.sRT.d) ? r.sRT.d.toFixed(1) : "",
+    r.sRT ? Math.round(r.sRT.geom.dur || 0) : "",
+    fac.join("!")
+  ];
+  try { return b64uEnc(f.join("|")); } catch (e) { return null; }
+}
+
+/* 解码 + 逐字段校验。任一环节不合格返回 null —— 调用方据此"当这条链接没有快照"。 */
+function snapDecode(raw) {
+  if (typeof raw !== "string" || !raw || raw.length > SNAP_MAX) return null;
+  let txt = "";
+  try { txt = b64uDec(raw); } catch (e) { return null; }
+  if (!txt || txt.length > 4000) return null;
+  const f = txt.split("|");
+  if (f.length < 21 || f[0] !== SNAP_VER) return null;
+  const num = v => { const x = parseFloat(v); return isNum(x) ? x : null; };
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(f[2]) ? f[2] : null;
+  const period = (f[3] === "am" || f[3] === "pm") ? f[3] : null;
+  const lat = num(f[4]), lon = num(f[5]);
+  const P = num(f[8]), Q = num(f[9]);
+  if (!date || !period || lat == null || lon == null || P == null || Q == null) return null;
+  if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+  const fac = String(f[20] || "").split("!").filter(Boolean).map(seg => {
+    const p = seg.split("~");
+    return { k: p[0], v: num(p[1]), s: num(p[2]) };
+  }).filter(x => SNAP_KEYS.indexOf(x.k) >= 0 && x.v != null && x.s != null).slice(0, SNAP_N_FAC);
+  const tRaw = /^\d$/.test(f[16]) ? parseInt(f[16], 10) : -1;
+  const dRaw = /^[012]$/.test(f[15]) ? parseInt(f[15], 10) : -1;
+  const g = parseInt(f[1], 36);
+  return {
+    gen: isNum(g) ? g * 1000 : 0,
+    date: date, period: period, lat: lat, lon: lon,
+    name: safeLabel(f[6] || "", 24) || i18n("该地点"),
+    region: safeLabel(f[7] || "", 16),
+    P: clamp(P, 0, 100), Q: clamp(Q, 0, 100),
+    consist: clamp(nz(num(f[10]), 0), 0, 100),
+    dvI: num(f[11]), spread: num(f[12]), spreadQ: num(f[13]),
+    tzMin: clamp(nz(num(f[14]), 480), -1440, 1440),
+    deck: dRaw,                                        /* 下标；-1 = 没记 */
+    type: (tRaw >= 0 && tRaw < SNAP_TYPES.length) ? SNAP_TYPES[tRaw] : null,
+    baseKm: num(f[17]), dKm: num(f[18]), durMin: num(f[19]),
+    factors: fac
+  };
+}
+
+/* 生成一条可分享的快照链接。没有结果就返回空串（调用方据此提示"先算一次"）。 */
+function snapUrl() {
+  const s = snapEncode(State.result);
+  if (!s) return "";
+  /* 以**当前页面地址去掉查询串**为底，而不是写死 origin：file:// 直接双击打开时
+     location.origin 是 "null"，拼出来的链接是坏的。 */
+  const base = String(location.href).split("#")[0].split("?")[0];
+  return base + baseQuery() + "&snap=" + s;
+}
+
+/* 快照作废。**唯一入口** —— 改地点 / 改日期 / 改时段 / 重新算过都调它。
+   只清 State 与 DOM 上的快照痕迹；地址栏由随后那次 syncUrl() 自然把 snap= 去掉，
+   于是"失效"只有一个来源，不需要在 syncUrl 里再判一次"快照还匹配不匹配"。 */
+function invalidateSnap() {
+  if (State.booting) return;
+  State.snapRaw = null; State.snap = null;
+  if (typeof document === "undefined") return;
+  if (document.body) document.body.classList.remove("snapmode");
+  const tag = $("#heroTag");
+  if (tag) { tag.setAttribute("data-i18n", "多模型综合"); tag.textContent = i18n("多模型综合"); }
+  snapMsg("");
+}
+
+/* 快照区（#snapOut）的唯一写入口。只有两种内容：
+   一行提示，或一行提示 + 一个可手动复制的输入框。 */
+function snapMsg(txt, url) {
+  const box = $("#snapOut");
+  if (!box) return;
+  if (!txt) { box.hidden = true; box.innerHTML = ""; return; }
+  box.hidden = false;
+  box.innerHTML = `<div class="note ${url ? "n-warn" : "n-info"}">${esc(txt)}` +
+    /* value 用引号包住 + esc() —— 这条纪律与 _p2.js 里写的一致。 */
+    (url ? `<input class="snapurl" type="text" readonly value="${esc(url)}" aria-label="${esc(i18n("快照链接"))}">` : "") +
+    `</div>`;
+  const ip = box.querySelector("input");
+  if (ip) { try { ip.focus(); ip.select(); } catch (e) { } }
+}
+
+/* 剪贴板兜底：navigator.clipboard 在非安全上下文（file:// / 老 http）里是 undefined，
+   在部分浏览器里还会因权限被拒而抛错。这条老路不带 Promise，但覆盖了上述场景。 */
+function legacyCopy(s) {
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = s; ta.setAttribute("readonly", "");
+    ta.style.cssText = "position:fixed;top:-1000px;left:0;opacity:0";
+    document.body.appendChild(ta);
+    ta.select(); ta.setSelectionRange(0, s.length);
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return !!ok;
+  } catch (e) { return false; }
+}
+
+/* 「复制快照链接」按钮。复制失败时把链接**摊出来**让人手动复制 ——
+   静默假装成功比不复制更糟：用户会以为已经发给了同行人。 */
+async function copySnap() {
+  const btn = $("#snapUrl");
+  const u = snapUrl();
+  if (!u) { snapMsg(i18n("还没有可分享的预报结果，请先完成一次预报。")); return; }
+  let ok = false;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(u); ok = true; }
+  } catch (e) { ok = false; }
+  if (!ok) ok = legacyCopy(u);
+  if (ok) {
+    snapMsg("");
+    if (btn) {
+      const old = btn.getAttribute("data-i18n") || btn.textContent;
+      btn.textContent = i18n("已复制");
+      setTimeout(() => { btn.textContent = i18n(old); }, 1800);
+    }
+  } else {
+    snapMsg(i18n("自动复制失败，请手动复制下面的链接："), u);
+  }
+}
+
+/* 进入快照模式：铺结论卡 + 把"这不是实时结果"讲清楚。
+   取数相关的按钮（保存为图片 / 再复制一条）在快照模式下禁用 —— 它们需要完整的
+   State.result，而快照只带了摘要，硬做只会导出一张半空的图。 */
+function applySnap(s) {
+  if (typeof document !== "undefined" && document.body) document.body.classList.add("snapmode");
+  const tag = $("#heroTag");
+  if (tag) { tag.setAttribute("data-i18n", "快照"); tag.textContent = i18n("快照"); }
+  renderSnap(s);
+  const sc = $("#shareCard"); if (sc) sc.disabled = true;
+  const su = $("#snapUrl"); if (su) su.disabled = true;
+}
+
 /* 供地图点击查询复用：带地名解析地跳转到一个坐标 */
 function gotoLatLng(lat, lon) {
   let nm = "自定义坐标", rg = "";

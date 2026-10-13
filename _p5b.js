@@ -202,6 +202,105 @@ function rayCurve(s, omega) {
   </div>`;
 }
 
+/* ---------------------------------------------------------------------------
+   快照卡（F5）：把一条 `snap=` 里的结论摘要画成结论卡，**零取数**。
+   ---------------------------------------------------------------------------
+   与 renderHero 共用 gradeOf / gradeColor / conclOf / confBadge —— 于是"快照里的
+   等级"与"完整结果里的等级"必然是同一个，不会出现两处口径。差异只有两处，且都是刻意的：
+     · 日出日落时刻与方位角**现算**（sunEvents / solarPosition 都是纯天文、零取数），
+       所以链接里不必带，也因此不可能被篡改 —— 想改时刻就得连地点日期一起改；
+     · 只带最决定性的 4 个因素，且不带长篇解读 —— 那是完整结果的事。
+   安全边界：进 innerHTML 的只有四类东西 —— i18n() 的常量译文、esc() 过的地名、
+   SNAP_FACTORS 里按白名单取出的展示名与 fmt() 算出的数字串、以及上面现算的天文量。
+   链接里任何"自由文本"在 snapDecode 阶段就已经过 safeLabel / 白名单了。 */
+function snapAgeH(genMs) { return genMs ? (Date.now() - genMs) / 3600000 : 0; }
+/* "生成于"要**绝对时间 + 相对时间都给**：只给相对时间，对方不知道是哪天算的；
+   只给绝对时间，还得自己做减法才知道过没过期。 */
+function snapGenTxt(genMs) {
+  if (!genMs) return i18n("未知时间");
+  const d = new Date(genMs);
+  /* 用**生成方本地**的挂钟时间：ymd() 是 UTC 口径，与 getHours() 混用会差一个时区。 */
+  const abs = d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) +
+    " " + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+  const h = snapAgeH(genMs);
+  if (h < 0) return abs;                    /* 对方机器的时钟往前飘了 */
+  if (h < 1) return i18n("{abs}（{n} 分钟前）", { abs: abs, n: Math.max(1, Math.round(h * 60)) });
+  if (h < 24) return i18n("{abs}（{n} 小时前）", { abs: abs, n: Math.round(h) });
+  return i18n("{abs}（{n} 天前）", { abs: abs, n: Math.round(h / 24) });
+}
+
+function renderSnap(s) {
+  const [Y, M, D] = s.date.split("-").map(Number);
+  const dayMs = Date.UTC(Y, M - 1, D);
+  const isAM = s.period === "am";
+  const evName = i18n(isAM ? "日出" : "日落");
+  let evMs = null, az = null;
+  try {
+    const ev = sunEvents(dayMs, s.lat, s.lon);
+    evMs = isAM ? ev.riseMs : ev.setMs;
+    if (!isNum(evMs)) evMs = ev.noonMs + 12 * 3600000;
+    az = solarPosition(evMs, s.lat, s.lon).azimuth;
+  } catch (e) { softWarn("快照天文量重算失败", e); }
+  const evLocal = isNum(evMs) ? uClock(((evMs + s.tzMin * 60000) / 3600000 % 24 + 24) % 24) : "—";
+
+  const grade = gradeOf(s.Q), col = gradeColor(grade);
+  const C = 2 * Math.PI * 54;
+  /* 徽标照旧走 confBadge：spread / spreadQ 缺失时它自己会收敛成"只报 ΔI"。 */
+  const badge = confBadge({ consist: s.consist, dvI: s.dvI, spread: s.spread, spreadQ: s.spreadQ, conf: null });
+  const stale = snapAgeH(s.gen) > 24;
+  const deckTxt = s.deck >= 0 ? i18n(SNAP_DECKS[s.deck]) : "—";
+  const typeTxt = s.type ? i18n(s.type) : "—";
+  const qualTxt = i18n("观赏质量") + (QUALITY_LABEL[grade] ? i18n(QUALITY_LABEL[grade]) : "");
+
+  const facHtml = s.factors.length ? `<div class="snapfac">
+    <div class="sfh">${i18n("最决定性的几个因素")}</div>
+    <div class="sfl">${s.factors.map(x => {
+      const d = SNAP_FACTORS.filter(y => y.k === x.k)[0];
+      return `<span class="sf">${esc(i18n(d.zh))}<b>${esc(d.fmt(x.v))}</b>${pill(x.s)}</span>`;
+    }).join("")}</div>
+  </div>` : "";
+
+  $("#hero").innerHTML = `
+  <div class="note ${stale ? "n-warn" : "n-info"} snapnote">
+    <div class="snt"><b>${i18n("这是 {t} 的计算结果（快照）", { t: snapGenTxt(s.gen) })}</b>
+      <span>${i18n("打开快照链接不会重新取数，因此不消耗接口额度。")}${stale ? " " + i18n("距今已超过一天，模式数据可能已更新多次，请谨慎参考。") : ""}</span></div>
+    <button class="sm primary" id="snapRefresh">${i18n("按当前条件重新计算")}</button>
+  </div>
+  <div class="hero">
+    <div class="dial">
+      <svg width="126" height="126" viewBox="0 0 126 126">
+        <circle class="dialbg" cx="63" cy="63" r="54" fill="none" stroke-width="11"/>
+        <circle cx="63" cy="63" r="54" fill="none" stroke="${col}" stroke-width="11" stroke-linecap="round"
+          stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - clamp01(s.P / 100))).toFixed(1)}"/>
+      </svg>
+      <div class="dv"><b>${Math.round(s.P)}<span style="font-size:15px">%</span></b><span>${i18n("出现概率")}</span></div>
+    </div>
+    <div class="hero-txt">
+      ${badge}
+      <div class="big">${i18n("预计 {site} {date} {period}{concl}（{p}），{q} 分 · {qual} {grade}", {
+        site: esc(s.name), date: esc(s.date), period: i18n(isAM ? "朝霞" : "晚霞"),
+        concl: conclOf(s.P), p: pct(s.P), q: Math.round(s.Q), qual: qualTxt, grade: i18n(grade) })}</div>
+      <div class="hint" style="margin-top:5px">
+        ${i18n("承载霞光的主要云层：{type}（{deck}），云底约 {base}；云边界 {d}。", {
+          type: "<b>" + esc(typeTxt) + "</b>", deck: esc(deckTxt), base: uAlt((s.baseKm || 0) * 1000),
+          d: isNum(s.dKm) ? uDist(s.dKm) : i18n("无明显边界") })}
+      </div>
+      <div class="hint" style="margin-top:5px">${i18n("综合指数 I=0.55P+0.45Q")} <b>${Math.round(mixedIndex(s.P, s.Q))}</b></div>
+    </div>
+  </div>
+  <div class="kv" style="margin-top:14px">
+    <div class="it"><div class="k">${i18n("{ev}时刻（本地）", { ev: evName })}</div><div class="v">${evLocal}</div></div>
+    <div class="it"><div class="k">${i18n("{ev}方位角", { ev: evName })}</div><div class="v">${isNum(az) ? Math.round(az) + "°" : "—"}</div></div>
+    <div class="it"><div class="k">${i18n("云底高度")}</div><div class="v">${uAlt((s.baseKm || 0) * 1000)}</div></div>
+    <div class="it"><div class="k">${i18n("云边界距离")}</div><div class="v">${isNum(s.dKm) ? uDist(s.dKm) : "—"}</div></div>
+    <div class="it"><div class="k">${i18n("预计持续时间（头顶）")}</div><div class="v">${isNum(s.durMin) ? fmtDur(s.durMin) : "—"}</div></div>
+    <div class="it"><div class="k">${i18n("综合指数 I=0.55P+0.45Q")}</div><div class="v">${Math.round(mixedIndex(s.P, s.Q))}</div></div>
+  </div>
+  ${facHtml}`;
+  const rb = $("#snapRefresh");
+  if (rb) rb.addEventListener("click", () => { invalidateSnap(); syncUrl(); runForecast(true); });
+}
+
 function modelCard(title, sub, P, Q, facts, color, extraClass) {
   const grade = gradeOf(Q);
   return `<div class="mcard ${extraClass || ""}">
@@ -262,13 +361,48 @@ function pill(score) {
   if (score >= 0.5) return `<span class="pill p-mid">${i18n("中性")}</span>`;
   return `<span class="pill p-bad">${i18n("不利")}</span>`;
 }
+/* =========================================================================
+   快照（F5）里"主要因素"的口径
+   -------------------------------------------------------------------------
+   链接里只存 `key + 原始数值 + 得分`；**展示名与单位在渲染时才由这里现算**。
+   于是同一条快照链接：切到英文界面就是英文、切成英制就是 ft / mi / mph，
+   链接本身一个字符都不用改。
+   `fmt` 与下面 renderFactors 里那 12 个显示串必须**等价**（同一输入出同一串），
+   否则快照卡与完整因素表会说出两个数。
+   ========================================================================= */
+const SNAP_FACTORS = [
+  { k: "cover", zh: "云量类型与覆盖度", fmt: v => Math.round(v) + "%" },
+  { k: "base", zh: "云底高度", fmt: v => uAlt(v * 1000) },
+  { k: "heq", zh: "光学等效地表高度", fmt: v => uDist(v, 2) },
+  { k: "heff", zh: "等效云底高度", fmt: v => uDist(v, 2) },
+  { k: "dedge", zh: "云边界距离", fmt: v => uDist(v) },
+  { k: "block", zh: "光路上游低层云遮挡", fmt: v => Math.round(v) + "%" },
+  { k: "aod", zh: "气溶胶光学厚度 AOD", fmt: v => n1(v, 2) },
+  { k: "vis", zh: "能见度", fmt: v => uDist(v / 1000, 1) },
+  { k: "rh", zh: "2m 相对湿度", fmt: v => Math.round(v) + "%" },
+  { k: "stab", zh: "气压稳定性", fmt: v => "|ΔP/Δt| = " + v.toFixed(2) + " hPa/h" },
+  { k: "wind", zh: "云边界风速分量", fmt: v => uSpeed(v) },
+  { k: "cape", zh: "对流活动", fmt: v => "CAPE " + Math.round(v) + " J/kg" }
+];
+/* 白名单：snapDecode 拿它过滤因素键 —— 不在名单里的键整条丢掉。 */
+const SNAP_KEYS = SNAP_FACTORS.map(x => x.k);
+
 function renderFactors(r) {
   const env = r.envM, s = r.sRT, tr = r.aM, p = s.primary;
   const rows = [];
-  const add = (name, val, score, desc) => rows.push([name, val, score, desc]);
+  /* 快照（F5）要挑"最决定性的几个因素"，而它需要的是**原始量**（米 / 百分数 / J/kg），
+     不是这里已经拼好单位的显示串 —— 否则对方把界面切成英制就对不上了。
+     所以 add 多收一个 `key` 与 `numVal`，把 (键, 原始数值, 得分) 存进 State.factorRows。
+     这一步的意义是：下面这 12 组 trap() 阈值**只有这一份**，快照侧不许再抄一遍。 */
+  const snapRows = [];
+  const add = (key, name, numVal, val, score, desc) => {
+    rows.push([name, val, score, desc]);
+    if (key) snapRows.push([key, numVal, score]);
+  };
+  State.factorRows = snapRows;
 
   const coverSc = trap(p.cover, [[0, 0], [8, 0.12], [22, 0.62], [38, 1], [75, 1], [88, 0.5], [100, 0.22]]);
-  add(i18n("云量类型与覆盖度"), `${p.type} · ${Math.round(p.cover)}%`, coverSc,
+  add("cover", i18n("云量类型与覆盖度"), p.cover, `${p.type} · ${Math.round(p.cover)}%`, coverSc,
     i18n("{type}属{deck}，云底约 {base}。{tail}", {
       type: i18n(p.type), deck: i18n(["低云", "中云", "高云"][p.level]), base: uAlt(p.base * 1000),
       tail: i18n(p.cover < 20 ? "云量偏少，可能没有足够云体承接霞光。"
@@ -276,53 +410,53 @@ function renderFactors(r) {
           : "云量处于理想区间，云块之间既能透光又能承接低角度阳光。") }));
 
   const baseSc = trap(p.base, [[0.1, 0.05], [0.6, 0.24], [1.2, 0.55], [2.0, 0.8], [3.0, 1], [9, 1], [13, 0.68]]);
-  add(i18n("云底高度"), uAlt(p.base * 1000), baseSc,
+  add("base", i18n("云底高度"), p.base, uAlt(p.base * 1000), baseSc,
     i18n("云底越高，霞光可出现的范围与色相变化越丰富；云底越低，霞光越局限于橘红且持续时间短。"));
 
   const heqSc = trap(s.Heq, [[0, 1], [0.8, 1], [1.5, 0.8], [2.5, 0.5], [3.5, 0.3], [5, 0.12], [8, 0.03]]);
-  add(i18n("光学等效地表高度"), uDist(s.Heq, 2), heqSc,
+  add("heq", i18n("光学等效地表高度"), s.Heq, uDist(s.Heq, 2), heqSc,
     i18n("气溶胶把光线“垫高”的等效地表高度，由 AOD 与气溶胶标高 Hs={v} km 计算（z=Hs·ln(AOD/(Hs·k₀))）。该值越大，等效云底越低，霞光越难形成。", { v: n1(s.Hs, 2) }));
 
   const heffSc = trap(s.hEff, [[0, 0.03], [0.4, 0.25], [1, 0.6], [2, 0.85], [4, 1], [10, 1]]);
-  add(i18n("等效云底高度"), uDist(s.hEff, 2), heffSc, i18n("云底高度减去光学等效地表高度后的有效高度，是几何判定的真正输入。"));
+  add("heff", i18n("等效云底高度"), s.hEff, uDist(s.hEff, 2), heffSc, i18n("云底高度减去光学等效地表高度后的有效高度，是几何判定的真正输入。"));
 
   const dSc = s.geom.ok ? clamp(1 - s.d / s.geom.xMax, 0, 1) * 0.6 + 0.4 : 0.05;
-  add(i18n("云边界距离"), isNum(s.d) ? uDist(s.d) + i18n("（上限 {v}）", { v: uDist(s.geom.xMax) }) : i18n("无明显云边界"), dSc,
+  add("dedge", i18n("云边界距离"), s.d, isNum(s.d) ? uDist(s.d) + i18n("（上限 {v}）", { v: uDist(s.geom.xMax) }) : i18n("无明显云边界"), dSc,
     i18n("沿日出/日落方位以 25 km 间隔采样（地图批量估算时以采样网格插值代替实地采样）得到的云盘外缘距离。必须小于霞光深入距离 2√(2Rh)，阳光才能从云底下方照进来；距离越远，颜色越红、开始越晚。"));
 
   const blockSc = trap(isNum(tr.upstreamLowMax) ? tr.upstreamLowMax : (env.cLow || 0),
     [[0, 1], [25, 0.95], [45, 0.72], [65, 0.4], [85, 0.18], [100, 0.1]]);
-  add(i18n("光路上游低层云遮挡"), `${Math.round(isNum(tr.upstreamLowMax) ? tr.upstreamLowMax : 0)}%`, blockSc,
+  add("block", i18n("光路上游低层云遮挡"), (isNum(tr.upstreamLowMax) ? tr.upstreamLowMax : (env.cLow || 0)), `${Math.round(isNum(tr.upstreamLowMax) ? tr.upstreamLowMax : 0)}%`, blockSc,
     i18n("低云位于霞光光路下方，是最常见的“翻车”原因：低云量高会把阳光彻底挡住。"));
 
   const aeroSc = trap(r.aodUse, [[0, 1], [0.1, 1], [0.2, 0.88], [0.3, 0.72], [0.5, 0.52], [0.8, 0.26], [1.2, 0.12], [3, 0.03]]);
-  add(i18n("气溶胶光学厚度 AOD"), `${n1(r.aodUse, 2)}（550nm）`, aeroSc,
+  add("aod", i18n("气溶胶光学厚度 AOD"), r.aodUse, `${n1(r.aodUse, 2)}（550nm）`, aeroSc,
     i18n(r.aodUse < 0.2 ? "气溶胶很少，瑞利散射占主导，阳光颜色纯净、饱和度高，水晶天。"
       : r.aodUse < 0.5 ? "气溶胶一般，天空通透度普通，颜色饱和度会略降。"
         : r.aodUse < 0.8 ? "气溶胶较多，天空偏霾，会明显削弱霞光的亮度与饱和度。"
           : "气溶胶大量存在，属“污烧”，低角度霞光细节会被灰霾吞掉。"));
 
   const visSc = isNum(env.vis) ? trap(env.vis / 1000, [[0.4, 0.05], [2, 0.2], [5, 0.42], [10, 0.66], [20, 0.92], [30, 1], [80, 1]]) : null;
-  add(i18n("能见度"), isNum(env.vis) ? uDist(env.vis / 1000, 1) : "—", visSc,
+  add("vis", i18n("能见度"), env.vis, isNum(env.vis) ? uDist(env.vis / 1000, 1) : "—", visSc,
     i18n("反映底层大气通透程度。能见度低于 5 km 时地面附近霾/雾显著，霞光的低角度部分会被遮挡。"));
 
   const humSc = isNum(env.RH) ? trap(env.RH, [[5, 0.7], [20, 0.92], [40, 1], [75, 1], [88, 0.78], [95, 0.45], [100, 0.3]]) : null;
-  add(i18n("2m 相对湿度"), isNum(env.RH) ? Math.round(env.RH) + "%" : "—", humSc,
+  add("rh", i18n("2m 相对湿度"), env.RH, isNum(env.RH) ? Math.round(env.RH) + "%" : "—", humSc,
     i18n("湿度适中利于云的存在与散射；相对湿度过高（>90%）会形成雾并放大气溶胶消光，反而使天空浑浊；过低则可能没有云。"));
 
   const dPv = r.trendVal;
   const stabSc = isNum(dPv) ? trap(dPv, [[0, 1], [0.6, 1], [1.2, 0.8], [2.5, 0.52], [6, 0.3]]) : null;
-  add(i18n("气压稳定性"), isNum(dPv) ? "|ΔP/Δt| = " + dPv.toFixed(2) + " hPa/h" : "—", stabSc,
+  add("stab", i18n("气压稳定性"), dPv, isNum(dPv) ? "|ΔP/Δt| = " + dPv.toFixed(2) + " hPa/h" : "—", stabSc,
     i18n("气压稳定说明天气系统移动缓慢，云边界位置可预测；气压快速变化意味着云况随时可能改变，预报不确定性大。"));
 
   const comp = alongComponent(env.ws, env.wd, r.az);
   const compSc = isNum(comp) ? trap(comp, [[0, 1], [8, 1], [15, 0.75], [22, 0.5], [32, 0.3], [50, 0.15]]) : null;
-  add(i18n("云边界风速分量"), isNum(comp) ? uSpeed(comp) : "—", compSc,
+  add("wind", i18n("云边界风速分量"), comp, isNum(comp) ? uSpeed(comp) : "—", compSc,
     i18n("云边界沿日出/日落方向的速度分量。经验上 <15 m/s 云边界位置不确定度小，>30 m/s 则很大（云边界会明显推移）。"));
 
   const cape = env.cape, pr = env.precip;
   const convSc = isNum(cape) ? trap(cape, [[0, 1], [300, 1], [800, 0.8], [1500, 0.55], [3000, 0.32]]) : null;
-  add(i18n("对流活动"),
+  add("cape", i18n("对流活动"), cape,
     (isNum(cape) ? "CAPE " + Math.round(cape) + " J/kg" : "—")
     + (isNum(pr) ? i18n(" · 降水 {v} mm", { v: pr.toFixed(1) }) : ""), convSc,
     i18n("对流强时局地积云/积雨云发展，会随机遮挡光路；但积雨云云砧本身也可能形成漂亮的云砧晚霞。"));
@@ -332,7 +466,7 @@ function renderFactors(r) {
      等于在 _p4.js 之外又养了一份同义实现，阈值一改两处就会打架。
      判别量也统一成 ΔI（与地图「模型分歧」维度同源），ΔP / ΔQ 只作为分解项展示。 */
   const cfF = confText(r.conf || ensConfOf(r.dvI));
-  add(i18n("模式一致性"),
+  add("consist", i18n("模式一致性"), null,
     isNum(r.dvI)
       ? `${cfF.lv} · ΔI ${Math.round(r.dvI)}（ΔP ${Math.round(nz(r.spread, 0))} · ΔQ ${Math.round(nz(r.spreadQ, 0))}）`
       : i18n("数据不足"),

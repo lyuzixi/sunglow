@@ -87,11 +87,12 @@
     ④ 路径显示必须用 `textContent`（路径是用户输入，拼 `innerHTML` 就是反射型 XSS）；长路径要 `word-break:break-all`。
     ⑤ `:root` 令牌与主页**逐字一致**、窄屏走同一条 760px 媒体查询 ⇒ 由 `404probe` 的"令牌比对 / 占位符残留 / 外部引用 / 窄屏不溢出"守着。
     ⑥ 必须 `noindex`（它会被拿去应答各种拼错地址）。
+53. **快照链接（F5）：只存"键 + 数"，不存"文案"** —— 云型 / 因素名存**内部键**，展示时才过 `i18n()`（同一条链接切英文就是英文、切英制就是 ft/mi）；日出日落时刻与方位角**不进链接**，由 (lat,lon,date,tz 分钟) 用 `sunEvents`/`solarPosition` 现算。解码**前**先量长度（`SNAP_MAX`），解码时逐字段过闸门（日期正则 / 时段白名单 / 云型下标 / `parseFloat+isNum` / 字符串 `safeLabel`）。`SNAP_TYPES` 的**顺序即编码下标** ⇒ 改动必须升 `SNAP_VER`。失效只收口在 `invalidateSnap()`（`State.booting` 期间不生效，否则首屏 `setLocation` 会把刚读进来的快照判死）；它只清 State，地址栏靠随后那次 `syncUrl()` 自然去掉 snap=。**快照模式不跑 `runForecast`** —— 首屏自动预报是本项目唯一一处被动取数。
 
 ## 验证脚本
 **首选 `python _check/all.py`**（`-v` 详细、`-k` 过滤、`--fast` ＝ cdp 只跑快段）。理由：`run_self.py`/`cdp.js`/`cachesize.js` **始终 exit 0**，只在 stdout 打计数，漏解析会把失败当成功。
-序列（**17 项，顺序即依赖**）：`syntax`/`globals`/`run_self`/`datacheck`/`localgrid`/`timeoutprobe`/`zoomprobe`/`raceprobe`/`cachesize`/`cdp`/`mapaudit`/`mobileprobe`/`mobileprobe360`/`persistprobe`/`a11yprobe`/**`404probe`**/`docfacts`。不全跑：`pointcache`、`perfprobe`（只测量）、`consistency`/`shotdefault`（花真实额度）、`tzprobe`、`aodscale`、`styleprobe`。
-阈值：`zoomprobe` **136 项 0 失败**；`timeoutprobe` **15**；`mapaudit` **26**；`mobileprobe` **26**（两档视口各跑一次，不花额度）；`persistprobe` **15**；`a11yprobe` **15**；**`404probe` 21**。
+序列（**22 项，顺序即依赖**）：`syntax`/`globals`/`run_self`/`datacheck`/`localgrid`/`timeoutprobe`/`zoomprobe`/`raceprobe`/`cachesize`/`cdp`/`mapaudit`/`mobileprobe`/`mobileprobe360`/`persistprobe`/`a11yprobe`/`xssprobe`/`i18nprobe`/`darkprobe`/`spotprobe`/**`snapprobe`**/**`404probe`**/`docfacts`。不全跑：`pointcache`、`perfprobe`（只测量）、`consistency`/`shotdefault`（花真实额度）、`tzprobe`、`aodscale`、`styleprobe`。
+阈值：`zoomprobe` **136 项 0 失败**；`timeoutprobe` **15**；`mapaudit` **26**；`mobileprobe` **26**（两档视口各跑一次，不花额度）；`persistprobe` **15**；`a11yprobe` **15**；`xssprobe` **18**；`i18nprobe` **23**；`darkprobe` **19**；`spotprobe` **21**；**`snapprobe` 24**；**`404probe` 21**。
 坑（都踩过）：改源码忘重跑 `assemble.py`+`mkpreview.py`（已两次）· **别硬编码城市坐标**（写死的点落值场外时断言静默空转）· **同一时间只跑一个 `all.py`**（否则 `EADDRINUSE` 假失败）· `cdp.js` 末节「部署缺陷探测」必须排在**所有截图与新增段落之后**（局部变量也叫 `B1`，会清空 `#map`）· 别用固定 `sleep`，改轮询 · 探针模板串**内部**要写 `\\s`、**注释里不能出现反引号**（截断模板串，已踩 **4 次**）· **给 md/日志追加文本别用 `python -c "…"`**（双引号里的反引号被 bash 当命令替换**静默吃掉**）· 重跑 `assemble.py` **必须看字节数**（重定向到 `/dev/null` 会让文档记下中间态）· 断言用 `{名称:条件}` 别串 `&&` · **失败登记务必保留**（`FAIL` 行 + `FAIL 计数: N` 作退出码）· **判据失效导致的空等/绿灯也是坑**（曾静默空等 125.8 s）⇒ 判据要配自检断言。
 
 ## 地图规模与账目

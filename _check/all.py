@@ -53,7 +53,7 @@ if not os.path.exists(NODE):
 # 末尾两项的顺序不能动：
 #   mobileprobe 的 FACTS 行是 docfacts 的事实源之一，docfacts 必须排在它后面。
 SUITE = [
-    ("syntax",       "syntax.py",       "3 个内联 script 块语法"),
+    ("syntax",       "syntax.py",       "4 个内联 script 块语法"),
     ("globals",      "globals.js",      "跨脚本块命名冲突（静默覆盖 / 词法冲突）"),
     ("run_self",     "run_self.py",     "色阶/等级纯函数自测"),
     ("datacheck",    "datacheck.py",    "内联城市表不变量 + 港澳台合规"),
@@ -75,6 +75,7 @@ SUITE = [
     ("i18nprobe",     "i18nprobe.js",    "多语言（词典键覆盖/切换/往返/优先级）"),
     ("darkprobe",     "darkprobe.js",    "深色模式（令牌/跟随系统/覆盖/持久化/双扫描仪）"),
     ("spotprobe",     "spotprobe.js",    "F3 最佳窗口 / F2 多观测点（额度纪律与失效边界）"),
+    ("snapprobe",     "snapprobe.js",    "F5 结果快照（零额度 / 失效 / 恶意载荷 / 坏输入）"),
     ("404probe",     "404probe.js",     "404 页（深路径渲染/桌面+窄屏/两个出口）"),
     ("docfacts",     "docfacts.py",     "文档↔代码一致性（行数/字节/常量/探针条数）"),
 ]
