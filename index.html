@@ -602,6 +602,39 @@ footer li{margin:3px 0}
   pointer-events:auto}
 .tgo:hover{background:var(--tint3)}
 
+/* ---------- F3 最佳窗口日历 ---------- */
+.tcal{margin:0 0 12px}
+.tcal-h{font-size:12.5px;color:var(--tx3);margin-bottom:7px}
+.tcal-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:7px}
+.tcal-d{border:1px solid var(--line);border-radius:var(--r2);padding:6px 8px;background:var(--hover);
+  cursor:pointer;text-align:left;font:inherit;color:inherit;transition:border-color .12s,background .12s}
+.tcal-d:hover{border-color:var(--acc);background:var(--tint)}
+.tcal-d.on{border-color:var(--acc2);background:var(--tint);box-shadow:0 0 0 2px var(--accbg)}
+.tcal-d .d1{display:flex;justify-content:space-between;gap:5px;font-size:11.5px;color:var(--tx3)}
+.tcal-d .d1 b{color:var(--tx2);font-weight:600}
+.tcal-d .b{display:flex;align-items:center;gap:5px;font-size:12px;margin-top:4px}
+.tcal-d .b i{width:9px;height:9px;border-radius:2px;flex:0 0 auto}
+.tcal-d .b em{font-style:normal;color:var(--tx3);font-size:11px}
+.tcal-d .b b{font-weight:600}
+.tcal-d.best{border-color:var(--acc2)}
+.tcal-sum{margin-top:9px;font-size:12.5px;color:var(--tx2)}
+
+/* ---------- F2 多观测点对比 ---------- */
+.spotbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.spotbar .presets{margin:0}
+.sp-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;
+  padding:4px 6px 4px 10px;font-size:12.5px;background:var(--card);color:var(--tx2)}
+.sp-chip.cur{border-color:var(--acc);color:var(--acc2)}
+.sp-chip button{border:0;background:transparent;color:var(--tx3);cursor:pointer;font-size:14px;
+  line-height:1;padding:0 3px;border-radius:4px}
+.sp-chip button:hover{color:var(--bad)}
+.t-spot{width:100%;border-collapse:collapse;font-size:13px}
+.t-spot th,.t-spot td{border:1px solid var(--line);padding:6px 9px;text-align:left}
+.t-spot th{background:var(--hover);font-weight:600;white-space:nowrap}
+.t-spot tr.cur td{background:var(--tint)}
+.t-spot td.nm{white-space:nowrap}
+.t-spot td.nm i{font-style:normal;color:var(--tx3);font-size:11px}
+
 /* ---------- 数值直标：第二编码（F6） ---------- */
 .mlayer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;display:none;z-index:5;overflow:hidden}
 .mlayer.on{display:block}
@@ -808,7 +841,25 @@ footer li{margin:3px 0}
           <span class="tag" data-i18n="同一点位的逐日对比，一次取数看完整窗口（点格子可跳转）">同一点位的逐日对比，一次取数看完整窗口（点格子可跳转）</span>
           <span class="right"><button class="sm" id="trendGo">加载趋势</button></span>
         </div>
+        <!-- F3 最佳窗口：由 renderTrendCal() 填。放在趋势表**上方** ——
+             "未来十天哪些天值得去"比"逐日两列数字"更接近真实决策。 -->
+        <div id="trendCal" class="tcal"></div>
         <div id="trendBody"></div>
+      </div>
+
+      <!-- F2 多观测点对比：左列末尾。取数**必须显式触发**（约束 9 的额度纪律），
+           所以这里只有"收藏 + 一个按钮"，打开页面不发任何请求。 -->
+      <div class="card">
+        <div class="card-h">
+          <h2 data-i18n="⑨ 多观测点对比">⑨ 多观测点对比</h2>
+          <span class="tag" data-i18n="把常去的几个机位放一起比 —— “今天去哪儿拍”一眼看出来">把常去的几个机位放一起比 —— “今天去哪儿拍”一眼看出来</span>
+          <span class="right"><button class="sm primary" id="spotGo" data-i18n="对比这些点">对比这些点</button></span>
+        </div>
+        <div class="spotbar">
+          <div class="presets" id="spotList"></div>
+          <button class="sm" id="spotAdd" data-i18n="收藏当前地点">收藏当前地点</button>
+        </div>
+        <div id="spotBody"></div>
       </div>
 
     </div>
@@ -1376,6 +1427,35 @@ const I18N_ZH_HANT = {
   "跟随系统": "跟隨系統",
   "浅色": "淺色",
   "深色": "深色",
+  "最佳窗口": "最佳時段",
+  "未来 {n} 天": "未來 {n} 天",
+  "最值得去：{v}": "最值得去：{v}",
+  "周一": "週一",
+  "周二": "週二",
+  "周三": "週三",
+  "周四": "週四",
+  "周五": "週五",
+  "周六": "週六",
+  "周日": "週日",
+  "{d} 朝霞": "{d} 朝霞",
+  "{d} 晚霞": "{d} 晚霞",
+  "⑨ 多观测点对比": "⑨ 多觀測點對比",
+  "把常去的几个机位放一起比 —— “今天去哪儿拍”一眼看出来": "把常去的幾個機位放在一起比 —— 「今天去哪兒拍」一眼看出來",
+  "收藏当前地点": "收藏目前地點",
+  "对比这些点": "對比這些點",
+  "已收藏 {n} 个点（最多 {nMax} 个）": "已收藏 {n} 個點（最多 {nMax} 個）",
+  "先收藏几个地点，再点「对比这些点」—— 一次取数把它们横着排出来。": "先收藏幾個地點，再點「對比這些點」—— 一次取數把它們橫著排出來。",
+  "本次将消耗约 {n} 个计费调用（已缓存的地点不重复取）": "本次將消耗約 {n} 個計費呼叫（已快取的地點不重複取）",
+  "正在对比 {n} 个点（{c} 个坐标 × 3 路）…": "正在對比 {n} 個點（{c} 個座標 × 3 路）…",
+  "其中 {k} 个点命中了缓存，无需取数": "其中 {k} 個點命中了快取，無需取數",
+  "对比结果": "對比結果",
+  "地点": "地點",
+  "对比数据获取失败：{m}": "對比資料取得失敗：{m}",
+  "已收藏过这个地点": "已收藏過這個地點",
+  "列表已满：最多 {n} 个地点": "清單已滿：最多 {n} 個地點",
+  "移除": "移除",
+  "当前": "目前",
+  "按质量分排序；点上方任意位置可切地点，再点一次「对比这些点」重算。": "依品質分排序；點上方任意位置可切換地點，再點一次「對比這些點」重算。",
 };
 
 /* ---- English ---- */
@@ -1817,6 +1897,35 @@ const I18N_EN = {
   "跟随系统": "System",
   "浅色": "Light",
   "深色": "Dark",
+  "最佳窗口": "Best windows",
+  "未来 {n} 天": "next {n} days",
+  "最值得去：{v}": "Top picks: {v}",
+  "周一": "Mon",
+  "周二": "Tue",
+  "周三": "Wed",
+  "周四": "Thu",
+  "周五": "Fri",
+  "周六": "Sat",
+  "周日": "Sun",
+  "{d} 朝霞": "{d} dawn",
+  "{d} 晚霞": "{d} dusk",
+  "⑨ 多观测点对比": "⑨ Compare spots",
+  "把常去的几个机位放一起比 —— “今天去哪儿拍”一眼看出来": "Line up the spots you shoot from, so you can see at a glance where to go today",
+  "收藏当前地点": "Save current location",
+  "对比这些点": "Compare",
+  "已收藏 {n} 个点（最多 {nMax} 个）": "{n} saved (max {nMax})",
+  "先收藏几个地点，再点「对比这些点」—— 一次取数把它们横着排出来。": "Save a few spots first, then hit Compare — one fetch lines them up side by side.",
+  "本次将消耗约 {n} 个计费调用（已缓存的地点不重复取）": "This will cost about {n} billable calls (cached spots are not re-fetched)",
+  "正在对比 {n} 个点（{c} 个坐标 × 3 路）…": "Comparing {n} spots ({c} coordinates × 3 paths)…",
+  "其中 {k} 个点命中了缓存，无需取数": "{k} of them came from cache — no fetch needed",
+  "对比结果": "Comparison",
+  "地点": "Spot",
+  "对比数据获取失败：{m}": "Failed to load the comparison: {m}",
+  "已收藏过这个地点": "That spot is already saved",
+  "列表已满：最多 {n} 个地点": "List is full: {n} spots maximum",
+  "移除": "Remove",
+  "当前": "now",
+  "按质量分排序；点上方任意位置可切地点，再点一次「对比这些点」重算。": "Sorted by quality; click any spot above to switch, then hit Compare again to recompute.",
 };
 
 const I18N = { zh: null, zhHant: I18N_ZH_HANT, en: I18N_EN };
@@ -3116,6 +3225,10 @@ const State = {
   trend: null,
   /* 展示偏好（F7）：只影响展示，不参与任何计算与判定 */
   units: "metric", hour12: false,
+  /* F2 多观测点：收藏列表（localStorage 持久化）、上一次的对比结果、一行提示。
+     spotRows 在**位置/日期/时段**三者任一变化时必须置空 —— 否则会显示"上一个地点
+     或上一天"的数字，这是本类功能最容易出的静默错误。 */
+  spots: [], spotRows: null, spotMsg: "",
   /* 地图端的选择（与单点查询相互独立）：
      mapPeriod 朝/晚霞、mapDim 着色依据、mapModel 算法模型 */
   mapPeriod: "pm", mapDim: "mix", mapModel: "ens"
@@ -3408,6 +3521,7 @@ function initUI() {
   $$("#periodSeg button").forEach(b => b.addEventListener("click", () => {
     setSegActive("#periodSeg", b);
     State.period = b.dataset.p; updateLegend(); renderTrend(); runForecast(true);
+    invalidateSpotRows();      /* 对比结果按 (日期, 时段) 取 ⇒ 切时段即作废 */
   }));
   $("#presets").addEventListener("click", e => {
     const b = e.target.closest("button"); if (!b) return;
@@ -3479,6 +3593,13 @@ function initUI() {
 
   /* 主题切换（F8）：与语言控件同一套模式（.unitseg + aria-pressed）。
      切完只改 CSS 令牌 + 重画语义色，不取数、不重算场。 */
+  /* F2 多观测点：只画列表，**不发任何请求**（额度纪律的第一条） */
+  State.spots = spotsRead();
+  renderSpots(); renderSpotBody();
+  const spAdd = $("#spotAdd"), spGo = $("#spotGo");
+  if (spAdd) spAdd.addEventListener("click", spotAdd);
+  if (spGo) spGo.addEventListener("click", () => { State.spotRows = null; loadSpots(); });
+
   refreshThemeSeg();
   if ($("#themeSeg")) {
     $$("#themeSeg button").forEach(b => b.addEventListener("click", () => {
@@ -3538,12 +3659,15 @@ function initUI() {
   /* 地图数据由 initMap() 统一加载，避免重复请求 */
 }
 
+function invalidateSpotRows() { State.spotRows = null; State.spotMsg = ""; if (typeof renderSpotBody === "function") renderSpotBody(); }
+
 function saveDate() {
   const v = $("#date").value;
   if (!v) return;
   if (v < $("#date").min) $("#date").value = $("#date").min;
   if (v > $("#date").max) $("#date").value = $("#date").max;
   State.dateStr = $("#date").value;
+  invalidateSpotRows();          /* 日期变 ⇒ 对比结果作废 */
   $("#mapDateSel").value = State.dateStr;
   syncUrl();
   /* 已加载的趋势区间内换日期无需重新取数，只需把高亮挪过去 */
@@ -3560,6 +3684,10 @@ function setLocation(lat, lon, name, region) {
   refreshLocHint();
   /* 换了地方，已加载的趋势数据不再成立（它是按位置取的 34 个坐标） */
   if (moved && State.trend) { State.trend = null; renderTrend(); }
+  /* 多观测点对比同理：结果记的是"其他地点"的数字，换了地方就不对应了。
+     同时刷新列表里的"当前"标记与预估消耗。 */
+  State.spotRows = null; State.spotMsg = "";
+  if (typeof renderSpots === "function") { renderSpots(); renderSpotBody(); }
   /* 地图同理，而且更彻底：局部网格是围绕查询点生成的（B13），
      旧数据属于旧地点 —— 必须整个作废，不能当缓存留着。 */
   if (moved) mapOnPlaceChanged();
@@ -4077,9 +4205,252 @@ async function computeTrend() {
   t.rows = rows;
 }
 
+/* =========================================================================
+   F3 · 最佳窗口日历
+   -------------------------------------------------------------------------
+   把趋势的 rows 换一种读法：不是"逐日两列数字"，而是"未来这些天，哪天值得去"。
+   **零取数**是硬约束：只读 State.trend.rows（趋势已经算好的那批格子），
+   一次网络调用都不产生 —— 所以它可以在趋势加载完后无条件重画（切语言、切主题、
+   切日期都能重来一遍）。
+   排在最值得去的前三名会在格子上描边，并在下方写成一行的"最值得去：…"。
+   点格子＝切到那天的那个时段。**"零取数"的边界要说清楚**：零取数指的是**渲染这张
+   日历**（它只读 t.rows）；点格子是用户的显式意图（"我要看那天"），所以它照常走一次
+   单点取数，与趋势表格里的格子行为完全一致。
+   （别再写"走缓存"—— runForecast 的参数是"是否滚动到结果卡"，不是 cacheOnly。）
+   ========================================================================= */
+function renderTrendCal() {
+  const box = $("#trendCal");
+  if (!box) return;
+  const t = State.trend;
+  if (!t || !t.rows || !t.rows.length) { box.innerHTML = ""; return; }
+  /* 周日=0，与 Date.getUTCDay() 对齐 */
+  const WD = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+  const dm = ds => { const q = ds.split("-").map(Number); return new Date(Date.UTC(q[0], q[1] - 1, q[2])); };
+
+  /* 最值得去的前三名：跨朝/晚按质量分排（用户关心的是"值不值得跑一趟"） */
+  const flat = [];
+  t.rows.forEach(r => ["am", "pm"].forEach(per => {
+    const c = r[per];
+    if (c && isNum(c.Q)) flat.push({ date: r.date, per: per, Q: c.Q });
+  }));
+  const best = flat.slice().sort((a, b) => b.Q - a.Q).slice(0, 3);
+  const bestKey = {};
+  best.forEach(x => { bestKey[x.date + "|" + x.per] = true; });
+  const isBest = r => !!bestKey[r.date + "|am"] || !!bestKey[r.date + "|pm"];
+
+  const line = (row, per) => {
+    const c = row[per];
+    const lab = i18n(per === "am" ? "朝霞" : "晚霞");
+    if (!c) return `<div class="b"><i style="background:var(--track2)"></i><em>${lab}</em><b>—</b></div>`;
+    return `<div class="b"><i style="background:${gradeColor(c.grade)}"></i><em>${lab}</em>` +
+      `<b>${Math.round(c.Q)}</b><em>${i18n("分")} · ${i18n(c.grade)}</em>` +
+      `<em style="margin-left:auto">${Math.round(c.P)}%</em></div>`;
+  };
+
+  box.innerHTML = `<div class="tcal-h">${i18n("最佳窗口")} · ${i18n("未来 {n} 天", { n: t.rows.length })}</div>` +
+    `<div class="tcal-g">` + t.rows.map(r => {
+      const cur = r.date === State.dateStr;
+      /* 该日要跳到哪个时段：优先保持用户当前的时段（若那天有数），否则用有数的那个 */
+      const per = r[State.period] ? State.period : (r.am ? "am" : "pm");
+      return `<button type="button" class="tcal-d${cur ? " on" : ""}${isBest(r) ? " best" : ""}"` +
+        ` data-date="${r.date}" data-period="${per}">` +
+        `<span class="d1"><b>${r.date.slice(5)}</b><span>${i18n(WD[dm(r.date).getUTCDay()])}</span></span>` +
+        line(r, "am") + line(r, "pm") + `</button>`;
+    }).join("") + `</div>` +
+    (best.length ? `<div class="tcal-sum">${i18n("最值得去：{v}", {
+      v: best.map(x => i18n(x.per === "am" ? "{d} 朝霞" : "{d} 晚霞", { d: x.date.slice(5) }) +
+        " " + Math.round(x.Q) + " " + i18n("分")).join(" · ")
+    })}</div>` : "");
+
+  box.querySelectorAll("button.tcal-d").forEach(b => {
+    b.addEventListener("click", () => {
+      State.dateStr = b.getAttribute("data-date");
+      const per = b.getAttribute("data-period");
+      if (per) State.period = per;
+      $("#date").value = State.dateStr;
+      $("#mapDateSel").value = State.dateStr;
+      setSegActive("#periodSeg", $("#periodSeg button[data-p='" + State.period + "']"));
+      syncUrl();
+      renderTrend();
+      renderSpotBody();          /* 日期一变，对比表的预估消耗随缓存命中情况变 */
+      runForecast(true);         /* 用户的显式意图：照常算一次那天那段（参数是是否滚动） */
+    });
+  });
+}
+
+/* =========================================================================
+   F2 · 多观测点对比
+   -------------------------------------------------------------------------
+   "今天去哪儿拍"比"某个点今天好不好"更接近真实决策 —— 把常去的几个机位
+   一次横着排出来，按质量分排序。
+
+   **额度纪律（约束 9）在这里的三条落法**（这是本功能最关键的部分）：
+     ① 取数**只能**由「对比这些点」按钮触发：打开页面只画列表，一个请求都不发；
+     ② 命中单点缓存的点**不进请求** —— 请求里只有未命中的那些坐标。
+        缓存用的就是普通单点缓存（同样的键 `pointKeyOf`），所以"先单独查过某个点"
+        再对比，那一点是零成本的；
+     ③ 默认**只比当前时段**（不朝晚各取一轮）：坐标数是 17N 而不是 34N。
+   上限 SPOTS_MAX=5：5 × 17 = 85 坐标，比一次趋势取数（34 坐标）贵，
+   所以界面上明确写出"本次将消耗约 N 个计费调用"。
+   ========================================================================= */
+const SPOTS_KEY = "sunsetbot.spots.v1";   /* 与偏好分键：这是"数据"不是"显示偏好" */
+const SPOTS_MAX = 5;
+/* 坏值降级：坐标必须有限且在范围内，名字走 safeLabel（与 URL 地名同一条纪律），
+   整条记录不合格就丢弃 —— 与 prefRead 的"坏值一律当没有"同一套做法。 */
+function spotNorm(o) {
+  if (!o || !isNum(o.lat) || !isNum(o.lon)) return null;
+  if (Math.abs(o.lat) > 90 || Math.abs(o.lon) > 180) return null;
+  const nm = safeLabel(String(o.name || ""), 24) || i18n("自定义坐标");
+  return { lat: o.lat, lon: o.lon, name: nm };
+}
+function spotsRead() {
+  let out = [];
+  try {
+    const j = JSON.parse(localStorage.getItem(SPOTS_KEY) || "null");
+    if (Array.isArray(j)) out = j.map(spotNorm).filter(Boolean);
+  } catch (e) { softWarn("读收藏地点失败", e); }
+  return out.slice(0, SPOTS_MAX);
+}
+function spotsWrite(list) {
+  try { localStorage.setItem(SPOTS_KEY, JSON.stringify((list || []).slice(0, SPOTS_MAX))); }
+  catch (e) { softWarn("写收藏地点失败（隐私模式或配额不足）", e); }
+}
+const sameSpot = (a, b) => Math.abs(a.lat - b.lat) < 0.02 && Math.abs(a.lon - b.lon) < 0.02;
+
+function renderSpots() {
+  const box = $("#spotList");
+  if (!box) return;
+  const list = State.spots || [];
+  box.innerHTML = list.map((s, i) =>
+    `<span class="sp-chip${sameSpot(s, State) ? " cur" : ""}">${esc(s.name)}` +
+    `<button type="button" data-i="${i}" title="${i18n("移除")}" aria-label="${i18n("移除")} ${esc(s.name)}">×</button></span>`
+  ).join("") + (list.length
+    ? `<span class="hint">${i18n("已收藏 {n} 个点（最多 {nMax} 个）", { n: list.length, nMax: SPOTS_MAX })}</span>` : "");
+  box.querySelectorAll("button[data-i]").forEach(b => b.addEventListener("click", () => {
+    const i = +b.getAttribute("data-i");
+    State.spots = (State.spots || []).filter((_, k) => k !== i);
+    spotsWrite(State.spots);
+    State.spotRows = null;          /* 列表变了，上一次的对比结果不再对应 */
+    renderSpots(); renderSpotBody();
+  }));
+}
+function spotAdd() {
+  const list = (State.spots || []).slice();
+  const cur = { lat: State.lat, lon: State.lon, name: State.name || i18n("我的位置") };
+  if (list.some(s => sameSpot(s, cur))) { State.spotMsg = i18n("已收藏过这个地点"); renderSpotBody(); return; }
+  if (list.length >= SPOTS_MAX) { State.spotMsg = i18n("列表已满：最多 {n} 个地点", { n: SPOTS_MAX }); renderSpotBody(); return; }
+  list.push(cur);
+  State.spots = list; spotsWrite(list);
+  State.spotRows = null; State.spotMsg = "";
+  renderSpots(); renderSpotBody();
+}
+/* 预估消耗：未命中缓存的点数 × 3 路（GFS / EC / AQ），与实际请求一一对应 */
+function spotMissCount() {
+  const ds = State.dateStr, per = State.period;
+  return (State.spots || []).filter(s => !pointCacheGet(s.lat, s.lon, ds, per)).length;
+}
+function renderSpotBody() {
+  const box = $("#spotBody");
+  if (!box) return;
+  const list = State.spots || [];
+  const msg = State.spotMsg ? `<div class="hint" style="margin-bottom:8px">${esc(State.spotMsg)}</div>` : "";
+  if (!list.length) {
+    box.innerHTML = msg + `<div class="hint">${i18n("先收藏几个地点，再点「对比这些点」—— 一次取数把它们横着排出来。")}</div>`;
+    return;
+  }
+  const rows = State.spotRows;
+  if (!rows || !rows.length) {
+    const miss = spotMissCount();
+    box.innerHTML = msg + `<div class="hint">${i18n("本次将消耗约 {n} 个计费调用（已缓存的地点不重复取）", { n: miss * 3 })}` +
+      (miss < list.length ? ` · ${i18n("其中 {k} 个点命中了缓存，无需取数", { k: list.length - miss })}` : "") + `</div>`;
+    return;
+  }
+  box.innerHTML = msg +
+    `<div class="t-scroll"><table class="t-spot"><thead><tr>` +
+    `<th>${i18n("地点")}</th><th>${i18n("出现概率")}</th><th>${i18n("观赏质量")}</th><th>${i18n("等级")}</th>` +
+    `</tr></thead><tbody>` + rows.map(x => {
+      const col = gradeColor(x.grade);
+      const cur = sameSpot(x.s, State);
+      return `<tr class="${cur ? "cur" : ""}">` +
+        `<td class="nm">${esc(x.s.name)}${cur ? ` <i>${i18n("当前")}</i>` : ""}` +
+        `${x.fromCache ? ` <i>${i18n("已缓存")}</i>` : ""}</td>` +
+        `<td><b style="color:${col}">${Math.round(x.P)}%</b></td>` +
+        `<td><span class="chipc" style="background:${col}"></span> ${Math.round(x.Q)} ${i18n("分")}</td>` +
+        `<td><span class="grade g-${x.grade}">${i18n(x.grade)}</span></td></tr>`;
+    }).join("") + `</tbody></table></div>` +
+    `<div class="hint" style="margin-top:8px">${i18n("对比结果")}：${State.dateStr} · ${i18n(State.period === "am" ? "朝霞" : "晚霞")}。` +
+    i18n("按质量分排序；点上方任意位置可切地点，再点一次「对比这些点」重算。") + `</div>`;
+}
+
+async function loadSpots() {
+  const btn = $("#spotGo"), box = $("#spotBody");
+  const list = State.spots || [];
+  if (!list.length) { renderSpotBody(); return; }
+  const ds = State.dateStr, per = State.period;
+  const q = ds.split("-").map(Number);
+  const day0 = Date.UTC(q[0], q[1] - 1, q[2]);
+  /* ① 缓存优先：命中的点**不进请求** */
+  const hit = [], need = [];
+  list.forEach(s => {
+    const b = pointCacheGet(s.lat, s.lon, ds, per);
+    if (b) hit.push(s); else need.push(s);
+  });
+  State.spotMsg = "";
+  if (btn) btn.disabled = true;
+  if (box) box.innerHTML = `<div class="hint">${i18n("正在对比 {n} 个点（{c} 个坐标 × 3 路）…", { n: list.length, c: need.length * TREND_N })}` +
+    (hit.length ? `<br>${i18n("其中 {k} 个点命中了缓存，无需取数", { k: hit.length })}` : "") + `</div>`;
+  try {
+    const picked = [];
+    if (need.length) {
+      /* 每个点一套样带（与单点、趋势同一套几何：TRANSECT 17 点，方位按该时段事件方位） */
+      const ptsList = need.map(s => transectFor(s.lat, s.lon, day0, per));
+      const all = [];
+      ptsList.forEach(ps => ps.forEach(p => all.push(p)));
+      const gD = await apiForecast(MODEL_NAME.gfs, all, ds, ds, API_TZ);
+      const eD = await apiForecast(MODEL_NAME.ec, all, ds, ds, API_TZ).catch(() => null);
+      const aD = await apiAQ(all, ds, ds, API_TZ).catch(() => null);
+      need.forEach((s, i) => {
+        const a = i * TREND_N, b = a + TREND_N;
+        const bundle = { gfsD: trendCut(gD, a, b), ecD: trendCut(eD, a, b), aqD: trendCut(aD, a, b) };
+        /* 顺手落盘：用的就是普通单点缓存的键族，所以"下次单独查这个点"也能命中 */
+        pointCachePut(s.lat, s.lon, ds, per, bundle);
+        picked.push({ s: s, bundle: bundle, pts: ptsList[i], fromCache: false });
+      });
+    }
+    hit.forEach(s => picked.push({
+      s: s, bundle: pointCacheGet(s.lat, s.lon, ds, per),
+      pts: transectFor(s.lat, s.lon, day0, per), fromCache: true
+    }));
+    const rows = [];
+    for (const it of picked) {
+      if (!it.bundle) continue;
+      try {
+        const r = await computeAll(it.s.lat, it.s.lon, ds, per, it.s.name, { bundle: it.bundle, pts: it.pts });
+        rows.push({ s: it.s, P: r.P, Q: r.Q, grade: gradeOf(r.Q), fromCache: it.fromCache });
+      } catch (e) { softWarn("对比算分失败 " + it.s.name, e); }
+    }
+    rows.sort((a, b) => b.Q - a.Q);   /* 按质量分排序：一眼看出"今天去哪" */
+    State.spotRows = rows;
+  } catch (e) {
+    console.warn("对比取数失败", e);
+    const st = e && e.status;
+    const m = (e && e.friendly) ? e.friendly
+      : e && e.timeout ? i18n("气象接口响应超时（超过 12 秒），请检查网络后重试。")
+        : st === 429 ? i18n("气象接口暂时限流（同一 IP 请求过于频繁），请稍候约 1 分钟后重试。")
+          : i18n("对比数据获取失败：{m}", { m: (e && e.message ? e.message : i18n("网络异常")) });
+    State.spotRows = null;
+    if (box) box.innerHTML = `<div class="note n-bad">${m}</div>`;
+  } finally {
+    if (btn) btn.disabled = false;
+    if (State.spotRows) renderSpotBody();
+  }
+}
+
 function renderTrend() {
   const box = $("#trendBody");
   if (!box) return;
+  /* 日历与表格同源（都读 t.rows）：放在最前面，无数据时它会自己清空 */
+  renderTrendCal();
   const t = State.trend;
   if (!t || !t.rows) {
     box.innerHTML = `<div class="hint">${i18n("点上方按钮加载趋势（最长 {n} 天，具体天数受模式可预报范围限制）—— 一次取数即可比较“哪天值得去”，不用一天天手动切。（会额外发一轮约 {c} 个坐标的请求。）", { n: TREND_DAYS, c: 2 * TREND_N })}</div>`;
@@ -8457,6 +8828,9 @@ function rerenderForTheme() {
   if (typeof renderTrend === "function") renderTrend();
   if (typeof updateLegend === "function") updateLegend();
   if (typeof renderRank === "function" && mapSet()) renderRank(MapMod.field);
+  /* F3/F2 的等级色是主题相关的（gradeColor），切主题要重画 */
+  if (typeof renderTrendCal === "function") renderTrendCal();
+  if (typeof renderSpotBody === "function") renderSpotBody();
   if (typeof hideMapTip === "function") hideMapTip();
   if (typeof refreshThemeSeg === "function") refreshThemeSeg();
 }
@@ -8475,6 +8849,9 @@ function relang() {
     if (typeof State !== "undefined" && State.result && typeof renderAll === "function") renderAll(State.result);
     if (typeof renderTrend === "function") renderTrend();
     if (typeof updateLegend === "function") updateLegend();
+    /* F3/F2：日历与对比表都要重画（等级色、星期名、按钮文案都随语言走） */
+    if (typeof renderTrendCal === "function") renderTrendCal();
+    if (typeof renderSpots === "function") { renderSpots(); renderSpotBody(); }
     /* 地图侧：引导/错误文案 + 模型下拉 + 榜单口径。
        mapShowGuide 与 applyModelOptions 都是幂等的；错误态文案不追（罕见路径）。 */
     if (typeof mapShowGuide === "function" && MapMod.ok && !mapSet()) mapShowGuide();

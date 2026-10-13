@@ -3756,6 +3756,9 @@ function rerenderForTheme() {
   if (typeof renderTrend === "function") renderTrend();
   if (typeof updateLegend === "function") updateLegend();
   if (typeof renderRank === "function" && mapSet()) renderRank(MapMod.field);
+  /* F3/F2 的等级色是主题相关的（gradeColor），切主题要重画 */
+  if (typeof renderTrendCal === "function") renderTrendCal();
+  if (typeof renderSpotBody === "function") renderSpotBody();
   if (typeof hideMapTip === "function") hideMapTip();
   if (typeof refreshThemeSeg === "function") refreshThemeSeg();
 }
@@ -3774,6 +3777,9 @@ function relang() {
     if (typeof State !== "undefined" && State.result && typeof renderAll === "function") renderAll(State.result);
     if (typeof renderTrend === "function") renderTrend();
     if (typeof updateLegend === "function") updateLegend();
+    /* F3/F2：日历与对比表都要重画（等级色、星期名、按钮文案都随语言走） */
+    if (typeof renderTrendCal === "function") renderTrendCal();
+    if (typeof renderSpots === "function") { renderSpots(); renderSpotBody(); }
     /* 地图侧：引导/错误文案 + 模型下拉 + 榜单口径。
        mapShowGuide 与 applyModelOptions 都是幂等的；错误态文案不追（罕见路径）。 */
     if (typeof mapShowGuide === "function" && MapMod.ok && !mapSet()) mapShowGuide();
