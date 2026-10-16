@@ -218,7 +218,7 @@ a{color:var(--blue)}
      相对地址会按 /foo/bar 解析成 /foo/index.html —— 越深的错链错得越离谱。
      写死 "/" 又照顾不到部署在子路径下的站点（GitHub Pages 项目页），
      所以跟地图代理一样走"构建期注入"这条路。 -->
-<body data-home="/">
+<body data-home="/sunglow/">
 
 <div class="top">
   <div class="top-in">
@@ -242,7 +242,7 @@ a{color:var(--blue)}
     <div class="acts">
       <!-- 主出口是**真链接**：没有 JS 也能回首页（404 页被各种奇怪客户端打开过，
            不能把唯一出路挂在一个 script 上）。 -->
-      <a class="btn pri" href="/" id="btnHome" data-i18n="返回首页">返回首页</a>
+      <a class="btn pri" href="/sunglow/" id="btnHome" data-i18n="返回首页">返回首页</a>
       <!-- 次出口相反：它只有在 JS 确认"确实有上一页"时才显形，见下面那段脚本。 -->
       <button type="button" class="btn" id="btnBack" hidden data-i18n="返回上一页">返回上一页</button>
     </div>
