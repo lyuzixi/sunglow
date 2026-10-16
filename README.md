@@ -72,6 +72,17 @@ SITE_BASE=/          默认，站点在域名根下（Cloudflare Pages、自定�
 SITE_BASE=/仓库名/   GitHub Pages 的项目页这类部署在子路径下的站点
 ```
 
+本仓库的 Pages 开在 `https://lyuzixi.github.io/sunglow/`（**子路径**），
+所以推 GitHub 前要按子路径构建：
+
+```
+SITE_BASE=sunglow python assemble.py     # → 404.html 里写 /sunglow/
+```
+
+> 换到域名根下部署时直接 `python assemble.py` 即可（默认 `/`）。
+> 判据在 `404probe`：站点根不再写死 `/`，而是**从构建好的 404.html 的
+> `data-home` 上读出来**，两种部署形态测的是同一条性质。
+
 > 为什么不能写相对地址 `index.html`：`404.html` 是在**请求的那个 URL** 下被返回的，
 > 相对地址会按 `/a/b` 解析成 `/a/index.html` —— 越深的错链错得越离谱。
 > 写死 `/` 又照顾不到子路径部署，所以跟地图代理走同一条「构建期注入」的路。

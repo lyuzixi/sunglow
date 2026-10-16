@@ -30,7 +30,16 @@ const ROOT = path.resolve(__dirname, "..");
 const CHROME = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const PORT = 47899;
 const DEBUG_PORT = 9360;
-const HOME = "/";
+/* 站点根**由构建好的 404.html 自己声明**（构建期注入的 `__SITE_BASE__`），
+   不写死 "/" —— 部署在子路径下时（GitHub Pages 的项目页 = `/仓库名/`），页内地址
+   必须写成 `/仓库名/`，否则"返回首页"会跳到域名根（那是**别人的**站点）。
+   探针跟着产物走，两种部署形态才能测到同一条性质；
+   写死 "/" 的话，一旦按子路径构建，这条断言就会变成假失败。 */
+const SITE_BASE = (function () {
+  const m = readProduct().match(/data-home="([^"]*)"/);
+  return (m && m[1] && m[1][0] === "/" && m[1].slice(-1) === "/") ? m[1] : "/";
+})();
+const HOME = SITE_BASE;
 const MISS = "/a/b/c-d?x=1&y=2";
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -57,7 +66,7 @@ function serve() {
   const nf = fs.readFileSync(path.join(ROOT, "404.html"));
   const srv = http.createServer((req, res) => {
     const u = decodeURIComponent(req.url.split("?")[0]);
-    if (u === HOME || u === "/index.html") {
+    if (u === HOME || u === "/index.html" || u === HOME + "index.html") {
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
       res.end(idx);
       return;
@@ -258,8 +267,9 @@ const AUDIT = `(function(){
     "深路径下渲染出来的就是 404 页": D.code === "404" && /找不到/.test(D.h2 || ""),
     "顶部条沿用主页那一条（badge 写明 404）": /404/.test(D.badge || ""),
     "请求路径显示正确（转义后原样呈现）": D.pathShown && D.pathTx === MISS,
-    "首页链接指向站点根（不随请求路径漂）":
-      D.homeHref === "http://127.0.0.1:" + PORT + "/" && D.homeAttr === "/",
+    "首页链接指向站点根（绝对形式，不随请求路径漂）":
+      /^\/.*\/$/.test(D.homeAttr || "") && D.homeAttr === SITE_BASE &&
+      D.homeHref === "http://127.0.0.1:" + PORT + SITE_BASE,
     "两个出口在桌面视口内都可点": D.homeUsable && D.backUsable,
     "桌面无横向溢出（scrollWidth ≤ clientWidth）": D.sw <= D.vw + 1,
     "404 页零外部请求": extHits === 0,

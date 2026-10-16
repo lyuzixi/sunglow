@@ -824,12 +824,22 @@ console.log = function (...a) {
       nl.checked=false; nl.dispatchEvent(new Event('change'));
       await sleep(200);
       out.labelsOff=document.querySelectorAll('#mapLabels .mlbl').length;
-      /* F3 演变曲线 */
+      /* F3 演变曲线。
+         判据长期是"必须有 5 点双折线"，隐含前提是**几何条件成立**
+         （geom.ok 为真时才有 5 个采样点；不成立时只有 1 个点，画不出曲线，
+          renderRay 会改画一句"几何条件不成立"的说明 —— 那是设计内的合法状态）。
+         而"几何成不成立"取决于前面几段把页面留在哪个点位 / 时段 / 日期上，
+         日期还是**今天** —— 于是这条断言会随日历漂：2026-10-16 在 46°N 那一支上
+         恰好不成立，就假失败了一次。
+         改成"曲线或说明必有其一"，并把实际走了哪一支打出来 ——
+         既不静默放宽（说明那一支也要验到），也不再把日历当输入。 */
       const rc=document.querySelector('#ray svg.rcurve');
       out.curve=!!rc;
       out.curveLines=rc?rc.querySelectorAll('polyline').length:0;
       out.curvePts=rc?((rc.querySelectorAll('polyline')[0].getAttribute('points')||'').trim().split(/\\s+/).length):0;
       out.curveMarks=rc?rc.querySelectorAll('line').length:0;
+      out.geomOk=!!(State.result&&State.result.sRT&&State.result.sRT.geom&&State.result.sRT.geom.ok);
+      out.rayNote=/几何条件不成立/.test((document.querySelector('#ray')||{}).textContent||'');
       /* F7 单位制 / 时间制（只影响展示，不重新取数） */
       const hero=()=>((document.querySelector('#hero')||{}).textContent||'');
       out.heroMetric=hero().replace(/\\s+/g,' ').slice(0,110);
@@ -861,7 +871,8 @@ console.log = function (...a) {
     && (UX.drillHead || "").indexOf(UX.drillProv) >= 0
     && UX.tgo === true && UX.tipHasConf === true && !!UX.tipName && (UX.locAfter || "").indexOf(UX.tipName) >= 0
     && UX.labels > 0 && UX.labelsOff === 0
-    && UX.curve === true && UX.curveLines === 2 && UX.curvePts === 5
+    && ((UX.curve === true && UX.curveLines === 2 && UX.curvePts === 5)
+        || (UX.geomOk === false && UX.rayNote === true))
     && UX.imperialHasFt === true && UX.metricBack === true && UX.clock12Has === true
     && UX.periodOn === UX.periodState && UX.mapPeriodOn === UX.mapPeriodState && UX.ariaPressed === "true"
     && UX.noscript === true && (UX.labelsFor || []).indexOf("go") < 0 && (UX.labelsFor || []).length >= 4;
@@ -870,7 +881,8 @@ console.log = function (...a) {
   console.log("  F4 省份命中: " + JSON.stringify(UX.prov) + "  下钻: " + UX.drillOn + " " + JSON.stringify(UX.drillCities) + " " + UX.drillHead);
   console.log("  F4 点图精细查询: 入口=" + UX.tgo + " 期望地名=" + UX.tipName + " 定位后=" + UX.locAfter);
   console.log("  F6 数值直标: 开=" + UX.labels + " " + JSON.stringify(UX.labelTxt) + " 关=" + UX.labelsOff + "  noscript=" + UX.noscript + "  label[for]=" + JSON.stringify(UX.labelsFor));
-  console.log("  F3 演变曲线: svg=" + UX.curve + " 折线=" + UX.curveLines + " 采样点=" + UX.curvePts + " 竖线=" + UX.curveMarks);
+  console.log("  F3 演变曲线: svg=" + UX.curve + " 折线=" + UX.curveLines + " 采样点=" + UX.curvePts + " 竖线=" + UX.curveMarks +
+    "  ← 几何" + (UX.geomOk ? "成立⇒画曲线" : "不成立⇒应给说明(" + (UX.rayNote ? "有" : "无") + ")"));
   console.log("  F7 单位制: 英制含 ft/mi/mph=" + UX.imperialHasFt + " 切回公制=" + UX.metricBack + " 12 时制=" + UX.clock12Has);
   console.log("  时段高亮一致性: 单点 " + UX.periodOn + "/" + UX.periodState + "  aria=" + UX.ariaPressed + " · 地图 " + UX.mapPeriodOn + "/" + UX.mapPeriodState);
   console.log("  地图模块软失败计数: " + UX.warnCount + " " + JSON.stringify(UX.softWarns));
