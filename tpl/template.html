@@ -13,6 +13,14 @@
      用户手动选的主题由 JS 在切换时同步（见 _p5.js 的 applyTheme）。 -->
 <meta name="theme-color" content="#f4f6fa" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#11151c" media="(prefers-color-scheme: dark)">
+<!-- PWA 头部占位符（F1）。默认注入成空 —— 单文件产物不引 manifest；
+     PWA=1 时注入 <link rel="manifest">。
+     **这里只放 link、不放注册脚本**：内联脚本块数是 syntax.py / globals.js /
+     assemble.py 共同守着的不变量（4 块），多一块要连带改好几处。
+     SW 的注册由业务脚本自己做，判据就是"有没有这个 link"（见 _p5.js 的
+     initPWA）：link 在 ⇒ PWA 版，且 sw.js 的地址由 link 的 href 推出，
+     于是子路径部署也自动成立，不需要再注入一个地址常量。 -->
+<!--__PWA_HEAD__-->
 <!-- 主题引导：**必须在 CSS 解析之前跑完**，否则用户上次选了深色时，
      刷新页面会先按默认渲染一帧浅色再跳成深色（FOUC）—— 深色模式最典型的丑陋瞬间。
      这是它单独成块、且放在 <head> 里的**唯一**理由（其余脚本都在 body 末尾）。
@@ -635,6 +643,15 @@ footer li{margin:3px 0}
 .t-spot td.nm{white-space:nowrap}
 .t-spot td.nm i{font-style:normal;color:var(--tx3);font-size:11px}
 
+/* ---------- F1 离线 / PWA ---------- */
+/* 离线提示条：无网络时才出现。放在 .top 外面，避免挤窄屏顶部条（约束 44）。
+   `[hidden]` 要显式写 display:none —— 一旦别处给 .netbar 设了 display，
+   UA 的 hidden 样式就会被盖掉（与 .tip.dock 那次是同一类坑）。 */
+.netbar{background:var(--warnbg);border-bottom:1px solid var(--warnbd);color:var(--warn);
+  font-size:12.7px;line-height:1.55;padding:7px 14px;text-align:center}
+.netbar[hidden]{display:none}
+.netbar b{font-weight:700}
+
 /* ---------- F5 结果快照 ---------- */
 /* 快照模式：③④⑤⑥ 这几张卡依赖**完整结果对象**，而快照只带了摘要。
    与其铺四张空卡，不如收起来 —— 页面仍然保留输入区、结论卡、趋势、地图与对比，
@@ -757,6 +774,11 @@ body.snapmode [data-snaphide]{display:none}
     <div class="badge" id="topBadge">等待计算</div>
   </div>
 </div>
+
+<!-- F1 离线提示条：只在**无网络**时显形（hidden 由 JS 控制）。
+     刻意放在 .top **外面** —— 顶部条有"窄屏必须一行"的硬约束（约束 44），
+     塞进去会把它顶成两行，那是之前花过力气压下去的。 -->
+<div id="netBar" class="netbar" hidden></div>
 
 <div class="wrap">
 

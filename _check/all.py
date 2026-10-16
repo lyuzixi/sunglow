@@ -76,6 +76,9 @@ SUITE = [
     ("darkprobe",     "darkprobe.js",    "深色模式（令牌/跟随系统/覆盖/持久化/双扫描仪）"),
     ("spotprobe",     "spotprobe.js",    "F3 最佳窗口 / F2 多观测点（额度纪律与失效边界）"),
     ("snapprobe",     "snapprobe.js",    "F5 结果快照（零额度 / 失效 / 恶意载荷 / 坏输入）"),
+    # F1 探针要自己跑 assemble.py（构建三套产物），所以把当前解释器传进去。
+    ("pwaprobe",      "pwaprobe.js",     "F1 离线 / PWA（单文件约束仍成立 + 离线真能打开 + 不缓存气象）",
+     {"PY": sys.executable}),
     ("404probe",     "404probe.js",     "404 页（深路径渲染/桌面+窄屏/两个出口）"),
     ("docfacts",     "docfacts.py",     "文档↔代码一致性（行数/字节/常量/探针条数）"),
 ]

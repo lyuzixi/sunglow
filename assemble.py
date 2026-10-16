@@ -29,7 +29,9 @@ Pages / GitHub Pages / 对象存储）在**路径匹配不到任何文件**时�
  aodscale / docfacts 的读取路径。）
 """
 import base64
+import hashlib
 import io
+import json
 import os
 import re
 import struct
@@ -43,6 +45,20 @@ OUT = os.path.join(BASE, "index.html")
 # ---- 第二个产物：404 页（模板 + 站点根路径占位符），见文件头说明。
 TPL404 = os.path.join(BASE, "tpl", "404.html")
 OUT404 = os.path.join(BASE, "404.html")
+
+# ---- 输出目录（OUT_DIR）与 PWA 可选产物 ----
+# `OUT_DIR` 让探针能把**另一套构建**产到别处（例如 PWA 版），不必覆盖仓库里的
+# 交付产物 —— 否则"测一次 PWA"就把根目录的 index.html 换掉了。
+# `PWA=1` 才会多出 manifest.json / sw.js / icon-192 / icon-512。
+# 为什么默认关：本项目的核心属性是**单文件产物**（自包含、双击即用、丢进任意
+# 静态托管就是完整站点）。PWA 必然要额外的 manifest 与 sw —— 而 SW 的注册脚本
+# 也不允许来自 blob:/data:（必须同源 http(s) 的真实 URL），所以"单文件 PWA"
+# 物理上做不到。取舍是：**默认仍是 1 个文件**，想要"可安装 + 离线开壳"的人
+# 自己开 PWA=1，多出来的文件全部是这一份构建同时产出的，不会漂移。
+OUT_DIR = os.environ.get("OUT_DIR") or BASE
+PWA_HOLE = "<!--__PWA_HEAD__-->"
+ICON192 = "icon-192.png"
+ICON512 = "icon-512.png"
 
 PARTS = ["_pi18n.js", "_p2.js", "_p3.js", "_p4.js", "_p5.js", "_p5b.js", "_p6.js"]
 DATA = ["refs/CN_CITIES_RAW.txt", "refs/MAP_CITIES_RAW.txt",
@@ -166,7 +182,12 @@ def rd(p):
 
 
 def wr(p, s):
-    with io.open(os.path.join(BASE, p), "w", encoding="utf-8", newline="") as f:
+    # 绝对路径直接用（OUT_DIR 可能指向仓库外的目录）；相对路径才按 BASE 解析。
+    fp = p if os.path.isabs(p) else os.path.join(BASE, p)
+    d = os.path.dirname(fp)
+    if d and not os.path.isdir(d):
+        os.makedirs(d)
+    with io.open(fp, "w", encoding="utf-8", newline="") as f:
         f.write(s)
 
 
@@ -253,10 +274,38 @@ def main():
     if ("serviceHost: '%s'" % tmap_host) not in out:
         print("地图代理地址注入后未出现在产物中：%s" % tmap_host, file=sys.stderr)
         return 1
-    wr("index.html", out)
+
+    # ---- PWA 头部（manifest 链接）。
+    # **只放 <link>，不放注册脚本** —— 注册脚本若在这里内联，产物就多出一个
+    # 内联 <script> 块，而"块数 = 4"是 syntax.py / globals.js / 本文件共同守着的
+    # 不变量（加过一次，代价是把好几处探针对齐了一遍）。改由业务脚本从
+    # `link[rel=manifest]` 的 href 推出 sw.js 的位置：manifest 存在即 PWA 版，
+    # 不存在就什么都不做 —— 同一个判断，零个新块。
+    pwa = (os.environ.get("PWA") or "").strip() in ("1", "true", "yes", "on")
+    site_base = os.environ.get("SITE_BASE") or "/"
+    if not site_base.startswith("/"):
+        site_base = "/" + site_base
+    if not site_base.endswith("/"):
+        site_base += "/"
+    npwa = out.count(PWA_HOLE)
+    if npwa != 1:
+        print("PWA 头占位符异常：%s 出现 %d 次（应为 1）" % (PWA_HOLE, npwa), file=sys.stderr)
+        return 1
+    pwa_head = ('<link rel="manifest" href="%smanifest.json">' % site_base) if pwa else ""
+    out = out.replace(PWA_HOLE, pwa_head)
+    # 与地图代理同一条纪律：占位符**不允许残留**。
+    if PWA_HOLE in out:
+        print("PWA 头占位符替换后仍有残留：%s" % PWA_HOLE, file=sys.stderr)
+        return 1
+
+    out_bytes = out.encode("utf-8")
+    # SW 的缓存版本取**产物内容的哈希**：内容一变缓存名就变，于是"用户看到的旧版本"
+    # 这件事由哈希保证，而不是靠人去改一个版本号常量（改漏了就是经典的事故）。
+    build_id = hashlib.sha256(out_bytes).hexdigest()[:12]
+    wr(os.path.join(OUT_DIR, "index.html"), out)
     src = "环境变量 TMAP_SERVICE_HOST" if os.environ.get("TMAP_SERVICE_HOST") else "本地预览回落值"
     print("地图代理地址取自%s：%s" % (src, tmap_host))
-    print("OK -> %s  %d bytes" % (OUT, len(out.encode("utf-8"))))
+    print("OK -> %s  %d bytes" % (os.path.join(OUT_DIR, "index.html"), len(out_bytes)))
 
     # ---- 第二个产物：404 页。图标与主页同一枚（同样必须内联，这页要能在任意
     # 路径下独立打开），站点根地址按部署环境注入。
@@ -267,24 +316,162 @@ def main():
             print("404 模板图标占位符异常：%s 出现 %d 次（应为 1）" % (hole, nc), file=sys.stderr)
             return 1
         t404 = t404.replace(hole, val)
-    site_base = os.environ.get("SITE_BASE") or "/"
-    if not site_base.startswith("/"):
-        site_base = "/" + site_base
-    if not site_base.endswith("/"):
-        site_base += "/"
     nb = t404.count(SITE_BASE_HOLE)
     if nb < 1:
         print("404 模板里没有站点根占位符：%s" % SITE_BASE_HOLE, file=sys.stderr)
         return 1
-    t404 = t404.replace(SITE_BASE_HOLE, site_base)
+    t404 = t404.replace(SITE_BASE_HOLE, site_base)   # site_base 已在上面算好并归一化
     # 与地图代理同一条纪律：占位符**不允许残留**。留着会让"回首页"跳到一个
     # 字面量叫 __SITE_BASE__ 的地址上，而且这种错只在部署后才看得见。
     if SITE_BASE_HOLE in t404:
         print("站点根占位符替换后仍有残留：%s" % SITE_BASE_HOLE, file=sys.stderr)
         return 1
-    wr("404.html", t404)
-    print("OK -> %s  %d bytes（站点根 %s）" % (OUT404, len(t404.encode("utf-8")), site_base))
+    wr(os.path.join(OUT_DIR, "404.html"), t404)
+    print("OK -> %s  %d bytes（站点根 %s）"
+          % (os.path.join(OUT_DIR, "404.html"), len(t404.encode("utf-8")), site_base))
+
+    # ---- PWA 可选产物（PWA=1）：manifest.json / sw.js / icon-192 / icon-512 ----
+    if pwa:
+        rc = write_pwa(site_base, build_id)
+        if rc:
+            return rc
+    else:
+        print("PWA 未开启（PWA=1 可产出 manifest.json / sw.js / 两张图标）"
+              " —— 产物仍是**单文件**，自包含约束保持")
     return 0
+
+
+# =========================================================================
+# PWA 可选产物
+# -------------------------------------------------------------------------
+# 三条纪律：
+#  ① **绝不缓存气象响应**。缓存过期预报是最糟的一种"帮忙"—— 用户在山顶拿着
+#     昨天的数据当今天的看。所以 SW 只认一份**预缓存名单**（同源静态资源 +
+#     404 页），名单之外的请求一律不拦截，跨域（气象 / 地图 SDK / 瓦片 / 省界）
+#     更是连看都不看。
+#  ② 缓存名带**产物内容哈希**（build_id）。内容一变名字就变，旧缓存在 activate
+#     时清掉 —— 靠哈希而不是靠人去改版本号常量。
+#  ③ 名单里包含 `./`（站点根）。离线时导航请求回落到缓存的 index.html，
+#     再不行才用缓存的 404.html —— 那页本来就是为"取不到"准备的。
+# =========================================================================
+def write_pwa(site_base, build_id):
+    for n, name in ((192, ICON192), (512, ICON512)):
+        data = icon_png(n)
+        with io.open(os.path.join(OUT_DIR, name), "wb") as f:
+            f.write(data)
+        print("OK -> %s  %d bytes（%dx%d PNG）" % (os.path.join(OUT_DIR, name), len(data), n, n))
+
+    manifest = {
+        "name": "霞光预报 · 朝霞与晚霞概率与观赏质量",
+        "short_name": "霞光预报",
+        "description": "基于气象数据预测朝霞与晚霞（火烧云）的出现概率与观赏质量，"
+                       "GFS / ECMWF / 光追三路模型合成评分。",
+        "lang": "zh-CN",
+        # start_url / scope 必须写成**站点根的绝对形式**：部署在子路径（GitHub Pages
+        # 项目页 = /仓库名/）时写相对地址会被按请求路径解析，与 404 页同一条纪律。
+        "start_url": site_base,
+        "scope": site_base,
+        "display": "standalone",
+        "orientation": "any",
+        "background_color": "#f4f6fa",
+        "theme_color": "#f4f6fa",
+        "icons": [
+            {"src": ICON192, "sizes": "192x192", "type": "image/png", "purpose": "any"},
+            {"src": ICON512, "sizes": "512x512", "type": "image/png", "purpose": "any"},
+            {"src": ICON512, "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+        ]
+    }
+    mt = json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
+    wr(os.path.join(OUT_DIR, "manifest.json"), mt)
+    print("OK -> %s  %d bytes（start_url %s）"
+          % (os.path.join(OUT_DIR, "manifest.json"), len(mt.encode("utf-8")), site_base))
+
+    wr(os.path.join(OUT_DIR, "sw.js"), sw_source(build_id))
+    print("OK -> %s  %d bytes（缓存版本 %s）"
+          % (os.path.join(OUT_DIR, "sw.js"),
+             len(sw_source(build_id).encode("utf-8")), build_id))
+    return 0
+
+
+def sw_source(build_id):
+    """生成 sw.js。缓存名带 build_id ⇒ 产物一变，缓存自动作废旧版本。"""
+    return """/* 霞光预报 · Service Worker
+   **由 assemble.py 生成，勿手改**（改了会被下一次构建覆盖）。
+   缓存版本 %(bid)s —— 它是**产物内容的 sha256 前 12 位**，不是手写的版本号。
+
+   只做一件事：让"打开页面"这件事不再依赖网络。
+   刻意不做的事：**不缓存任何气象响应**。过期预报比没有预报更危险 ——
+   用户在山顶、海边拿着昨天的数据当今天的看，而页面上根本看不出那是旧的。
+   所以这里只认下面这份预缓存名单（同源静态资源 + 404 页），名单之外的请求
+   一律不拦截：跨域（气象接口 / 腾讯地图 SDK 与瓦片 / 省界 GeoJSON）连看都不看，
+   同源但不在名单里的（自建部署时地图代理 /_TMapService 就在同源下）同样不碰。
+
+   策略是 **stale-while-revalidate**：先用缓存应答（秒开），再在后台回源更新，
+   于是"下次打开"是新版本，而"这次打开"不用等。
+*/
+'use strict';
+var CACHE = 'sunglow-%(bid)s';
+/* 相对地址：SW 挂在站点根下，随 scope 一起解析 —— 子路径部署也成立。 */
+var PRECACHE = ['./', './index.html', './404.html', './manifest.json',
+                './icon-192.png', './icon-512.png'];
+
+function abs(p) { return new URL(p, self.location.href).href; }
+function isListed(href) {
+  for (var i = 0; i < PRECACHE.length; i++) { if (abs(PRECACHE[i]) === href) return true; }
+  return false;
+}
+
+self.addEventListener('install', function (e) {
+  e.waitUntil(
+    caches.open(CACHE)
+      .then(function (c) { return c.addAll(PRECACHE); })
+      .then(function () { return self.skipWaiting(); })
+  );
+});
+
+self.addEventListener('activate', function (e) {
+  e.waitUntil(
+    caches.keys().then(function (ks) {
+      return Promise.all(ks.map(function (k) { return k === CACHE ? null : caches.delete(k); }));
+    }).then(function () { return self.clients.claim(); })
+  );
+});
+
+self.addEventListener('fetch', function (e) {
+  var req = e.request;
+  if (req.method !== 'GET') return;
+  var u = new URL(req.url);
+  /* 跨域一律放行（见文件头：气象 / 地图 / 省界都不碰） */
+  if (u.origin !== self.location.origin) return;
+  /* 同源但不在名单里 —— 例如自建部署时的地图代理，同样放行 */
+  if (!isListed(u.href)) return;
+
+  e.respondWith((function () {
+    var cache = caches.open(CACHE);
+    /* 后台回源更新。失败（离线）就当没发生 —— 缓存那份照样能用。 */
+    var net = cache.then(function (c) {
+      return fetch(req).then(function (r) {
+        if (r && r.ok) c.put(req, r.clone());
+        return r;
+      });
+    }).catch(function () { return null; });
+
+    return cache.then(function (c) { return c.match(req); }).then(function (hit) {
+      if (hit) return hit;                       /* 先给缓存：秒开 */
+      return net.then(function (r) {
+        if (r) return r;
+        /* 离线且这份没缓存过：导航请求回落到缓存的 404 页 —— 它本来就是
+           为"取不到"准备的，而且同样自包含、能在任意路径下独立打开。 */
+        if (req.mode === 'navigate') {
+          return cache.then(function (c) { return c.match(abs('./404.html')); })
+                      .then(function (nf) { return nf || new Response('', { status: 503 }); });
+        }
+        return new Response('', { status: 503 });
+      });
+    });
+  })());
+});
+""" % {"bid": build_id}
 
 
 if __name__ == "__main__":

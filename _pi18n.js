@@ -512,6 +512,10 @@ const I18N_ZH_HANT = {
   "打开快照链接不会重新取数，因此不消耗接口额度。": "開啟快照連結不會重新取數，因此不會消耗介接額度。",
   "距今已超过一天，模式数据可能已更新多次，请谨慎参考。": "距今已超過一天，模式資料可能已更新多次，請謹慎參考。",
   "承载霞光的主要云层：{type}（{deck}），云底约 {base}；云边界 {d}。": "承載霞光的主要雲層：{type}（{deck}），雲底約 {base}；雲邊界 {d}。",
+  "离线": "離線",
+  "当前无网络连接：已缓存的地点与日期仍可查看（会标注为缓存结果），新的预报与地图需要联网。": "目前沒有網路連線：已快取的地点與日期仍可檢視（會標示為快取結果），新的預報與地圖需要連網。",
+  "当前处于离线状态，无法获取新的气象数据。已缓存的地点与日期仍可查看。": "目前處於離線狀態，無法取得新的氣象資料。已快取的地点與日期仍可檢視。",
+  "恢复网络后点「开始预报」即可重新计算。": "恢復網路後點「開始預報」即可重新計算。",
 };
 
 /* ---- English ---- */
@@ -999,6 +1003,10 @@ const I18N_EN = {
   "打开快照链接不会重新取数，因此不消耗接口额度。": "Opening a snapshot link fetches no data, so it costs no API quota.",
   "距今已超过一天，模式数据可能已更新多次，请谨慎参考。": "It is over a day old — the model data may have been updated several times since, so treat it with caution.",
   "承载霞光的主要云层：{type}（{deck}），云底约 {base}；云边界 {d}。": "Main layer carrying the glow: {type} ({deck}), cloud base about {base}; cloud edge {d}.",
+  "离线": "Offline",
+  "当前无网络连接：已缓存的地点与日期仍可查看（会标注为缓存结果），新的预报与地图需要联网。": "No network connection. Cached places and dates still work (they are marked as cached); new forecasts and the map need to be online.",
+  "当前处于离线状态，无法获取新的气象数据。已缓存的地点与日期仍可查看。": "You are offline, so no new weather data can be fetched. Cached places and dates are still available.",
+  "恢复网络后点「开始预报」即可重新计算。": "Once you are back online, hit Forecast to compute it again.",
 };
 
 const I18N = { zh: null, zhHant: I18N_ZH_HANT, en: I18N_EN };

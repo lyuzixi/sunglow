@@ -163,7 +163,7 @@ td code{background:transparent;padding:0}
       <div class="fact"><b>8,867</b><span>源码总行数（含 i18n 词典 1060 行）</span></div>
       <div class="fact"><b>627 KB</b><span>主产物 index.html（单文件、自包含）</span></div>
       <div class="fact"><b>52.7%</b><span>_p6.js 地图模块占源码比重</span></div>
-      <div class="fact"><b>22 / 385</b><span>一键序列项数 / 已登记具名断言</span></div>
+      <div class="fact"><b>23 / 403</b><span>一键序列项数 / 已登记具名断言</span></div>
       <div class="fact"><b>49</b><span>innerHTML 动态插值处（已收口 5 处热点）</span></div>
       <div class="fact"><b>4</b><span>外部依赖域（气象 2 / 省界 1 / 地图 1）</span></div>
       <div class="fact"><b>65</b><span>首屏加权调用（地图 171 需显式触发）</span></div>
@@ -189,6 +189,11 @@ td code{background:transparent;padding:0}
       （<b>23 条断言</b>），一键序列 18 → <b>19 项</b>；界面层（顶栏 / 查询控件 / 结果卡 / 地图 UI /
       错误与额度文案 / 趋势 / 分享卡 canvas / 404 页）已三语，产物 475 → <b>590 KB</b>。
       下表与「事实面板」已按最新代码更新，其余章节的结论不受影响。
+      <b>更新 · 2026-10-17（F1 离线 / PWA 落地）：</b>
+      新增 <code>_check/pwaprobe.js</code>（<b>18 条断言</b>），一键序列 22 → <b>23 项</b>、具名断言
+      385 → <b>403</b>；产物 <b>678,416 字节</b>；源码 9,346 → <b>9,438 行</b>。取舍按原方案执行：
+      PWA 做成 <code>PWA=1</code> 的<b>可选产物</b>（<code>manifest.json</code> + <code>sw.js</code> + 两张图标），
+      <b>默认构建仍是单文件</b> —— 探针 A 组专门守这一条。SW 绝不缓存气象响应。
       <b>更新 · 2026-10-13（F5 结果快照落地）：</b>
       新增 <code>_check/snapprobe.js</code>（<b>24 条断言</b>），一键序列 21 → <b>22 项</b>、具名断言
       361 → <b>385</b>；产物 <b>671,972 字节</b>；源码 8,867 → <b>9,346 行</b>。<code>snap=</code>
@@ -526,7 +531,7 @@ td code{background:transparent;padding:0}
 
   <div class="feat">
     <div class="feat-h"><h3>F1 · 离线可用（PWA 化）</h3>
-      <span class="tag t-p1">推荐优先</span><span class="tag t-phase">中期</span></div>
+      <span class="tag t-p1">推荐优先</span><span class="tag t-phase">中期</span><span class="tag t-ok">已落地</span></div>
     <p>把整份产物（472 KB）与已缓存的结果做成离线可用：山顶、海边、地铁这类"最需要看霞光预报"的场景恰恰最可能没信号。</p>
     <dl>
       <dt>用户价值</dt><dd>无网络时仍能打开页面、查看上次算过的结果与缓存的地图/趋势；二次打开近乎秒开。</dd>
@@ -534,6 +539,7 @@ td code{background:transparent;padding:0}
       <dt>依赖条件</dt><dd>HTTPS + 同源（静态托管均满足）。<b>与"单文件产物"约束冲突</b>：需接受"产物从 1 个变 3 个"——建议把 manifest/sw 作为<b>可选产物</b>，由环境变量 <code>PWA=1</code> 开关。</dd>
       <dt>涉及模块</dt><dd><span class="tag t-file">assemble.py</span> <span class="tag t-file">tpl/</span> <span class="tag t-file">_p5.js（网络状态提示）</span> <span class="tag t-file">新增 404probe 扩展</span></dd>
       <dt>成本 / 风险</dt><dd>3–5 天。主要风险是缓存失效导致用户看到旧版本——必须在 SW 里带构建版本号，且 <code>assemble.py</code> 注入。</dd>
+      <dt>实测（2026-10-17）</dt><dd>按"可选产物"落地：<code>PWA=1</code> 才多出 <code>manifest.json</code> / <code>sw.js</code> / <code>icon-192.png</code> / <code>icon-512.png</code>，<b>默认构建仍是 1 个文件</b>。缓存版本取<b>产物内容的 sha256 前 12 位</b>（不靠人改版本号常量）；SW <b>只认一份预缓存名单</b>，跨域与同源的地图代理一律不拦截 ⇒ 探针实测"气象请求发了 9 次、缓存里气象条目 <b>0</b> 条"。离线侧真浏览器验过：切 offline 后 reload <b>页面仍能打开</b>、显示离线提示条、取数失败给的是离线专属文案（不是"稍候 1 分钟重试"）。SW 注册<b>没有</b>新增内联 <code>&lt;script&gt;</code> 块（块数 4 是不变量）：地址由 <code>link[rel=manifest]</code> 推出。新增 <code>_check/pwaprobe.js</code>（<b>18 条断言</b>），序列 22 → <b>23 项</b>。</dd>
     </dl>
   </div>
 

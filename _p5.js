@@ -332,6 +332,12 @@ function initUI() {
      它**不取数** —— 只把已算好的结论压进 URL。 */
   const spb = $("#snapUrl");
   if (spb) spb.addEventListener("click", copySnap);
+  /* F1：离线提示条 + SW 注册。两者都"有就用、没有就算"，
+     非 PWA 构建下 initPWA() 会因为找不到 manifest 直接返回。 */
+  refreshNetBar();
+  window.addEventListener("online", refreshNetBar);
+  window.addEventListener("offline", refreshNetBar);
+  initPWA();
   $("#geoBtn").addEventListener("click", useGeo);
   $("#nowBtn").addEventListener("click", () => { $("#date").value = State.dateStr; saveDate(); });
   $("#date").addEventListener("change", saveDate);
@@ -607,16 +613,21 @@ async function runForecast(scroll) {
     /* friendly 优先：它是取数层对「为什么失败、该怎么办」给出的针对性说明。
        尤其是 429 的两种情况（短时限流 vs 日额度耗尽）处置方式完全相反，
        用同一句"请稍候 1 分钟重试"会把人引到错误方向。 */
-    const head = (e && e.friendly)
-      ? e.friendly
-      : e && e.timeout
-        ? i18n("气象接口响应超时（超过 12 秒），请检查网络后重试。")
-        : st === 429
-          ? i18n("气象接口暂时限流（同一 IP 请求过于频繁），请稍候约 1 分钟后重试。")
-          : i18n("数据获取失败：{v}", { v: String(e.message || e) });
+    /* 离线放在最前：此时"稍候重试 / 检查网络"都是错的指引（约束 11）。 */
+    const head = !netOn()
+      ? offlineHint()
+      : (e && e.friendly)
+        ? e.friendly
+        : e && e.timeout
+          ? i18n("气象接口响应超时（超过 12 秒），请检查网络后重试。")
+          : st === 429
+            ? i18n("气象接口暂时限流（同一 IP 请求过于频繁），请稍候约 1 分钟后重试。")
+            : i18n("数据获取失败：{v}", { v: String(e.message || e) });
     const tail = (e && e.fatal)
       ? i18n("额度会在次日重置，之后即可恢复。想继续使用的话：地图数据占单次首屏约 88% 的调用量，不点「加载周边地图」就不会消耗；也可以改用付费计划或自建实例。")
-      : i18n("请检查网络连接或稍后重试；也可能是该日期超出模式可提供的范围（可预报范围约 今天−7 天 ~ 今天+10 天）。");
+      : !netOn()
+        ? i18n("恢复网络后点「开始预报」即可重新计算。")
+        : i18n("请检查网络连接或稍后重试；也可能是该日期超出模式可提供的范围（可预报范围约 今天−7 天 ~ 今天+10 天）。");
     $("#hero").innerHTML = `<div class="note n-bad">${head}<br>${tail}</div>`;
     $("#models").innerHTML = ""; $("#fac").innerHTML = ""; $("#ray").innerHTML = "";
     $("#notes").innerHTML = `<div class="note n-bad">${i18n("请求未完成，无结果可展示。")}</div>`;
@@ -1120,6 +1131,57 @@ function gotoLatLng(lat, lon) {
     if (nc && nc.distKm < 120) { nm = nc.city.name; rg = nc.city.region; }
   } catch (e) { softWarn("点位地名解析失败", e); }
   setLocation(lat, lon, nm, rg);
+}
+
+/* =========================================================================
+   离线与 PWA（F1）
+   -------------------------------------------------------------------------
+   产物本身就是自包含的（JS / CSS / 城市表 / 图标全部内联），所以"离线把页面打
+   开"从来不是问题；真正会断的是**取数**与**地图**。F1 补的是两件事：
+     ① 可安装 + 启动壳离线（`manifest.json` + `sw.js`，只在 `PWA=1` 构建里有）；
+     ② 无网络时**说清楚**：什么还能用（已缓存的结果）、什么不能（新的预报与地图）。
+   三条纪律：
+     · SW **绝不缓存气象响应**（过期预报比没有预报更危险，见 sw.js 文件头）；
+     · 注册是"增强"：没有 SW / 注册失败 / file:// 打开，一律静默跳过，页面照常能用；
+     · 判据只有"有没有 manifest"这一个 —— PWA 版与非 PWA 版共用同一份代码，
+       不需要构建时再往 JS 里注入一个开关常量。
+   ========================================================================= */
+function netOn() {
+  /* 只有**明确**为 false 才算离线：`navigator.onLine` 在某些环境下是 undefined，
+     把它当离线会让联网用户看到一条假提示（比没有提示更糟）。 */
+  return !(typeof navigator !== "undefined" && navigator.onLine === false);
+}
+
+/* 注册 Service Worker。**不新增内联脚本块**：块数是 syntax.py / globals.js /
+   assemble.py 共同守着的不变量（4 块），多一块要连带改好几处。 */
+function initPWA() {
+  try {
+    const link = document.querySelector('link[rel="manifest"]');
+    if (!link || !("serviceWorker" in navigator)) return;
+    const mUrl = new URL(link.href, location.href);
+    /* sw.js 与 manifest.json 同目录 ⇒ scope 与脚本地址都从它推出去，
+       子路径部署（/仓库名/）自动成立，不必再注入一个地址常量。 */
+    const scope = new URL(".", mUrl).href;
+    const swUrl = new URL("sw.js", mUrl).href;
+    /* 放到 load 之后：别跟首屏那批关键请求抢带宽。 */
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register(swUrl, { scope: scope }).catch(() => { });
+    });
+  } catch (e) { /* 不该因为"想装个 PWA"而让页面报错 */ }
+}
+
+/* 离线提示条。文案要说清**还能用什么** —— 只喊一句"没网"等于没说。 */
+function refreshNetBar() {
+  const el = $("#netBar");
+  if (!el) return;
+  if (netOn()) { el.hidden = true; el.innerHTML = ""; return; }
+  el.hidden = false;
+  el.innerHTML = `<b>${esc(i18n("离线"))}</b> · ${esc(i18n("当前无网络连接：已缓存的地点与日期仍可查看（会标注为缓存结果），新的预报与地图需要联网。"))}`;
+}
+/* 离线时取数失败的文案。与 429 / 超时那种"稍后重试"给出**不同**的建议 ——
+   约束 11 那条纪律的延伸：处置方式必须跟着原因走，否则就是把人往错的方向引。 */
+function offlineHint() {
+  return i18n("当前处于离线状态，无法获取新的气象数据。已缓存的地点与日期仍可查看。");
 }
 
 /* =========================================================================
