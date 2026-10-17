@@ -40,4 +40,4 @@
 ## 回归方法
 语义变更不能拿旧实现直接当新基准：先用结构独立的第三方参考实现证明旧语义一致，再以新语义做双重差分。探针避免固定 sleep、硬编码城市坐标、模板串中的未转义正则与反引号；所有判据必须自检，防静默假绿。
 判据不要按"元素总数"断死（如 `[data-snaphide]` 的个数）：新增一个同类块就会变成"改数字"式的假失败。按**身份/集合**断（如 `div.card[data-snaphide]` 恰 4 张 + 所有同类块都收起）。计数器/累积量型断言必须在**被测动作结束那一刻**取值：放到最后统一读会把中间其它动作（如"制造上一页"要载入首页）一起算进来，名字说测 A 实际测 A+B。判"页面就绪"不能用 `window.State` —— `State` 是顶层 `const`（词法全局），`window.State` 恒为 `undefined`，写错会让轮询静默跑满预算、探针零输出被杀。`Page.navigate` 返回时旧文档仍 `complete`，重复导航必须用"导航标记"握手且超时要抛错。
-提交前必须用 `git diff --ignore-cr-at-eol --numstat` 与原始 numstat 逐文件对一遍：`_pi18n.js` / `硬约束详解.md` 混用行尾，任何"读全文再写回"的编辑都会统一掉它们、制造几百行纯噪音（已踩五次——**连 Edit 工具的精准字符串替换也会污染** `_pi18n.js` 的行尾；修法见 `_scratch/eolfix.py`，拿 `git show HEAD:<file>` 的原始字节当行尾基准；还原后产物字节数会变（CRLF 行数差），`product.bytes` 文档数字要跟着改）。
+行尾已**机制化**（2026-10-17，替代旧的"numstat 两口径核对"人肉纪律）：`.gitattributes` 全仓 LF（`* text=auto eol=lf`，png binary）守 blob；`_check/syntax.py` 末尾的「源文件无 CRLF」断言守工作区（clean filter 会把工作区 CR 藏进 diff，但 assemble 的 `rd(newline='')` 会把它带进产物字节——探针是唯一守门员）。工作区被编辑工具写脏时跑一次全仓 `python -c` 转换即可，`eolfix.py` 已删。注意：这台机器的 `git show` 会做 LF→CRLF smudge，查 blob 原始字节要用 `git cat-file blob`。

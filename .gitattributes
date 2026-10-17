@@ -1,0 +1,10 @@
+# 行尾机制化（视觉方案三之后的架构深化）：全仓统一 LF。
+# 背景：_pi18n.js 曾 5 次被编辑工具写混行尾，靠 _scratch/eolfix.py 人肉还原。
+# 机制分两层：
+#   1) 本文件 —— blob 层：clean filter 保证入库内容永远是 LF（core.autocrlf 任何
+#      取值都不再影响仓库内容；系统级 autocrlf=true 的机器也翻不了车）。
+#   2) _check/syntax.py 的「源文件无 CRLF」断言 —— 工作区层：clean filter 会把
+#      工作区污染从 diff 里藏起来，但 assemble.py 的 rd(newline='') 会把 CR 忠实
+#      带进产物字节，所以探针断言是唯一守门员。
+* text=auto eol=lf
+*.png binary
