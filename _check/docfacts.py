@@ -180,6 +180,22 @@ DECL = [
     ("const.W_ENS", "多模型权重 `W_ENS`",
      [("README.md", r"`W_ENS = ([\d.]+) / ([\d.]+) / ([\d.]+)`", [1, 2, 3])]),
 
+    # ---- F4 本地校准的阈值（阶段性总结 §四） ----
+    # 这几个数直接决定"给不给结论"，是最需要机器守着的一类常量：
+    # 手抄进文档错了，后果是文档在教人用一套实际不生效的阈值。
+    ("const.CALIB_GRID_DEG", "本地校准归组网格（度）",
+     [("阶段性总结.md", r"`CALIB_GRID_DEG = ([\d.]+)`", [1])]),
+    ("const.CALIB_BUCKET", "本地校准分桶宽度（%）",
+     [("阶段性总结.md", r"`CALIB_BUCKET = (\d+)`", [1])]),
+    ("const.CALIB_HIT_MIN", "本地校准「实际出现」阈值",
+     [("阶段性总结.md", r"`CALIB_HIT_MIN = (\d+)`", [1])]),
+    ("const.CALIB_MIN_N", "本地校准总样本阈值",
+     [("阶段性总结.md", r"`CALIB_MIN_N = (\d+)`", [1])]),
+    ("const.CALIB_MIN_BUCKET", "本地校准本档样本阈值",
+     [("阶段性总结.md", r"`CALIB_MIN_BUCKET = (\d+)`", [1])]),
+    ("const.CALIB_MAX", "本地标注存储上限（条）",
+     [("阶段性总结.md", r"`CALIB_MAX = (\d+)`", [1])]),
+
     # ---- 探针断言条数（事实源 = _check/.facts.json） ----
     ("probe.zoomprobe", "`zoomprobe` 断言条数",
      [("阶段性总结.md", r"`zoomprobe` \*\*(\d+) 项", [1])]),
@@ -197,6 +213,8 @@ DECL = [
      [("README.md", r"`a11yprobe\.js`[^\n]*?\*\*(\d+) 条", [1])]),
     ("probe.snapprobe", "`snapprobe` 断言条数",
      [("README.md", r"`snapprobe\.js`[^\n]*?\*\*(\d+) 条", [1])]),
+    ("probe.calibprobe", "`calibprobe` 断言条数",
+     [("README.md", r"`calibprobe\.js`[^\n]*?\*\*(\d+) 条", [1])]),
 
     # ---- 一键序列规模 ----
     ("suite.size", "`all.py` 序列项数",
@@ -216,7 +234,9 @@ def build_truth(pf):
     t["product.bytes"] = os.path.getsize(os.path.join(BASE, PRODUCT))
     for name in ["FIELD_STEP", "N_BANDS", "MAP_RADIUS_KM", "MAP_GRID_KM", "POINT_CACHE_MAX",
                  "MAP_DATA_MAX", "MAP_CACHE_MAX", "FIELD_OUT_KM", "FIELD_FULL",
-                 "FIELD_REACH_KM", "CONT_PX", "TREND_DAYS"]:
+                 "FIELD_REACH_KM", "CONT_PX", "TREND_DAYS",
+                 "CALIB_GRID_DEG", "CALIB_BUCKET", "CALIB_HIT_MIN", "CALIB_MIN_N",
+                 "CALIB_MIN_BUCKET", "CALIB_MAX"]:
         t["const." + name] = const(name)
     w = const("W_ENS")
     t["const.W_ENS"] = None
@@ -236,6 +256,7 @@ def build_truth(pf):
     t["probe.persistprobe"] = _probe(pf, "persistprobe")
     t["probe.a11yprobe"] = _probe(pf, "a11yprobe")
     t["probe.snapprobe"] = _probe(pf, "snapprobe")
+    t["probe.calibprobe"] = _probe(pf, "calibprobe")
     t["suite.size"] = suite_size()
     return t
 

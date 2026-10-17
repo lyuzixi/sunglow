@@ -674,6 +674,35 @@ body.snapmode [data-snaphide]{display:none}
   background:var(--hover);color:var(--tx2)}
 .snapfac .sf b{font-weight:700;color:var(--tx);font-family:var(--mono);font-size:12px}
 
+/* ---------- F4 本地校准（实况回填） ---------- */
+/* 独立一块，属于结论卡但**不参与它的排版** —— 与 renderHero 互不写对方的 DOM，
+   "校准不回改模型"这条纪律在样式上的体现就是它有自己的边框与底色，一眼分得开。
+   `[hidden]` 显式写 display:none（同 .netbar：一旦给 .calib 设了 display，
+   UA 的 hidden 样式就会被盖掉）。 */
+.calib{margin-top:14px;border:1px solid var(--line);border-radius:var(--r2);
+  background:var(--soft);padding:11px 12px}
+.calib[hidden]{display:none}
+.calib .cbq{font-weight:700;font-size:13px;color:var(--tx)}
+.calib .cbq.cbquiet{font-weight:400;color:var(--tx3);font-size:12.7px;line-height:1.6}
+/* 六档按钮**必须换行**：六个中文档位并排约 430 px，窄屏卡片只有 ~340 px，
+   不换行就会把卡片顶出容器（约束 46 那一类溢出）。 */
+.calib .cbseg{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+/* 配色照搬 .unitseg 的选中态（--acc2 字 + --accbg 底）—— 那套已经过了对比度审计，
+   不另造一套颜色（约束 25 的同类理由：同一个"选中"语义只该有一套色）。 */
+.calib .cbseg button{border:1px solid var(--line);background:var(--card);color:var(--tx2);
+  padding:4px 10px;border-radius:9px;font:inherit;font-size:12.5px;cursor:pointer}
+.calib .cbseg button.on{background:var(--accbg);color:var(--acc2);font-weight:600;border-color:var(--accbd)}
+.calib .cbhint{margin-top:8px;font-size:11.5px;color:var(--tx3);line-height:1.6}
+.calib .cbsh{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin-top:10px}
+.calib .cbsh b{font-size:12.5px;color:var(--acc2)}
+.calib .cbsh span{font-size:11.5px;color:var(--tx3)}
+.calib .cbsr{margin-top:5px;font-size:12.5px;color:var(--tx2);line-height:1.65}
+.calib .cbsr.cbprog{margin-top:9px;font-size:12.2px;color:var(--tx3)}
+.calib .cbf{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  margin-top:10px;padding-top:9px;border-top:1px solid var(--line)}
+.calib .cbp{flex:1 1 220px;min-width:0;font-size:11.5px;color:var(--tx3);line-height:1.6}
+.calib .chk{font-size:12.5px}
+
 /* ---------- 数值直标：第二编码（F6） ---------- */
 .mlayer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;display:none;z-index:5;overflow:hidden}
 .mlayer.on{display:block}
@@ -857,6 +886,22 @@ body.snapmode [data-snaphide]{display:none}
              平时 hidden，只有需要时才由 snapMsg() 打开。 -->
         <div id="snapOut" hidden></div>
         <div id="hero"></div>
+        <!-- F4 本地校准：**外壳是静态的**（三个容器 + 页脚控件），只让 JS 填
+             #calibHead / #calibStat。外壳静态有两个具体好处：
+               ① `#calibOff` / `#calibClear` 在 `applyPrefs()` 跑的时候就已存在，
+                  能像别的偏好一样被铺初值（动态生成的控件赶不上那一步）；
+               ② 三段结构在模板里一眼可见，不必去 JS 里拼骨架。
+             `data-snaphide`：快照模式下整块收起 —— 快照是**别人**分享来的结论，
+             你未必真去过那个地方，标成自己的实况会污染自己的校准。 -->
+        <div class="calib" id="calibBox" data-snaphide hidden>
+          <div id="calibHead"></div>
+          <div id="calibStat"></div>
+          <div class="cbf">
+            <span class="cbp" data-i18n="标注只保存在这台设备的浏览器里，不会上传到任何服务器。">标注只保存在这台设备的浏览器里，不会上传到任何服务器。</span>
+            <label class="chk"><input type="checkbox" id="calibOff"> <span data-i18n="关闭本地校准">关闭本地校准</span></label>
+            <button class="sm" id="calibClear" data-i18n="清空标注数据">清空标注数据</button>
+          </div>
+        </div>
       </div>
 
       <div class="card" data-snaphide>
@@ -994,6 +1039,7 @@ body.snapmode [data-snaphide]{display:none}
           <li data-i18n-html="气象要素（温度、露点、相对湿度、云量、能见度、气压、风、0℃层高度等）来自 <b>Open-Meteo</b> 数值模式接口，分别取 <b>GFS</b> 与 <b>ECMWF IFS</b> 两套模式；气溶胶光学厚度 AOD、PM2.5 来自 <b>CAMS</b> 空气质量接口。">气象要素（温度、露点、相对湿度、云量、能见度、气压、风、0℃层高度等）来自 <b>Open-Meteo</b> 数值模式接口，分别取 <b>GFS</b> 与 <b>ECMWF IFS</b> 两套模式；气溶胶光学厚度 AOD、PM2.5 来自 <b>CAMS</b> 空气质量接口。</li>
           <li data-i18n-html="底图由<b>腾讯地图</b>提供（GCJ-02），符合中国地图使用规范；热力与色块为本应用根据气象数据计算生成，不代表官方结论。">底图由<b>腾讯地图</b>提供（GCJ-02），符合中国地图使用规范；热力与色块为本应用根据气象数据计算生成，不代表官方结论。</li>
           <li data-i18n-html="<b>光追算法</b>为本地实现的物理模型：在几何可行基础上做多波长消光积分与色度换算，不依赖任何统计订正。"><b>光追算法</b>为本地实现的物理模型：在几何可行基础上做多波长消光积分与色度换算，不依赖任何统计订正。</li>
+          <li data-i18n-html="<b>实况标注与本地校准</b>（F4）：你在结论卡里标注的「这次实际看到霞了吗」只保存在<b>你自己这台设备的浏览器</b>里（localStorage），<b>不会上传到任何服务器</b>，也不参与任何评分或地图计算 —— 它只在结论卡里额外给出一行「本地校准」作对照，<b>不会改动模型给出的概率与等级</b>。可在该行一键关闭或清空。"><b>实况标注与本地校准</b>（F4）：你在结论卡里标注的「这次实际看到霞了吗」只保存在<b>你自己这台设备的浏览器</b>里（localStorage），<b>不会上传到任何服务器</b>，也不参与任何评分或地图计算 —— 它只在结论卡里额外给出一行「本地校准」作对照，<b>不会改动模型给出的概率与等级</b>。可在该行一键关闭或清空。</li>
           <li data-i18n-html="<b>地图的算法模型选择</b>：热力图可分别按 <b>多模型综合 / GFS / ECMWF-IFS / 光追算法</b> 四者之一着色。四套结果在<b>同一次取数</b>中一次性算好并随该日数据缓存，因此切换模型只是换个维度重新插值着色，<b>不会产生新的网络请求</b>；多模型综合＝GFS / ECMWF / 光追 按 0.30 / 0.34 / 0.36 的加权几何平均，某个模型缺数据时自动剔除该项并重新归一（与单点查询口径一致）。若某模型本次确实没有可用结果，选择框中会标注「本次无数据」并置灰，误选时会自动回退到多模型综合并给出提示；整批取数失败（如接口限流）则在地图区显示错误说明，点「刷新地图」重试。"><b>地图的算法模型选择</b>：热力图可分别按 <b>多模型综合 / GFS / ECMWF-IFS / 光追算法</b> 四者之一着色。四套结果在<b>同一次取数</b>中一次性算好并随该日数据缓存，因此切换模型只是换个维度重新插值着色，<b>不会产生新的网络请求</b>；多模型综合＝GFS / ECMWF / 光追 按 0.30 / 0.34 / 0.36 的加权几何平均，某个模型缺数据时自动剔除该项并重新归一（与单点查询口径一致）。若某模型本次确实没有可用结果，选择框中会标注「本次无数据」并置灰，误选时会自动回退到多模型综合并给出提示；整批取数失败（如接口限流）则在地图区显示错误说明，点「刷新地图」重试。</li>
           <li data-i18n-html="霞光对云的三维分布极为敏感。教程明确指出：短期预报时效不建议超过 36 小时；超过时效或模式间分歧较大时，结论仅作参考，应以临近时刻的卫星云图与实况外推为准。">霞光对云的三维分布极为敏感。教程明确指出：短期预报时效不建议超过 36 小时；超过时效或模式间分歧较大时，结论仅作参考，应以临近时刻的卫星云图与实况外推为准。</li>
           <li data-i18n-html="本程序为科普与辅助决策工具，不构成任何形式的专业气象预报或出行承诺。">本程序为科普与辅助决策工具，不构成任何形式的专业气象预报或出行承诺。</li>

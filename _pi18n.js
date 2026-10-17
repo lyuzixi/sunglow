@@ -516,6 +516,26 @@ const I18N_ZH_HANT = {
   "当前无网络连接：已缓存的地点与日期仍可查看（会标注为缓存结果），新的预报与地图需要联网。": "目前沒有網路連線：已快取的地点與日期仍可檢視（會標示為快取結果），新的預報與地圖需要連網。",
   "当前处于离线状态，无法获取新的气象数据。已缓存的地点与日期仍可查看。": "目前處於離線狀態，無法取得新的氣象資料。已快取的地点與日期仍可檢視。",
   "恢复网络后点「开始预报」即可重新计算。": "恢復網路後點「開始預報」即可重新計算。",
+  /* F4 实况回填与本地校准 */
+  "这次实际看到霞了吗？": "這次實際看到霞了嗎？",
+  "没看到（无法判断）": "沒看到（無法判斷）",
+  "没有霞": "沒有霞",
+  "很淡，勉强可见": "很淡，勉強可見",
+  "一般，能看": "一般，能看",
+  "很好": "很好",
+  "非常壮观": "非常壯觀",
+  "本地校准": "本地校準",
+  "只统计你自己标注的数据，不会回改模型结论": "只統計你自己標註的資料，不會回改模型結論",
+  "模型在 {lo}–{hi}% 这一档平均报 {pred}%；你标注的 {n} 次实况中实际出现 {obs}%（{hit} 次），偏差 {d} 个百分点。该位置共 {m} 次标注。": "模型在 {lo}–{hi}% 這一檔平均報 {pred}%；你標註的 {n} 次實況中實際出現 {obs}%（{hit} 次），偏差 {d} 個百分點。該位置共 {m} 次標註。",
+  "已记录 {n} 次实况标注（本机）；累计满 {m} 次、且当前这一档至少有 {k} 次后显示本地校准。": "已記錄 {n} 次實況標註（本機）；累計滿 {m} 次、且目前這一檔至少有 {k} 次後顯示本地校準。",
+  "本次是未来时段的预报，等事后回来再标注实况。": "本次是未來時段的預報，等事後回來再標註實況。",
+  "实况回填：点一档记录这次实际看到的情况": "實況回填：點一檔記錄這次實際看到的情況",
+  "「实际出现」按标注 ≥「一般，能看」计 —— 与概率 P 的口径（出现可观赏霞光）对齐。": "「實際出現」依標註 ≥「一般，能看」計 —— 與機率 P 的口徑（出現可觀賞霞光）對齊。",
+  "标注只保存在这台设备的浏览器里，不会上传到任何服务器。": "標註只保存在這台裝置的瀏覽器裡，不會上傳到任何伺服器。",
+  "关闭本地校准": "關閉本地校準",
+  "清空标注数据": "清空標註資料",
+  "确定清空全部实况标注数据？此操作只影响本机，无法撤销。": "確定清空全部實況標註資料？此操作只影響本機，無法復原。",
+  "<b>实况标注与本地校准</b>（F4）：你在结论卡里标注的「这次实际看到霞了吗」只保存在<b>你自己这台设备的浏览器</b>里（localStorage），<b>不会上传到任何服务器</b>，也不参与任何评分或地图计算 —— 它只在结论卡里额外给出一行「本地校准」作对照，<b>不会改动模型给出的概率与等级</b>。可在该行一键关闭或清空。": "<b>實況標註與本地校準</b>（F4）：你在結論卡裡標註的「這次實際看到霞了嗎」只保存在<b>你自己這台裝置的瀏覽器</b>裡（localStorage），<b>不會上傳到任何伺服器</b>，也不參與任何評分或地圖計算 —— 它只在結論卡裡額外給出一行「本地校準」作對照，<b>不會改動模型給出的機率與等級</b>。可在該行一鍵關閉或清空。",
 };
 
 /* ---- English ---- */
@@ -1007,6 +1027,26 @@ const I18N_EN = {
   "当前无网络连接：已缓存的地点与日期仍可查看（会标注为缓存结果），新的预报与地图需要联网。": "No network connection. Cached places and dates still work (they are marked as cached); new forecasts and the map need to be online.",
   "当前处于离线状态，无法获取新的气象数据。已缓存的地点与日期仍可查看。": "You are offline, so no new weather data can be fetched. Cached places and dates are still available.",
   "恢复网络后点「开始预报」即可重新计算。": "Once you are back online, hit Forecast to compute it again.",
+  /* F4 实况回填与本地校准 */
+  "这次实际看到霞了吗？": "Did you actually see a glow this time?",
+  "没看到（无法判断）": "Didn't watch (can't tell)",
+  "没有霞": "No glow",
+  "很淡，勉强可见": "Faint, barely visible",
+  "一般，能看": "Fair, watchable",
+  "很好": "Good",
+  "非常壮观": "Spectacular",
+  "本地校准": "Local calibration",
+  "只统计你自己标注的数据，不会回改模型结论": "Uses only your own reports; the model's conclusion is never changed",
+  "模型在 {lo}–{hi}% 这一档平均报 {pred}%；你标注的 {n} 次实况中实际出现 {obs}%（{hit} 次），偏差 {d} 个百分点。该位置共 {m} 次标注。": "In the {lo}–{hi}% band the model averaged {pred}%; across your {n} reports the glow actually appeared {obs}% of the time ({hit} times) — an offset of {d} points. {m} reports for this spot so far.",
+  "已记录 {n} 次实况标注（本机）；累计满 {m} 次、且当前这一档至少有 {k} 次后显示本地校准。": "{n} report(s) stored on this device; local calibration appears once you reach {m} in total and at least {k} in the current band.",
+  "本次是未来时段的预报，等事后回来再标注实况。": "This slot is still in the future — come back afterwards to report what you saw.",
+  "实况回填：点一档记录这次实际看到的情况": "Field report: pick the option that matches what you actually saw",
+  "「实际出现」按标注 ≥「一般，能看」计 —— 与概率 P 的口径（出现可观赏霞光）对齐。": "\"Actually appeared\" means a report of \"Fair, watchable\" or better — matching how P is defined (a watchable glow occurred).",
+  "标注只保存在这台设备的浏览器里，不会上传到任何服务器。": "Reports are stored only in this browser on this device and are never uploaded.",
+  "关闭本地校准": "Turn off local calibration",
+  "清空标注数据": "Clear reports",
+  "确定清空全部实况标注数据？此操作只影响本机，无法撤销。": "Clear all field reports? This affects only this device and cannot be undone.",
+  "<b>实况标注与本地校准</b>（F4）：你在结论卡里标注的「这次实际看到霞了吗」只保存在<b>你自己这台设备的浏览器</b>里（localStorage），<b>不会上传到任何服务器</b>，也不参与任何评分或地图计算 —— 它只在结论卡里额外给出一行「本地校准」作对照，<b>不会改动模型给出的概率与等级</b>。可在该行一键关闭或清空。": "<b>Field reports and local calibration</b> (F4): your \"did you actually see a glow?\" answers are stored only in <b>this browser on this device</b> (localStorage). They are <b>never uploaded</b> and never feed into any score or map computation — they only add one \"local calibration\" line to the conclusion card for comparison, and <b>never change the model's probability or grade</b>. You can switch the feature off or clear the reports right there.",
 };
 
 const I18N = { zh: null, zhHant: I18N_ZH_HANT, en: I18N_EN };

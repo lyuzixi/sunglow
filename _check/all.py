@@ -76,6 +76,7 @@ SUITE = [
     ("darkprobe",     "darkprobe.js",    "深色模式（令牌/跟随系统/覆盖/持久化/双扫描仪）"),
     ("spotprobe",     "spotprobe.js",    "F3 最佳窗口 / F2 多观测点（额度纪律与失效边界）"),
     ("snapprobe",     "snapprobe.js",    "F5 结果快照（零额度 / 失效 / 恶意载荷 / 坏输入）"),
+    ("calibprobe",    "calibprobe.js",   "F4 实况回填与本地校准（口径 / 阈值 / 不改模型输出 / 只存本机）"),
     # F1 探针要自己跑 assemble.py（构建三套产物），所以把当前解释器传进去。
     ("pwaprobe",      "pwaprobe.js",     "F1 离线 / PWA（单文件约束仍成立 + 离线真能打开 + 不缓存气象）",
      {"PY": sys.executable}),

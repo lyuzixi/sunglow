@@ -39,6 +39,14 @@ const State = {
      · factorRows —— renderFactors 顺手记下的 [键, 原始数值, 得分]，快照挑"最决定性
        的几个因素"时读它（阈值不另抄一份）。 */
   snapRaw: null, snap: null, factorRows: [],
+  /* F4 实况回填与本地校准：
+     · calib    —— 本机实况标注（`{lat,lon,date,period,P,Q,a,t}` 数组）。
+                   `null` = **还没读盘**（懒加载；localStorage 是用户能顺手改的地方，
+                   没必要在首屏就解析一遍）。真值一律经 `calibRows()` 取。
+     · calibOff —— 用户关掉了整个功能。它进了 `PREF_BOOL`，所以刷新后仍然关闭；
+                   **关掉只影响显示与入口，已存的标注一条都不删**（那要用户显式点"清空"）。
+                   两者必须分开：把"我不想看"做成"你的数据没了"是最招人恨的一种默认。 */
+  calib: null, calibOff: false,
   /* initUI 期间置位。此时 setLocation() 会被调用一次（把 State 铺进输入框），
      那一次**不算**"用户改了地点" —— 否则首屏就会把刚从 URL 读进来的快照抹掉。 */
   booting: false
@@ -87,8 +95,9 @@ const PRESETS = [
    偏好不是缓存：它不需要 LRU，更绝不能被"配额清理"顺手删掉。
    ========================================================================= */
 const PREF_KEY = "sunsetbot.pref.v1";
-/* 白名单：布尔字段（图层开关 / 时间制） */
-const PREF_BOOL = ["numLabels", "showPts", "showConf", "showGrid", "dimBase", "hour12"];
+/* 白名单：布尔字段（图层开关 / 时间制 / F4 关闭本地校准）。`calibOff` 在这里
+   而不在别处 —— 它就是一个普通的显示偏好，与"深色底图"同一性质。 */
+const PREF_BOOL = ["numLabels", "showPts", "showConf", "showGrid", "dimBase", "hour12", "calibOff"];
 /* 白名单：枚举字段 —— 值必须落在允许集合里，防止旧值/脏值把控件设成不存在的选项 */
 const PREF_STR = {
   units: ["metric", "imperial"],
@@ -126,6 +135,7 @@ function applyPrefs() {
   const p = prefRead();
   if (p.units) State.units = p.units;
   if (typeof p.hour12 === "boolean") State.hour12 = p.hour12;
+  if (typeof p.calibOff === "boolean") State.calibOff = p.calibOff;
   if (p.mapDim) State.mapDim = p.mapDim;
   if (p.mapModel) State.mapModel = p.mapModel;
   PREF_BOOL.forEach(k => {
@@ -147,6 +157,167 @@ function applyMapLayerPrefs() {
   refreshDimBase();
   const g = $("#showGrid");
   setGratUser(!!(g && g.checked));
+}
+
+/* =========================================================================
+   F4 · 实况回填与本地校准
+   -------------------------------------------------------------------------
+   用户事后回来一键标注"这次实际看到霞了吗"，本机累积后按**预测概率分桶**
+   统计实际出现率，在结论卡里给一行「本地校准」。
+
+   四条边界 —— 每一条越过去，这个功能就变成另一种东西：
+    ① **只展示，绝不回改模型**。大字号概率、等级、结论句一个像素都不动，
+       校准值只出现在它自己那一行里。校准若改了结论，它就不再是"校准"，
+       而是把一份样本量只有个位数的本地统计混进了物理模型 —— 那正是本项目
+       最忌讳的那类**静默**错误（同一个界面里两个数字互相矛盾）。
+    ② **只存本机**。localStorage，不出设备、不上传。可一键关闭、一键清空；
+       且"关闭"与"清空"是两件事（见 State 那段注释）。
+    ③ **样本不足就不给结论**。总样本 ≥ `CALIB_MIN_N` **且**当前这一档
+       ≥ `CALIB_MIN_BUCKET` 才显示校准值；此前只显示"已记录 N 次"的**进度**
+       —— 那是"机制在运作"的证据，不是一个统计结论。
+    ④ **"没看到"与"没去"必须分开**。用户可能压根没出门；把 `a = -1`
+       （无法判断）算成"没有霞"会把校准**系统性低估**，而且勤快标注的人偏得
+       最少、懒得标的人偏得最多 —— 这种偏差最难自查。所以它**不进统计**。
+
+   为什么存原始坐标、分组却按格：用户可能站在机位上就标，也可能回家才标
+   （坐标差几十米），而"这个机位"的意义是**一片区域**而不是一个点。所以存
+   三位小数（≈110 m），分组时按 `CALIB_GRID_DEG` 量化。**量化在读取时做、
+   不落盘** —— 将来改网格尺寸，旧样本按新尺寸重新归组，不会出现"新旧样本
+   按两套尺寸混在同一组里"。
+   ========================================================================= */
+const CALIB_KEY = "sunsetbot.calib.v1";
+/* 归组网格：0.5° ≈ 55 km（纬向），"同一片区域"的判据 */
+const CALIB_GRID_DEG = 0.5;
+/* 预测概率分桶宽度（%）：0–20 / 20–40 / 40–60 / 60–80 / 80–100 五桶 */
+const CALIB_BUCKET = 20;
+/* 标注 ≥ 这一档才叫"实际出现"。取 2（"一般，能看"）是为了与概率 P 的口径
+   （"出现**可观赏**霞光"）对齐 —— 取 1 会把"很淡、勉强可见"也算成出现，
+   于是校准值恒高于模型，而且随用户宽严程度漂移。 */
+const CALIB_HIT_MIN = 2;
+/* 显示校准值的两个门槛：总样本数、以及**当前这一档**的样本数。
+   只卡总数是不够的 —— 100 次标注全落在 0–20% 档，也解释不了 80% 档。 */
+const CALIB_MIN_N = 8;
+const CALIB_MIN_BUCKET = 3;
+/* 存储上限。localStorage 是所有缓存共用的 5 MB，无界增长会让**别的**缓存静默
+   失效（单点缓存那条 754 KB/条的账就是这么算出来的）。溢出时丢最旧的。 */
+const CALIB_MAX = 200;
+/* 事件时刻至少已过去 1 小时才允许标注 —— 与取数层"过去 N 小时 / 当前时刻"的
+   分界（`leadH < -1`）同源，不另立一个新阈值。 */
+const CALIB_AFTER_H = -1;
+
+/* 标注档位。`-1` = 没看到/无法判断（**不进统计**），0–4 = 强度。 */
+const CALIB_MARKS = [-1, 0, 1, 2, 3, 4];
+
+/* 单条校验：localStorage 是用户能顺手改的地方，所以按白名单取，坏值**整条丢掉**
+   而不是试着修（"修"出来的数据比丢掉更危险：它会带着一个看着合理的数进统计）。
+   要求字段是**数字类型**而不是"能转成数字" —— `Number(null) === 0` 会把
+   "没标过"变成一个合法的"没有霞"。
+   刻意不存地名：地名是自由度最大的用户可控文本，而校准只需要"哪一片区域"，
+   坐标够用 ⇒ 少一个注入面。 */
+function calibClean(o) {
+  if (!o || typeof o !== "object") return null;
+  if (!isNum(o.lat) || o.lat < -90 || o.lat > 90) return null;
+  if (!isNum(o.lon) || o.lon < -180 || o.lon > 180) return null;
+  if (typeof o.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(o.date)) return null;
+  if (o.period !== "am" && o.period !== "pm") return null;
+  if (!isNum(o.P) || !isNum(o.Q) || !isNum(o.a)) return null;
+  const a = Math.round(o.a);
+  if (CALIB_MARKS.indexOf(a) < 0) return null;
+  return {
+    lat: Math.round(o.lat * 1000) / 1000, lon: Math.round(o.lon * 1000) / 1000,
+    date: o.date, period: o.period,
+    P: clamp(o.P, 0, 100), Q: clamp(o.Q, 0, 100), a: a,
+    t: isNum(o.t) ? o.t : 0
+  };
+}
+function calibRead() {
+  const out = [];
+  try {
+    const j = JSON.parse(localStorage.getItem(CALIB_KEY) || "null");
+    const list = (j && Array.isArray(j.rows)) ? j.rows : null;
+    if (!list) return out;
+    for (let i = 0; i < list.length && out.length < CALIB_MAX; i++) {
+      const r = calibClean(list[i]);
+      if (r) out.push(r);
+    }
+  } catch (e) { softWarn("读实况标注失败", e); }
+  return out;
+}
+/* 取标注列表。懒读盘：首屏没必要为这个功能解析一遍 localStorage。 */
+function calibRows() {
+  if (!Array.isArray(State.calib)) State.calib = calibRead();
+  return State.calib;
+}
+function calibSave(rows) {
+  State.calib = rows;
+  try { localStorage.setItem(CALIB_KEY, JSON.stringify({ v: 1, rows: rows })); }
+  catch (e) { softWarn("写实况标注失败（隐私模式或配额不足）", e); }
+}
+/* 分组键：**整数**网格坐标。用整数而不是"四舍五入后的度数"—— 后者在字符串化时
+   会碰上 0.30000000000000004 这类值，同一片区域的样本被拆成两组。 */
+function calibGroupOf(lat, lon) {
+  const k = 1 / CALIB_GRID_DEG;
+  return Math.round(lat * k) + "," + Math.round(lon * k);
+}
+/* 这次事件是否已经过去够久（够久 = 这轮霞已经结束、人已经看完了）。 */
+function calibCanAnnotate(r) {
+  return !!r && isNum(r.leadH) && r.leadH <= CALIB_AFTER_H;
+}
+function calibBucketOf(P) {
+  return clamp(Math.floor(clamp(P, 0, 100) / CALIB_BUCKET), 0, 100 / CALIB_BUCKET - 1);
+}
+/* 同一片区域的**有效**样本（`a >= 0`；"无法判断"不算）。 */
+function calibFindGroup(lat, lon) {
+  const g = calibGroupOf(lat, lon);
+  return calibRows().filter(r => r.a >= 0 && calibGroupOf(r.lat, r.lon) === g);
+}
+/* 同一片区域 + 同一日期 + 同一时段的那一条（没有则 null）—— 用来把按钮的
+   选中态画出来，也用来让"改主意"变成**改**上一次而不是又记一笔。 */
+function calibFind(lat, lon, date, period) {
+  const g = calibGroupOf(lat, lon);
+  const hit = calibRows().filter(r => r.date === date && r.period === period &&
+    calibGroupOf(r.lat, r.lon) === g);
+  return hit.length ? hit[hit.length - 1] : null;
+}
+/* 写入（或改写）一条标注。同一"区域 + 日期 + 时段"只留一条 ——
+   记两笔会让同一场霞被数两遍，而用户改主意是常态。 */
+function calibSet(lat, lon, date, period, P, Q, a) {
+  const g = calibGroupOf(lat, lon);
+  const rec = calibClean({ lat: lat, lon: lon, date: date, period: period,
+    P: P, Q: Q, a: a, t: Date.now() });
+  if (!rec) return null;
+  const rows = calibRows().slice();
+  let at = -1;
+  for (let i = rows.length - 1; i >= 0; i--) {
+    if (rows[i].date === date && rows[i].period === period &&
+        calibGroupOf(rows[i].lat, rows[i].lon) === g) { at = i; break; }
+  }
+  if (at >= 0) rows[at] = rec; else rows.push(rec);
+  while (rows.length > CALIB_MAX) rows.shift();
+  calibSave(rows);
+  return rec;
+}
+function calibClear() { calibSave([]); }
+/* 外部（探针 / 别的标签页）改过 localStorage 后强制重读。 */
+function calibReload() { State.calib = calibRead(); return State.calib; }
+
+/* 按"当前查询所在的档"算校准。`enough` 是**显示校准值**的闸门；不足时调用方
+   显示进度，但 `nAll` / `nBucket` 照样算出来（进度文案要用）。 */
+function calibStats(lat, lon, P) {
+  const rows = calibFindGroup(lat, lon);
+  const bucket = calibBucketOf(P);
+  const inB = rows.filter(r => calibBucketOf(r.P) === bucket);
+  let sumP = 0, hit = 0;
+  for (let i = 0; i < inB.length; i++) { sumP += inB[i].P; if (inB[i].a >= CALIB_HIT_MIN) hit++; }
+  const nBucket = inB.length;
+  const obs = nBucket ? hit / nBucket * 100 : null;
+  const pred = nBucket ? sumP / nBucket : null;
+  return {
+    bucket: bucket, lo: bucket * CALIB_BUCKET, hi: (bucket + 1) * CALIB_BUCKET,
+    nAll: rows.length, nBucket: nBucket, hit: hit, obs: obs, pred: pred,
+    delta: (obs === null || pred === null) ? null : obs - pred,
+    enough: rows.length >= CALIB_MIN_N && nBucket >= CALIB_MIN_BUCKET
+  };
 }
 
 /* ---------- 三处"由 JS 生成的静态文案" ----------
@@ -338,6 +509,31 @@ function initUI() {
   window.addEventListener("online", refreshNetBar);
   window.addEventListener("offline", refreshNetBar);
   initPWA();
+  /* F4 实况回填：标注按钮是**每次重渲**出来的（选中态随记录变），所以在容器上
+     做一次事件委托；关闭开关与清空按钮是模板里的静态元素，直接绑。
+     三条都不取数、不发请求 —— 这一段完全在本机完成，额度账目不受影响。 */
+  const cbox = $("#calibBox");
+  if (cbox) cbox.addEventListener("click", e => {
+    const b = e.target.closest("#calibSeg button");
+    if (!b || !State.result) return;
+    const a = parseInt(b.getAttribute("data-a"), 10);
+    if (CALIB_MARKS.indexOf(a) < 0) return;
+    const r = State.result;
+    calibSet(r.lat, r.lon, r.dateStr, r.period, r.P, r.Q, a);
+    renderCalibBox();
+  });
+  const coff = $("#calibOff");
+  if (coff) coff.addEventListener("change", () => {
+    State.calibOff = !!coff.checked;
+    prefWrite({ calibOff: State.calibOff });
+    renderCalibBox();
+  });
+  const cclr = $("#calibClear");
+  if (cclr) cclr.addEventListener("click", () => {
+    if (!window.confirm(i18n("确定清空全部实况标注数据？此操作只影响本机，无法撤销。"))) return;
+    calibClear();
+    renderCalibBox();
+  });
   $("#geoBtn").addEventListener("click", useGeo);
   $("#nowBtn").addEventListener("click", () => { $("#date").value = State.dateStr; saveDate(); });
   $("#date").addEventListener("change", saveDate);
@@ -631,6 +827,9 @@ async function runForecast(scroll) {
     $("#hero").innerHTML = `<div class="note n-bad">${head}<br>${tail}</div>`;
     $("#models").innerHTML = ""; $("#fac").innerHTML = ""; $("#ray").innerHTML = "";
     $("#notes").innerHTML = `<div class="note n-bad">${i18n("请求未完成，无结果可展示。")}</div>`;
+    /* 校准块一起收起：`State.result` 仍留着上一轮的结果（别的地方要靠它），
+       但结论区已经被错误文案占掉 —— 不收就会挂着一份与当前画面无关的统计。 */
+    hideCalibBox();
     $("#topBadge").textContent = i18n("获取失败");
   } finally {
     State.busy = false;

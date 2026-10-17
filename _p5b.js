@@ -49,9 +49,69 @@ function renderAll(r) {
   renderFactors(r);
   renderRay(r);
   renderNotes(r);
+  /* F4 本地校准块：**独立渲染**，只写 #calibHead / #calibStat 两个容器 ——
+     结论卡的大字号概率、等级、结论句都由 renderHero 画，这里一个字都不碰。
+     "本地校准不回改模型"这条纪律在代码上的落点就是这句"两段代码互不写对方的
+     DOM"，而不是靠约定。 */
+  renderCalibBox();
   /* 有结果了才放开分享卡按钮（初始 disabled 写在模板里） */
   const b = $("#shareCard");
   if (b) b.disabled = false;
+}
+
+/* =========================================================================
+   F4 · 本地校准块（结论卡里那一条）
+   -------------------------------------------------------------------------
+   三种状态，共用一层外壳（外壳在模板里是静态的，所以 #calibOff / #calibClear
+   在 `applyPrefs()` 跑的时候就已经存在，能像别的偏好一样被铺初值）：
+     · 可标注（事件已过去）→ 提问 + 六档按钮，选中态取自已有记录
+     · 不可标注（未来时段）→ 只说明"等事后回来标"
+     · 统计行 → 样本够给**校准值**，不够给**进度**
+   ========================================================================= */
+function calibMarkName(a) {
+  if (a < 0) return i18n("没看到（无法判断）");
+  if (a === 0) return i18n("没有霞");
+  if (a === 1) return i18n("很淡，勉强可见");
+  if (a === 2) return i18n("一般，能看");
+  if (a === 3) return i18n("很好");
+  return i18n("非常壮观");
+}
+/* 偏差必须带符号："偏差 18 个百分点"与"偏差 -18 个百分点"是相反的结论。 */
+function calibSigned(v) { return (v >= 0 ? "+" : "-") + Math.round(Math.abs(v)); }
+function hideCalibBox() { const b = $("#calibBox"); if (b) b.hidden = true; }
+
+function renderCalibBox() {
+  const box = $("#calibBox");
+  if (!box) return;
+  const r = State.result;
+  /* 快照模式下隐藏：快照是**别人**分享来的结论，你未必真去过那个地方 ——
+     把它标成自己的实况会污染你自己的校准。（模板上另有 data-snaphide 兜底。） */
+  if (!r || State.snap || State.calibOff) { box.hidden = true; return; }
+  box.hidden = false;
+
+  const cur = calibFind(r.lat, r.lon, r.dateStr, r.period);
+  const st = calibStats(r.lat, r.lon, r.P);
+  const head = $("#calibHead"), stat = $("#calibStat");
+
+  if (head) head.innerHTML = calibCanAnnotate(r)
+    ? `<div class="cbq">${i18n("这次实际看到霞了吗？")}</div>
+       <div class="cbseg" role="group" id="calibSeg" aria-label="${esc(i18n("实况回填：点一档记录这次实际看到的情况"))}">` +
+      CALIB_MARKS.map(a => {
+        const on = !!(cur && cur.a === a);
+        return `<button type="button" data-a="${a}" class="${on ? "on" : ""}"
+          aria-pressed="${on ? "true" : "false"}">${esc(calibMarkName(a))}</button>`;
+      }).join("") +
+      `</div>
+       <div class="cbhint">${i18n("「实际出现」按标注 ≥「一般，能看」计 —— 与概率 P 的口径（出现可观赏霞光）对齐。")}</div>`
+    : `<div class="cbq cbquiet">${i18n("本次是未来时段的预报，等事后回来再标注实况。")}</div>`;
+
+  if (stat) stat.innerHTML = st.enough
+    ? `<div class="cbsh"><b>${i18n("本地校准")}</b><span>${i18n("只统计你自己标注的数据，不会回改模型结论")}</span></div>
+       <div class="cbsr">${i18n("模型在 {lo}–{hi}% 这一档平均报 {pred}%；你标注的 {n} 次实况中实际出现 {obs}%（{hit} 次），偏差 {d} 个百分点。该位置共 {m} 次标注。", {
+         lo: st.lo, hi: st.hi, pred: Math.round(st.pred), n: st.nBucket,
+         obs: Math.round(st.obs), hit: st.hit, d: calibSigned(st.delta), m: st.nAll })}</div>`
+    : `<div class="cbsr cbprog">${i18n("已记录 {n} 次实况标注（本机）；累计满 {m} 次、且当前这一档至少有 {k} 次后显示本地校准。", {
+         n: st.nAll, m: CALIB_MIN_N, k: CALIB_MIN_BUCKET })}</div>`;
 }
 
 /* 结论文案的唯一来源 —— 结论卡与分享卡共用，阈值只在这里出现一次 */

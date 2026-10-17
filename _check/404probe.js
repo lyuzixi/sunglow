@@ -187,6 +187,7 @@ const AUDIT = `(function(){
 
   const errs = [];
   let extHits = 0;                       // 非本机的请求数（404 页必须是 0）
+  const blocked = [];                    // 被掐断的地址（最多留 8 条，供诊断）
   cdp.on(m => {
     if (m.method === "Runtime.consoleAPICalled" && m.params.type === "error") {
       errs.push((m.params.args || []).map(a => a.value === undefined ? a.description : a.value).join(" "));
@@ -207,6 +208,7 @@ const AUDIT = `(function(){
         await cdp.send("Fetch.continueRequest", { requestId });
       } else {
         extHits++;                        // 记下来，并掐断 —— 探针不该碰真实网络
+        if (blocked.length < 8) blocked.push(request.url);
         await cdp.send("Fetch.failRequest", { requestId, errorReason: "BlockedByClient" });
       }
     } catch (e) { }
@@ -239,6 +241,11 @@ const AUDIT = `(function(){
   await go(MISS);
   const D = await audit();
   const errs404 = errs.length;
+  /* 计数器必须**当场**取值：下面 B 组要载入两次首页，而首页会真的去取气象数据
+     （被掐断、会被计进 extHits）。先前是到最后才读，等于把"首页的请求"算在
+     "404 页零外部请求"头上 —— 靠"首页请求还没发出来就被导航取消"侥幸通过，
+     机器一忙就翻红。这类"判据口径和名字对不上"的断言比起它漏测更危险。 */
+  const dExt = extHits;
 
   /* ---------- B. 出口：从首页进来 → 返回上一页 ---------- */
   await go(HOME);                                  // 制造一条"上一页"
@@ -261,6 +268,7 @@ const AUDIT = `(function(){
   extHits = 0;
   await go(MISS);
   const M = await audit();
+  const mExt = extHits;                            // 同上：当场取值
 
   const o = Object.assign({}, s, {
     /* D 组 */
@@ -272,7 +280,7 @@ const AUDIT = `(function(){
       D.homeHref === "http://127.0.0.1:" + PORT + SITE_BASE,
     "两个出口在桌面视口内都可点": D.homeUsable && D.backUsable,
     "桌面无横向溢出（scrollWidth ≤ clientWidth）": D.sw <= D.vw + 1,
-    "404 页零外部请求": extHits === 0,
+    "404 页零外部请求": dExt === 0,
     "404 页无控制台报错": errs404 === 0,
     /* B 组 */
     "首页能正常打开（回得去的地方是好的）": homeOk.result.value === true,
@@ -284,7 +292,7 @@ const AUDIT = `(function(){
       M.backUsable && M.homeBox.right <= M.vw + 1,
     "窄屏顶部条仍是单行": M.topH !== null && M.topH <= 48,
     "窄屏 404 卡片在首屏内": M.nfTop !== null && M.nfTop < M.vh,
-    "窄屏仍零外部请求": extHits === 0,
+    "窄屏仍零外部请求": mExt === 0,
   });
 
   console.log("=== 404 页探针 ===");
@@ -293,7 +301,7 @@ const AUDIT = `(function(){
     + " · 路径行 " + JSON.stringify(D.pathTx));
   console.log("  窄屏 " + M.vw + "×" + M.vh + "  · scrollWidth " + M.sw
     + " · 顶部条 " + Math.round(M.topH) + "px · 按钮宽 " + Math.round(M.homeBox.w) + "px");
-  console.log("  外部请求 " + extHits + " · 控制台错误 " + errs404);
+  console.log("  外部请求 404页 " + dExt + " / 窄屏 " + mExt + " · 控制台错误 " + errs404);
 
   console.log("\n--- 断言 ---");
   let fail = 0;
@@ -301,6 +309,12 @@ const AUDIT = `(function(){
     if (!o[k]) { console.log("  FAIL " + k); fail++; } else console.log("  ok   " + k);
   }
   if (errs.length) { console.log("  控制台错误 " + errs.length + " 条："); errs.slice(0, 5).forEach(e => console.log("    " + e)); }
+  /* 真被外部请求打中时，把地址摊出来 —— 否则只知道"非零"，无从查起。
+     注意 blocked 也含 B 组载入首页时的气象请求（那是预期的，不计入 dExt/mExt）。 */
+  if (blocked.length) {
+    console.log("  被掐断的地址 " + blocked.length + " 条（含 B 组首页取数，预期）：");
+    blocked.forEach(u => console.log("    " + u));
+  }
   console.log("\nFAIL 计数: " + fail);
   console.log('FACTS {"assertions":' + Object.keys(o).length + ',"fail":' + fail + '}');
   try { chrome.kill(); } catch (e) { }

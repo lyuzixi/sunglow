@@ -160,11 +160,11 @@ td code{background:transparent;padding:0}
       探针输出、<code>docfacts</code> 事实表），不是模板化的清单。所有数字都可在文末「核对方式」里复现。
     </p>
     <div class="facts">
-      <div class="fact"><b>8,867</b><span>源码总行数（含 i18n 词典 1060 行）</span></div>
-      <div class="fact"><b>627 KB</b><span>主产物 index.html（单文件、自包含）</span></div>
-      <div class="fact"><b>52.7%</b><span>_p6.js 地图模块占源码比重</span></div>
-      <div class="fact"><b>23 / 403</b><span>一键序列项数 / 已登记具名断言</span></div>
-      <div class="fact"><b>49</b><span>innerHTML 动态插值处（已收口 5 处热点）</span></div>
+      <div class="fact"><b>9,783</b><span>源码总行数（含 i18n 词典 1,142 行）</span></div>
+      <div class="fact"><b>687 KB</b><span>主产物 index.html（单文件、自包含）</span></div>
+      <div class="fact"><b>38.8%</b><span>_p6.js 占源码比重（地图模块所在文件）</span></div>
+      <div class="fact"><b>24 / 428</b><span>一键序列项数 / 已登记具名断言</span></div>
+      <div class="fact"><b>71</b><span>innerHTML 动态插值处（已收口 5 处热点）</span></div>
       <div class="fact"><b>4</b><span>外部依赖域（气象 2 / 省界 1 / 地图 1）</span></div>
       <div class="fact"><b>65</b><span>首屏加权调用（地图 171 需显式触发）</span></div>
       <div class="fact"><b>3</b><span>界面语言（简体 / 繁體 / English）</span></div>
@@ -199,6 +199,18 @@ td code{background:transparent;padding:0}
       361 → <b>385</b>；产物 <b>671,972 字节</b>；源码 8,867 → <b>9,346 行</b>。<code>snap=</code>
       参数承载结论摘要（base64url，187 字符），带它的链接<b>零取数</b>即出结论卡，并明确标注
       "这是 X 时的计算结果"与过期提示。22 项全绿。
+      <b>更新 · 2026-10-17（F2 / F3 / F4 落地，五个功能方向全部收口）：</b>
+      新增 <code>_check/calibprobe.js</code>（<b>25 条断言</b>），一键序列 <b>24 项</b>、具名断言
+      <b>428</b>；产物 <b>703,841 字节</b>；源码 <b>9,783 行</b>（<code>_p5</code> 1,818 / <code>_p5b</code> 747 /
+      <code>_template</code> 1,076）。F2 多观测点对比（最多 5 点，命中缓存不进请求，<code>spotprobe</code> 21 条）、
+      F3 最佳窗口日历（渲染零取数）与 F4 实况回填与本地校准共用一个探针文件。
+      F4 按原方案的<b>纯展示</b>边界落地：标注只进本机 <code>localStorage</code>（显示"不会上传到任何服务器"），
+      <b>不改模型输出</b>（探针用 136 字符模型指纹逐个字段断死），样本不足不给结论，
+      "没看到（无法判断）"不进统计，<b>关闭 ≠ 删除</b>（两个按钮各管一件事）。
+      六个阈值常量全部纳入 <code>docfacts</code> 机读核对。<b>本轮顺带修掉一处探针脆弱点</b>：
+      <code>snapprobe</code> 原先按 <code>[data-snaphide]</code> 的<b>总数</b>断言"四张卡收起"，
+      F4 的校准块也是 <code>data-snaphide</code>（但它是结论卡的子块、不是一张卡）⇒ 改成按
+      <code>div.card[data-snaphide]</code> 的<b>身份</b>数，既能仍断死 ③④⑤⑥ 四张，又不再让"新增一个块"变成改数字式的假失败。
     </div>
   </div>
 
@@ -280,8 +292,8 @@ td code{background:transparent;padding:0}
     <div class="box good">
       <h4>工程纪律远超同类个人项目</h4>
       <ol>
-        <li><b>280 条具名断言</b>，17 项一键序列，且失败信号统一收口（<code>all.py</code> 的 <code>judge()</code>）——因为各探针"有的 exit 0 只打计数"，漏解析会把失败当成功。</li>
-        <li><b><code>docfacts</code> 让文档不许变谎话</b>：33 条可机读事实（源码行数、产物字节、常量值、探针条数）与 README/总结逐条比对，找不到声明就报 STALE 而不是静默通过。</li>
+        <li><b>428 条具名断言</b>，24 项一键序列，且失败信号统一收口（<code>all.py</code> 的 <code>judge()</code>）——因为各探针"有的 exit 0 只打计数"，漏解析会把失败当成功。</li>
+        <li><b><code>docfacts</code> 让文档不许变谎话</b>：42 条可机读事实（源码行数、产物字节、常量值、探针条数）与 README/总结逐条比对，找不到声明就报 STALE 而不是静默通过。</li>
         <li><b>语义变更用"第三方参考实现"做双重差分</b>（<code>zoomprobe</code> 的 <code>refThird</code>）：不拿改造前的实现当尺子。</li>
         <li><b>硬约束有据可查</b>：<code>.workbuddy/memory/硬约束详解.md</code> 52 条，每条写清"为什么这么定 + 实测数字"，不是拍脑袋。</li>
       </ol>
@@ -305,7 +317,8 @@ td code{background:transparent;padding:0}
       <ol>
         <li><span class="tag t-ok">已修</span> <b>反射型 DOM XSS</b>：<code>_p5.js:669</code> 从 URL 读 <code>?name=</code>（截断 40 字符）→ <code>State.name</code> → <code>_p5b.js:111</code> 的模板串直接进 <code>innerHTML</code>。<code>&lt;img src=1 onerror=eval(location.hash)&gt;</code> 正好 39 字符，超长载荷可放 hash 里绕过截断。<b>一条分享链接即可触发。</b>
         <br><span class="muted">→ S0 处置：输入侧 <code>safeLabel()</code> 白名单 + 输出侧 <code>esc()</code> 转义，5 个热点已替换，<code>xssprobe.js</code> 18 条断言守着。</span></li>
-        <li><span class="tag t-p1">P1</span> <b>49 处 <code>innerHTML</code> 没有任何转义函数</b>（全项目无 <code>esc()</code> / <code>escapeHtml</code>）。目前只靠"数据来自内置城市表"兜底；但 <code>_p6.js:1367</code> 的 <code>provName</code> 来自<b>外部 GeoJSON</b>（DataV），上游一旦被污染就是存储型 XSS。</li>
+        <li><span class="tag t-p2">P2</span> <b><code>innerHTML</code> 逐处转义只覆盖了热点，未铺满全项目</b>（审计当时 49 处；现为 <b>71 处</b>，随 i18n 与 F1–F5 增加）。目前只靠"数据来自内置城市表"兜底；但 <code>_p6.js:1367</code> 的 <code>provName</code> 来自<b>外部 GeoJSON</b>（DataV），上游一旦被污染就是存储型 XSS。
+        <br><span class="muted">→ S0 已提供 <code>esc()</code> / <code>safeLabel()</code> 并替换 5 处热点（<code>xssprobe.js</code> 18 条断言守着，含"5 个热点是否仍带 <code>esc(</code>"的源码级断言）；剩余各处分批替换仍待做。</span></li>
         <li><span class="tag t-p1">P1</span> <b>无 CSP</b>。单文件页也能加 <code>&lt;meta http-equiv="Content-Security-Policy"&gt;</code>，可把可连域限制到 4 个已知域，即使将来出现未转义处也难外传。</li>
         <li><span class="tag t-p1">P1</span> <b>地图代理无鉴权无限流</b>（<code>functions/_TMapService/[[path]].js</code>）：任何人可直接打 <code>/_TMapService/service/…</code>，消耗 Pages Functions 10 万/天共享池与你的腾讯 key 配额。上游主机是写死的（无 SSRF），但"刷配额"这条敞着。</li>
         <li><span class="tag t-p2">P2</span> 第三方脚本 <code>map.qq.com/api/gljs</code> 拥有完整 DOM 权限，且无 SRI 校验（单文件站加 SRI 需内联哈希，可行但未做）。</li>
@@ -316,7 +329,7 @@ td code{background:transparent;padding:0}
       <ol>
         <li><span class="tag t-ok">已修</span> <b>项目目录不是 git 仓库</b>，8 个手工快照目录（<code>_backup/before-batch1…第八批后</code>）曾是全部版本管理。
         <br><span class="muted">→ S0 处置：<code>git init</code>（main / <code>core.autocrlf=false</code>）+ <code>.gitignore</code>（排除 25 MB 快照与 27 MB 探针产物），70 个文件入库。</span></li>
-        <li><span class="tag t-p1">P1</span> <b><code>_p6.js</code> 单体 3,782 行 / 112 函数</b>，占源码 51.6%，且内部分节只有一条 <code>/* ---- */</code> 分隔线级别的粗切分。</li>
+        <li><span class="tag t-p1">P1</span> <b><code>_p6.js</code> 单体 3,800 行 / 115 函数</b>，占源码 38.8%，且内部分节只有一条 <code>/* ---- */</code> 分隔线级别的粗切分。</li>
         <li><span class="tag t-p1">P1</span> <b>无 lint / 无格式化 / 无编辑器配置</b>；改名与重命名只能靠 grep，<code>function</code> 声明静默覆盖这类 bug 只有 <code>globals.js</code> 在守。</li>
         <li><span class="tag t-p2">P2</span> <b>错误文案 4 处各写各的</b>（<code>_p4.js:110</code>、<code>_p5.js:408/789</code>、<code>_p6.js:3082</code>），429 的"日额度耗尽劝退"与"短时限流重试"两种相反处置分散在三条链路。</li>
         <li><span class="tag t-p2">P2</span> <b>构建需手动两步</b>（assemble + mkpreview），无 watch、无产物变更摘要；踩过两次"改源码忘重跑 → 探针测的是旧代码"。</li>
@@ -568,7 +581,7 @@ td code{background:transparent;padding:0}
   </div>
 
   <div class="feat">
-    <div class="feat-h"><h3>F4 · 实况回填与个性化校准</h3><span class="tag t-phase">长期</span></div>
+    <div class="feat-h"><h3>F4 · 实况回填与个性化校准</h3><span class="tag t-phase">长期</span><span class="tag t-ok">已落地</span></div>
     <p>次日让用户一键标注"实际有没有霞 / 强度如何"，本地累积后给出该地区的<b>系统性偏差修正</b>。</p>
     <dl>
       <dt>用户价值</dt><dd>把"模型说 60%"变成"在你这个机位，模型说 60% 时实际约八成能看到"——这是从"预报"走向"可信"的关键一步，也是同类工具都没有的差异化能力。</dd>
@@ -576,6 +589,7 @@ td code{background:transparent;padding:0}
       <dt>依赖条件</dt><dd>需要隐私声明（数据不出设备）；需要足够的样本量才敢显示校准，前期只记录不展示。涉及 <code>docfacts</code> 风格的"样本量阈值"可机读常量。</dd>
       <dt>涉及模块</dt><dd><span class="tag t-file">_p5.js（标注入口与存储）</span> <span class="tag t-file">_p5b.js（校准行）</span> <span class="tag t-file">新增 calibprobe.js</span></dd>
       <dt>成本 / 风险</dt><dd>2 周（含隐私文案）。主要风险是<b>校准被误当成模型输出</b>——必须在 UI 上明确区分"模型原始值"与"本地校准值"，且可一键关闭。</dd>
+      <dt>实测（2026-10-17）</dt><dd>按原方案的<b>纯展示</b>边界落地：结论卡下方一块独立卡片（6 档「无法判断 / 没有霞 / 很淡 / 一般 / 很好 / 非常壮观」+ 进度行 + 隐私声明 + 关闭开关 + 清空按钮），<b>数据只进本机 localStorage</b>（<code>sunsetbot.calib.v1</code>，上限 200 条），页面里明写"不会上传到任何服务器"。四道闸门：① <b>不改模型输出</b> —— 探针用"标注前后模型指纹逐字段相同"（概率文本 + 大数 + 徽章 + 环 <code>stroke-dashoffset</code> + 每个模型数字 + 因素表行数，<b>136 字符</b>签名）断死；② <b>样本不够不给结论</b> —— 累计 <code>CALIB_MIN_N = 8</code> 且当前档 <code>CALIB_MIN_BUCKET = 3</code> 才出数字，之前只显示进度；③ <b>"没看到（无法判断）"不进统计</b>（分子分母都不进，否则"没出门看"会被算成预报失败）；④ <b>关掉 ≠ 删除</b>（开关只关入口与展示，已存标注一条不删；清空是另一个按钮 + 二次确认）。另两条：<b>未来时段不给标注</b>（入口只看既有的 <code>leadH</code>，不新增阈值）、<b>快照链接里不出现</b>（避免让接收者往自己机器写数据）。分桶口径按预测 P 每 <code>CALIB_BUCKET = 20</code> 个百分点一档、同地区判定 <code>CALIB_GRID_DEG = 0.5</code>°，"实际出现" = 标注 ≥「一般，能看」（<code>CALIB_HIT_MIN = 2</code>）；六个常量全部纳入 <code>docfacts</code> 机读核对。新增 <code>_check/calibprobe.js</code>（<b>25 条断言</b>，自带<b>结构独立的参考实现</b>做双重差分、全程 <b>0 条气象请求</b>），一键序列 23 → <b>24 项</b>。</dd>
     </dl>
   </div>
 
@@ -615,11 +629,11 @@ td code{background:transparent;padding:0}
   <ul class="hint">
     <li>行数 / 字节：<code>wc -l</code> 与 <code>wc -c</code>（与 <code>_check/docfacts.py</code> 同一口径）。</li>
     <li>函数与常量数：<code>grep -cE '^function '</code> / <code>'^const '</code>。</li>
-    <li><code>innerHTML</code> 49 处：<code>grep -c innerHTML _p4.js _p5.js _p5b.js _p6.js</code>（12+5+31+1）；转义函数与 CSP：全项目 grep 无命中。</li>
+    <li><code>innerHTML</code> 71 处：<code>grep -c innerHTML _p2.js _p4.js _p5.js _p5b.js _p6.js</code>（2+1+28+9+31）；转义函数 <code>esc()</code> / <code>safeLabel()</code> 在 <code>_p2.js</code>（S0 已落地），CSP 仍无。</li>
     <li>XSS 链路：<code>_p5.js:669</code> → <code>State.name</code> → <code>_p5.js:389</code> → <code>_p5b.js:111</code> 模板串（该模板串由 <code>innerHTML</code> 写入）。</li>
     <li>探针断言数：读 <code>_check/.facts.json</code>（由 <code>all.py</code> 从各探针末行 <code>FACTS {...}</code> 汇总，含源码 sha1）。</li>
     <li>额度账目与网格规模：README §5 与 <code>.workbuddy/memory/硬约束详解.md</code>（均为实测值）。</li>
-    <li>一键序列 17 项全绿：<code>python _check/all.py --fast</code>（2026-10-12 实测，2 分 54 秒）。</li>
+    <li>一键序列 24 项全绿：<code>python _check/all.py --fast</code>（2026-10-17 实测，约 4 分 27 秒）。</li>
   </ul>
 
   <p class="muted" style="margin-top:26px">
