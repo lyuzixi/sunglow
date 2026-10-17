@@ -1,6 +1,6 @@
 /* 霞光预报 · Service Worker
    **由 assemble.py 生成，勿手改**（改了会被下一次构建覆盖）。
-   缓存版本 106a74b9bccd —— 它是**产物内容的 sha256 前 12 位**，不是手写的版本号。
+   缓存版本 f269bb650cb6 —— 它是**产物内容的 sha256 前 12 位**，不是手写的版本号。
 
    只做一件事：让"打开页面"这件事不再依赖网络。
    刻意不做的事：**不缓存任何气象响应**。过期预报比没有预报更危险 ——
@@ -13,7 +13,7 @@
    于是"下次打开"是新版本，而"这次打开"不用等。
 */
 'use strict';
-var CACHE = 'sunglow-106a74b9bccd';
+var CACHE = 'sunglow-f269bb650cb6';
 /* 相对地址：SW 挂在站点根下，随 scope 一起解析 —— 子路径部署也成立。 */
 var PRECACHE = ['./', './index.html', './404.html', './manifest.json',
                 './icon-192.png', './icon-512.png'];
