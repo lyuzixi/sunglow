@@ -533,11 +533,58 @@ function gen(v, la, lo, hh, isAQ, dof) {
   F.over.forEach(o => console.log("    " + (o.inScroller ? "[滚动容器内] " : "[直接越界]   ")
     + o.el + " " + o.left + ".." + o.right));
 
+  /* ---------- G. 目录：浮钮与底部 sheet ----------
+     手机端入口是"滚过首屏才浮出"的圆钮（顶栏在手机上是 static）。守三件事：
+     浮出后不越界 / 点开后是贴底的 sheet（宽满、底对齐视口）且遮罩在场 / 点遮罩能关。
+     注意 fаːb 的显隐由 rAF 节流的 scroll 回调控制 —— 必须先 scrollTo、等两帧再读。 */
+  await ev(`(function(){ window.scrollTo(0, 900); return new Promise(function(res){
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ res(1); }); });
+  }); })()`, true);
+  /* ① 只看浮钮位置（面板未开） */
+  const G0 = await ev(`(function(){
+    var fab = document.getElementById('tocFab');
+    var r = fab.getBoundingClientRect();
+    var vw = document.documentElement.clientWidth, vh = window.innerHeight;
+    return { vis: getComputedStyle(fab).display !== 'none',
+             inView: r.left >= 0 && r.right <= vw + 0.5 && r.top >= 0 && r.bottom <= vh + 0.5 };
+  })()`);
+  /* ② 打开 sheet，**等入场动画走完**（220ms）再量 —— 第一版就是量在动画中途、
+     读到 +14px 的位移，把"贴底"判成 false */
+  await ev(`document.getElementById('tocFab').click()`);
+  await sleep(400);
+  const G1 = await ev(`(function(){
+    var panel = document.getElementById('tocPanel'), veil = document.getElementById('tocVeil');
+    var pr = panel.getBoundingClientRect();
+    var vw = document.documentElement.clientWidth, vh = window.innerHeight;
+    return { sheet: !panel.hidden && Math.abs(pr.bottom - vh) < 2
+               && pr.left <= 1 && pr.width >= vw - 2,
+             veilOn: !veil.hidden, w: Math.round(pr.width), h: Math.round(pr.height),
+             vw: vw, vh: vh };
+  })()`);
+  /* ③ 点遮罩关闭 */
+  const G2 = await ev(`(function(){
+    var panel = document.getElementById('tocPanel'), veil = document.getElementById('tocVeil');
+    veil.click();
+    var closed = panel.hidden && veil.hidden;
+    window.scrollTo(0, 0);
+    return { closed: closed };
+  })()`);
+  const G = { vis: G0.vis, inView: G0.inView, sheet: G1.sheet, veilOn: G1.veilOn,
+              closed: G2.closed, w: G1.w, h: G1.h, vw: G1.vw, vh: G1.vh };
+  console.log("\n=== G. 目录浮钮与底部 sheet ===");
+  console.log("  滚 900px 后浮钮可见=" + G.vis + " · 不越界=" + G.inView
+    + " · sheet " + G.w + "×" + G.h + "（视口 " + G.vw + "×" + G.vh + "）贴底=" + G.sheet
+    + " · 遮罩=" + G.veilOn + " · 点遮罩关闭=" + G.closed);
+
   /* ---------- 汇总断言 ---------- */
   const T = { wrapW: B.wrapW, wrapH: B.wrapH };
   const o = {
     "顶部区不超过视口的 8%": A.pctView <= 8,
     "没有元素越出可视区（参照=clientWidth 防自指；badge 越界曾是横拖空白根因）": A.over.length === 0,
+    "目录浮钮：滚过首屏才出现、四个边都不越界":
+      G.vis === true && G.inView === true,
+    "目录：手机上点开是贴底满宽的 sheet，遮罩在场且点遮罩能关":
+      G.sheet === true && G.veilOn === true && G.closed === true,
     "顶部区只占一行（不再摊开）": A.rows === 1,
     "标题单行（nowrap+ellipsis 兜底；截断可接受，折行会撑高顶部）": A.h1Lines === 1,
     "窄屏隐藏技术栈副标题": A.subShown === false,

@@ -70,6 +70,9 @@ SUITE = [
     ("mobileprobe360", "mobileprobe.js", "手机端适配审计（360×640 窄屏下限）",
      {"VW": "360", "VH": "640"}),
     ("persistprobe", "persistprobe.js", "状态持久化（B1 偏好 / B2 趋势缓存，跨加载）"),
+    # 第五轮 UI：默认态与分组结构。放在 persistprobe 后面 —— 那边管"跨加载读写回"，
+    # 这边管"默认态本身长什么样 + 分组结构 + 折叠交互 + 快照兼容 + 零请求"。
+    ("uiprobe",      "uiprobe.js",      "UI 默认态与分组结构（查询区三组 / 工具条两组 / 四处默认收起 / 两层结论卡）"),
     ("a11yprobe",    "a11yprobe.js",    "无障碍（焦点可见/对比度/可访问名）"),
     ("xssprobe",     "xssprobe.js",     "XSS 防护（转义/白名单/载荷 URL 端到端）"),
     ("i18nprobe",     "i18nprobe.js",    "多语言（词典键覆盖/切换/往返/优先级）"),

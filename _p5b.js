@@ -138,7 +138,7 @@ function confBadge(r) {
 }
 
 function renderHero(r) {
-  const grade = gradeOf(r.Q), col = gradeColor(grade);
+  const grade = gradeOf(r.Q);
   const isAM = r.period === "am";
   const evName = i18n(isAM ? "日出" : "日落");
   const evMs = isAM ? r.ev.riseMs : r.ev.setMs;
@@ -149,22 +149,43 @@ function renderHero(r) {
   /* B3：三套算法各自的综合指数 I 并列摊开 —— 此前只说"一致性 62%"，
      用户看不到究竟是哪一家把结论拉开了。I 与徽标里的 ΔI 同源（都由 mixedIndex(P,Q) 得来），
      所以两处可以直接对账。 */
-  const partTxt = r.parts.map(x => ({ gfs: "GFS", ec: "EC", rt: "光追" }[x.k] + " " + Math.round(x.I))).join(" · ");
+  const partTxt = listJoin(r.parts.map(x => ({ gfs: "GFS", ec: "EC", rt: "光追" }[x.k] + " " + Math.round(x.I))));
 
   const concl = conclOf(r.P);
   /* 等级文案唯一取自 gradeOf / QUALITY_LABEL（阈值只在 QUALITY_BANDS 定义一次） */
   const qualTxt = i18n("观赏质量") + (QUALITY_LABEL[gradeOf(r.Q)] ? i18n(QUALITY_LABEL[gradeOf(r.Q)]) : "");
 
-  const C = 2 * Math.PI * 54;
+  /* 视觉方案 P1：结论卡 =
+     天色带（这一天这一刻的真实天色）+ 衬线大字概率 + 一句结论 + 三个决策数；
+     其余参数、算法指数与环境输入进默认收起的 <details>（heroFold）。
+     折叠态来自 State.folds（偏好持久化，见 _p5.js 的 FOLD_KEYS）——
+     每次重渲都按它现铺，因为 innerHTML 整段替换会丢掉 details 的 open。 */
+  const kvIt = (k, v) => `<div class="it"><div class="k">${k}</div><div class="v">${v}</div></div>`;
+
+  const band = skyBand(r);
+  const reveal = !!band && !heroRevealed;
+  if (band) heroRevealed = true;
+  /* 柔光锚点：霞光窗口中心，无窗口时退回事件位置（视觉方案二 P1） */
+  const glowX = band ? (band.win ? band.win.left + band.win.width / 2 : band.evPct) : 0;
+
   $("#hero").innerHTML = `
+  ${band ? `<div class="sky${reveal ? " reveal" : ""}" role="img" style="--skyglow-x:${glowX.toFixed(2)}%"
+      aria-label="${i18n("天色带：{ev} {t} 前后的曙暮光分段（民用 / 航海 / 天文）；薄纱表示低/中云遮挡", { ev: evName, t: evLocal })}">
+      ${band.segs.map(s => `<span class="s ${s.cls}" style="flex:${s.m.toFixed(2)}" title="${s.title}"></span>`).join("")}
+      ${band.veil ? `<span class="veil" style="background:linear-gradient(to right,${band.veil.map(v => "rgba(27,37,54," + v.a.toFixed(3) + ") " + v.p.toFixed(1) + "%").join(",")})"></span>` : ""}
+      ${band.win ? `<span class="win" style="left:${band.win.left.toFixed(2)}%;width:${band.win.width.toFixed(2)}%"></span>` : ""}
+      ${band.nowPct != null ? `<span class="now" style="left:${band.nowPct.toFixed(2)}%"></span>` : ""}
+    </div>
+    <div class="skyaxis">
+      <span style="left:${band.evPct.toFixed(2)}%"><b>${evName} ${evLocal}</b></span>
+      <span style="left:${band.darkPct.toFixed(2)}%;transform:translateX(-100%)">${i18n("天黑")} ${band.darkLocal}</span>
+      ${band.nowPct != null && Math.abs(band.nowPct - band.evPct) > 8
+        ? `<span class="nowlbl" style="left:${clamp(band.nowPct, 6, 94).toFixed(2)}%;transform:translateX(-50%)">${i18n("现在")} ${band.nowLocal}</span>` : ""}
+    </div>` : ""}
   <div class="hero">
-    <div class="dial">
-      <svg width="126" height="126" viewBox="0 0 126 126">
-        <circle class="dialbg" cx="63" cy="63" r="54" fill="none" stroke-width="11"/>
-        <circle cx="63" cy="63" r="54" fill="none" stroke="${col}" stroke-width="11" stroke-linecap="round"
-          stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - clamp01(r.P / 100))).toFixed(1)}"/>
-      </svg>
-      <div class="dv"><b>${Math.round(r.P)}<span style="font-size:15px">%</span></b><span>${i18n("出现概率")}</span></div>
+    <div class="hero-prob">
+      <div class="hero-num">${Math.round(r.P)}<span>%</span></div>
+      <div class="hero-lbl">${i18n("出现概率")}</div>
     </div>
     <div class="hero-txt">
       ${confBadge(r)}
@@ -178,27 +199,146 @@ function renderHero(r) {
           heff: uAlt(r.sRT.hEff * 1000),
           d: isNum(r.sRT.d) ? uDist(r.sRT.d) : i18n("无明显边界") })}
       </div>
-      <div class="hint" style="margin-top:5px">
-        ${i18n("各算法综合指数 I（0–100，越高越好）：{parts} · 综合 {mix}", {
-          parts: partTxt, mix: "<b>" + Math.round(mixedIndex(r.P, r.Q)) + "</b>" })}
-      </div>
     </div>
   </div>
-  <div class="kv" style="margin-top:14px">
-    <div class="it"><div class="k">${i18n("{ev}时刻（本地）", { ev: evName })}</div><div class="v">${evLocal}</div></div>
-    <div class="it"><div class="k">${i18n("{ev}方位角", { ev: evName })}</div><div class="v">${Math.round(r.az)}°</div></div>
-    <div class="it"><div class="k">${i18n("日出日落线速度")}</div><div class="v">${r.vSpd.toFixed(1)} km/min</div></div>
-    <div class="it"><div class="k">${i18n("太阳高度角变化率")}</div><div class="v">${r.omega.toFixed(3)} °/min</div></div>
-    <div class="it"><div class="k">${i18n("霞光深入距离上限")}</div><div class="v">${uDist(r.sRT.geom.xMax)}</div></div>
-    <div class="it"><div class="k">${i18n("云边界距离")}</div><div class="v">${isNum(r.sRT.d) ? uDist(r.sRT.d) : "—"}</div></div>
-    <div class="it"><div class="k">${i18n("云底 / 等效云底")}</div><div class="v">${uAlt(r.sRT.primary.base * 1000)} / ${uAlt(r.sRT.hEff * 1000)}</div></div>
-    <div class="it"><div class="k">${i18n("光学等效地表高度")}</div><div class="v">${uAlt(r.sRT.Heq * 1000)}</div></div>
-    <div class="it"><div class="k">AOD(550nm)</div><div class="v">${n1(r.aodUse, 2)}</div></div>
-    <div class="it"><div class="k">${i18n("550nm 透射率")}</div><div class="v">${r.sRT.peak.T550 < 0.01 ? r.sRT.peak.T550.toExponential(2) : r.sRT.peak.T550.toFixed(3)}</div></div>
-    <div class="it"><div class="k">${i18n("预计持续时间（头顶）")}</div><div class="v">${fmtDur(r.sRT.geom.dur)}</div></div>
-    <div class="it"><div class="k">${i18n("综合指数 I=0.55P+0.45Q")}</div><div class="v">${Math.round(mixedIndex(r.P, r.Q))}</div></div>
+  <div class="kv hero-kv">
+    ${kvIt(i18n("{ev}时刻（本地）", { ev: evName }), evLocal)}
+    ${kvIt(i18n("{ev}方位角", { ev: evName }), Math.round(r.az) + "°")}
+    ${kvIt(i18n("预计持续时间（头顶）"), fmtDur(r.sRT.geom.dur))}
   </div>
-  ${envStrip(r)}`;
+  <details class="fmore" id="heroFold">
+    <summary>${i18n("更多参数与计算输入")}</summary>
+    <div class="kv hero-kv">
+      ${kvIt(i18n("日出日落线速度"), r.vSpd.toFixed(1) + " km/min")}
+      ${kvIt(i18n("太阳高度角变化率"), r.omega.toFixed(3) + " °/min")}
+      ${kvIt(i18n("霞光深入距离上限"), uDist(r.sRT.geom.xMax))}
+      ${kvIt(i18n("云边界距离"), isNum(r.sRT.d) ? uDist(r.sRT.d) : "—")}
+      ${kvIt(i18n("云底 / 等效云底"), uAlt(r.sRT.primary.base * 1000) + " / " + uAlt(r.sRT.hEff * 1000))}
+      ${kvIt(i18n("光学等效地表高度"), uAlt(r.sRT.Heq * 1000))}
+      ${kvIt("AOD(550nm)", n1(r.aodUse, 2))}
+      ${kvIt(i18n("550nm 透射率"), r.sRT.peak.T550 < 0.01 ? r.sRT.peak.T550.toExponential(2) : r.sRT.peak.T550.toFixed(3))}
+      ${kvIt(i18n("综合指数 I=0.55P+0.45Q"), Math.round(mixedIndex(r.P, r.Q)))}
+    </div>
+    <div class="hint" style="margin-top:9px">
+      ${i18n("各算法综合指数 I（0–100，越高越好）：{parts} · 综合 {mix}", {
+        parts: partTxt, mix: "<b>" + Math.round(mixedIndex(r.P, r.Q)) + "</b>" })}
+    </div>
+    ${envStrip(r)}
+  </details>`;
+  /* 详情层的开合态：innerHTML 整段替换会丢掉 details 的 open，所以每次重渲都按
+     State.folds 现铺一次（与 renderTrend 的 trendFold 同一手法）。 */
+  const hf = $("#heroFold");
+  if (hf && typeof State !== "undefined" && State.folds) hf.open = !!State.folds.heroFold;
+}
+
+/* =========================================================================
+   天色带（视觉方案 P1）
+   -------------------------------------------------------------------------
+   把"这一天这一刻的天色"画成时间轴：按太阳高度角 0 / −6 / −12 / −18 度分段
+   （白昼 / 民用 / 航海 / 天文 / 夜间），段宽＝该段**真实时长**（flex-grow 吃分钟数）。
+   全部量来自 solarPosition() —— 同一份天文算法，没有手工比例。
+
+   霞光窗口按 fireGeometry 的**真语义**锚定，不是"以事件为中心"：
+     dur = (θfar − θnear) / |ω|，θnear＝云边界遮挡角、θfar＝地球遮挡角。
+     晚霞：太阳继续下沉，θ 从 θnear 走到 θfar ⇒ 窗口整体在日落**之后**；
+     朝霞：太阳回升，θ 从 θfar 回到 θnear ⇒ 窗口整体在日出**之前**。
+   窗口若画错方位，带上那一截和"预计持续时间"就对不上了 —— 这是几何量的定义，不是排版。
+
+   穿越时刻用二分求：高度角在事件附近单调，44 次二分远超需要。
+   高纬极昼/极夜时某个穿越不存在 ⇒ 整条带返回 null（宁可没有，也不硬画假带）。
+   ========================================================================= */
+let heroRevealed = false;      /* 只让首帧播一次入场；之后的每次重渲都静默 */
+function skyBand(r) {
+  const isAM = r.period === "am";
+  const evMs = isAM ? r.ev.riseMs : r.ev.setMs;
+  if (!isNum(evMs)) return null;
+  const lat = r.lat, lon = r.lon;
+  const altOf = ms => solarPosition(ms, lat, lon).altitude;      /* 度 */
+  const dir = isAM ? -1 : 1;                                     /* 朝霞向前、晚霞向后 */
+
+  /* 求"高度角 = target 度"的穿越时刻；d 为搜索方向。
+     两端同号（区间内无穿越）⇒ null —— 极昼/极夜时整条带不放。 */
+  const cross = (target, d) => {
+    let lo = evMs, hi = evMs + d * 6 * 3600000;
+    const f = ms => altOf(ms) - target;
+    if (!(f(lo) * f(hi) <= 0)) return null;
+    for (let i = 0; i < 44; i++) {
+      const mid = (lo + hi) / 2;
+      if (f(mid) * f(lo) > 0) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
+  };
+  /* 带的两端：事件前 +2°（朝阳侧）/ 事件后 −20°（入夜侧），方向相反 */
+  const tEdge = cross(2, -dir);          /* 白昼那一端 */
+  const t6 = cross(-6, dir), t12 = cross(-12, dir), t18 = cross(-18, dir), t20 = cross(-20, dir);
+  if (!isNum(tEdge) || !isNum(t6) || !isNum(t12) || !isNum(t18) || !isNum(t20)) return null;
+
+  const tStart = Math.min(tEdge, t20), tEnd = Math.max(tEdge, t20);
+  const span = tEnd - tStart;
+  if (!(span > 60000)) return null;
+
+  /* 分段（按时间序排好，颜色取 --dusk-* 固定序列；title 是悬停解释） */
+  /* 段名在**字面量处**过 i18n —— 传变量进函数再翻译会让静态扫描看不到那五个键
+     （i18nprobe 会把它们报成孤儿键）。 */
+  const seg = (cls, a, b, title) => ({
+    cls: cls, m: Math.max(0.01, (b - a) / 60000), title: title
+  });
+  const segs = isAM
+    ? [seg("s-night", tStart, t18, i18n("夜间")), seg("s-astro", t18, t12, i18n("天文曙暮光")),
+       seg("s-naut", t12, t6, i18n("航海曙暮光")), seg("s-civil", t6, evMs, i18n("民用曙暮光")),
+       seg("s-day", evMs, tEnd, i18n("白昼余晖"))]
+    : [seg("s-day", tStart, evMs, i18n("白昼余晖")), seg("s-civil", evMs, t6, i18n("民用曙暮光")),
+       seg("s-naut", t6, t12, i18n("航海曙暮光")), seg("s-astro", t12, t18, i18n("天文曙暮光")),
+       seg("s-night", t18, tEnd, i18n("夜间"))];
+
+  /* 霞光窗口：θnear（云边界）→ θfar（地球遮挡）之间的那段 —— 见函数头部的语义说明 */
+  let win = null;
+  const g = r.sRT.geom;
+  if (g && g.ok && isNum(g.thNearDeg) && isNum(g.thFarDeg)) {
+    /* 注意符号：thNear/thFar 是**俯角**（正数），而窗口对应的高度角是负的
+       （-θnear … -θfar）。传正值会让二分找不到穿越 ⇒ 窗口恒为 null（踩过）。 */
+    const a = cross(-g.thNearDeg, dir), b = cross(-g.thFarDeg, dir);
+    if (isNum(a) && isNum(b)) {
+      const ws = Math.max(tStart, Math.min(a, b)), we = Math.min(tEnd, Math.max(a, b));
+      if (we > ws) {
+        win = {
+          left: (ws - tStart) / span * 100,
+          width: (we - ws) / span * 100
+        };
+      }
+    }
+  }
+
+  const localOf = ms => uClock(((ms + r.offsetS * 1000) / 3600000 % 24 + 24) % 24);
+
+  /* P2：云量淡纹 —— 把 skyCloud 的逐时样本映射到带的横向百分比，不透明度 ∝ 遮挡云量。
+     快照模式没有逐时切片（r.skyCloud 不存在）⇒ 整段跳过，带照常画。判空是硬要求。 */
+  let veil = null;
+  if (Array.isArray(r.skyCloud) && r.skyCloud.length >= 2) {
+    const pts = r.skyCloud.map(s => ({
+      p: clamp((s.t - tStart) / span * 100, 0, 100),
+      a: 0.30 * clamp01(s.b / 100)
+    })).sort((x, y) => x.p - y.p);
+    veil = [{ p: 0, a: pts[0].a }].concat(pts, [{ p: 100, a: pts[pts.length - 1].a }]);
+  }
+
+  /* P2："现在"标记 —— 只有"所选日期＝今天"且此刻落在带内才画。
+     日期用**点位时区**的墙钟判（与用户看到的 dateStr 同一口径），不是浏览器时区。 */
+  let nowPct = null, nowLocal = null;
+  const nowMs = Date.now();
+  const todayStr = new Date(nowMs + r.offsetS * 1000).toISOString().slice(0, 10);
+  if (r.dateStr === todayStr && nowMs >= tStart && nowMs <= tEnd) {
+    nowPct = (nowMs - tStart) / span * 100;
+    nowLocal = localOf(nowMs);
+  }
+
+  /* 轴上的两个真时刻：事件（左对齐）、天文曙暮光结束＝天黑（右对齐） */
+  return {
+    segs: segs, win: win, veil: veil, nowPct: nowPct, nowLocal: nowLocal,
+    evPct: (evMs - tStart) / span * 100,
+    darkPct: (t18 - tStart) / span * 100,
+    darkLocal: localOf(t18)
+  };
 }
 
 /* 参与计算的环境要素读数（F7）：把"输入了什么"摊开，结论才可复核。
@@ -644,73 +784,108 @@ function shareCard() {
   const c = cv.getContext("2d");
   if (!c) return;
   c.scale(S, S);
-  const FAM = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif';
-  const MONO = 'ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace';
-  const f = (w, s, mono) => w + " " + s + "px " + (mono ? MONO : FAM);
+  /* 视觉方案 P2：分享卡按新识别重画 —— 衬线标题与数字 + 天色带 + 云量薄纱；概率环退役
+     （与网页 hero 一致）。字体栈与 --serif / --sans 同源，但 canvas 读不到 CSS 变量，
+     只能写同一串（改栈时两处一起改）。天色/强调色**从令牌现读**，不复制色值。 */
+  const SERIF = '"Songti SC","STSong","SimSun","Noto Serif CJK SC","Source Han Serif SC",serif';
+  const SANS = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif';
+  const f = (w, s, serif) => w + " " + s + "px " + (serif ? SERIF : SANS);
+  const tok = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
   const grade = gradeOf(r.Q), gc = gradeColor(grade);
   const isAM = r.period === "am";
   const cfb = confText(r.conf || ensConfOf(r.dvI));
+  const band = skyBand(r);
 
-  /* 背景与顶部等级色条 */
-  const bg = c.createLinearGradient(0, 0, CARD_W, CARD_H);
-  bg.addColorStop(0, "#fff8f4"); bg.addColorStop(.55, "#ffffff"); bg.addColorStop(1, "#f6f9ff");
-  c.fillStyle = bg; c.fillRect(0, 0, CARD_W, CARD_H);
-  c.fillStyle = gc; c.fillRect(0, 0, CARD_W, 8);
+  /* 背景 + 等级色条（顶部 6px） */
+  c.fillStyle = "#f7f8fa"; c.fillRect(0, 0, CARD_W, CARD_H);
+  c.fillStyle = gc; c.fillRect(0, 0, CARD_W, 6);
 
-  /* 概率环 */
-  const cx = 122, cy = 200, R = 72;
-  c.lineCap = "round"; c.lineWidth = 15;
-  c.strokeStyle = "#eceff5";
-  c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2); c.stroke();
-  const p01 = clamp01(r.P / 100);
-  if (p01 > 0.002) {
-    c.strokeStyle = gc;
-    c.beginPath(); c.arc(cx, cy, R, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * p01); c.stroke();
+  /* 天色带：与网页同一份 skyBand() 结果（分段 / 薄纱 / 窗口） */
+  const BY = 6, BH = 54;
+  if (band) {
+    const totalM = band.segs.reduce((a, s) => a + s.m, 0) || 1;
+    const DUSK = { "s-day": tok("--dusk-day"), "s-civil": tok("--dusk-civil"),
+      "s-naut": tok("--dusk-nautical"), "s-astro": tok("--dusk-astro"), "s-night": tok("--dusk-night") };
+    let x = 0;
+    band.segs.forEach(s => {
+      const w = s.m / totalM * CARD_W;
+      c.fillStyle = DUSK[s.cls] || "#ccc";
+      c.fillRect(x, BY, Math.ceil(w) + 0.5, BH);
+      x += w;
+    });
+    /* 云量薄纱：同一个"0.30 × 遮挡云量"口径。**必须用渐变**——
+       早先按 80 条矩形铺、各自 +0.5px 宽，重叠处透明度叠了两次，
+       每 10px 一道深色竖缝（实拍抓到）。渐变由画布自己插值，没有接缝。 */
+    if (band.veil) {
+      const g = c.createLinearGradient(0, 0, CARD_W, 0);
+      band.veil.forEach(v => g.addColorStop(Math.min(1, Math.max(0, v.p / 100)),
+        "rgba(27,37,54," + v.a.toFixed(3) + ")"));
+      c.fillStyle = g;
+      c.fillRect(0, BY, CARD_W, BH);
+    }
+    /* 霞光窗口：橙条 + 白上沿（与网页同一处理） */
+    if (band.win) {
+      const wx = band.win.left / 100 * CARD_W;
+      const ww = Math.max(3, band.win.width / 100 * CARD_W);
+      c.fillStyle = tok("--acc") || "#e2601f";
+      c.fillRect(wx, BY + BH - 4, ww, 4);
+      c.fillStyle = "rgba(255,255,255,.85)";
+      c.fillRect(wx, BY + BH - 4, ww, 1);
+    }
+    /* 轴：两个真时刻 */
+    c.fillStyle = "#667081"; c.font = f(500, 12);
+    c.textAlign = "left"; c.textBaseline = "alphabetic";
+    const evT = isNum(isAM ? r.ev.riseMs : r.ev.setMs)
+      ? uClock((((isAM ? r.ev.riseMs : r.ev.setMs) + r.offsetS * 1000) / 3600000 % 24 + 24) % 24) : "—";
+    c.fillText(cardFit(c, i18n(isAM ? "日出" : "日落") + " " + evT, 160), band.evPct / 100 * CARD_W, 78);
+    c.textAlign = "right";
+    c.fillText(cardFit(c, i18n("天黑") + " " + band.darkLocal, 160), band.darkPct / 100 * CARD_W + 4, 78);
+    c.textAlign = "left";
   }
-  c.textAlign = "center"; c.textBaseline = "middle";
-  c.fillStyle = "#1f2733"; c.font = f(800, 40, true);
-  c.fillText(Math.round(r.P) + "%", cx, cy - 9);
+
+  /* 左：概率（衬线大字）+ 标签 */
+  c.fillStyle = "#1c2330"; c.font = f(800, 46, true); c.textAlign = "left";
+  c.fillText(Math.round(r.P) + "%", 44, 156);
+  c.fillStyle = "#8b96a5"; c.font = f(500, 12);
+  c.fillText(i18n("出现概率"), 44, 176);
+
+  /* 右：标题 / 日期 / 质量 / 结论 */
+  const X = 252, maxW = CARD_W - X - 36;
+  c.fillStyle = "#1c2330"; c.font = f(700, 25, true);
+  c.fillText(cardFit(c, r.name, maxW), X, 104);
   c.fillStyle = "#8b96a5"; c.font = f(500, 13);
-  c.fillText(i18n("出现概率"), cx, cy + 25);
+  c.fillText(r.dateStr + "　" + i18n(isAM ? "朝霞" : "晚霞"), X, 126);
 
-  /* 右侧文字块 */
-  const x0 = 232, maxW = CARD_W - x0 - 36;
-  c.textAlign = "left";
-  c.fillStyle = "#1f2733"; c.font = f(700, 25);
-  c.fillText(cardFit(c, r.name + " · " + r.dateStr + " " + i18n(isAM ? "朝霞" : "晚霞"), maxW), x0, 84);
-
-  /* 分数 + 等级药丸。数字用等宽体（对齐好看），"分"单独用无衬线 ——
-     等宽字体里中文占两倍宽度，写在一起会变成 "27  分" 那种夸张的字距。 */
   const qNum = String(Math.round(r.Q));
-  c.fillStyle = gc; c.font = f(800, 38, true);
-  c.fillText(qNum, x0, 142);
+  c.fillStyle = gc; c.font = f(800, 34, true);
+  c.fillText(qNum, X, 176);
   const qw = c.measureText(qNum).width;
-  c.font = f(700, 19);
+  c.font = f(700, 17); c.fillStyle = "#1c2330";
   const qUnit = i18n("分");
+  c.fillText(qUnit, X + qw + 6, 176);
   const uw = c.measureText(qUnit).width;
-  c.fillText(qUnit, x0 + qw + 7, 143);
   const pillTxt = i18n("观赏质量") + " " + i18n(grade);
-  c.font = f(700, 14);
-  const pw = c.measureText(pillTxt).width + 26;
-  const px = x0 + qw + 7 + uw + 16;
-  cardRR(c, px, 126, pw, 30, 15);
+  c.font = f(700, 13);
+  const pw = c.measureText(pillTxt).width + 24;
+  const px = X + qw + 6 + uw + 14;
+  cardRR(c, px, 154, pw, 28, 14);
   c.fillStyle = cardA(gc, .12); c.fill();
   c.strokeStyle = cardA(gc, .34); c.lineWidth = 1; c.stroke();
   c.fillStyle = gc; c.textAlign = "center";
-  c.fillText(pillTxt, px + pw / 2, 142);
-
-  /* 结论句 */
+  c.fillText(pillTxt, px + pw / 2, 172);
   c.textAlign = "left";
-  c.fillStyle = "#1f2733"; c.font = f(700, 18);
-  c.fillText(cardFit(c, conclOf(r.P) + i18n("（{v}）", { v: pct(r.P) }), maxW), x0, 190);
+
+  /* 结论句（衬线 —— 应用唯一开口说的一次话） */
+  c.fillStyle = "#1c2330"; c.font = f(600, 17, true);
+  c.fillText(cardFit(c, conclOf(r.P) + i18n("（{v}）", { v: pct(r.P) }), maxW), X, 210);
 
   /* 细节行 */
-  const p = r.sRT.primary;
+  const p2 = r.sRT.primary;
   const rows = [
-    i18n("载霞云层 {v}", { v: i18n(p.type) }) + " · " +
-      i18n("覆盖 {v}", { v: Math.round(p.cover) + "%" }) + " · " +
-      i18n("云底") + " " + uAlt(p.base * 1000),
+    i18n("载霞云层 {v}", { v: i18n(p2.type) }) + " · " +
+      i18n("覆盖 {v}", { v: Math.round(p2.cover) + "%" }) + " · " +
+      i18n("云底") + " " + uAlt(p2.base * 1000),
     i18n("云边界") + " " + (isNum(r.sRT.d) ? uDist(r.sRT.d) : i18n("无明显边界")) +
       " · " + i18n("等效云底") + " " + uAlt(r.sRT.hEff * 1000) + " · AOD " + n1(r.aodUse, 2),
     i18n("可信度 {v}", { v: cfb.lv }) + i18n("（{v}）", { v: cfb.txt + (isNum(r.dvI) ? i18n("，ΔI {v}", { v: Math.round(r.dvI) }) : "") }),
@@ -718,19 +893,20 @@ function shareCard() {
       r.parts.slice(1).map(x => ({ ec: "EC ", rt: i18n("光追 ") }[x.k] + Math.round(x.I))).join(" · ") +
       " · " + i18n("综合 I {v}", { v: Math.round(mixedIndex(r.P, r.Q)) })
   ];
-  c.font = f(500, 14);
-  rows.forEach((s, i) => {
-    c.fillStyle = i === 2 ? cfb.color : "#5b6675";
-    c.fillText(cardFit(c, s, maxW), x0, 228 + i * 26);
+  c.font = f(500, 13.5);
+  rows.forEach((s, k) => {
+    c.fillStyle = k === 2 ? cfb.color : "#5b6675";
+    c.fillText(cardFit(c, s, maxW), X, 242 + k * 23);
   });
 
   /* 页脚 */
-  c.strokeStyle = "#e9edf3"; c.lineWidth = 1;
-  c.beginPath(); c.moveTo(40, 344); c.lineTo(CARD_W - 40, 344); c.stroke();
+  c.strokeStyle = "#e6eaf0"; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(40, 340); c.lineTo(CARD_W - 40, 340); c.stroke();
   c.fillStyle = "#9aa4b2"; c.font = f(500, 12);
-  c.fillText(cardFit(c, i18n("霞光预报 · 数据源 Open-Meteo（GFS / ECMWF-IFS / CAMS 气溶胶）· 结论仅供观赏参考"), CARD_W - 80), 40, 372);
+  c.fillText(cardFit(c, i18n("霞光预报 · 数据源 Open-Meteo（GFS / ECMWF-IFS / CAMS 气溶胶）· 结论仅供观赏参考"), CARD_W - 200), 40, 366);
   c.textAlign = "right";
-  c.fillText(r.leadH > 0 ? i18n("预报时效约 {n} 小时", { n: Math.round(r.leadH) }) : i18n("实况 / 历史分析场"), CARD_W - 40, 372);
+  c.fillText(r.leadH > 0 ? i18n("预报时效约 {n} 小时", { n: Math.round(r.leadH) }) : i18n("实况 / 历史分析场"), CARD_W - 40, 366);
+  c.textAlign = "left";
 
   /* 落地：toBlob + <a download>，对象 URL 用完即撤 */
   cv.toBlob(b => {

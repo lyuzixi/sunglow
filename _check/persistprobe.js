@@ -14,6 +14,11 @@
  *   D. 坏值与版本：v1 里塞脏数据 / 塞错类型 / 换成 v2 ⇒ 一律降级为默认，不报错、不崩
  *   E. 趋势：点一次加载（合成数据）⇒ 落盘；重新加载 ⇒ **自动画出且 0 请求**；无缓存时开页 0 请求也不打扰
  *
+ * 第五轮 UI 起，A/B/C/D/E 五段各自多带一两句折叠态（rayFold 等 5 个"默认收起"开关）：
+ *   A 段量四处默认收起（光追/数据质量卡 + 结论卡详情 + 图例说明；趋势表要等 E 段加载出趋势才存在）；
+ *   B 段多点一下折叠按钮 ⇒ 落盘；C 段验证类 / aria-expanded / 文案三处读回一致；
+ *   D 段的脏数据里补两个错类型的折叠值。落盘机制与既有偏好完全同构，不新增第二条通路。
+ *
  * 用法: node _check/persistprobe.js
  */
 "use strict";
@@ -210,12 +215,22 @@ let bulkN = 0;           // 其中"坐标数 ≥ 20"的（趋势 34 / 地图 57�
       units: State.units, h12: State.hour12,
       mDim: State.mapDim, mModel: State.mapModel,
       unitOn: document.querySelector('#unitSeg button.on').dataset.u,
-      clockOn: document.querySelector('#clockSeg button.on').dataset.c };
+      clockOn: document.querySelector('#clockSeg button.on').dataset.c,
+      /* 第五轮 UI：四处"默认收起"。趋势表的 details 要等 E2 加载出趋势才存在，
+         放到那段里量；这里量三个首屏就有的（光追/数据质量卡 + 结论卡详情 + 图例说明）。 */
+      rayFolded: document.getElementById('cardRay').classList.contains('folded'),
+      notesFolded: document.getElementById('cardNotes').classList.contains('folded'),
+      rayBtnExp: document.getElementById('rayFoldBtn').getAttribute('aria-expanded'),
+      heroFoldOpen: (function(){ var d = document.getElementById('heroFold'); return d ? d.open : null; })(),
+      legendFoldOpen: document.getElementById('legendFold').open };
   })()`);
   console.log("\n=== A. 初始干净（新 profile 不得有偏好键）===");
   console.log("  sunsetbot.pref.* 键数=" + A.anyPref + " · 默认 numLabels=" + A.nLabels
     + " · showGrid=" + A.nGrid + " · units=" + A.units + " · hour12=" + A.h12
     + " · mapDim=" + A.mDim + " · mapModel=" + A.mModel);
+  console.log("  默认折叠态：⑤=" + A.rayFolded + " ⑥=" + A.notesFolded
+    + " · 按钮 aria-expanded=" + A.rayBtnExp + " · 结论卡详情开=" + A.heroFoldOpen
+    + " · 图例说明开=" + A.legendFoldOpen);
 
   /* ---------- B. 拨动控件 ⇒ 写盘 ---------- */
   const B = await ev(`(function(){
@@ -226,6 +241,8 @@ let bulkN = 0;           // 其中"坐标数 ≥ 20"的（趋势 34 / 地图 57�
       b.click(); };
     seg('#unitSeg', 'data-u', 'imperial');
     seg('#clockSeg', 'data-c', '12');
+    /* 第五轮 UI：折叠按钮与其它显示偏好同一套机制（点展开 ⇒ rayFold 落盘） */
+    document.getElementById('rayFoldBtn').click();
     const dim = document.getElementById('mapDim'); dim.value = 'q';
     dim.dispatchEvent(new Event('change', { bubbles: true }));
     const mdl = document.getElementById('mapModel'); mdl.value = 'ec';
@@ -233,7 +250,8 @@ let bulkN = 0;           // 其中"坐标数 ≥ 20"的（趋势 34 / 地图 57�
     let raw = null; try { raw = localStorage.getItem(${JSON.stringify(PREF_KEY)}); } catch (e) {}
     let j = null; try { j = JSON.parse(raw); } catch (e) {}
     return { raw: raw, j: j, size: raw ? raw.length : 0,
-      state: { units: State.units, h12: State.hour12, dim: State.mapDim, model: State.mapModel } };
+      state: { units: State.units, h12: State.hour12, dim: State.mapDim, model: State.mapModel,
+               foldRay: State.folds.rayFold } };
   })()`);
   console.log("\n=== B. 拨动控件 ⇒ 写盘 ===");
   console.log("  键字节 " + B.size + " · 内容 " + JSON.stringify(B.j));
@@ -252,13 +270,20 @@ let bulkN = 0;           // 其中"坐标数 ≥ 20"的（趋势 34 / 地图 57�
       modelSel: document.getElementById('mapModel').value,
       gridOn: !!(typeof MapMod !== 'undefined' && MapMod.gratUser),
       dark: document.querySelector('.mapwrap').classList.contains('dark'),
-      dimbaseOn: (function(){ const e = document.getElementById('mapDimBase'); return e ? e.classList.contains('on') : null; })() };
+      dimbaseOn: (function(){ const e = document.getElementById('mapDimBase'); return e ? e.classList.contains('on') : null; })(),
+      /* 第五轮 UI：折叠状态跨加载读回 —— 类 / aria-expanded / 按钮文案三处都要对 */
+      rayFolded: document.getElementById('cardRay').classList.contains('folded'),
+      rayBtnExp: document.getElementById('rayFoldBtn').getAttribute('aria-expanded'),
+      rayBtnTxt: document.getElementById('rayFoldBtn').textContent,
+      foldRay: State.folds.rayFold };
   })()`);
   console.log("\n=== C. 重新加载 ⇒ 偏好被读回 ===");
   console.log("  控件：numLabels=" + C.numLabels + " dimBase=" + C.dimBase + " showGrid=" + C.showGrid
     + " · units 高亮=" + C.unitOn + " · clock 高亮=" + C.clockOn
     + " · mapDim=" + C.dimSel + " · mapModel=" + C.modelSel);
   console.log("  State：units=" + C.units + " hour12=" + C.h12 + " mapDim=" + C.dim + " mapModel=" + C.model);
+  console.log("  折叠态：⑤ folded=" + C.rayFolded + " · aria-expanded=" + C.rayBtnExp
+    + " · 按钮文案=" + JSON.stringify(C.rayBtnTxt) + " · State.folds.rayFold=" + C.foldRay);
   console.log("  依赖地图 DOM 的两项已生效：gratUser=" + C.gridOn + " · .mapwrap.dark=" + C.dark
     + " · .dimbase.on=" + C.dimbaseOn);
 
@@ -267,7 +292,8 @@ let bulkN = 0;           // 其中"坐标数 ≥ 20"的（趋势 34 / 地图 57�
     const t = {};
     /* ① 脏字段 + 错类型：白名单之外的一律丢掉，类型不对的一律忽略 */
     localStorage.setItem(${JSON.stringify(PREF_KEY)}, JSON.stringify(
-      { numLabels: 'yes', showPts: true, evil: { a: 1 }, mapDim: 'NOT_A_DIM', units: 42 }));
+      { numLabels: 'yes', showPts: true, evil: { a: 1 }, mapDim: 'NOT_A_DIM', units: 42,
+        rayFold: 'yes', heroFold: 42 }));
     t.dirty = prefRead();
     /* ② 完全不是 JSON */
     localStorage.setItem(${JSON.stringify(PREF_KEY)}, '{{{');
@@ -325,7 +351,10 @@ let bulkN = 0;           // 其中"坐标数 ≥ 20"的（趋势 34 / 地图 57�
       objKeys: j ? Object.keys(j.obj) : [],
       hasRawBundle: !!(j && (j.obj.b || j.obj.pts)),
       storedRows: j && j.obj.rows ? j.obj.rows.length : 0,
-      bodyHasTable: !!document.getElementById('trendBody').querySelector('table') };
+      bodyHasTable: !!document.getElementById('trendBody').querySelector('table'),
+      /* 第五轮 UI：趋势表在默认收起的 details 里 —— 表格要能在 DOM 里找到
+         （querySelector 不受 closed 影响），且 open 必须是 false */
+      trendFoldOpen: (function(){ var d = document.getElementById('trendFold'); return d ? d.open : null; })() };
   })()`);
   console.log("\n=== E2. 点一次加载 ⇒ 落盘 ===");
   console.log("  请求 " + fetchReq + "（批量 " + fetchBulk + "）· rows=" + E1.rows
@@ -361,24 +390,36 @@ let bulkN = 0;           // 其中"坐标数 ≥ 20"的（趋势 34 / 地图 57�
   /* ---------- 汇总断言 ---------- */
   const o = {
     "新 profile 下没有任何偏好键（后续默认态断言的地基）": A.anyPref === 0 && A.pref === null,
+    /* ---- 第五轮 UI：四处默认收起（设计态由机器守，防将来某次改动悄悄展开） ---- */
+    "光追/数据质量两张技术卡默认折叠（folded 类 + 按钮 aria-expanded=false）":
+      A.rayFolded === true && A.notesFolded === true && A.rayBtnExp === "false",
+    "结论卡详情与图例说明的 details 默认收起":
+      A.heroFoldOpen === false && A.legendFoldOpen === false,
+    /* ---- ---- */
     "拨动后偏好键出现且内容正确": !!B.j && B.j.numLabels === true && B.j.dimBase === true
       && B.j.showGrid === false && B.j.units === "imperial" && B.j.hour12 === true
       && B.j.mapDim === "q" && B.j.mapModel === "ec",
+    "折叠状态写盘（点展开 ⇒ rayFold 进偏好键）": B.j.rayFold === true && B.state.foldRay === true,
     "偏好体积很小（几百字节级，不会挤占缓存配额）": B.size > 0 && B.size < 400,
     "重新加载后 State 被恢复": C.units === "imperial" && C.h12 === true
       && C.dim === "q" && C.model === "ec",
     "重新加载后控件被恢复（控件与 State 不脱节）": C.numLabels === true && C.dimBase === true
       && C.showGrid === false && C.unitOn === "imperial" && C.clockOn === "12"
       && C.dimSel === "q" && C.modelSel === "ec",
+    "折叠状态跨加载读回（类 / aria-expanded / 按钮文案三处一致）":
+      C.rayFolded === false && C.rayBtnExp === "true" && C.rayBtnTxt === "收起" && C.foldRay === true,
     "依赖地图 DOM 的两项也生效（经纬网 / 深色底图）": C.gridOn === false && C.dark === true
       && C.dimbaseOn === true,
-    "脏值与错类型被白名单挡掉（不污染 State）": JSON.stringify(D.dirty) === JSON.stringify({ showPts: true }),
+    "脏值与错类型被白名单挡掉（不污染 State）": JSON.stringify(D.dirty) === JSON.stringify({ showPts: true })
+      && D.dirty.rayFold === undefined && D.dirty.heroFold === undefined,
     "非 JSON / 数组 / 版本不符一律降级为默认（不抛错）": Object.keys(D.broken).length === 0
       && Object.keys(D.array).length === 0 && D.v2Isolated === true,
     "无趋势缓存时开页不取数、不打扰用户": noCacheBulk === 0 && E0.hasTable === false && E0.hasHint === true,
     "点一次加载走的是真取数（3 路批量请求）": fetchBulk >= 3 && trendOK === true,
     "趋势缓存落盘的是 rows，不是原始响应": E1.storedRows > 0 && E1.hasRawBundle === false
       && E1.rawSize > 0 && E1.rawSize < 20000,
+    "趋势表包在默认收起的 details 里（表格在 DOM 中可查、open=false）":
+      E1.trendFoldOpen === false && E1.bodyHasTable === true,
     "有趋势缓存时开页自动画出且零请求": reloadBulk === 0 && E2.hasTable === true && E2.cellN >= 2
       && E2.hasHint === false,
     "换地点后旧趋势被作废（不拿旧缓存冒充新地点）": E3.trendAfterMove !== "still-has-rows",

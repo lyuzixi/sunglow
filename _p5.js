@@ -47,6 +47,16 @@ const State = {
                    **关掉只影响显示与入口，已存的标注一条都不删**（那要用户显式点"清空"）。
                    两者必须分开：把"我不想看"做成"你的数据没了"是最招人恨的一种默认。 */
   calib: null, calibOff: false,
+  /* 第五轮 UI · 折叠态（与 calibOff 同性质：显示偏好，不是数据）。
+     五个"默认收起"的开关，true = 展开：
+       rayFold    光追算法细节卡（卡片折叠，静态外壳）
+       notesFold  数据质量与提示卡（卡片折叠，静态外壳）
+       heroFold   ② 结论卡的"更多参数与计算输入"（<details>，动态生成）
+       trendFold  ⑧ 趋势的"逐日数值表"（<details>，动态生成）
+       legendFold ⑦ 地图卡图例的"图例与着色说明"（<details>，静态外壳）
+     全部进 sunsetbot.pref.v1 白名单；applyPrefs 铺静态外壳那三个，
+     动态生成的那两个由 renderHero / renderTrend 按这里的值现铺。 */
+  folds: { rayFold: false, notesFold: false, heroFold: false, trendFold: false, legendFold: false },
   /* initUI 期间置位。此时 setLocation() 会被调用一次（把 State 铺进输入框），
      那一次**不算**"用户改了地点" —— 否则首屏就会把刚从 URL 读进来的快照抹掉。 */
   booting: false
@@ -98,6 +108,13 @@ const PREF_KEY = "sunsetbot.pref.v1";
 /* 白名单：布尔字段（图层开关 / 时间制 / F4 关闭本地校准）。`calibOff` 在这里
    而不在别处 —— 它就是一个普通的显示偏好，与"深色底图"同一性质。 */
 const PREF_BOOL = ["numLabels", "showPts", "showConf", "showGrid", "dimBase", "hour12", "calibOff"];
+/* 第五轮 UI · 折叠态白名单。与 PREF_BOOL 同性质（布尔、只影响显示），
+   单独列一份是因为 applyPrefs 里对它们的铺法不同（见 FOLD_KEYS 与 applyFolds）——
+   特别是**不能**走下面那个 `$("#"+k).checked` 的通用循环：
+   heroFold / trendFold / legendFold 是 <details> 元素，给它们设 .checked
+   只会挂一个无人读的 expando，而"开合"要的是 .open。 */
+const FOLD_KEYS = ["rayFold", "notesFold", "heroFold", "trendFold", "legendFold"];
+const PREF_BOOL_ALL = PREF_BOOL.concat(FOLD_KEYS);
 /* 白名单：枚举字段 —— 值必须落在允许集合里，防止旧值/脏值把控件设成不存在的选项 */
 const PREF_STR = {
   units: ["metric", "imperial"],
@@ -118,7 +135,7 @@ function prefRead() {
   try {
     const j = JSON.parse(localStorage.getItem(PREF_KEY) || "null");
     if (!j || typeof j !== "object" || Array.isArray(j)) return out;
-    PREF_BOOL.forEach(k => { if (typeof j[k] === "boolean") out[k] = j[k]; });
+    PREF_BOOL_ALL.forEach(k => { if (typeof j[k] === "boolean") out[k] = j[k]; });
     Object.keys(PREF_STR).forEach(k => { if (PREF_STR[k].indexOf(j[k]) >= 0) out[k] = j[k]; });
   } catch (e) { softWarn("读展示偏好失败", e); }
   return out;
@@ -148,7 +165,176 @@ function applyPrefs() {
      一直是最初的默认值（F6 那条纪律），而肉眼也看不出高亮与 State 已经分家。 */
   setSegActive("#unitSeg", $("#unitSeg button[data-u='" + State.units + "']"));
   setSegActive("#clockSeg", $("#clockSeg button[data-c='" + (State.hour12 ? "12" : "24") + "']"));
+  /* 第五轮 UI · 折叠态：先读进 State（渲染函数按它现铺动态生成的两个 details），
+     再铺静态外壳那三个（光追/数据质量卡 + 图例 details 在模板里就存在，赶得上这一步）。
+     时序纪律同 B1：在任何"控件初值 / 派生状态"赋值之前。 */
+  FOLD_KEYS.forEach(k => { if (typeof p[k] === "boolean") State.folds[k] = p[k]; });
+  applyFolds();
   return p;
+}
+
+/* =========================================================================
+   第五轮 UI · 折叠态铺设与切换
+   -------------------------------------------------------------------------
+   两种形态，一个 State 来源：
+     ① 卡片折叠（光追/数据质量）：.folded 类 + 卡头按钮（aria-expanded 与文案同步）。
+        模板里默认就带 folded —— 首屏第一帧就是收起态，不等 JS；
+        偏好说"展开"时这里把类摘掉。CSS 是 `.card.folded > :not(.card-h)`，
+        所以卡头（标题 + 按钮）永远在，折叠不隐藏"这里有什么"。
+     ② <details>：.open 属性。结论卡（heroFold）与趋势表（trendFold）的
+        details 是**每次重渲整段生成**的，所以 renderHero / renderTrend 各自
+        按 State.folds 现铺；这里对"此刻已存在"的也铺一次（静态外壳 +
+        重渲后补刀），是幂等的。
+   切换入口只有 foldToggle 一个：先改 State、再落盘、最后铺 DOM ——
+   与图层开关"先应用、再落盘"同一顺序（落盘失败不影响本次生效）。
+   ========================================================================= */
+function applyFolds() {
+  const card = (cid, bid, key) => {
+    const c = document.getElementById(cid);
+    if (c) c.classList.toggle("folded", !State.folds[key]);
+    const b = document.getElementById(bid);
+    if (b) {
+      b.setAttribute("aria-expanded", State.folds[key] ? "true" : "false");
+      b.textContent = i18n(State.folds[key] ? "收起" : "展开");
+    }
+  };
+  card("cardRay", "rayFoldBtn", "rayFold");
+  card("cardNotes", "notesFoldBtn", "notesFold");
+  const set = (id, key) => { const e = document.getElementById(id); if (e) e.open = !!State.folds[key]; };
+  set("legendFold", "legendFold");
+  set("heroFold", "heroFold");
+  set("trendFold", "trendFold");
+}
+function foldToggle(key) {
+  if (FOLD_KEYS.indexOf(key) < 0) return;
+  State.folds[key] = !State.folds[key];
+  const patch = {};
+  patch[key] = State.folds[key];
+  prefWrite(patch);
+  applyFolds();
+}
+/* 切语言时刷新折叠按钮文案（aria-expanded 不受影响）。由 _p6.js 的 relang 调用。 */
+function refreshFoldBtns() { applyFolds(); }
+/* =========================================================================
+   目录菜单（grill 定稿）
+   -------------------------------------------------------------------------
+   入口：桌面＝顶栏"目录"按钮（顶栏贴顶，滚到哪都能开）；手机＝滚过首屏后浮出的圆钮。
+   面板：桌面＝按钮下方浮层（**无遮罩**，页面仍可滚，高亮随滚动走）；
+         手机＝底部 sheet（带遮罩，开之前先收掉地图提示卡 —— 两者共用底部）。
+   跳转：默认收起的卡被点中时**展开并写偏好**（一次点击是明确意图，与手动点
+         "展开"完全同效）；跳转靠 scroll-margin-top 让过 64px 粘顶栏。
+   快照模式：整块带 data-snaphide，由 body.snapmode 统一隐藏（列出来也全是空洞）。
+   可访问性：nav 地标、当前项 aria-current、Esc 关闭并还焦点、动效可降级。
+   ========================================================================= */
+const TOC_ITEMS = ["cardHero", "cardModels", "cardFac", "cardTrend", "cardSpots", "cardMap",
+                   "cardRay", "cardNotes"];
+const TOC_FOLD = { cardRay: "rayFold", cardNotes: "notesFold" };
+let tocOpen = false, tocRaf = 0;
+function tocIsMobile() { return window.innerWidth <= 760; }
+
+/* 当前所在卡：取"顶部已越过判据线"的最后一张（文档序）。不用 IntersectionObserver ——
+   折叠卡边界、sticky 地图这些情况它不好处理，而这里要的只是"读到这里了"。 */
+function tocSyncActive() {
+  const sy = window.scrollY || document.documentElement.scrollTop || 0;
+  const line = sy + 130;
+  let cur = null;
+  TOC_ITEMS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.getBoundingClientRect().top + sy <= line) cur = id;
+  });
+  document.querySelectorAll("#tocPanel .toc-i").forEach(b => {
+    b.setAttribute("aria-current", b.getAttribute("data-goto") === cur ? "true" : "false");
+  });
+}
+
+function openToc() {
+  const p = $("#tocPanel");
+  if (!p || tocOpen) return;
+  tocOpen = true;
+  if (tocIsMobile() && typeof hideMapTip === "function") hideMapTip();
+  p.hidden = false;
+  if (tocIsMobile()) {
+    const v = $("#tocVeil"); if (v) v.hidden = false;
+  } else {
+    /* 桌面：贴在入口按钮下方；下方放不下就夹回视口内 */
+    const btn = $("#tocBtn");
+    const b = (btn && btn.offsetParent) ? btn.getBoundingClientRect() : null;
+    const r = p.getBoundingClientRect();
+    let left = b ? b.left : 16;
+    left = Math.max(12, Math.min(left, window.innerWidth - r.width - 12));
+    let top = b ? b.bottom + 8 : 72;
+    if (top + r.height > window.innerHeight - 12) top = Math.max(12, window.innerHeight - r.height - 12);
+    p.style.left = left + "px";
+    p.style.top = top + "px";
+  }
+  ["tocBtn", "tocFab"].forEach(id => { const el = $("#" + id); if (el) el.setAttribute("aria-expanded", "true"); });
+  tocSyncActive();
+  /* 焦点给第一项：键盘用户打开即可操作（:focus-visible 只给键盘画圈） */
+  const first = p.querySelector(".toc-i");
+  if (first) first.focus({ preventScroll: true });
+}
+
+function closeToc() {
+  if (!tocOpen) return;
+  tocOpen = false;
+  const p = $("#tocPanel"), v = $("#tocVeil");
+  if (p) { p.hidden = true; p.style.left = ""; p.style.top = ""; }
+  if (v) v.hidden = true;
+  ["tocBtn", "tocFab"].forEach(id => { const el = $("#" + id); if (el) el.setAttribute("aria-expanded", "false"); });
+  document.querySelectorAll("#tocPanel .toc-i").forEach(b => b.setAttribute("aria-current", "false"));
+  const back = tocIsMobile() ? $("#tocFab") : $("#tocBtn");
+  if (back && back.offsetParent) back.focus({ preventScroll: true });
+}
+
+function tocGoto(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  closeToc();
+  const fk = TOC_FOLD[id];
+  if (fk && typeof State !== "undefined" && State.folds && !State.folds[fk]) {
+    State.folds[fk] = true;
+    prefWrite({ [fk]: true });
+    applyFolds();
+  }
+  const soft = (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) ? "auto" : "smooth";
+  el.scrollIntoView({ behavior: soft, block: "start" });
+}
+
+function initToc() {
+  const btn = $("#tocBtn"), fab = $("#tocFab"), panel = $("#tocPanel"), veil = $("#tocVeil");
+  if (!panel) return;
+  if (btn) btn.addEventListener("click", () => (tocOpen ? closeToc() : openToc()));
+  if (fab) fab.addEventListener("click", () => (tocOpen ? closeToc() : openToc()));
+  if (veil) veil.addEventListener("click", closeToc);
+  panel.addEventListener("click", e => {
+    const b = e.target.closest(".toc-i");
+    if (b) tocGoto(b.getAttribute("data-goto"));
+  });
+  document.addEventListener("keydown", e => {
+    if (tocOpen && e.key === "Escape") { e.preventDefault(); closeToc(); }
+  });
+  /* 桌面点外部关闭（手机由遮罩负责）。入口按钮的点击冒泡到这里时已经开过了，
+     必须把入口也排除，否则会立刻又关掉。 */
+  document.addEventListener("click", e => {
+    if (!tocOpen || tocIsMobile()) return;
+    if (e.target.closest("#tocPanel") || e.target.closest("#tocBtn")) return;
+    closeToc();
+  });
+  /* 浮钮显隐 + 高亮跟随：rAF 合并，滚动时不连发 */
+  const onScroll = () => {
+    if (tocRaf) return;
+    tocRaf = requestAnimationFrame(() => {
+      tocRaf = 0;
+      if (fab) fab.classList.toggle("on", tocIsMobile() && (window.scrollY || 0) > 380);
+      if (tocOpen) tocSyncActive();
+    });
+  };
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", () => {
+    if (tocOpen) closeToc();          /* 视口变了：定位/形态都可能失效，直接收起 */
+    onScroll();
+  });
+  onScroll();
 }
 /* initMap 末尾调用：把两个"依赖地图 DOM"的偏好真正挂上去。
    经纬网走 `setGratUser`（唯一入口，见 _p6.js）—— 它同时负责写 `MapMod.gratUser`
@@ -534,6 +720,14 @@ function initUI() {
     calibClear();
     renderCalibBox();
   });
+  /* 视觉方案二 P0：查询区一行条的「更多选项」开合。
+     状态只进 aria-expanded，不进偏好白名单 —— 每次进页面都从收起态开始。 */
+  const qmb = $("#qMoreBtn"), qm = $("#qMore");
+  if (qmb && qm) qmb.addEventListener("click", () => {
+    const open = qm.hidden;
+    qm.hidden = !open;
+    qmb.setAttribute("aria-expanded", String(open));
+  });
   $("#geoBtn").addEventListener("click", useGeo);
   $("#nowBtn").addEventListener("click", () => { $("#date").value = State.dateStr; saveDate(); });
   $("#date").addEventListener("change", saveDate);
@@ -665,6 +859,12 @@ function initUI() {
   const db = $("#dimBase");
   if (db) db.addEventListener("change", () => { refreshDimBase(); prefWrite({ dimBase: db.checked }); });
 
+  /* 折叠按钮（第五轮 UI）：光追/数据质量两张技术卡默认收起，展开态进偏好白名单。
+     纯显示、不取数、不重算 —— 与图层开关同一性质。 */
+  const foldBind = (bid, key) => { const b = $("#" + bid); if (b) b.addEventListener("click", () => foldToggle(key)); };
+  foldBind("rayFoldBtn", "rayFold");
+  foldBind("notesFoldBtn", "notesFold");
+
   /* 首屏定位：**唯一来源是 `State`** —— 它的初值就是默认城市，地址栏带了参数时
      已在上面的 readUrl() 里覆盖。这里绝不能再另写一份写死的城市名：那样改默认城市
      要改两处，漏一处就会出现"标题写着上海、数据却是广州"这种自相矛盾的首屏。 */
@@ -683,6 +883,7 @@ function initUI() {
      有快照还照跑，等于把"分享链接不花对方额度"这个承诺作废掉。 */
   if (State.snap) applySnap(State.snap);
   else runForecast(true);
+  initToc();          /* 目录菜单：纯 DOM 绑定（不需要数据/地图就绪） */
   /* 地图数据由 initMap() 统一加载，避免重复请求 */
 }
 
@@ -960,6 +1161,27 @@ async function computeAll(lat, lon, dateStr, period, name, pre) {
       const a = envG[k], b = envE ? envE[k] : null;
       envM[k] = (isNum(a) && isNum(b)) ? (a + b) / 2 : (isNum(a) ? a : (isNum(b) ? b : null));
     });
+  /* 视觉方案 P2：天色带的云量切片 —— 事件前后各 2 小时、逐时取**遮挡层**
+     （低云 + 中云；高云是霞光的载体，不算遮挡），两模式取平均，与 envM 同一口径。
+     零新增请求：序列已在内存（serG / serE 的 .at() 插值）。
+     快照模式不带逐时数据（快照只存摘要）⇒ 前端必须判空，见 skyBand() 的 r.skyCloud 判空。 */
+  const skyCloud = (function () {
+    const tEv = period === "am" ? ev.riseMs : ev.setMs;
+    if (!isNum(tEv) || !serG[0]) return null;
+    const avg = (v, t) => {
+      const a = serG[0].at(v, t);
+      const b = serE && serE[0] ? serE[0].at(v, t) : null;
+      return (isNum(a) && isNum(b)) ? (a + b) / 2 : (isNum(a) ? a : (isNum(b) ? b : null));
+    };
+    const out = [];
+    for (let k = -2; k <= 2; k++) {
+      const t = tEv + k * 3600000;
+      const lo = avg("cloud_cover_low", t), mi = avg("cloud_cover_mid", t);
+      if (!isNum(lo) && !isNum(mi)) continue;
+      out.push({ t: t, b: clamp((isNum(lo) ? lo : 0) + (isNum(mi) ? mi : 0), 0, 100) });
+    }
+    return out.length ? out : null;
+  })();
   const trM = TRANSECT.map((d, i) => {
     const o = { d };
     ["cLow", "cMid", "cHigh", "vis", "rh", "aod"].forEach(k => {
@@ -1037,7 +1259,7 @@ async function computeAll(lat, lon, dateStr, period, name, pre) {
     name, lat, lon, dateStr, period, ev, tMs, az, vSpd, omega, offsetS, tzName,
     envG, envE, envM, aG, aE, aM, sG, sE, sRT, P, Q, spread, spreadQ, dvI, consist, conf, parts,
     aodUse, aodMain, pm25, dust, notes, pts, trG, trE, trM, leadH, trendVal: ctx.dP, along,
-    fallbackFields, apiRise, apiSet, dRise, dSet
+    skyCloud, fallbackFields, apiRise, apiSet, dRise, dSet
   };
 }
 const FIELD_CN = {
@@ -1794,13 +2016,21 @@ function renderTrend() {
   if (!t.ecOK) miss.push("ECMWF-IFS");
   if (!t.aqOK) miss.push("气溶胶");
   const inRange = t.rows.some(r => r.date === State.dateStr);
-  box.innerHTML = `<div class="t-scroll"><table class="t-trend">
+  /* 第五轮 UI：十日数值表折进默认收起的 <details>（trendFold）。
+     F3 日历升为主视图（它在 #trendCal 里、details 之外，renderTrendCal 填）——
+     日历与表格信息重叠（都是逐日概率/质量），这是"消重 + 降密度"的一处；
+     要精确数字的人自己展开。open 按 State.folds 现铺：innerHTML 整段替换
+     会丢掉 details 的 open（与 renderHero 的 heroFold 同一手法）。 */
+  box.innerHTML = `<details class="fmore" id="trendFold"${(State.folds && State.folds.trendFold) ? " open" : ""}>
+      <summary>${i18n("逐日数值表")}</summary>
+      <div class="t-scroll"><table class="t-trend">
       <thead><tr><th>${i18n("日期")}</th><th>${i18n("朝霞")}</th><th>${i18n("晚霞")}</th></tr></thead><tbody>${body}</tbody></table></div>
     <div class="hint" style="margin-top:8px">
       ${i18n("区间 {a} ~ {b}；一次取数 {n} 个坐标（朝/晚霞共用），样带方位按 {a} 构造，其余日期有几公里量级的方位偏差；点任意格子可跳到该日期与该时段。", { a: t.sD, b: t.eD, n: 2 * TREND_N })}
       ${inRange ? "" : `<b>${i18n("当前所选日期不在已加载区间内，点「重新加载趋势」更新。")}</b>`}
       ${miss.length ? `<b>${i18n("本次缺少 {v} 数据，相应结论不确定性更高。", { v: miss.join("、") })}</b>` : ""}
-    </div>`;
+    </div>
+    </details>`;
   box.querySelectorAll("td.td-cell[data-date]").forEach(td => {
     const go = () => {
       State.dateStr = td.dataset.date;

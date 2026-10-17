@@ -72,6 +72,14 @@
   --r:14px; --r2:10px;
   --sh:0 1px 2px rgba(16,24,40,.04), 0 6px 20px -8px rgba(16,24,40,.10);
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  /* 视觉设计方案 P0：两个字体角色，界限分明。
+     "声音"（衬线）只给：结论句、卡题、hero 大数字 —— 应用唯一开口说的一次话；
+     "仪器"（无衬线）给：控件、正文、标签、图例。
+     等宽体收缩到只守真正对齐成列的数字（趋势/对比表、悬停读数）。
+     单文件约束 ⇒ 只用系统栈，零外部字体文件。
+     已知风险：SimSun 在 ≤12px 有 bitmap 提示发虚 ⇒ 衬线只用于 ≥15px 处。 */
+  --serif:"Songti SC","STSong","SimSun","Noto Serif CJK SC","Source Han Serif SC",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
 
   /* ---------- 深色模式（F8）追加的令牌 ----------
      为什么要有这一层：原来全站只有 10 个令牌，**132 处颜色是硬编码的**。
@@ -88,6 +96,14 @@
   --topbg:rgba(255,255,255,.86);
   --tipbg:rgba(255,255,255,.98);
   --tipbgSolid:#ffffff;   /* 手机端贴底卡片要求不透明 */
+  /* 下拉与桌面提示卡的外阴影：基础态与液态玻璃块共用一套值（darkprobe 收敛硬编码色） */
+  --sh-sug:0 14px 34px -12px rgba(16,24,40,.34);
+  --sh-tip:0 12px 30px -10px rgba(16,24,40,.4);
+  /* 液态玻璃（磨砂+高光档）共用令牌：只在 @supports(backdrop-filter) 内生效，
+     四处悬浮件（顶栏/搜索下拉/桌面提示卡/目录面板）用；正文卡片保持实心。 */
+  --glass:rgba(255,255,255,.60);       /* 玻璃底色，浮在内容上时透出下方色彩 */
+  --glass-sheen:rgba(255,255,255,.32); /* 顶部一道高光渐变的起点 */
+  --glass-hi:rgba(255,255,255,.70);    /* 内侧 1px 高光描边 */
   --loadbg:rgba(255,255,255,.9);
   --azibg:rgba(255,255,255,.72);
   --azitx:#6b7486;
@@ -106,6 +122,20 @@
   /* 四路模型标识色（模型卡上的小圆点与数字）：深色下要提亮，
      否则 #2f6fd0 这类中蓝压在深底上几乎看不见 */
   --mc-gfs:#2f6fd0; --mc-ec:#0f9c8a; --mc-rt:#c9501a; --mc-ens:#e2601f;
+  /* 天色带专用（视觉方案 P1）：**固定的**曙暮光序列，按太阳高度角分段
+     （>0 / 0~-6 / -6~-12 / -12~-18 / <-18 度）。它只属于天色带 ——
+     页面 chrome、徽章、按钮一概不许引用；与地图色阶（当日拉伸）是两套色阶，
+     刻意不混用，否则"看图反查数值"的单值映射会被第二种暖色序列污染。 */
+  --dusk-day:#dde5ee; --dusk-civil:#f0c48c; --dusk-nautical:#d9784a;
+  --dusk-astro:#7a759f; --dusk-night:#2b3450;
+  /* 霞光位置的一团柔光（视觉方案二 P1）：只属于天色带的第二层大气 ——
+     位置由 JS 按霞光窗口中心写入 --skyglow-x，颜色固定不随数据变。 */
+  --skyglow:rgba(255,166,87,.30);
+  /* 目录菜单/浮层用的三档阴影与遮罩（浅色）：放进令牌是 darkprobe 的「令牌外硬编码色 ≤45」守着的——弹层阴影在深色下要用另一组值 */
+  --sh-pop:0 14px 36px rgba(16,24,40,.18);
+  --sh-fab:0 8px 20px rgba(16,24,40,.18);
+  --sh-up:0 -14px 36px rgba(16,24,40,.22);
+  --veil:rgba(12,18,28,.30);
   /* 四级等级色（.g-优/良/一般/差 与 pill）：**必须成套**，
      深色下不能只换底色 —— 文字色 #178a52 之类在深底上对比度只有 2.6，读不出来 */
   --g1bg:#e9f7ef; --g1tx:#12734a; --g1bd:#bfe7d2;
@@ -131,6 +161,8 @@ html[data-theme="dark"]{
   --sh:0 1px 2px rgba(0,0,0,.5), 0 8px 24px -10px rgba(0,0,0,.65);
   --hover:#1e242e; --rowalt:#1a2029; --hoverline:#3a4450; --panel:#1c232c; --sug:#1f2630;
   --topbg:rgba(18,23,30,.9); --tipbg:rgba(23,29,38,.98); --tipbgSolid:#171d26;
+  /* 玻璃令牌深色版：底色更沉，高光更弱 —— 深底上白高光容易过曝 */
+  --glass:rgba(22,27,38,.58); --glass-sheen:rgba(255,255,255,.07); --glass-hi:rgba(255,255,255,.10);
   --loadbg:rgba(20,26,34,.92); --azibg:rgba(20,25,33,.72); --azitx:#a9b4c2;
   --spinbd:#3a2a20;
   --focusbd:#a9663a; --focusring:#4a2f1e;
@@ -143,6 +175,17 @@ html[data-theme="dark"]{
   --hole:rgba(255,255,255,.10);
   --gp1:#6f9dea; --gp2:#f4791f;
   --mc-gfs:#6f9dea; --mc-ec:#3fc3b0; --mc-rt:#e8783a; --mc-ens:#f4791f;
+  /* 天色带：深色下保持同一序列（它本来就是"天"，不反色），只把白昼段压暗一档，
+     否则一块亮白压在深色卡上刺眼；夜段要比卡片底色(#171d26)略亮才看得出边界。 */
+  --dusk-day:#3d4859; --dusk-civil:#e8b678; --dusk-nautical:#cf6f42;
+  --dusk-astro:#6f6a92; --dusk-night:#20283c;
+  /* 深色下柔光略强：四周更暗，同样强度读起来反而弱 */
+  --skyglow:rgba(255,150,70,.36);
+  /* 弹层阴影/遮罩（深色）：黑底上要更深、更实，否则浮层与卡片分不开 */
+  --sh-pop:0 14px 36px rgba(0,0,0,.55);
+  --sh-fab:0 8px 20px rgba(0,0,0,.5);
+  --sh-up:0 -14px 36px rgba(0,0,0,.6);
+  --veil:rgba(0,0,0,.55);
   --g1bg:#122a20; --g1tx:#5fce97; --g1bd:#1f4735;
   --g2bg:#1c2a17; --g2tx:#9ac765; --g2bd:#2f4526;
   --g3bg:#2a2314; --g3tx:#e2b45e; --g3bd:#463a1e;
@@ -183,7 +226,7 @@ a{color:var(--blue)}
    空间，badge 不再贴右。 */
 .top-tx{min-width:0}
 .top .spacer{flex:1 1 auto}
-.badge{font-size:11.5px;padding:4px 9px;border-radius:999px;background:var(--accbg);color:var(--acc2);border:1px solid var(--accbd);white-space:nowrap}
+.badge{font-size:12px;padding:4px 9px;border-radius:999px;background:var(--accbg);color:var(--acc2);border:1px solid var(--accbd);white-space:nowrap;letter-spacing:.2px}
 /* 手机端：顶部整块在窄屏下会**换行摊开** —— .top-in 是 flex-wrap:wrap，而中间的
    文字列没有 min-width:0，于是 h1 与 sub 先各自撑成整行，badge 再被挤到第三行。
    实测 390×844 下占掉视口高度的 20.8%（175 px、摊成 3 行），而这一屏里
@@ -193,7 +236,7 @@ a{color:var(--blue)}
    ③ badge 与标题同行（右对齐），不再单独占一行；
    ④ logo 从 34 缩到 26；
    ⑤ sticky 改成 static —— 压薄之后这 43 px 虽然小，但半透明浮在内容上，
-      实拍里它正好压在"① 查询条件"的城市按钮行上、把那行截断成两半。
+      实拍里它正好压在"查询条件"的城市按钮行上、把那行截断成两半。
       顶部条的价值是"随时知道在看哪儿"，而它带的信息（地名/日期/时段）
       在地图卡片与结论卡里都有；桌面端保持 sticky（宽屏有空间且不重叠）。
    结果：175 px（20.8%、3 行）→ **43 px（4.4%、1 行）**，
@@ -213,13 +256,21 @@ a{color:var(--blue)}
 }
 
 /* ---------- 通用卡片 ---------- */
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px}
-.card+.card{margin-top:14px}
+/* 第五轮 UI（轻量收敛）：卡内留白 16→20、卡间距 14→18 ——
+   "整体太满、不透气"的治法之一。间距只加竖向，不动横向结构
+   （横向一移动，mobileprobe 的越界断言就要重新审）。
+   视觉设计方案 P0：主次卡层级。默认（.card）＝主卡：白面 + 1px 边 + 半径 14 + 轻阴影，
+   只给 hero（天色带）与地图两张"脸"；.q＝次卡：半径 10、无阴影，
+   给查询区与全部读数卡。层级主要来自内容与字重，圆角阴影只是助攻。 */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:20px}
+.card.q{border-radius:var(--r2);box-shadow:none}
+.card+.card{margin-top:18px}
 .card-h{display:flex;align-items:center;gap:9px;margin-bottom:12px;flex-wrap:wrap}
-.card-h h2{font-size:15.5px}
-.card-h .tag{font-size:11.5px;color:var(--tx3)}
+/* P0：卡题用衬线 —— 编辑感的来源；15.5px 在 SimSun 的发虚线之上 */
+.card-h h2{font-size:15.5px;font-family:var(--serif);font-weight:600;letter-spacing:.3px}
+.card-h .tag{font-size:12px;color:var(--tx3)}
 .card-h .right{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.hint{font-size:12.5px;color:var(--tx3);line-height:1.6}
+.hint{font-size:12px;color:var(--tx3);line-height:1.6}
 
 /* ---------- 配色纪律（改之前先读这段） ----------
    --tx3 / --acc2 这两个色**不是随手挑的**，是 C1 无障碍审计按 WCAG 对比度定下来的：
@@ -235,7 +286,7 @@ a{color:var(--blue)}
 
 /* ---------- 表单 ---------- */
 .field{position:relative}
-label.lb{display:block;font-size:12.5px;color:var(--tx2);font-weight:600;margin-bottom:5px}
+label.lb{display:block;font-size:12px;color:var(--tx2);font-weight:600;margin-bottom:5px}
 input,select,button{font:inherit;color:inherit}
 input[type=text],input[type=date],input[type=number],select{
   width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:var(--r2);
@@ -248,7 +299,7 @@ button.primary{background:linear-gradient(180deg,#f0763a,#dd5a1d);border-color:#
   box-shadow:0 6px 14px -6px rgba(221,90,29,.7)}
 button.primary:hover{filter:brightness(1.05);background:linear-gradient(180deg,#f0763a,#dd5a1d)}
 button:disabled{opacity:.55;cursor:not-allowed}
-button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
+button.sm{padding:6px 10px;font-size:12px;font-weight:600}
 
 /* ---------- 焦点可见性（C1） ----------
    上面 `input/select{outline:none}` 是作者显式关掉 UA 焦点环的写法 ——
@@ -263,45 +314,144 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 .seg button:focus-visible,.unitseg button:focus-visible,.presets button:focus-visible{outline-offset:1px}
 
 /* 搜索下拉 */
-.sug{position:absolute;left:0;right:0;top:calc(100% + 5px);background:var(--sug);border:1px solid var(--line);
-  border-radius:var(--r2);box-shadow:0 14px 34px -12px rgba(16,24,40,.34);max-height:296px;overflow:auto;z-index:70;display:none}
+  .sug{position:absolute;left:0;right:0;top:calc(100% + 5px);background:var(--sug);border:1px solid var(--line);
+  border-radius:var(--r2);box-shadow:var(--sh-sug);max-height:296px;overflow:auto;z-index:70;display:none}
 .sug.on{display:block}
 .sug div{padding:9px 12px;font-size:13.5px;cursor:pointer;display:flex;gap:8px;align-items:baseline}
 .sug div:hover div,.sug div:hover{background:var(--accbg)}
 .sug .s1{font-weight:600}
-.sug .s2{font-size:11.5px;color:var(--tx3);margin-left:auto;font-family:var(--mono)}
+.sug .s2{font-size:12px;color:var(--tx3);margin-left:auto;font-family:var(--mono)}
 
-/* ---------- 控制面板 ---------- */
-.ctrl-grid{display:grid;grid-template-columns:minmax(240px,1.5fr) 150px 150px 128px auto;gap:12px;align-items:end}
+/* ---------- 控制面板（视觉方案二 P0：一行条 + 折叠面板） ----------
+   决策四件套（地点 / 日期 / 时段 / 开始预报）常驻一行：地点搜索吃剩余宽度、
+   其余按内容宽；「更多选项」推向右端。折叠面板里的经纬度用两列小网格，
+   上限宽度 —— 它是“手动改坐标”的低频入口，不重回首屏抢宽度。 */
+.qbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.qbar .qloc{flex:1 1 220px;min-width:0}
+.qbar .qloc input[type=text]{width:100%}
+.qbar > input[type=date]{flex:0 1 auto;width:139px}
+.qbar .seg{flex:0 0 auto}
+.qbar .primary{flex:0 0 auto;white-space:nowrap}
+.qmorebtn{flex:0 0 auto;margin-left:auto}
+.qmore > .qgroup:first-child{margin-top:13px}
+.qgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:420px}
+@media (max-width:760px){
+  .qbar .qloc{flex-basis:100%}
+  .qbar > input[type=date]{flex:1 1 auto}
+}
 .seg{display:flex;gap:6px;background:var(--panel);border:1px solid var(--line);padding:4px;border-radius:12px}
 .seg button{border:0;background:transparent;padding:7px 12px;border-radius:8px;font-size:13.5px;color:var(--tx2)}
 .seg button.on{background:var(--sug);color:var(--acc2);box-shadow:0 2px 8px -3px rgba(16,24,40,.22)}
 .rowline{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
 .chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--tx2);cursor:pointer;user-select:none}
 .presets{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
-.presets button{font-size:12.5px;padding:5px 10px;border-radius:999px;color:var(--tx2)}
+.presets button{font-size:12px;padding:5px 10px;border-radius:999px;color:var(--tx2)}
+
+/* ---------- 第五轮 UI：查询区三组 / 工具条两组 / 默认折叠 ----------
+   分组只加"小标签 + 分隔"，不引入任何新交互形态（分段按钮 / 按钮 / 复选框 /
+   下拉各就各位）—— 治的是"控件形态杂乱"，不是把控件换一遍。
+   标签 12px 与收敛后的辅助文字同档；虚线分隔与 .rank 的分隔同源。 */
+.qgroup{margin-top:14px}
+.qlabel{font-size:12px;font-weight:700;color:var(--tx3);margin-bottom:7px;letter-spacing:.3px}
+.qgroup .rowline{margin-top:0}
+.qgroup + .qgroup{border-top:1px dashed var(--line);padding-top:12px}
+/* 卡片折叠（⑤⑥）：只收卡头以下的内容，卡头（标题 + 折叠按钮）永远在 ——
+   折叠态下用户仍然看得见"这里有什么、要不要展开"。 */
+.card.folded > :not(.card-h){display:none}
+.foldbtn{flex:0 0 auto}
+/* <details> 折叠（结论卡详情 / 趋势数值表 / 图例说明）与 .lgmore 同款摘要样式 */
+.fmore{margin-top:10px;font-size:12px;color:var(--tx2)}
+.fmore summary{cursor:pointer;font-weight:600;color:var(--tx3);font-size:12px;padding:3px 0}
+.fmore summary:hover{color:var(--acc)}
+.fmore .hint{margin-top:7px}
+/* 结论卡两层：核心一眼层与详情层共用 .kv 网格，各自的外距由这里给 */
+.hero-kv{margin-top:14px}
 
 /* ---------- 布局 ---------- */
-.layout{display:grid;grid-template-columns:minmax(0,1.02fr) minmax(0,1fr);gap:14px;margin-top:14px;align-items:start}
+.layout{display:grid;grid-template-columns:minmax(0,1.02fr) minmax(0,1fr);gap:18px;margin-top:18px;align-items:start}
 .col{min-width:0}
 @media (max-width:1180px){.layout{grid-template-columns:1fr}}
 @media (max-width:760px){
-  .ctrl-grid{grid-template-columns:1fr 1fr}
-  .ctrl-grid .full{grid-column:1 / -1}
   .wrap{padding:0 11px 40px}
-  .card{padding:13px}
+  .card{padding:15px}
 }
 
-/* ---------- 结论条 ---------- */
-.hero{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+/* ---------- 结论条 + 天色带（视觉方案 P1） ----------
+   天色带是 hero 的核心：分段宽度＝该段真实时长（flex-grow 直接吃"分钟数"），
+   颜色取 --dusk-* 的固定序列 —— 它不是装饰图，是"那一段时间的天色"。
+   与地图色阶是两套色阶：一个按当日值域拉伸，一个是物理固定的曙暮光序列，绝不混用。 */
+.sky{display:flex;height:58px;margin:2px -20px 0;overflow:hidden;position:relative}
+.sky .s{display:block;min-width:1px}
+.sky .s-day{background:var(--dusk-day)}
+.sky .s-civil{background:var(--dusk-civil)}
+.sky .s-naut{background:var(--dusk-nautical)}
+.sky .s-astro{background:var(--dusk-astro)}
+.sky .s-night{background:var(--dusk-night)}
+/* 视觉方案二 P1：大气 —— 柔光（::before）+ 颗粒（::after）。
+   柔光锚在霞光窗口中心（--skyglow-x 由 JS 按 win/事件位置写入）：光从霞光来的
+   方向晕开。绘制顺序正好分层：分段色块（非定位）在最底 → ::before 柔光 →
+   薄纱/窗口/现在线（定位子元素）→ ::after 颗粒在最顶 —— 云遮住光、颗粒铺满天色。
+   两层都 pointer-events:none，不吃悬停解释。 */
+.sky::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(46% 150% at var(--skyglow-x,50%) 96%,var(--skyglow) 0%,transparent 68%)}
+/* 颗粒：SVG feTurbulence 噪声瓦片（灰度、无色值字面量）。overlay 混合让它
+   在浅段上压暗、在深段上提亮，都是"磨砂"而不是"脏点"；深色下换普通混合、
+   再低一档 —— 深底上 overlay 几乎不可见，normal 的 3% 灰点恰好像夜里的空气。 */
+.sky::after{content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:overlay;opacity:.10;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  background-size:160px 160px}
+[data-theme="dark"] .sky::after{mix-blend-mode:normal;opacity:.08}
+/* P2：云量淡纹 —— 深色薄纱，不透明度 ∝ 低/中云遮挡量（0.30 上限）。
+   用"阴影"而不是"白云"：白云在浅色白昼段上等于没画；薄纱压在任何天色段上
+   都能读出来，语义也顺（云遮住了光）。pointer-events:none 让它不吃悬停。 */
+.sky .veil{position:absolute;inset:0;pointer-events:none}
+/* P2："现在"线 —— 白线 + 深色外描边，压在浅色与深色段上都认得出 */
+.sky .now{position:absolute;top:0;bottom:0;width:1px;background:rgba(255,255,255,.9);
+  box-shadow:0 0 0 1px rgba(20,30,45,.35);pointer-events:none}
+.skyaxis .nowlbl{font-weight:700;color:var(--tx2)}
+/* 霞光窗口：4px 底线 + **1px 白色上沿** + 两端细刻度。
+   白色上沿不是装饰：窗口落在中国曙暮光段（tan）上，橙线压橙底几乎看不见
+   （实拍确认过）；一道白沿把它从任何天色段里分离出来。
+   min-width:3px —— 窗口只有 2 分钟时占带宽 1.8%，纯按比例会细到看不见；
+   3px 是"标记"的可见下限，不代表时长（时长由下方核心格给）。 */
+.sky .win{position:absolute;bottom:0;height:4px;min-width:3px;background:var(--acc);
+  border-top:1px solid rgba(255,255,255,.85);border-radius:2px;transform-origin:left center}
+.sky .win::before,.sky .win::after{content:"";position:absolute;top:-6px;width:1px;height:9px;background:var(--acc);opacity:.9}
+.sky .win::before{left:0}
+.sky .win::after{right:0}
+/* 轴：只标两个真时刻（事件 / 天黑），位置按各自在带上的百分比；
+   左端标签左对齐、右端标签右对齐 —— 居中定位在带的两端必然被卡片裁掉。 */
+.skyaxis{position:relative;height:17px;margin:5px -20px 0;font-size:12px;color:var(--tx3)}
+.skyaxis span{position:absolute;white-space:nowrap}
+.skyaxis b{font-weight:700;color:var(--tx2)}
+/* 数字：衬线大字 —— 取代原概率环。环是"数字 + 渐变 accent"的默认处理，
+   有了天色带之后它是多余的那件 accessory，砍掉（Chanel：出门前摘掉一件）。 */
+.hero{display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-top:16px}
+.hero-num{font-family:var(--serif);font-size:46px;font-weight:800;line-height:1;letter-spacing:-1px}
+.hero-num span{font-size:20px;font-weight:600;margin-left:2px}
+.hero-lbl{font-size:12px;color:var(--tx3);margin-top:3px}
+.hero-txt{flex:1 1 320px;min-width:240px}
+.hero-txt .big{font-size:19px;font-weight:600;line-height:1.5;font-family:var(--serif)}
+.hero-txt .big em{font-style:normal;color:var(--acc2)}
+/* 一次编排动效：首次预报完成时天色带淡入、霞光窗口从左画到右。
+   只挂首帧（JS 只给第一次渲染加 .reveal）；其余过渡都回答用户动作。 */
+@keyframes skyIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@keyframes winIn{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.sky.reveal{animation:skyIn .45s cubic-bezier(.2,.8,.2,1) both}
+.sky.reveal .win{animation:winIn .55s .12s cubic-bezier(.2,.8,.2,1) both}
+@media (prefers-reduced-motion:reduce){.sky.reveal,.sky.reveal .win{animation:none}}
+@media (max-width:760px){
+  .sky{height:46px;margin:2px -15px 0}
+  .skyaxis{margin:5px -15px 0}
+  .hero-num{font-size:38px}
+}
+/* 概率环：**只剩快照模式在用**（renderSnap 的紧凑摘要卡 —— 快照数据没有几何量，
+   画不出天色带，环是那页最合适的紧凑读数）。普通 hero 已改用衬线数字。 */
 .dial{position:relative;width:126px;height:126px;flex:0 0 auto}
 .dial svg{transform:rotate(-90deg)}
 .dial .dv{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
 .dial .dv b{font-size:27px;letter-spacing:-.5px}
-.dial .dv span{font-size:11px;color:var(--tx3)}
-.hero-txt{flex:1 1 260px;min-width:220px}
-.hero-txt .big{font-size:19px;font-weight:700;line-height:1.45}
-.hero-txt .big em{font-style:normal;color:var(--acc2)}
+.dial .dv span{font-size:12px;color:var(--tx3)}
 
 /* ---------- 可信度徽标（B2） ----------
    三档配色由 _p4.js 的 ENS_CONF_BANDS 通过 --cfb / --cfbg / --cfbd 传入，
@@ -314,10 +464,10 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 .cfbadge i{width:7px;height:7px;border-radius:50%;background:var(--cfb);flex:0 0 auto}
 .cfbadge b{font-weight:800}
 /* 明细用等宽体以便数字对齐，但不动 letter-spacing —— 负字距在中英混排下会挤成一团 */
-.cfbadge .cfsm{font-weight:500;font-family:var(--mono);font-size:11px;opacity:.86}
+.cfbadge .cfsm{font-weight:500;font-family:var(--mono);font-size:12px;opacity:.86}
 /* 窄屏不再整段隐藏：宁可让它换行，也不要把 ΔI / 一致性 这些判断依据丢掉 */
 @media (max-width:520px){.cfbadge .cfsm{flex:1 1 100%;padding-left:13px}}
-.grade{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12.5px;font-weight:700;border:1px solid}
+.grade{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid}
 /* 结论卡的概率环底：走令牌，深色下才是深灰而不是一道白圈 */
 .dialbg{stroke:var(--track)}
 .g-优{background:var(--g1bg);color:var(--g1tx);border-color:var(--g1bd)}
@@ -328,8 +478,8 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 /* ---------- 概览小格 ---------- */
 .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:9px}
 .kv .it{background:var(--hover);border:1px solid var(--line2);border-radius:var(--r2);padding:8px 10px}
-.kv .k{font-size:11.5px;color:var(--tx3)}
-.kv .v{font-size:14.5px;font-weight:700;margin-top:2px;font-family:var(--mono);word-break:break-all}
+.kv .k{font-size:12px;color:var(--tx3)}
+.kv .v{font-size:14.5px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums;word-break:break-all}
 
 /* ---------- 模型卡 ---------- */
 .models{display:grid;grid-template-columns:1fr 1fr;gap:11px}
@@ -339,25 +489,25 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 .mcard .mh{display:flex;align-items:center;gap:7px;margin-bottom:9px}
 .mcard .mh b{font-size:14px}
 .mcard .mh .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
-.mcard .mh .rt{margin-left:auto;font-size:11px;color:var(--tx3)}
+.mcard .mh .rt{margin-left:auto;font-size:12px;color:var(--tx3)}
 .mrow{display:flex;align-items:flex-end;gap:9px}
-.mnum{font-size:30px;font-weight:800;line-height:1;letter-spacing:-1px;font-family:var(--mono)}
+.mnum{font-size:30px;font-weight:800;line-height:1;letter-spacing:-1px;font-variant-numeric:tabular-nums}
 .mnum small{font-size:14px;font-weight:700;margin-left:1px}
 .mmeta{display:flex;flex-direction:column;gap:3px;padding-bottom:2px}
 .bar{height:7px;border-radius:99px;background:var(--track);overflow:hidden;margin-top:9px}
 .bar i{display:block;height:100%;border-radius:99px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
-.mfacts{margin-top:9px;font-size:12.2px;color:var(--tx2);line-height:1.75}
+.mfacts{margin-top:9px;font-size:12px;color:var(--tx2);line-height:1.75}
 .mfacts span{display:inline-block;margin-right:10px;white-space:nowrap}
 .mfacts b{color:var(--tx);font-family:var(--mono);font-weight:700}
 
 /* ---------- 因素表 ---------- */
 .ftab{width:100%;border-collapse:collapse;font-size:13px}
-.ftab th{text-align:left;font-size:11.5px;color:var(--tx3);font-weight:600;padding:0 8px 7px 0;border-bottom:1px solid var(--line);white-space:nowrap}
+.ftab th{text-align:left;font-size:12px;color:var(--tx3);font-weight:600;padding:0 8px 7px 0;border-bottom:1px solid var(--line);white-space:nowrap}
 .ftab td{padding:8px 8px 8px 0;border-bottom:1px solid var(--line2);vertical-align:top}
 .ftab tr:last-child td{border-bottom:0}
 .ftab td.v{font-family:var(--mono);font-weight:700;white-space:nowrap}
-.ftab td.d{color:var(--tx2);font-size:12.3px;line-height:1.6}
-.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:700;border:1px solid;white-space:nowrap}
+.ftab td.d{color:var(--tx2);font-size:12px;line-height:1.6}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid;white-space:nowrap}
 .p-ok{background:var(--okbg);color:var(--ok);border-color:var(--okbd)}
 .p-mid{background:var(--warnbg);color:var(--warn);border-color:var(--warnbd)}
 .p-bad{background:var(--badbg);color:var(--bad);border-color:var(--badbd)}
@@ -372,7 +522,7 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 /* ---------- 光追 ---------- */
 .ray{display:grid;grid-template-columns:repeat(auto-fit,minmax(146px,1fr));gap:9px}
 .swatch{height:42px;border-radius:9px;border:1px solid var(--hole);display:flex;align-items:flex-end;
-  justify-content:flex-end;padding:3px 7px;font-size:11px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+  justify-content:flex-end;padding:3px 7px;font-size:12px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5)}
 .tl{position:relative;height:56px;margin:12px 0 4px;border-radius:9px;background:var(--hover);border:1px solid var(--line2);overflow:hidden}
 .tl .seg2{position:absolute;top:0;bottom:0;background:linear-gradient(180deg,#ffd9a8,#f08a3c);opacity:.32}
 .tl .mk{position:absolute;top:0;bottom:0;width:1px;background:#94a3b8}
@@ -381,7 +531,7 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 
 /* ---------- 提示 ---------- */
 .notes{display:flex;flex-direction:column;gap:7px}
-.note{display:flex;gap:9px;font-size:12.7px;line-height:1.6;padding:8px 11px;border-radius:var(--r2);border:1px solid}
+.note{display:flex;gap:9px;font-size:12px;line-height:1.6;padding:8px 11px;border-radius:var(--r2);border:1px solid}
 .note b{font-weight:700}
 .n-ok{background:var(--okbg);border-color:var(--okbd);color:var(--ok)}
 .n-warn{background:var(--warnbg);border-color:var(--warnbd);color:var(--warn)}
@@ -458,10 +608,10 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 .mload.err{padding:20px 18px;text-align:center;line-height:1.75;background:var(--tipbg)}
 .mload.err .spin{display:none}
 .mretry{margin-left:6px;padding:4px 12px;border:1px solid var(--acc);background:transparent;color:var(--acc);
-  border-radius:8px;font-size:12.5px;cursor:pointer;font-family:inherit}
+  border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit}
 .mretry:hover{background:var(--acc);color:#fff}
 .tip{position:absolute;z-index:20;pointer-events:none;background:rgba(255,255,255,.98);border:1px solid var(--line);
-  border-radius:11px;box-shadow:0 12px 30px -10px rgba(16,24,40,.4);padding:9px 11px;font-size:12.5px;min-width:172px;
+  border-radius:11px;box-shadow:var(--sh-tip);padding:9px 11px;font-size:12px;min-width:172px;
   max-width:calc(100% - 12px);
   transform:translate(-50%,calc(-100% - 14px + var(--tipshift,0px)));opacity:0;transition:opacity .12s;line-height:1.6}
 .tip.on{opacity:1}
@@ -501,6 +651,10 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
        （实拍里"郴州市附近"四个字清晰浮在卡片中间）。层序是对的（tip z=20 >
        pinlayer z=6），问题纯粹在 alpha。 */
     background:var(--tipbgSolid);
+    /* 液态玻璃只给桌面那把小卡：dock 不透明是硬约束（上方注释），
+       backdrop-filter 若从基础 .tip 继承过来，模糊本身也会把底下的
+       图钉/直标"揉"进卡片 —— 必须显式关掉，而不是只换底色。 */
+    backdrop-filter:none;-webkit-backdrop-filter:none;
     /* z=2000 而不是 20：腾讯地图 SDK 会在**触屏真机**上自动加缩放（+/−）与
        罗盘控件，z-index 是 SDK 内部值、无从约定 —— 真机实测它们整只压在
        z=20 的卡片上，连卡片右上角的 × 都被盖住（第二批真机反馈）。
@@ -518,24 +672,30 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
    上半部分（地点/时段/综合指数/概率/质量），只剩最下面的按钮。 */
 .tip.below{transform:translate(-50%,calc(14px + var(--tipshift,0px)))}
 .tip .t1{font-weight:700;font-size:13.5px;display:flex;gap:7px;align-items:center}
-.tip .t2{color:var(--tx3);font-size:11.5px;margin-bottom:5px}
+.tip .t2{color:var(--tx3);font-size:12px;margin-bottom:5px}
 .tip .t3{display:flex;justify-content:space-between;gap:12px}
 .tip .t3 b{font-family:var(--mono)}
 .legend{margin-top:11px}
 .legend .bar2{height:14px;border-radius:5px;border:1px solid var(--line);overflow:hidden;display:flex}
 .legend .bar2 i{flex:1}
-.legend .ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--tx3);margin-top:5px;font-family:var(--mono)}
-.lgm-rows{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:9px;font-size:12.2px;color:var(--tx2)}
+.legend .ticks{display:flex;justify-content:space-between;font-size:12px;color:var(--tx3);margin-top:5px;font-family:var(--mono)}
+.lgm-rows{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:9px;font-size:12px;color:var(--tx2)}
 .lgm-rows span{display:inline-flex;align-items:center;gap:6px}
 /* M2-3 · 长文折叠：默认收起，别让它把地图卡片撑到 1713 px */
-.lgmore{margin-top:8px;font-size:12.4px;color:var(--tx2)}
-.lgmore summary{cursor:pointer;font-weight:600;color:var(--tx3);font-size:12.3px;padding:3px 0}
+.lgmore{margin-top:8px;font-size:12px;color:var(--tx2)}
+.lgmore summary{cursor:pointer;font-weight:600;color:var(--tx3);font-size:12px;padding:3px 0}
 .lgmore summary:hover{color:var(--acc)}
 .lgmore .hint{margin-top:7px}
 .chipc{width:13px;height:13px;border-radius:4px;border:1px solid var(--hole);flex:0 0 auto}
 
 /* ---------- 地图工具条 ---------- */
-.maptool{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:11px}
+/* 第五轮 UI：两组并列（数据源 / 显示层），各组"标签在上、控件在下"。
+   align-items:flex-start —— 两组高度不同（显示层五个复选框会折行），
+   顶对齐才不会出现第二组被垂直居中的奇怪留白。 */
+.maptool{display:flex;gap:8px 16px;flex-wrap:wrap;align-items:flex-start;margin-bottom:11px}
+.mtgroup{display:flex;flex-direction:column;gap:5px;min-width:0}
+.mtgroup .mtrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.mtgroup .qlabel{margin-bottom:0}
 /* M2-2：这条规则本意是给**下拉框**一个最小宽度，但 .maptool 里还有 5 个复选框，
    它们也被撑成了 118 px 的盒子（实测各多占 105 px），
    观感上就是"方块和它的文字被拉开一大截"。拆成两条，复选框回到自然尺寸。
@@ -549,7 +709,7 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 .rank h4{font-size:13px;margin-bottom:8px}
 /* M1 · 榜单每行都可点：与"点击地图上任意一点"走同一条通路（gotoLatLng + 单点查询），
    悬停时给个明确的反馈，键盘也能用（Enter / Space）。 */
-.rank .rr{display:flex;align-items:center;gap:9px;font-size:12.5px;padding:4px 0;border-bottom:1px solid var(--line2);
+.rank .rr{display:flex;align-items:center;gap:9px;font-size:12px;padding:4px 0;border-bottom:1px solid var(--line2);
   cursor:pointer;border-radius:6px;transition:background .12s}
 .rank .rr:last-child{border-bottom:0}
 .rank .rr:hover{background:var(--bluebg)}
@@ -559,10 +719,56 @@ button.sm{padding:6px 10px;font-size:12.5px;font-weight:600}
 /* 条形底色比色阶最低端（白）略深一档，否则"低值"的白色条会融进轨道里看不出长度 */
 .rank .rr .b3{flex:1;height:8px;border-radius:99px;background:var(--track2);box-shadow:inset 0 0 0 1px rgba(0,0,0,.05);overflow:hidden}
 .rank .rr .b3 i{display:block;height:100%}
-.rank .rr .vv{font-family:var(--mono);font-weight:700;min-width:42px;text-align:right}
+.rank .rr .vv{font-variant-numeric:tabular-nums;font-weight:700;min-width:42px;text-align:right}
 
+/* ---------- 目录菜单（grill 定稿） ----------
+   双入口同一面板：桌面顶栏按钮（粘顶）＋ 手机右下角浮钮（滚过首屏才出）。
+   桌面是浮层（无遮罩、页面可滚，高亮随滚动走）；手机是底部 sheet（带遮罩）。
+   z 序：浮钮 110 < 遮罩 119 < 面板 120；都低于地图提示卡手机的 2000（提示卡在场
+   时不与它抢——开 sheet 前会先收掉提示卡）。 */
+.top #tocBtn{flex:0 0 auto}
+.tocfab{position:fixed;right:16px;bottom:18px;z-index:110;width:46px;height:46px;border-radius:50%;
+  border:1px solid var(--line);background:var(--card);box-shadow:var(--sh-fab);
+  align-items:center;justify-content:center;color:var(--tx2);cursor:pointer;display:none}
+.tocfab.on{display:flex}
+.tocfab:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.tocveil{position:fixed;inset:0;z-index:119;background:var(--veil)}
+.tocveil[hidden]{display:none}
+.tocpanel{position:fixed;z-index:120;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;box-shadow:var(--sh-pop);padding:8px;min-width:238px;max-width:320px;
+  max-height:calc(100vh - 24px);overflow:auto;-webkit-overflow-scrolling:touch}
+.tocpanel[hidden]{display:none}
+/* 分组标题用衬线 —— 与卡题同源，一眼能分出"两组" */
+.toc-g{font-family:var(--serif);font-size:13px;font-weight:600;color:var(--tx2);
+  padding:9px 10px 6px;margin-top:6px;border-top:1px solid var(--line2)}
+.toc-g:first-child{border-top:0;margin-top:0;padding-top:6px}
+.toc-i{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;
+  background:transparent;color:var(--tx);font:inherit;font-size:13.5px;padding:8px 10px;
+  border-radius:8px;cursor:pointer;position:relative}
+.toc-i:hover{background:var(--hover)}
+.toc-i:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.toc-i[aria-current="true"]{color:var(--acc2);font-weight:600}
+.toc-i[aria-current="true"]::before{content:"";position:absolute;left:0;top:8px;bottom:8px;
+  width:2px;border-radius:2px;background:var(--acc)}
+.toc-tag{margin-left:auto;font-size:12px;color:var(--tx3);font-weight:400}
+/* 手机：面板变底部 sheet；顶栏按钮让位；跳转后不留缝 */
+@media (max-width:760px){
+  .top #tocBtn{display:none}
+  .tocpanel{left:0;right:0;bottom:0;top:auto;min-width:0;max-width:none;max-height:86vh;
+    border-radius:16px 16px 0 0;padding:6px 10px 18px;
+    box-shadow:var(--sh-up);
+    animation:tocUp .22s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes tocUp{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+  @media (prefers-reduced-motion:reduce){.tocpanel{animation:none}}
+}
+/* 跳转目标让过 64px 粘顶栏（scroll-margin 只在 scrollIntoView 时生效，不影响布局） */
+#cardHero,#cardModels,#cardFac,#cardRay,#cardNotes,#cardTrend,#cardSpots,#cardMap{scroll-margin-top:74px}
+/* 谚语落款（视觉方案 P1）：衬线一行 + 无衬线来源行。
+   来源行 12px 用 --sans —— 12px 宋体在 Windows 有 bitmap 提示，会发虚。 */
+.adage{text-align:center;margin:20px 0 4px;font-family:var(--serif);font-size:15px;color:var(--tx2);letter-spacing:.4px}
+.adage .src{display:block;font-family:var(--sans);font-size:12px;color:var(--tx3);margin-top:3px;letter-spacing:.6px}
 /* ---------- 页脚 ---------- */
-footer{margin-top:20px;font-size:12.3px;color:var(--tx3);line-height:1.75}
+footer{margin-top:20px;font-size:12px;color:var(--tx3);line-height:1.75}
 footer details{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:10px}
 footer summary{cursor:pointer;font-weight:700;color:var(--tx);font-size:13.5px}
 footer .body{padding-top:9px}
@@ -571,7 +777,7 @@ footer li{margin:3px 0}
 
 /* ---------- 环境输入条（F7：让单位切换落到实处，也让结论可复核） ---------- */
 .envstrip{margin-top:12px;border:1px dashed var(--line);border-radius:var(--r2);padding:9px 11px;background:var(--soft)}
-.envstrip .esh{font-size:12.5px;color:var(--tx3);margin-bottom:7px}
+.envstrip .esh{font-size:12px;color:var(--tx3);margin-bottom:7px}
 
 /* ---------- 霞光强度/彩度演变曲线（F3） ---------- */
 .rcwrap{margin:2px 0 4px}
@@ -579,7 +785,7 @@ footer li{margin:3px 0}
 .rcg{stroke:var(--line2);stroke-width:1}
 .rcL{fill:none;stroke:var(--gp1);stroke-width:1.8}
 .rcC{fill:none;stroke:var(--gp2);stroke-width:1.8;stroke-dasharray:4 3}
-.rcaxis{display:flex;justify-content:space-between;font-size:11.5px;color:var(--tx3);margin-top:2px}
+.rcaxis{display:flex;justify-content:space-between;font-size:12px;color:var(--tx3);margin-top:2px}
 .rcleg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--tx2);margin-top:6px}
 .rcleg i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
 .rcleg .rcLi{background:var(--gp1)}
@@ -590,21 +796,21 @@ footer li{margin:3px 0}
 .t-trend th,.t-trend td{border-bottom:1px solid var(--line2);padding:6px 8px;text-align:left;vertical-align:middle}
 .t-trend th{font-size:12px;color:var(--tx3);font-weight:600}
 .t-trend tr.cur td{background:var(--tint)}
-.td-date{white-space:nowrap;color:var(--tx2);font-family:var(--mono);font-size:12.5px}
-.td-date i{color:var(--acc);font-style:normal;font-size:11px;margin-left:4px}
+.td-date{white-space:nowrap;color:var(--tx2);font-family:var(--mono);font-size:12px}
+.td-date i{color:var(--acc);font-style:normal;font-size:12px;margin-left:4px}
 .td-cell{cursor:pointer;border-radius:6px}
 .td-cell:hover{background:var(--tint2)}
 .td-cell.on{outline:2px solid var(--acc);outline-offset:-2px}
 .td-cell:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
 .td-cell.empty{color:var(--tx3);cursor:default}
 .tp{font-weight:700;font-size:16px;margin-right:8px;font-family:var(--mono)}
-.tp i{font-style:normal;font-size:11px;font-weight:500}
-.tq{font-size:11.5px;color:var(--tx2);white-space:nowrap}
+.tp i{font-style:normal;font-size:12px;font-weight:500}
+.tq{font-size:12px;color:var(--tx2);white-space:nowrap}
 
 /* ---------- 数据可信度（B12） ---------- */
 .cf-hi{color:var(--ok)} .cf-mid{color:var(--warn)} .cf-lo{color:var(--bad)}
 .t3.tflat{opacity:.8}
-.t3.tflat span{font-size:11px;color:var(--tx3)}
+.t3.tflat span{font-size:12px;color:var(--tx3)}
 .tgo{display:block;width:100%;margin-top:8px;padding:6px 8px;border:1px solid var(--acc);
   background:var(--accbg);color:var(--acc2);border-radius:8px;font:inherit;font-size:12.5px;cursor:pointer;
   pointer-events:auto}
@@ -612,48 +818,52 @@ footer li{margin:3px 0}
 
 /* ---------- F3 最佳窗口日历 ---------- */
 .tcal{margin:0 0 12px}
-.tcal-h{font-size:12.5px;color:var(--tx3);margin-bottom:7px}
+.tcal-h{font-size:12px;color:var(--tx3);margin-bottom:7px}
 .tcal-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:7px}
 .tcal-d{border:1px solid var(--line);border-radius:var(--r2);padding:6px 8px;background:var(--hover);
   cursor:pointer;text-align:left;font:inherit;color:inherit;transition:border-color .12s,background .12s}
 .tcal-d:hover{border-color:var(--acc);background:var(--tint)}
 .tcal-d.on{border-color:var(--acc2);background:var(--tint);box-shadow:0 0 0 2px var(--accbg)}
-.tcal-d .d1{display:flex;justify-content:space-between;gap:5px;font-size:11.5px;color:var(--tx3)}
+.tcal-d .d1{display:flex;justify-content:space-between;gap:5px;font-size:12px;color:var(--tx3)}
 .tcal-d .d1 b{color:var(--tx2);font-weight:600}
 .tcal-d .b{display:flex;align-items:center;gap:5px;font-size:12px;margin-top:4px}
 .tcal-d .b i{width:9px;height:9px;border-radius:2px;flex:0 0 auto}
-.tcal-d .b em{font-style:normal;color:var(--tx3);font-size:11px}
+.tcal-d .b em{font-style:normal;color:var(--tx3);font-size:12px}
 .tcal-d .b b{font-weight:600}
 .tcal-d.best{border-color:var(--acc2)}
-.tcal-sum{margin-top:9px;font-size:12.5px;color:var(--tx2)}
+.tcal-sum{margin-top:9px;font-size:12px;color:var(--tx2)}
 
 /* ---------- F2 多观测点对比 ---------- */
+/* 第五轮 UI（降噪）：与 .t-trend 同一套边框语言 —— 只留横向分隔、去掉竖线。
+   原来四边都有 1px 实线（全网格），4 列表格被切成 12 个格子，视觉重量
+   远大于它的信息量；横线足以引导阅读，竖线纯属噪声。 */
 .spotbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
 .spotbar .presets{margin:0}
 .sp-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;
-  padding:4px 6px 4px 10px;font-size:12.5px;background:var(--card);color:var(--tx2)}
+  padding:4px 6px 4px 10px;font-size:12px;background:var(--card);color:var(--tx2)}
 .sp-chip.cur{border-color:var(--acc);color:var(--acc2)}
 .sp-chip button{border:0;background:transparent;color:var(--tx3);cursor:pointer;font-size:14px;
   line-height:1;padding:0 3px;border-radius:4px}
 .sp-chip button:hover{color:var(--bad)}
 .t-spot{width:100%;border-collapse:collapse;font-size:13px}
-.t-spot th,.t-spot td{border:1px solid var(--line);padding:6px 9px;text-align:left}
-.t-spot th{background:var(--hover);font-weight:600;white-space:nowrap}
+.t-spot th,.t-spot td{border-bottom:1px solid var(--line2);padding:6px 10px 6px 0;text-align:left;vertical-align:middle}
+.t-spot th{border-bottom:1px solid var(--line);font-weight:600;white-space:nowrap;color:var(--tx3)}
+.t-spot tbody tr:last-child td{border-bottom:0}
 .t-spot tr.cur td{background:var(--tint)}
 .t-spot td.nm{white-space:nowrap}
-.t-spot td.nm i{font-style:normal;color:var(--tx3);font-size:11px}
+.t-spot td.nm i{font-style:normal;color:var(--tx3);font-size:12px}
 
 /* ---------- F1 离线 / PWA ---------- */
 /* 离线提示条：无网络时才出现。放在 .top 外面，避免挤窄屏顶部条（约束 44）。
    `[hidden]` 要显式写 display:none —— 一旦别处给 .netbar 设了 display，
    UA 的 hidden 样式就会被盖掉（与 .tip.dock 那次是同一类坑）。 */
 .netbar{background:var(--warnbg);border-bottom:1px solid var(--warnbd);color:var(--warn);
-  font-size:12.7px;line-height:1.55;padding:7px 14px;text-align:center}
+  font-size:12px;line-height:1.55;padding:7px 14px;text-align:center}
 .netbar[hidden]{display:none}
 .netbar b{font-weight:700}
 
 /* ---------- F5 结果快照 ---------- */
-/* 快照模式：③④⑤⑥ 这几张卡依赖**完整结果对象**，而快照只带了摘要。
+/* 快照模式：模型/因素/光追/提示这四张卡依赖**完整结果对象**，而快照只带了摘要。
    与其铺四张空卡，不如收起来 —— 页面仍然保留输入区、结论卡、趋势、地图与对比，
    它依然是一个能用的应用，只是"这一页没有完整分析"，点「按当前条件重新计算」即可补齐。 */
 body.snapmode [data-snaphide]{display:none}
@@ -667,9 +877,9 @@ body.snapmode [data-snaphide]{display:none}
   font-family:var(--mono);color:var(--tx);background:var(--bg);
   border:1px solid var(--line);border-radius:var(--r2)}
 .snapfac{margin-top:13px}
-.snapfac .sfh{font-size:12.5px;color:var(--tx3);margin-bottom:7px}
+.snapfac .sfh{font-size:12px;color:var(--tx3);margin-bottom:7px}
 .snapfac .sfl{display:flex;flex-wrap:wrap;gap:7px}
-.snapfac .sf{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;
+.snapfac .sf{display:inline-flex;align-items:center;gap:7px;font-size:12px;
   border:1px solid var(--line);border-radius:var(--r2);padding:4px 8px;
   background:var(--hover);color:var(--tx2)}
 .snapfac .sf b{font-weight:700;color:var(--tx);font-family:var(--mono);font-size:12px}
@@ -683,7 +893,7 @@ body.snapmode [data-snaphide]{display:none}
   background:var(--soft);padding:11px 12px}
 .calib[hidden]{display:none}
 .calib .cbq{font-weight:700;font-size:13px;color:var(--tx)}
-.calib .cbq.cbquiet{font-weight:400;color:var(--tx3);font-size:12.7px;line-height:1.6}
+.calib .cbq.cbquiet{font-weight:400;color:var(--tx3);font-size:12px;line-height:1.6}
 /* 六档按钮**必须换行**：六个中文档位并排约 430 px，窄屏卡片只有 ~340 px，
    不换行就会把卡片顶出容器（约束 46 那一类溢出）。 */
 .calib .cbseg{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
@@ -692,15 +902,15 @@ body.snapmode [data-snaphide]{display:none}
 .calib .cbseg button{border:1px solid var(--line);background:var(--card);color:var(--tx2);
   padding:4px 10px;border-radius:9px;font:inherit;font-size:12.5px;cursor:pointer}
 .calib .cbseg button.on{background:var(--accbg);color:var(--acc2);font-weight:600;border-color:var(--accbd)}
-.calib .cbhint{margin-top:8px;font-size:11.5px;color:var(--tx3);line-height:1.6}
+.calib .cbhint{margin-top:8px;font-size:12px;color:var(--tx3);line-height:1.6}
 .calib .cbsh{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin-top:10px}
 .calib .cbsh b{font-size:12.5px;color:var(--acc2)}
-.calib .cbsh span{font-size:11.5px;color:var(--tx3)}
+.calib .cbsh span{font-size:12px;color:var(--tx3)}
 .calib .cbsr{margin-top:5px;font-size:12.5px;color:var(--tx2);line-height:1.65}
-.calib .cbsr.cbprog{margin-top:9px;font-size:12.2px;color:var(--tx3)}
+.calib .cbsr.cbprog{margin-top:9px;font-size:12px;color:var(--tx3)}
 .calib .cbf{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
   margin-top:10px;padding-top:9px;border-top:1px solid var(--line)}
-.calib .cbp{flex:1 1 220px;min-width:0;font-size:11.5px;color:var(--tx3);line-height:1.6}
+.calib .cbp{flex:1 1 220px;min-width:0;font-size:12px;color:var(--tx3);line-height:1.6}
 .calib .chk{font-size:12.5px}
 
 /* ---------- 数值直标：第二编码（F6） ---------- */
@@ -758,7 +968,7 @@ body.snapmode [data-snaphide]{display:none}
 .drill{display:none;margin-top:10px;border:1px solid var(--line);border-radius:var(--r2);background:var(--soft);padding:9px 11px}
 .drill.on{display:block}
 .dhead{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin-bottom:7px}
-.dhead .dsub{font-size:11.5px;color:var(--tx3)}
+.dhead .dsub{font-size:12px;color:var(--tx3)}
 .dhead .dx{margin-left:auto;border:1px solid var(--line);background:var(--card);border-radius:7px;
   padding:2px 9px;font:inherit;font-size:12px;color:var(--tx2);cursor:pointer}
 .dlist{display:flex;flex-wrap:wrap;gap:6px}
@@ -780,6 +990,32 @@ body.snapmode [data-snaphide]{display:none}
 
 /* ---------- 键盘焦点可见（F6） ---------- */
 #map:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+
+/* ---------- 液态玻璃（视觉方案三 · 磨砂+高光档） ----------
+   只给四处悬浮件：顶栏 / 搜索下拉 / 桌面提示卡 / 目录面板 —— 玻璃的语义是
+   "浮在内容上"；正文卡片（.card）保持实心，流内内容玻璃化只伤可读性。
+   配方三层：backdrop 磨砂+提饱和、顶部一道高光渐变（sheen）、内侧 1px 高光
+   描边（hi）。颜色全部走 --glass* 令牌，深浅主题只换令牌值。
+   兜底：@supports 不满足时什么都不改 —— 上方各元素的原实心样式原样生效。
+   手机端 .tip.dock 在自己的媒体块里显式关掉 blur（不透明是硬约束）。 */
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .top{
+    background:linear-gradient(180deg,var(--glass-sheen),transparent 46%) var(--glass);
+    backdrop-filter:saturate(1.6) blur(16px);-webkit-backdrop-filter:saturate(1.6) blur(16px);
+    box-shadow:inset 0 1px 0 var(--glass-hi)}
+  .sug{
+    background:linear-gradient(180deg,var(--glass-sheen),transparent 40%) var(--glass);
+    backdrop-filter:saturate(1.5) blur(14px);-webkit-backdrop-filter:saturate(1.5) blur(14px);
+    box-shadow:var(--sh-sug),inset 0 1px 0 var(--glass-hi)}
+  .tip{
+    background:linear-gradient(180deg,var(--glass-sheen),transparent 45%) var(--glass);
+    backdrop-filter:saturate(1.5) blur(12px);-webkit-backdrop-filter:saturate(1.5) blur(12px);
+    box-shadow:var(--sh-tip),inset 0 1px 0 var(--glass-hi)}
+  .tocpanel{
+    background:linear-gradient(180deg,var(--glass-sheen),transparent 40%) var(--glass);
+    backdrop-filter:saturate(1.5) blur(18px);-webkit-backdrop-filter:saturate(1.5) blur(18px);
+    box-shadow:var(--sh-pop),inset 0 1px 0 var(--glass-hi)}
+}
 </style>
 </head>
 <body>
@@ -800,6 +1036,10 @@ body.snapmode [data-snaphide]{display:none}
       <div class="sub" data-i18n="多模型融合（GFS · ECMWF-IFS · 光追算法）+ 火烧云三角几何模型 + 大气消光光谱计算">多模型融合（GFS · ECMWF-IFS · 光追算法）+ 火烧云三角几何模型 + 大气消光光谱计算</div>
     </div>
     <div class="spacer"></div>
+    <!-- 目录入口（桌面）：顶栏是粘顶的，滚到哪都能开；窄屏隐藏（那里用右下角浮钮，
+         顶栏"必须一行"是硬约束 44，塞按钮会把它顶成两行） -->
+    <button class="sm" id="tocBtn" data-snaphide aria-haspopup="dialog" aria-expanded="false"
+      aria-controls="tocPanel" data-i18n="目录">目录</button>
     <div class="badge" id="topBadge">等待计算</div>
   </div>
 </div>
@@ -811,125 +1051,139 @@ body.snapmode [data-snaphide]{display:none}
 
 <div class="wrap">
 
-  <!-- ============ 控制面板 ============ -->
-  <div class="card" style="margin-top:14px">
-    <div class="card-h">
-      <h2 data-i18n="① 查询条件">① 查询条件</h2>
-      <span class="tag" data-i18n="支持全国所有城市、全球主要城市，或直接输入经纬度 · 修改地区后重新计算即可">支持全国所有城市、全球主要城市，或直接输入经纬度 · 修改地区后重新计算即可</span>
-    </div>
-
-    <div class="ctrl-grid">
-      <div class="field full">
-        <label class="lb" for="q" data-i18n="地区搜索（输入城市名 / 拼音首字母 / 「纬度,经度」）">地区搜索（输入城市名 / 拼音首字母 / 「纬度,经度」）</label>
-        <input type="text" id="q" placeholder="例如：广州、shenzhen、拉萨、东京、23.13,113.26" data-i18n-ph="例如：广州、shenzhen、拉萨、东京、23.13,113.26" autocomplete="off"
+  <!-- ============ 控制面板（视觉方案二 P0：一行条 + 折叠面板） ============
+       决策路径上的四件套（地点 / 日期 / 时段 / 开始预报）常驻一行，
+       天色带 hero 因此顶到首屏第一眼；手动经纬度 / 定位 / 预设 / 显示 / 界面
+       收进「更多选项」折叠面板。三组（查什么/显示/界面）的 .qgroup/.qlabel
+       外壳与全部控件 id 原样保留 —— 分组结构探针认的就是这层。 -->
+  <div class="card q" style="margin-top:14px">
+    <div class="qbar" id="qBar">
+      <div class="field qloc">
+        <input type="text" id="q" placeholder="搜索城市或输入纬度,经度" data-i18n-ph="搜索城市或输入纬度,经度" autocomplete="off"
+          aria-label="地区搜索" data-i18n-aria="地区搜索"
           role="combobox" aria-expanded="false" aria-controls="sug" aria-autocomplete="list">
         <div class="sug" id="sug" role="listbox"></div>
       </div>
-      <div class="field">
-        <label class="lb" for="lat" data-i18n="纬度（-90 ~ 90）">纬度（-90 ~ 90）</label>
-        <input type="number" id="lat" step="0.0001" value="31.2304" aria-label="纬度" data-i18n-aria="纬度">
-      </div>
-      <div class="field">
-        <label class="lb" for="lon" data-i18n="经度（-180 ~ 180）">经度（-180 ~ 180）</label>
-        <input type="number" id="lon" step="0.0001" value="121.4737" aria-label="经度" data-i18n-aria="经度">
-      </div>
-      <div class="field">
-        <label class="lb" for="date" data-i18n="日期">日期</label>
-        <input type="date" id="date" aria-label="日期" data-i18n-aria="日期">
-      </div>
-      <div class="field">
-        <span class="lb" id="goLbl" data-i18n="计算">计算</span>
-        <button class="primary" id="go" style="width:100%" aria-describedby="goLbl" data-i18n="开始预报">开始预报</button>
-      </div>
-    </div>
-
-    <div class="rowline">
+      <input type="date" id="date" aria-label="日期" data-i18n-aria="日期">
       <div class="seg" id="periodSeg" role="group" aria-label="时段：朝霞（日出）或晚霞（日落）" data-i18n-aria="时段：朝霞（日出）或晚霞（日落）">
         <button data-p="am" aria-pressed="false" data-i18n="朝霞（日出）">朝霞（日出）</button>
         <button data-p="pm" class="on" aria-pressed="true" data-i18n="晚霞（日落）">晚霞（日落）</button>
       </div>
-      <button class="sm" id="geoBtn" data-i18n="使用我的定位">使用我的定位</button>
-      <button class="sm" id="nowBtn" data-i18n="回到今天">回到今天</button>
-      <label class="chk"><input type="checkbox" id="autoMap"> <span data-i18n="地图跟随查询自动刷新（已有缓存直接用，无缓存才额外取数）">地图跟随查询自动刷新（已有缓存直接用，无缓存才额外取数）</span></label>
-      <div class="unitseg" id="unitSeg" role="group" aria-label="单位制" data-i18n-aria="单位制">
-        <button data-u="metric" class="on" aria-pressed="true" data-i18n="公制">公制</button>
-        <button data-u="imperial" aria-pressed="false" data-i18n="英制">英制</button>
-      </div>
-      <div class="unitseg" id="clockSeg" role="group" aria-label="时间制" data-i18n-aria="时间制">
-        <button data-c="24" class="on" aria-pressed="true" data-i18n="24 时">24 时</button>
-        <button data-c="12" aria-pressed="false" data-i18n="12 时">12 时</button>
-      </div>
-      <!-- 语言切换（i18n）：与时段/单位同款分段控件。
-           **刻意不放顶栏** —— 窄屏顶部条有"必须收成一行（≤43 px）"的硬约束
-           （见 44 号约束与 mobileprobe 的断言），多一个三按钮的分段控件必然把它顶成两行。
-           这一行本来就 flex-wrap，加一个控件不影响任何现有断言。
-           按钮文字用各语言自己的写法（中文 / 繁體 / English），不参与翻译。 -->
-      <div class="unitseg" id="langSeg" role="group" aria-label="语言" data-i18n-aria="语言"></div>
-      <!-- 主题（F8）：三态分段控件。**同样不放顶栏** —— 窄屏顶部条有"必须一行"的硬约束。 -->
-      <div class="unitseg" id="themeSeg" role="group" aria-label="主题" data-i18n-aria="主题"></div>
-      <span class="hint" id="locHint" style="margin-left:auto"></span>
+      <button class="primary" id="go" data-i18n="开始预报">开始预报</button>
+      <!-- 开合态只进 aria，不进偏好白名单 —— 每次进页面都从收起态开始 -->
+      <button class="sm qmorebtn" id="qMoreBtn" aria-expanded="false" aria-controls="qMore" data-i18n="更多选项">更多选项</button>
     </div>
-
-    <div class="presets" id="presets"></div>
+    <div class="qmore" id="qMore" hidden>
+      <div class="qgroup">
+        <div class="qlabel" data-i18n="查什么">查什么</div>
+        <div class="qgrid">
+          <div class="field">
+            <label class="lb" for="lat" data-i18n="纬度（-90 ~ 90）">纬度（-90 ~ 90）</label>
+            <input type="number" id="lat" step="0.0001" value="31.2304" aria-label="纬度" data-i18n-aria="纬度">
+          </div>
+          <div class="field">
+            <label class="lb" for="lon" data-i18n="经度（-180 ~ 180）">经度（-180 ~ 180）</label>
+            <input type="number" id="lon" step="0.0001" value="121.4737" aria-label="经度" data-i18n-aria="经度">
+          </div>
+        </div>
+        <div class="rowline">
+          <button class="sm" id="geoBtn" data-i18n="使用我的定位">使用我的定位</button>
+          <button class="sm" id="nowBtn" data-i18n="回到今天">回到今天</button>
+          <span class="hint" id="locHint" style="margin-left:auto"></span>
+        </div>
+        <div class="presets" id="presets"></div>
+        <div class="hint" style="margin-top:9px" data-i18n="支持全国所有城市、全球主要城市，或直接输入经纬度 · 修改地区后重新计算即可">支持全国所有城市、全球主要城市，或直接输入经纬度 · 修改地区后重新计算即可</div>
+      </div>
+      <div class="qgroup">
+        <div class="qlabel" data-i18n="显示">显示</div>
+        <div class="rowline">
+          <div class="unitseg" id="unitSeg" role="group" aria-label="单位制" data-i18n-aria="单位制">
+            <button data-u="metric" class="on" aria-pressed="true" data-i18n="公制">公制</button>
+            <button data-u="imperial" aria-pressed="false" data-i18n="英制">英制</button>
+          </div>
+          <div class="unitseg" id="clockSeg" role="group" aria-label="时间制" data-i18n-aria="时间制">
+            <button data-c="24" class="on" aria-pressed="true" data-i18n="24 时">24 时</button>
+            <button data-c="12" aria-pressed="false" data-i18n="12 时">12 时</button>
+          </div>
+        </div>
+      </div>
+      <div class="qgroup">
+        <div class="qlabel" data-i18n="界面">界面</div>
+        <div class="rowline">
+          <label class="chk"><input type="checkbox" id="autoMap"> <span data-i18n="地图跟随查询自动刷新（已有缓存直接用，无缓存才额外取数）">地图跟随查询自动刷新（已有缓存直接用，无缓存才额外取数）</span></label>
+          <!-- 语言切换与主题分段控件留在面板里：窄屏顶部条"必须一行"的硬约束不变，
+               一行条自身也不塞这两个三按钮控件（会把决策四件套挤下第一行）。 -->
+          <div class="unitseg" id="langSeg" role="group" aria-label="语言" data-i18n-aria="语言"></div>
+          <div class="unitseg" id="themeSeg" role="group" aria-label="主题" data-i18n-aria="主题"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ============ 主体 ============ -->
+  <div class="card" id="cardHero">
+    <div class="card-h"><h2 data-i18n="预报结论">预报结论</h2><span class="tag" id="heroTag" data-i18n="多模型综合">多模型综合</span>
+      <span class="right"><button class="sm" id="snapUrl" disabled data-i18n="复制快照链接">复制快照链接</button><button class="sm" id="shareCard" disabled data-i18n="保存为图片">保存为图片</button></span></div>
+    <!-- F5：快照区的唯一落点（复制失败时把链接摊在这里让人手动复制）。
+         平时 hidden，只有需要时才由 snapMsg() 打开。 -->
+    <div id="snapOut" hidden></div>
+    <div id="hero"></div>
+    <!-- F4 本地校准：**外壳是静态的**（三个容器 + 页脚控件），只让 JS 填
+         #calibHead / #calibStat。外壳静态有两个具体好处：
+           ① `#calibOff` / `#calibClear` 在 `applyPrefs()` 跑的时候就已存在，
+              能像别的偏好一样被铺初值（动态生成的控件赶不上那一步）；
+           ② 三段结构在模板里一眼可见，不必去 JS 里拼骨架。
+         `data-snaphide`：快照模式下整块收起 —— 快照是**别人**分享来的结论，
+         你未必真去过那个地方，标成自己的实况会污染自己的校准。 -->
+    <div class="calib" id="calibBox" data-snaphide hidden>
+      <div id="calibHead"></div>
+      <div id="calibStat"></div>
+      <div class="cbf">
+        <span class="cbp" data-i18n="标注只保存在这台设备的浏览器里，不会上传到任何服务器。">标注只保存在这台设备的浏览器里，不会上传到任何服务器。</span>
+        <label class="chk"><input type="checkbox" id="calibOff"> <span data-i18n="关闭本地校准">关闭本地校准</span></label>
+        <button class="sm" id="calibClear" data-i18n="清空标注数据">清空标注数据</button>
+      </div>
+    </div>
+  </div>
+
   <div class="layout">
 
     <!-- ---------- 左列：预报结果 ---------- -->
     <div class="col">
 
-      <div class="card" id="cardHero">
-        <div class="card-h"><h2 data-i18n="② 预报结论">② 预报结论</h2><span class="tag" id="heroTag" data-i18n="多模型综合">多模型综合</span>
-          <span class="right"><button class="sm" id="snapUrl" disabled data-i18n="复制快照链接">复制快照链接</button><button class="sm" id="shareCard" disabled data-i18n="保存为图片">保存为图片</button></span></div>
-        <!-- F5：快照区的唯一落点（复制失败时把链接摊在这里让人手动复制）。
-             平时 hidden，只有需要时才由 snapMsg() 打开。 -->
-        <div id="snapOut" hidden></div>
-        <div id="hero"></div>
-        <!-- F4 本地校准：**外壳是静态的**（三个容器 + 页脚控件），只让 JS 填
-             #calibHead / #calibStat。外壳静态有两个具体好处：
-               ① `#calibOff` / `#calibClear` 在 `applyPrefs()` 跑的时候就已存在，
-                  能像别的偏好一样被铺初值（动态生成的控件赶不上那一步）；
-               ② 三段结构在模板里一眼可见，不必去 JS 里拼骨架。
-             `data-snaphide`：快照模式下整块收起 —— 快照是**别人**分享来的结论，
-             你未必真去过那个地方，标成自己的实况会污染自己的校准。 -->
-        <div class="calib" id="calibBox" data-snaphide hidden>
-          <div id="calibHead"></div>
-          <div id="calibStat"></div>
-          <div class="cbf">
-            <span class="cbp" data-i18n="标注只保存在这台设备的浏览器里，不会上传到任何服务器。">标注只保存在这台设备的浏览器里，不会上传到任何服务器。</span>
-            <label class="chk"><input type="checkbox" id="calibOff"> <span data-i18n="关闭本地校准">关闭本地校准</span></label>
-            <button class="sm" id="calibClear" data-i18n="清空标注数据">清空标注数据</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="card" data-snaphide>
-        <div class="card-h"><h2 data-i18n="③ 各模型独立结果">③ 各模型独立结果</h2><span class="tag" data-i18n="每种模型单独给出概率与质量，末尾为多模型综合">每种模型单独给出概率与质量，末尾为多模型综合</span></div>
+      <div class="card q" data-snaphide id="cardModels">
+        <div class="card-h"><h2 data-i18n="各模型独立结果">各模型独立结果</h2><span class="tag" data-i18n="每种模型单独给出概率与质量，末尾为多模型综合">每种模型单独给出概率与质量，末尾为多模型综合</span></div>
         <div class="models" id="models"></div>
         <div class="hint" style="margin-top:11px">
           概率 P = 该模型输入场下「出现可观赏霞光」的置信度（0–100%）；质量 Q = 观赏质量评分（0–100 分）→ 优 ≥80 / 良 65–79 / 一般 45–64 / 差 &lt;45。
         </div>
       </div>
 
-      <div class="card" data-snaphide>
-        <div class="card-h"><h2 data-i18n="④ 主要影响因素分析">④ 主要影响因素分析</h2><span class="tag" id="facTag" data-i18n="按影响权重排序">按影响权重排序</span></div>
+      <div class="card q" data-snaphide id="cardFac">
+        <div class="card-h"><h2 data-i18n="主要影响因素分析">主要影响因素分析</h2><span class="tag" id="facTag" data-i18n="按影响权重排序">按影响权重排序</span></div>
         <div class="t-scroll"><table class="ftab" id="fac"></table></div>
       </div>
 
-      <div class="card" data-snaphide>
-        <div class="card-h"><h2 data-i18n="⑤ 光追算法细节">⑤ 光追算法细节</h2><span class="tag" data-i18n="沿真实光路的消光积分 + CIE 色度换算">沿真实光路的消光积分 + CIE 色度换算</span></div>
+      <!-- 第五轮 UI：光追与数据质量两张技术卡**默认收起**（折叠状态进偏好白名单，见 _p5.js 的
+           FOLD_KEYS）。卡头永远可见 —— 折叠只收卡头以下的内容，用户仍看得见
+           "这里有什么、要不要展开"。模板里直接写 folded：首帧就是收起态，
+          不等 JS（与 data-snaphide 同一思路：默认态不依赖脚本时序）。
+           模型与因素两张卡保持默认展开 —— 它们解释"结论怎么来的"，属中等兴趣内容。 -->
+      <div class="card q folded" data-snaphide id="cardRay">
+        <div class="card-h"><h2 data-i18n="光追算法细节">光追算法细节</h2><span class="tag" data-i18n="沿真实光路的消光积分 + CIE 色度换算">沿真实光路的消光积分 + CIE 色度换算</span>
+          <span class="right"><button class="sm foldbtn" id="rayFoldBtn" aria-expanded="false" aria-controls="ray" data-i18n="展开">展开</button></span></div>
         <div id="ray"></div>
       </div>
 
-      <div class="card" data-snaphide>
-        <div class="card-h"><h2 data-i18n="⑥ 数据质量与提示">⑥ 数据质量与提示</h2><span class="tag" data-i18n="缺失值、异常值与不确定性来源">缺失值、异常值与不确定性来源</span></div>
+      <div class="card q folded" data-snaphide id="cardNotes">
+        <div class="card-h"><h2 data-i18n="数据质量与提示">数据质量与提示</h2><span class="tag" data-i18n="缺失值、异常值与不确定性来源">缺失值、异常值与不确定性来源</span>
+          <span class="right"><button class="sm foldbtn" id="notesFoldBtn" aria-expanded="false" aria-controls="notes" data-i18n="展开">展开</button></span></div>
         <div class="notes" id="notes"></div>
       </div>
 
-      <div class="card">
+      <div class="card q" id="cardTrend">
         <div class="card-h">
-          <h2 id="trendTitle">⑧ 未来趋势</h2>
+          <h2 id="trendTitle">未来趋势</h2>
           <span class="tag" data-i18n="同一点位的逐日对比，一次取数看完整窗口（点格子可跳转）">同一点位的逐日对比，一次取数看完整窗口（点格子可跳转）</span>
           <span class="right"><button class="sm" id="trendGo">加载趋势</button></span>
         </div>
@@ -941,9 +1195,9 @@ body.snapmode [data-snaphide]{display:none}
 
       <!-- F2 多观测点对比：左列末尾。取数**必须显式触发**（约束 9 的额度纪律），
            所以这里只有"收藏 + 一个按钮"，打开页面不发任何请求。 -->
-      <div class="card">
+      <div class="card q" id="cardSpots">
         <div class="card-h">
-          <h2 data-i18n="⑨ 多观测点对比">⑨ 多观测点对比</h2>
+          <h2 data-i18n="多观测点对比">多观测点对比</h2>
           <span class="tag" data-i18n="把常去的几个机位放一起比 —— “今天去哪儿拍”一眼看出来">把常去的几个机位放一起比 —— “今天去哪儿拍”一眼看出来</span>
           <span class="right"><button class="sm primary" id="spotGo" data-i18n="对比这些点">对比这些点</button></span>
         </div>
@@ -958,39 +1212,51 @@ body.snapmode [data-snaphide]{display:none}
 
     <!-- ---------- 右列：地图 ---------- -->
     <div class="col">
-      <div class="card" style="position:sticky;top:64px">
+      <div class="card" id="cardMap" style="position:sticky;top:64px">
         <div class="card-h">
-          <h2 data-i18n="⑦ 周边霞光热力图">⑦ 周边霞光热力图</h2>
+          <h2 data-i18n="周边霞光热力图">周边霞光热力图</h2>
           <span class="tag" id="mapTag"></span>
         </div>
+        <!-- 第五轮 UI：工具条按「数据源 / 显示层」分两组。
+             下拉/按钮/复选框各就各位（id 与事件绑定全部原样），只加标签分组。 -->
         <div class="maptool">
-          <div class="seg" id="mapPeriod" role="group" aria-label="时段：朝霞（日出）或晚霞（日落）" data-i18n-aria="时段：朝霞（日出）或晚霞（日落）">
-            <button data-p="am" aria-pressed="false" data-i18n="朝霞">朝霞</button>
-            <button data-p="pm" class="on" aria-pressed="true" data-i18n="晚霞">晚霞</button>
+          <div class="mtgroup">
+            <span class="qlabel" data-i18n="数据源">数据源</span>
+            <div class="mtrow">
+              <div class="seg" id="mapPeriod" role="group" aria-label="时段：朝霞（日出）或晚霞（日落）" data-i18n-aria="时段：朝霞（日出）或晚霞（日落）">
+                <button data-p="am" aria-pressed="false" data-i18n="朝霞">朝霞</button>
+                <button data-p="pm" class="on" aria-pressed="true" data-i18n="晚霞">晚霞</button>
+              </div>
+              <select id="mapDateSel" title="日期" aria-label="日期" data-i18n-title="日期" data-i18n-aria="日期"></select>
+              <select id="mapModel" title="算法模型" aria-label="算法模型" data-i18n-title="算法模型" data-i18n-aria="算法模型">
+                <option value="ens">模型：多模型综合</option>
+                <option value="gfs">模型：GFS</option>
+                <option value="ec">模型：ECMWF-IFS</option>
+                <option value="rt">模型：光追算法</option>
+              </select>
+              <select id="mapDim" title="着色依据" aria-label="着色依据" data-i18n-title="着色依据" data-i18n-aria="着色依据">
+                <option value="mix" data-i18n="着色：综合指数（概率+质量）">着色：综合指数（概率+质量）</option>
+                <option value="p" data-i18n="着色：仅出现概率">着色：仅出现概率</option>
+                <option value="q" data-i18n="着色：仅观赏质量">着色：仅观赏质量</option>
+                <option value="dv" data-i18n="着色：模型分歧（三模型不一致度）">着色：模型分歧（三模型不一致度）</option>
+              </select>
+              <button class="sm primary" id="mapGo" data-i18n="刷新地图">刷新地图</button>
+            </div>
           </div>
-          <select id="mapDateSel" title="日期" aria-label="日期" data-i18n-title="日期" data-i18n-aria="日期"></select>
-          <select id="mapModel" title="算法模型" aria-label="算法模型" data-i18n-title="算法模型" data-i18n-aria="算法模型">
-            <option value="ens">模型：多模型综合</option>
-            <option value="gfs">模型：GFS</option>
-            <option value="ec">模型：ECMWF-IFS</option>
-            <option value="rt">模型：光追算法</option>
-          </select>
-          <select id="mapDim" title="着色依据" aria-label="着色依据" data-i18n-title="着色依据" data-i18n-aria="着色依据">
-            <option value="mix" data-i18n="着色：综合指数（概率+质量）">着色：综合指数（概率+质量）</option>
-            <option value="p" data-i18n="着色：仅出现概率">着色：仅出现概率</option>
-            <option value="q" data-i18n="着色：仅观赏质量">着色：仅观赏质量</option>
-            <option value="dv" data-i18n="着色：模型分歧（三模型不一致度）">着色：模型分歧（三模型不一致度）</option>
-          </select>
-          <button class="sm primary" id="mapGo" data-i18n="刷新地图">刷新地图</button>
-          <label class="chk"><input type="checkbox" id="numLabels"> <span data-i18n="数值直标">数值直标</span></label>
-          <label class="chk"><input type="checkbox" id="showPts"> <span data-i18n="采样点">采样点</span></label>
-          <label class="chk"><input type="checkbox" id="showConf"> <span data-i18n="可信度">可信度</span></label>
-          <label class="chk"><input type="checkbox" id="showGrid" checked> <span data-i18n="经纬网">经纬网</span></label>
-          <label class="chk"><input type="checkbox" id="dimBase"> <span data-i18n="深色底图">深色底图</span></label>
+          <div class="mtgroup">
+            <span class="qlabel" data-i18n="显示层">显示层</span>
+            <div class="mtrow">
+              <label class="chk"><input type="checkbox" id="numLabels"> <span data-i18n="数值直标">数值直标</span></label>
+              <label class="chk"><input type="checkbox" id="showPts"> <span data-i18n="采样点">采样点</span></label>
+              <label class="chk"><input type="checkbox" id="showConf"> <span data-i18n="可信度">可信度</span></label>
+              <label class="chk"><input type="checkbox" id="showGrid" checked> <span data-i18n="经纬网">经纬网</span></label>
+              <label class="chk"><input type="checkbox" id="dimBase"> <span data-i18n="深色底图">深色底图</span></label>
+            </div>
+          </div>
         </div>
         <div class="hint" id="modelNote" style="display:none;margin:-2px 0 9px"></div>
         <div class="mapwrap">
-          <div id="map" role="application" aria-label="周边霞光热力图" data-i18n-aria="⑦ 周边霞光热力图"></div>
+          <div id="map" role="application" aria-label="周边霞光热力图" data-i18n-aria="周边霞光热力图"></div>
           <div class="mload" id="mapLoad"><div class="spin"></div><span id="mapLoadTxt">地图资源加载中…</span></div>
           <div class="tip" id="tip" role="tooltip"></div>
           <div class="mlayer" id="mapLabels" aria-hidden="true"></div>
@@ -1000,12 +1266,23 @@ body.snapmode [data-snaphide]{display:none}
           <div class="bar2" id="lgBar"></div>
           <div class="ticks"><span>0</span><span>20</span><span>40</span><span>60</span><span>80</span><span>100</span></div>
           <div class="lgm-rows" id="lgRows"></div>
-          <!-- M1/M2-3：色条 + 刻度 + 等级行 + 这一段短说明＝"图例"的本体，**必须留在外面**
-               （功能需求第 4 条就是"清晰图例"）。剩下的长文（值域拉伸为什么这么算、
-               四个勾选项各自做什么、换地点会不会重取数……）第一次读需要、之后再也不看，
-               实测它单独占了 480 px（整张地图卡片 1713 px），折进 <details> 默认收起。 -->
-          <div class="hint" style="margin-top:9px" id="lgNote"></div>
-          <details class="lgmore">
+          <!-- 第五轮 UI：掩膜说明**常驻可见**（不折进下面的 details）。
+               它存在的原因是一条硬约束：被裁掉的那一片，用户看到的只是"什么都没有"，
+               与"没有数据"完全无法区分（mapaudit G 段守着这句话必须在场）。
+               方案原打算把整段图例长文一起折掉 —— 那等于把当年修掉的缺陷请回来，
+               所以拆成"一句常驻 + 其余可折"。 -->
+          <div class="hint" style="margin-top:9px" id="lgMask"></div>
+          <!-- M1/M2-3 + 第五轮 UI：色条 + 刻度 + 等级行 + 上面那句掩膜说明＝"图例"的本体，
+               **必须留在外面**（功能需求第 4 条就是"清晰图例"）。剩下的长文（值域拉伸为什么这么算、
+               五个勾选项各自做什么、换地点会不会重取数……）第一次读需要、之后再也不看，
+               实测它单独占了约 480 px（整张地图卡片 1713 px），收进默认收起的 <details>
+               （折叠状态进偏好白名单 legendFold，见 _p5.js 的 FOLD_KEYS）——
+               "图例的本体"一个像素没少，少的是每次打开页面都要先读一遍的几行技术说明。 -->
+          <details class="fmore" id="legendFold">
+            <summary data-i18n="图例与着色说明">图例与着色说明</summary>
+            <div class="hint" id="lgNote"></div>
+          </details>
+          <details class="lgmore fmore">
             <summary data-i18n="色面与叠加层的细节说明">色面与叠加层的细节说明</summary>
             <div class="hint" id="lgMore"></div>
           </details>
@@ -1046,6 +1323,9 @@ body.snapmode [data-snaphide]{display:none}
         </ul>
       </div>
     </details>
+    <!-- 视觉方案 P1：谚语落款 —— 把应用接回民间观天传统。
+         朝霞不出门、晚霞行千里讲的正是这个应用在预报的那件事；安静一行，不参与信息层级。 -->
+    <div class="adage"><span data-i18n="朝霞不出门，晚霞行千里">朝霞不出门，晚霞行千里</span><span class="src" data-i18n="民间谚语">民间谚语</span></div>
     <div style="text-align:center;padding-top:6px" data-i18n="霞光预报单文件版 · 全部计算在浏览器本地完成 · 数据经 Open-Meteo / CAMS 实时获取">霞光预报单文件版 · 全部计算在浏览器本地完成 · 数据经 Open-Meteo / CAMS 实时获取</div>
   </footer>
 
@@ -1054,6 +1334,28 @@ body.snapmode [data-snaphide]{display:none}
 <script>
 /*__BLOCK0__*/
 </script>
+<!-- 目录菜单（grill 定稿：双入口同一面板）。分组标题用衬线 —— 与卡题同源；
+     折叠卡右侧标"收起"，点它会展开并写偏好。快照模式整块隐藏（data-snaphide）。 -->
+<nav class="tocpanel" id="tocPanel" hidden aria-label="目录" data-snaphide data-i18n-aria="目录">
+  <div class="toc-g" data-i18n="主结果">主结果</div>
+  <button type="button" class="toc-i" data-goto="cardHero"><span data-i18n="预报结论">预报结论</span></button>
+  <button type="button" class="toc-i" data-goto="cardModels"><span data-i18n="各模型独立结果">各模型独立结果</span></button>
+  <button type="button" class="toc-i" data-goto="cardFac"><span data-i18n="主要影响因素分析">主要影响因素分析</span></button>
+  <button type="button" class="toc-i" data-goto="cardTrend"><span data-i18n="未来趋势">未来趋势</span></button>
+  <button type="button" class="toc-i" data-goto="cardSpots"><span data-i18n="多观测点对比">多观测点对比</span></button>
+  <button type="button" class="toc-i" data-goto="cardMap"><span data-i18n="周边霞光热力图">周边霞光热力图</span></button>
+  <div class="toc-g" data-i18n="技术细节">技术细节</div>
+  <button type="button" class="toc-i" data-goto="cardRay"><span data-i18n="光追算法细节">光追算法细节</span><span class="toc-tag" data-i18n="收起">收起</span></button>
+  <button type="button" class="toc-i" data-goto="cardNotes"><span data-i18n="数据质量与提示">数据质量与提示</span><span class="toc-tag" data-i18n="收起">收起</span></button>
+</nav>
+<div class="tocveil" id="tocVeil" hidden></div>
+<button type="button" class="tocfab" id="tocFab" data-snaphide aria-haspopup="dialog" aria-expanded="false"
+  aria-controls="tocPanel" aria-label="目录" data-i18n-aria="目录">
+  <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" focusable="false">
+    <path d="M3 4.5h12M3 9h12M3 13.5h8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" fill="none"/>
+  </svg>
+</button>
+
 <script>
 /* 腾讯地图的 key 不能明文出现在产物里（会被抄走刷配额），所以地图请求要走一个
    中转端点。这个端点的地址由**部署环境**在构建时注入（见 assemble.py）：

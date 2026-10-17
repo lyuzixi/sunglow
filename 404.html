@@ -49,6 +49,14 @@
   --r:14px; --r2:10px;
   --sh:0 1px 2px rgba(16,24,40,.04), 0 6px 20px -8px rgba(16,24,40,.10);
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  /* 视觉设计方案 P0：两个字体角色，界限分明。
+     "声音"（衬线）只给：结论句、卡题、hero 大数字 —— 应用唯一开口说的一次话；
+     "仪器"（无衬线）给：控件、正文、标签、图例。
+     等宽体收缩到只守真正对齐成列的数字（趋势/对比表、悬停读数）。
+     单文件约束 ⇒ 只用系统栈，零外部字体文件。
+     已知风险：SimSun 在 ≤12px 有 bitmap 提示发虚 ⇒ 衬线只用于 ≥15px 处。 */
+  --serif:"Songti SC","STSong","SimSun","Noto Serif CJK SC","Source Han Serif SC",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
 
   /* ---------- 深色模式（F8）追加的令牌 ----------
      为什么要有这一层：原来全站只有 10 个令牌，**132 处颜色是硬编码的**。
@@ -65,6 +73,14 @@
   --topbg:rgba(255,255,255,.86);
   --tipbg:rgba(255,255,255,.98);
   --tipbgSolid:#ffffff;   /* 手机端贴底卡片要求不透明 */
+  /* 下拉与桌面提示卡的外阴影：基础态与液态玻璃块共用一套值（darkprobe 收敛硬编码色） */
+  --sh-sug:0 14px 34px -12px rgba(16,24,40,.34);
+  --sh-tip:0 12px 30px -10px rgba(16,24,40,.4);
+  /* 液态玻璃（磨砂+高光档）共用令牌：只在 @supports(backdrop-filter) 内生效，
+     四处悬浮件（顶栏/搜索下拉/桌面提示卡/目录面板）用；正文卡片保持实心。 */
+  --glass:rgba(255,255,255,.60);       /* 玻璃底色，浮在内容上时透出下方色彩 */
+  --glass-sheen:rgba(255,255,255,.32); /* 顶部一道高光渐变的起点 */
+  --glass-hi:rgba(255,255,255,.70);    /* 内侧 1px 高光描边 */
   --loadbg:rgba(255,255,255,.9);
   --azibg:rgba(255,255,255,.72);
   --azitx:#6b7486;
@@ -83,6 +99,20 @@
   /* 四路模型标识色（模型卡上的小圆点与数字）：深色下要提亮，
      否则 #2f6fd0 这类中蓝压在深底上几乎看不见 */
   --mc-gfs:#2f6fd0; --mc-ec:#0f9c8a; --mc-rt:#c9501a; --mc-ens:#e2601f;
+  /* 天色带专用（视觉方案 P1）：**固定的**曙暮光序列，按太阳高度角分段
+     （>0 / 0~-6 / -6~-12 / -12~-18 / <-18 度）。它只属于天色带 ——
+     页面 chrome、徽章、按钮一概不许引用；与地图色阶（当日拉伸）是两套色阶，
+     刻意不混用，否则"看图反查数值"的单值映射会被第二种暖色序列污染。 */
+  --dusk-day:#dde5ee; --dusk-civil:#f0c48c; --dusk-nautical:#d9784a;
+  --dusk-astro:#7a759f; --dusk-night:#2b3450;
+  /* 霞光位置的一团柔光（视觉方案二 P1）：只属于天色带的第二层大气 ——
+     位置由 JS 按霞光窗口中心写入 --skyglow-x，颜色固定不随数据变。 */
+  --skyglow:rgba(255,166,87,.30);
+  /* 目录菜单/浮层用的三档阴影与遮罩（浅色）：放进令牌是 darkprobe 的「令牌外硬编码色 ≤45」守着的——弹层阴影在深色下要用另一组值 */
+  --sh-pop:0 14px 36px rgba(16,24,40,.18);
+  --sh-fab:0 8px 20px rgba(16,24,40,.18);
+  --sh-up:0 -14px 36px rgba(16,24,40,.22);
+  --veil:rgba(12,18,28,.30);
   /* 四级等级色（.g-优/良/一般/差 与 pill）：**必须成套**，
      深色下不能只换底色 —— 文字色 #178a52 之类在深底上对比度只有 2.6，读不出来 */
   --g1bg:#e9f7ef; --g1tx:#12734a; --g1bd:#bfe7d2;
@@ -103,6 +133,8 @@ html[data-theme="dark"]{
   --sh:0 1px 2px rgba(0,0,0,.5), 0 8px 24px -10px rgba(0,0,0,.65);
   --hover:#1e242e; --rowalt:#1a2029; --hoverline:#3a4450; --panel:#1c232c; --sug:#1f2630;
   --topbg:rgba(18,23,30,.9); --tipbg:rgba(23,29,38,.98); --tipbgSolid:#171d26;
+  /* 玻璃令牌深色版：底色更沉，高光更弱 —— 深底上白高光容易过曝 */
+  --glass:rgba(22,27,38,.58); --glass-sheen:rgba(255,255,255,.07); --glass-hi:rgba(255,255,255,.10);
   --loadbg:rgba(20,26,34,.92); --azibg:rgba(20,25,33,.72); --azitx:#a9b4c2;
   --spinbd:#3a2a20;
   --focusbd:#a9663a; --focusring:#4a2f1e;

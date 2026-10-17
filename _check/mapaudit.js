@@ -496,68 +496,23 @@ function gen(v, la, lo, hh, isAQ, dof) {
      的样本（日落方位朝西、西边 400 km 全是南海）。按 hidden 数取最大会挑到上海，
      那看不出什么。 */
   const shotCity = SWEEP.find(s => s[0] === "三亚市") || worstXY;
-  try {
-    await ev(`setLocation(${shotCity[1]}, ${shotCity[2]}, ${JSON.stringify(shotCity[0])}, "")`);
-    await ev(`(async()=>{ await loadMapData(true); })()`, true);
-    for (let i = 0; i < 40; i++) {
-      await sleep(500);
-      if (await ev(`(function(){ const c = MapMod.gridC; return !!(c && Math.abs(c.lat - ${shotCity[1]}) < 0.05
-            && Math.abs(c.lon - ${shotCity[2]}) < 0.05 && mapSet() && mapSet().pts.length); })()`)) break;
-    }
-    await sleep(400);
-
-  /* 实拍留证（改后）：① 三亚的近海色面 + 方位环/距离环 ② 提示卡翻到下方后完整可见。
-     与之配对的是改动前那两张：audit-map-before.png（三亚，南海一片空白、无方位环）、
-     audit-tip-before.png（卡片上半部分被容器上沿裁掉 178 px）。
-     两两并排就是最直观的交付证据。
-     改前那两张由 `_backup/第七批前/` 的源码构建后用一次性脚本抓取（该脚本已删）——
-     别用当前构建重跑，那会把"改前"覆盖成"改后"。 */
-  try {
-    const shotOf = async (name) => {
-      const r = await ev(`(function(){ const b = document.querySelector('.mapwrap').getBoundingClientRect();
-        return { x: Math.round(b.x + window.scrollX), y: Math.round(b.y + window.scrollY),
-                 width: Math.round(b.width), height: Math.round(b.height) }; })()`);
-      const s = await cdp.send("Page.captureScreenshot", {
-        format: "png", captureBeyondViewport: true,
-        clip: { x: r.x, y: r.y, width: r.width, height: r.height, scale: 2 }
-      });
-      fs.writeFileSync(path.join(ROOT, "_check", name), Buffer.from(s.data, "base64"));
-      return r;
-    };
-    await ev(`(function(){ document.getElementById('tip').classList.remove('on'); window.scrollTo(0, 0); })()`);
-    await sleep(250);
-    await shotOf("audit-map-nearshore.png");
-    /* 再拍一张"提示卡被裁"：把指针放到容器顶部，用与页面同一条路径展示提示卡
-       （点击态，所以必须传普通对象 {lat,lon}，不是 TMap.LatLng） */
-    await ev(`(function(){
-      const b = document.querySelector('.mapwrap').getBoundingClientRect();
-      MapMod.lastPx = { x: Math.round(b.width / 2), y: 100 };
-      window.scrollTo(0, Math.round(b.top + window.scrollY - 60));
-    })()`);
-    await sleep(200);
-    await ev(`showMapTip({ lat: State.lat, lon: State.lon }, true)`);
-    await sleep(300);
-    await shotOf("audit-tip-below.png");
-    await ev(`document.getElementById('tip').classList.remove('on')`);
-    console.log("  实拍（改后）：_check/audit-map-nearshore.png · _check/audit-tip-below.png（查询点="
-      + shotCity[0] + "）；配对的是改前的 audit-map-before.png · audit-tip-before.png");
-  } catch (e) {
-    console.log("  实拍失败（不影响其余结论）：" + e.message);
-  }
-  } catch (e) {
-    /* 外层 try（切到三亚 + 等地图就绪）。截不到图只是"少一张证据"，
-       不该把整轮审计拖成 FATAL —— 后面的断言仍然要跑完。 */
-    console.log("  实拍准备失败（不影响其余结论）：" + e.message);
-  }
-
   /* ---------- E. 图例说明体量 ---------- */
+  /* 第五轮 UI：图例长文默认收进 <details>（#legendFold），closed 的 details
+     内容不渲染 ⇒ getBoundingClientRect().height 恒为 0。这段量的是"说明文字
+     有多长"（它一直是地图卡片里最重的一块静态文字），所以先临时打开再量、
+     量完还原 —— 不改变默认态（默认态由 uiprobe 守）。 */
   const E = await ev(`(function(){
+    const det = document.getElementById('legendFold');
+    const wasOpen = det ? det.open : null;
+    if (det) det.open = true;
     const n = document.querySelector('#lgNote'), r = document.querySelector('#lgRows');
     const em = [...n.querySelectorAll('br')].length;
-    return { chars: n.textContent.length, h: Math.round(n.getBoundingClientRect().height),
+    const out = { chars: n.textContent.length, h: Math.round(n.getBoundingClientRect().height),
              br: em, fs: getComputedStyle(n).fontSize, lh: getComputedStyle(n).lineHeight,
              lgRows: r ? r.children.length : 0,
              cardH: Math.round(n.closest('.card').getBoundingClientRect().height) };
+    if (det) det.open = !!wasOpen;
+    return out;
   })()`);
   console.log("\n=== E. 图例与说明的体量 ===");
   console.log("  说明文字 " + E.chars + " 字符 / " + E.br + " 个换行 → 渲染高度 " + E.h + " px"
@@ -915,6 +870,60 @@ function gen(v, la, lo, hh, isAQ, dof) {
     + "%（包内 " + J.hullInside + " 格不纱）");
   console.log("  对照：旧判据「dkm > FIELD_FULL」只命中 " + J.dkmOver + " 格 ＝ "
     + (100 * J.dkmOver / Math.max(1, J.painted)).toFixed(2)     + "% —— 这就是它形同没起作用的原因");
+
+  try {
+    await ev(`setLocation(${shotCity[1]}, ${shotCity[2]}, ${JSON.stringify(shotCity[0])}, "")`);
+    await ev(`(async()=>{ await loadMapData(true); })()`, true);
+    for (let i = 0; i < 40; i++) {
+      await sleep(500);
+      if (await ev(`(function(){ const c = MapMod.gridC; return !!(c && Math.abs(c.lat - ${shotCity[1]}) < 0.05
+            && Math.abs(c.lon - ${shotCity[2]}) < 0.05 && mapSet() && mapSet().pts.length); })()`)) break;
+    }
+    await sleep(400);
+
+  /* 实拍留证（改后）：① 三亚的近海色面 + 方位环/距离环 ② 提示卡翻到下方后完整可见。
+     与之配对的是改动前那两张：audit-map-before.png（三亚，南海一片空白、无方位环）、
+     audit-tip-before.png（卡片上半部分被容器上沿裁掉 178 px）。
+     两两并排就是最直观的交付证据。
+     改前那两张由 `_backup/第七批前/` 的源码构建后用一次性脚本抓取（该脚本已删）——
+     别用当前构建重跑，那会把"改前"覆盖成"改后"。 */
+  try {
+    const shotOf = async (name) => {
+      const r = await ev(`(function(){ const b = document.querySelector('.mapwrap').getBoundingClientRect();
+        return { x: Math.round(b.x + window.scrollX), y: Math.round(b.y + window.scrollY),
+                 width: Math.round(b.width), height: Math.round(b.height) }; })()`);
+      const s = await cdp.send("Page.captureScreenshot", {
+        format: "png", captureBeyondViewport: true,
+        clip: { x: r.x, y: r.y, width: r.width, height: r.height, scale: 2 }
+      });
+      fs.writeFileSync(path.join(ROOT, "_check", name), Buffer.from(s.data, "base64"));
+      return r;
+    };
+    await ev(`(function(){ document.getElementById('tip').classList.remove('on'); window.scrollTo(0, 0); })()`);
+    await sleep(250);
+    await shotOf("audit-map-nearshore.png");
+    /* 再拍一张"提示卡被裁"：把指针放到容器顶部，用与页面同一条路径展示提示卡
+       （点击态，所以必须传普通对象 {lat,lon}，不是 TMap.LatLng） */
+    await ev(`(function(){
+      const b = document.querySelector('.mapwrap').getBoundingClientRect();
+      MapMod.lastPx = { x: Math.round(b.width / 2), y: 100 };
+      window.scrollTo(0, Math.round(b.top + window.scrollY - 60));
+    })()`);
+    await sleep(200);
+    await ev(`showMapTip({ lat: State.lat, lon: State.lon }, true)`);
+    await sleep(300);
+    await shotOf("audit-tip-below.png");
+    await ev(`document.getElementById('tip').classList.remove('on')`);
+    console.log("  实拍（改后）：_check/audit-map-nearshore.png · _check/audit-tip-below.png（查询点="
+      + shotCity[0] + "）；配对的是改前的 audit-map-before.png · audit-tip-before.png");
+  } catch (e) {
+    console.log("  实拍失败（不影响其余结论）：" + e.message);
+  }
+  } catch (e) {
+    /* 外层 try（切到三亚 + 等地图就绪）。截不到图只是"少一张证据"，
+       不该把整轮审计拖成 FATAL —— 后面的断言仍然要跑完。 */
+    console.log("  实拍准备失败（不影响其余结论）：" + e.message);
+  }
 
   /* ---------- 汇总 ----------
      逐条具名，别串成一个巨型 && —— 挂了只知道"未通过"，不知道是哪一条。

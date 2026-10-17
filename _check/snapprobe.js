@@ -241,7 +241,7 @@ class CDP {
       hidden: Array.prototype.slice.call(document.querySelectorAll("[data-snaphide]"))
                 .filter(function(el){ return getComputedStyle(el).display === "none"; }).length,
       totalHide: document.querySelectorAll("[data-snaphide]").length,
-      /* ③④⑤⑥ 是**卡片**（div.card），与"快照模式下该收起的一切"不是同一集合 ——
+      /* 模型/因素/光追/提示四张卡是**卡片**（div.card），与"快照模式下该收起的一切"不是同一集合 ——
          例如 F4 的本地校准块也是 data-snaphide，但它是结论卡的子块、不是一张卡。
          判据按卡片身份数，不按 data-snaphide 总数：后者会随新块加入而变成
          "改数字"式的假失败（已踩过一次）。 */
@@ -383,7 +383,7 @@ class CDP {
     "F5 打开快照链接：零气象请求（这是本功能的核心承诺）": snapFc === 0,
     "F5 快照模式：进入 snapmode、卡片标记为「快照」": st.snapmode === true && st.snapOn === true && st.tag === "快照",
     "F5 快照卡画出了概率环与结论": st.heroLen > 60 && /%/.test(st.pct),
-    "F5 快照模式下 ③④⑤⑥ 四张卡收起（其余照常可用），且所有 data-snaphide 块都收起":
+    "F5 快照模式下模型/因素/光追/提示四张卡收起（其余照常可用），且所有 data-snaphide 块都收起":
       st.hidden === st.totalHide && st.hideCards === st.totalCards && st.totalCards === 4,
     "F5 快照卡带「按当前条件重新计算」按钮": st.hasRefresh === true,
     "F5 快照卡明确写出“生成于 … / 不消耗额度”": /前/.test(st.note) && /不消耗/.test(st.note),

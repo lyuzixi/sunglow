@@ -700,6 +700,14 @@ console.log = function (...a) {
   }
   await shotPanel("#map", "shot-map-desktop.png", 1);
   await shotPanel("#cardHero", "shot-hero.png", 1);
+  /* 第五轮 UI：⑤ 光追卡默认收起（设计内的默认态，见 uiprobe）。
+     截图前先展开 —— 这张立的是"光追卡内容"的基线，不是"它收着"的基线
+     （后者由 uiprobe 的默认态断言守）。展开只点按钮，不碰任何数据。 */
+  await cdp.send("Runtime.evaluate", {
+    expression: `(function(){var b=document.getElementById('rayFoldBtn');if(b)b.click();return 1})()`,
+    returnByValue: true
+  });
+  await sleep(300);
   await shotPanel("#ray", "shot-ray.png", 1);
 
   await cdp.send("Emulation.setDeviceMetricsOverride", { width: 390, height: 1600, deviceScaleFactor: 2, mobile: true });
@@ -861,6 +869,10 @@ console.log = function (...a) {
       out.softWarns=(typeof SOFT_WARNS!=='undefined')?SOFT_WARNS.slice(0,3):[];
       out.noscript=!!document.querySelector('noscript');
       out.labelsFor=[...document.querySelectorAll('label[for]')].map(e=>e.getAttribute('for'));
+      /* 视觉方案二 P0：搜索与日期改用 aria-label（一行条不再放可见 label），
+         显式 label[for] 只剩 lat/lon 两个 —— 计数跟着结构走，但可达名要求不放宽。 */
+      out.qAria=!!document.getElementById('q').getAttribute('aria-label');
+      out.dateAria=!!document.getElementById('date').getAttribute('aria-label');
       return out;
     })()`, returnByValue: true, awaitPromise: true
   });
@@ -875,7 +887,8 @@ console.log = function (...a) {
         || (UX.geomOk === false && UX.rayNote === true))
     && UX.imperialHasFt === true && UX.metricBack === true && UX.clock12Has === true
     && UX.periodOn === UX.periodState && UX.mapPeriodOn === UX.mapPeriodState && UX.ariaPressed === "true"
-    && UX.noscript === true && (UX.labelsFor || []).indexOf("go") < 0 && (UX.labelsFor || []).length >= 4;
+    && UX.noscript === true && (UX.labelsFor || []).indexOf("go") < 0 && (UX.labelsFor || []).length >= 2
+    && UX.qAria === true && UX.dateAria === true;
   console.log("\n=== F4 交互补全 / F3 曲线 / F6 可访问性 / F7 单位制 ===");
   console.log("  F4 地址栏: " + UX.url);
   console.log("  F4 省份命中: " + JSON.stringify(UX.prov) + "  下钻: " + UX.drillOn + " " + JSON.stringify(UX.drillCities) + " " + UX.drillHead);

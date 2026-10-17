@@ -264,14 +264,15 @@ function rStats(rows, lat, lon, P) {
   const headTxt = async () => await q("(document.querySelector('#calibHead')||{}).textContent || ''");
   const boxHidden = async () => await q("document.querySelector('#calibBox').hidden");
   const boxDisplay = async () => await q("getComputedStyle(document.querySelector('#calibBox')).display");
-  /* 模型输出的"指纹"：校准若改了任何一个数字，这里立刻对不上 */
+  /* 模型输出的"指纹"：校准若改了任何一个数字，这里立刻对不上。
+     视觉方案 P1 起，普通 hero 的概率环退役、改衬线大字（.hero-num）——
+     指纹字段跟着换，**不能丢概率**：它是最该守住的那个数。 */
   const heroSig = async () => await q(
     "(function(){ var h=document.querySelector('#hero');" +
-    "var dash=document.querySelector('#hero circle[stroke-dashoffset]');" +
-    "return JSON.stringify({pct:(h.querySelector('.dv b')||{}).textContent||''," +
+    "var num=h.querySelector('.hero-num');" +
+    "return JSON.stringify({pct:num?num.textContent:''," +
     "big:(h.querySelector('.big')||{}).textContent||''," +
     "badge:(h.querySelector('.cfbadge b')||{}).textContent||''," +
-    "dash:dash?dash.getAttribute('stroke-dashoffset'):''," +
     "models:Array.prototype.slice.call(document.querySelectorAll('#models .mnum')).map(function(e){return e.textContent;}).join('|')," +
     "facN:document.querySelectorAll('#fac tbody tr').length}); })()");
 

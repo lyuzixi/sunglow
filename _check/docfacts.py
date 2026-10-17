@@ -209,6 +209,8 @@ DECL = [
       ("README.md", r"`mobileprobe\.js`[^\n]*?\*\*(\d+) 条", [1])]),
     ("probe.persistprobe", "`persistprobe` 断言条数",
      [("README.md", r"`persistprobe\.js`[^\n]*?\*\*(\d+) 条", [1])]),
+    ("probe.uiprobe", "`uiprobe` 断言条数",
+     [("README.md", r"`uiprobe\.js`[^\n]*?\*\*(\d+) 条", [1])]),
     ("probe.a11yprobe", "`a11yprobe` 断言条数",
      [("README.md", r"`a11yprobe\.js`[^\n]*?\*\*(\d+) 条", [1])]),
     ("probe.snapprobe", "`snapprobe` 断言条数",
@@ -254,6 +256,7 @@ def build_truth(pf):
     t["probe.mapaudit"] = _probe(pf, "mapaudit")
     t["probe.mobileprobe"] = _probe(pf, "mobileprobe")
     t["probe.persistprobe"] = _probe(pf, "persistprobe")
+    t["probe.uiprobe"] = _probe(pf, "uiprobe")
     t["probe.a11yprobe"] = _probe(pf, "a11yprobe")
     t["probe.snapprobe"] = _probe(pf, "snapprobe")
     t["probe.calibprobe"] = _probe(pf, "calibprobe")

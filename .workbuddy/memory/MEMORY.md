@@ -4,7 +4,7 @@
 
 ## 构建与验证
 - 源文件：`tpl/template.html`、`_p2.._p6.js`、`refs/*`；`index.html`、`404.html`、`_check/preview.html` 都是产物，禁止手改。
-- 修改后固定执行：`python assemble.py`（确认输出字节数）→ `python mkpreview.py` → `python _check/all.py`。同一时间只跑一个 `all.py`。
+- 修改后固定执行：`SITE_BASE=sunglow python assemble.py`（确认输出字节数；**必须带 SITE_BASE**，部署约定是 GH Pages 项目页 `/sunglow/`，裸跑会按 `/` 构建并让 404probe 的首页链接断言假失败）→ `python mkpreview.py` → `python _check/all.py`。同一时间只跑一个 `all.py`。
 - `all.py` 是唯一总判据；单项脚本可能只在 stdout 报失败却 exit 0。改探针后先跑 `all.py`，再跑 `docfacts`。
 - 4 个内联脚本块必须按内容定位业务块（如 `function jget`），不能按序号；数 FAIL 时同时检查退出码。
 
@@ -40,4 +40,4 @@
 ## 回归方法
 语义变更不能拿旧实现直接当新基准：先用结构独立的第三方参考实现证明旧语义一致，再以新语义做双重差分。探针避免固定 sleep、硬编码城市坐标、模板串中的未转义正则与反引号；所有判据必须自检，防静默假绿。
 判据不要按"元素总数"断死（如 `[data-snaphide]` 的个数）：新增一个同类块就会变成"改数字"式的假失败。按**身份/集合**断（如 `div.card[data-snaphide]` 恰 4 张 + 所有同类块都收起）。计数器/累积量型断言必须在**被测动作结束那一刻**取值：放到最后统一读会把中间其它动作（如"制造上一页"要载入首页）一起算进来，名字说测 A 实际测 A+B。判"页面就绪"不能用 `window.State` —— `State` 是顶层 `const`（词法全局），`window.State` 恒为 `undefined`，写错会让轮询静默跑满预算、探针零输出被杀。`Page.navigate` 返回时旧文档仍 `complete`，重复导航必须用"导航标记"握手且超时要抛错。
-提交前必须用 `git diff --ignore-cr-at-eol --numstat` 与原始 numstat 逐文件对一遍：`_pi18n.js` / `硬约束详解.md` 混用行尾，任何"读全文再写回"的编辑都会统一掉它们、制造几百行纯噪音（已踩四次；修法见 `_scratch/eolfix.py`，拿 `git show HEAD:<file>` 的原始字节当行尾基准）。
+提交前必须用 `git diff --ignore-cr-at-eol --numstat` 与原始 numstat 逐文件对一遍：`_pi18n.js` / `硬约束详解.md` 混用行尾，任何"读全文再写回"的编辑都会统一掉它们、制造几百行纯噪音（已踩五次——**连 Edit 工具的精准字符串替换也会污染** `_pi18n.js` 的行尾；修法见 `_scratch/eolfix.py`，拿 `git show HEAD:<file>` 的原始字节当行尾基准；还原后产物字节数会变（CRLF 行数差），`product.bytes` 文档数字要跟着改）。
