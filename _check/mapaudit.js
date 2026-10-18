@@ -764,7 +764,10 @@ function gen(v, la, lo, hh, isAQ, dof) {
     out.inkW = pathLen > 0 ? out.inkArea / pathLen : null;
     var svg = gl ? gl.querySelector('svg') : null;
     var txt = svg ? [].slice.call(svg.querySelectorAll('text')).map(function(t){ return t.textContent; }) : [];
-    out.gratLines = svg ? svg.querySelectorAll('line').length : 0;
+    /* 2026-10-18：网格线改两层画法（白光晕 + 深灰芯）。数**芯线**（不带 .h），
+       光晕是同一根线的描边底层，不是"又多了一根线"—— 按元素总数会把尺子换掉。 */
+    out.gratLines = svg ? svg.querySelectorAll('line:not(.h)').length : 0;
+    out.gratHalo = svg ? svg.querySelectorAll('line.h').length : 0;
     out.gratTexts = txt.length;
     out.gratDeg = (typeof GRAT_DEG === 'number') ? GRAT_DEG : null;
     out.gratStep = (function(){
@@ -793,7 +796,7 @@ function gen(v, la, lo, hh, isAQ, dof) {
     + "（±2）上**的：" + I.offPalette + "（0 ⇒ 等值线一个像素都没混进色面）");
   console.log("  色面有 alpha 的格子 " + I.colorPix + " ≤ 有档位的格子 " + I.bandCells
     + "（掩膜只会减，不会增） · 色面 alpha 峰值 " + I.alMax);
-  console.log("  经纬网：" + I.gratLines + " 条线 · " + I.gratTexts + " 个标注 · 间距 "
+  console.log("  经纬网：" + I.gratLines + " 条芯线（+" + I.gratHalo + " 条光晕）· " + I.gratTexts + " 个标注 · 间距 "
     + I.gratDeg + "° → 相邻纬度标注之差的取值种数 " + I.gratStep + "（1 ＝ 严格等距）");
   console.log("  数据范围边界线（B1）：凸包顶点 " + I.hullN + " → 已连 " + I.edgePts
     + "（须相等；顶点数随浮点噪声在 8/10/12 间浮动，几何都是同一八边形）"
@@ -816,7 +819,7 @@ function gen(v, la, lo, hh, isAQ, dof) {
     var layer = MapMod.gridLayer, svg = MapMod.gridSvg;
     out.gratOnBefore = !!MapMod.gratOn;
     out.layOnBefore = layer ? layer.classList.contains('on') : null;
-    out.gratLines = svg ? svg.querySelectorAll('line').length : 0;
+    out.gratLines = svg ? svg.querySelectorAll('line:not(.h)').length : 0;
     if (cb) {
       cb.checked = false; cb.dispatchEvent(new Event('change', { bubbles: true }));
       out.dispOff = svg ? svg.style.display : null;
@@ -870,6 +873,51 @@ function gen(v, la, lo, hh, isAQ, dof) {
     + "%（包内 " + J.hullInside + " 格不纱）");
   console.log("  对照：旧判据「dkm > FIELD_FULL」只命中 " + J.dkmOver + " 格 ＝ "
     + (100 * J.dkmOver / Math.max(1, J.painted)).toFixed(2)     + "% —— 这就是它形同没起作用的原因");
+
+  /* ---------- J2. 经纬网可见度（2026-10-18 用户报"开了还是看不到"后的像素级判据） ----------
+     根因实测：旧画法（单层 34% 不透明度 1px 线）**线与邻像素的反差只有 17/255** ——
+     度数标注（78% 不透明度）看得见、线看不见，在真实底图上必然被淹没。
+     现在两层画法（3px 白光晕 + 62% 深灰芯线）。
+     判据不数 DOM、不读样式表，直接**量像素**：同视口截两份（线开 / 线关），
+     在页面里解码后算"变化像素与其左邻的反差"。这是用户那句"看不到"的可执行形式 ——
+     数 <line> 元素永远绿得出来，反差不会撒谎。裁剪坐标取整，避免整图重采样把线糊掉。 */
+  const jr = await ev(`(function(){ const b = document.querySelector('.mapwrap').getBoundingClientRect();
+    return { x: Math.round(b.x + window.scrollX), y: Math.round(b.y + window.scrollY),
+             width: Math.round(b.width), height: Math.round(b.height) }; })()`);
+  const shotB64 = async () => (await cdp.send("Page.captureScreenshot", {
+    format: "png", captureBeyondViewport: true,
+    clip: { x: jr.x, y: jr.y, width: jr.width, height: jr.height, scale: 1 }
+  })).data;
+  const gOn = await shotB64();
+  await ev(`(function(){ var cb=document.getElementById('showGrid'); cb.checked=false; cb.dispatchEvent(new Event('change',{bubbles:true})); })()`);
+  await sleep(400);
+  const gOff = await shotB64();
+  await ev(`(function(){ var cb=document.getElementById('showGrid'); cb.checked=true; cb.dispatchEvent(new Event('change',{bubbles:true})); })()`);
+  await sleep(400);
+  const J2 = await ev(`(async function(){
+    function load(d){ return new Promise(function(res){ var im=new Image(); im.onload=function(){ res(im); }; im.src="data:image/png;base64,"+d; }); }
+    var A = await load(${JSON.stringify(gOn)}), B = await load(${JSON.stringify(gOff)});
+    var W = A.width, H = A.height;
+    var ca = document.createElement("canvas"); ca.width=W; ca.height=H;
+    var cb2 = document.createElement("canvas"); cb2.width=W; cb2.height=H;
+    var xa = ca.getContext("2d"), xb = cb2.getContext("2d");
+    xa.drawImage(A,0,0); xb.drawImage(B,0,0);
+    var da = xa.getImageData(0,0,W,H).data, db = xb.getImageData(0,0,W,H).data;
+    var changed=0, lineC=0, lineN=0;
+    for (var y=0;y<H;y++) for (var x=1;x<W;x++){
+      var o=(y*W+x)*4;
+      var d = Math.max(Math.abs(da[o]-db[o]),Math.abs(da[o+1]-db[o+1]),Math.abs(da[o+2]-db[o+2]));
+      if (d>0) changed++;
+      if (d>8){
+        var ol=(y*W+x-1)*4;
+        lineC += Math.max(Math.abs(da[o]-da[ol]),Math.abs(da[o+1]-da[ol+1]),Math.abs(da[o+2]-da[ol+2]));
+        lineN++;
+      }
+    }
+    return { changed:changed, lineN:lineN, lineVsNeighbor: lineN?+(lineC/lineN).toFixed(2):null };
+  })()`, true);
+  console.log("  可见度（像素级）：开关造成 " + J2.changed + " 像素变化 · 线芯与其左邻的反差 "
+    + J2.lineVsNeighbor + "/255（旧画法实测 17 ⇒ 形同不存在；判据 ≥28）");
 
   /* ---------- K. S1 云量淡纹 + V3 有机边缘 ----------
      K1 云纹的三条硬约束（见 TX_RGB / TX_ALPHA 旁注释）：
@@ -927,8 +975,62 @@ function gen(v, la, lo, hh, isAQ, dof) {
       }
     }
     out.painted = painted; out.peak = peak; out.outOfField = outOfField; out.rgbBad = rgbBad; out.rgbN = rgbN;
-    /* 上限从页面常量现算（TX_ALPHA 是 _p6.js 的顶层 const，Node 侧取不到） */
-    out.cap = Math.ceil(TX_ALPHA * 255);
+    /* 上限从页面常量现算（TX_ALPHA/TX_EDGE_ALPHA 是 _p6.js 的顶层 const，Node 侧取不到）。
+       2026-10-18 起云纹有两档不透明度：云影（≤TX_ALPHA）与过半边线（≤TX_EDGE_ALPHA）。 */
+    out.cap = Math.ceil(Math.max(TX_ALPHA, TX_EDGE_ALPHA) * 255);
+    out.veilCap = Math.ceil(TX_ALPHA * 255);
+    out.edgeCap = Math.ceil(TX_EDGE_ALPHA * 255);
+    /* K3 云纹的边（2026-10-18 新增）：用户反馈"开不开都只是颜色深浅"之后，
+       云量过半处描了一道边线格。这里钉三件事：
+       ① 边线格真的存在（否则又是"一团均匀灰"）；
+       ② 每个边线格都严格按公式画（逐格精确比对，见下）—— 不是一片加深；
+       ③ 边线格是少数（≤30%）—— 否则等于整图蒙上一层，那不是边是底色。
+
+       【为什么不用“四邻必有更淡格”的启发式】第一版这么写，实测 edgeBad=59：
+       云量过半等值线把一小块干区围成孤岛时，干区周围的湿格**全是**边线格
+       （它们各自都有干邻），四邻 alpha 全同级 —— 那是正确渲染，启发式误报。
+       改为逐格精确比对：按画图公式（边线格 round(TX_EDGE_ALPHA×aF)、
+       普通淡纹 round(TX_ALPHA×v/100×aF)）重算期望 alpha，容差 ±2（预乘取整）。 */
+    var edgeN = 0, edgeMis = 0;
+    if (f && f.cloud && strips.length) {
+      var cols = f.cols, rows = f.rows, per2 = Math.max(1, Math.round(FIELD_BAND_DEG / f.dLa));
+      /* 先把整张 tx 的 alpha 读进一个矩阵（每 strip 只 getImageData 一次） */
+      var am = new Int32Array(rows * cols);
+      for (var si2 = 0; si2 < strips.length; si2++) {
+        var cv2 = strips[si2].cv, dd2 = strips[si2].ctx.getImageData(0, 0, cv2.width, cv2.height).data;
+        var r03 = si2 * per2;
+        for (var ly = 0; ly < cv2.height; ly++) {
+          var gr = r03 + ly; if (gr >= rows) break;
+          for (var gx = 0; gx < cv2.width; gx++) { if (gx >= cols) break; am[gr * cols + gx] = dd2[(ly * cv2.width + gx) * 4 + 3]; }
+        }
+      }
+      var alphaAt = function (gi, gj) {
+        if (gi < 0 || gj < 0 || gi >= cols || gj >= rows) return 0;
+        return am[gj * cols + gi];
+      };
+      for (var gj = 0; gj < rows; gj++) {
+        for (var gi = 0; gi < cols; gi++) {
+          var o2 = gj * cols + gi;
+          var aF = f.img[o2 * 4 + 3];
+          if (aF === 0) continue;
+          var v2 = f.cloud[o2];
+          if (!isNum(v2)) continue;
+          var wet2 = v2 >= TX_EDGE_AT;
+          var edge2 =
+            (gi > 0 && ((f.cloud[o2 - 1] >= TX_EDGE_AT) !== wet2)) ||
+            (gi < cols - 1 && ((f.cloud[o2 + 1] >= TX_EDGE_AT) !== wet2)) ||
+            (gj > 0 && ((f.cloud[o2 - cols] >= TX_EDGE_AT) !== wet2)) ||
+            (gj < rows - 1 && ((f.cloud[o2 + cols] >= TX_EDGE_AT) !== wet2));
+          /* 与 _p6.js 画图公式逐字对应：边线档恒 TX_EDGE_ALPHA×aF（0.52 > 0.3 ≥ TX_ALPHA×v/100，
+             v≤100 时边线总胜出）；普通格 TX_ALPHA×(v/100)×aF，v≤0 为 0。 */
+          var aExp = edge2 ? Math.round(TX_EDGE_ALPHA * aF)
+                           : Math.round(TX_ALPHA * (v2 > 0 ? v2 / 100 : 0) * aF);
+          if (edge2) edgeN++;
+          if (Math.abs(am[o2] - aExp) > 2) edgeMis++;
+        }
+      }
+    }
+    out.edgeN = edgeN; out.edgeMis = edgeMis;
     /* 开关：关掉应隐藏、再打开应恢复（refreshTx 的口径：.on 没了整层 display:none） */
     var cb = document.getElementById('showTx');
     out.toggleOk = null;
@@ -997,8 +1099,10 @@ function gen(v, la, lo, hh, isAQ, dof) {
   console.log("\n=== K. S1 云量淡纹 + V3 有机边缘 ===");
   console.log("  云纹层：z=" + K.z + "（色面 " + K.rlZ + " / 等值线 " + K.clZ + "）· 条带 " + K.stripN
     + " 条 · 可见=" + K.on + " · 默认勾选=" + K.defChecked + " · 开关可逆=" + K.toggleOk);
-  console.log("  云纹像素 " + K.painted + " 个 · 峰值 alpha " + K.peak + "（上限 " + K.cap + "）"
-    + " · 探出色面的 " + K.outOfField + " 个 · 非云影色的 " + K.rgbBad + "/" + K.rgbN + " 个（α≥20 才查）");
+  console.log("  云纹像素 " + K.painted + " 个 · 云影峰值 alpha " + K.peak + "（上限 " + K.veilCap
+    + "）· 边线档上限 " + K.edgeCap + " · 探出色面的 " + K.outOfField + " 个 · 非云影色的 " + K.rgbBad + "/" + K.rgbN + " 个（α≥20 才查）");
+  console.log("  云纹边线：" + K.edgeN + " 个边线格（云影像素的 " + (100 * K.edgeN / Math.max(1, K.painted)).toFixed(1)
+    + "%，须 ≤30%）· 逐格按公式比对不符 " + K.edgeMis + " 个（容差 ±2，须 0）");
   console.log("  有机边缘：确定性=" + K.nzDet + " · 值域=" + K.nzRange + " · 非常数=" + K.nzVaries
     + " · 相邻格最大跳变 " + K.nzMaxStep.toFixed(3) + "（应远小于 1 ⇒ 平滑波动）");
   console.log("  淡出内边界＝凸包：深入包内的有值格 " + K.insideFull + " 个满 alpha · 不符 " + K.insideBad + " 个");
@@ -1134,6 +1238,33 @@ function gen(v, la, lo, hh, isAQ, dof) {
     console.log("  实拍准备失败（不影响其余结论）：" + e.message);
   }
 
+  /* ---------- M. 深色底图跟随全局主题（2026-10-18 起不再是独立开关） ----------
+     用户要求"把深色底图功能与设置的深浅色统一"。这里钉三件事：
+       ① 深色主题 ⇒ .mapwrap.dark 与压暗层都在（反相 + 压暗都生效）；
+       ② 浅色主题 ⇒ 两者都不在；
+       ③ 换回浅色后**完全复原**（class 不残留）。
+     为什么在 mapaudit 而不是 darkprobe：darkprobe 不加载地图（没有 MapMod），
+     而 .mapwrap.dark 是 applyMapDark() 在地图初始化/切主题时打的 —— 必须在
+     有地图的上下文里量。 */
+  const M = await ev(`(function(){
+    var out = {};
+    var w = document.querySelector('.mapwrap');
+    var db = document.getElementById('mapDimBase');
+    var pref0 = themePref();
+    var st = function(){ return { dark: w.classList.contains('dark'),
+      dim: db ? db.classList.contains('on') : null,
+      theme: document.documentElement.getAttribute('data-theme') }; };
+    setTheme('dark');  out.darkOn = st();
+    setTheme('light'); out.lightOn = st();
+    setTheme(pref0);   out.restored = st();
+    out.pref0 = pref0;
+    return out;
+  })()`);
+  console.log("\n=== M. 深色底图跟随全局主题 ===");
+  console.log("  深色主题：.mapwrap.dark=" + M.darkOn.dark + " · 压暗层=" + M.darkOn.dim
+    + " · 浅色主题：.mapwrap.dark=" + M.lightOn.dark + " · 压暗层=" + M.lightOn.dim
+    + " · 还原(" + M.pref0 + ")：dark=" + M.restored.dark + " dim=" + M.restored.dim);
+
   /* ---------- 汇总 ----------
      逐条具名，别串成一个巨型 && —— 挂了只知道"未通过"，不知道是哪一条。
      这里的"期望值"就是改进方案要达成的状态；落地后本探针应当转绿。 */
@@ -1171,8 +1302,12 @@ function gen(v, la, lo, hh, isAQ, dof) {
        "不悬空"由上面那条等值线墨迹断言统一守着（同一块画布）。 */
     "数据范围边界线与凸包顶点数一致": I.hullN >= 3 && I.edgePts === I.hullN,
     "数据范围边界线仍画出了一段（没被掩膜整圈裁掉）": I.edgeIn > 0,
-    /* C1：三条分别钉三种失效模式 —— 开关不存在 / 关不掉 / 关掉连累等值线 / 开不回来 */
+    /* C1：四条分别钉四种失效模式 —— 开关不存在 / 关不掉 / 关掉连累等值线 / 开不回来 */
     "经纬网开关存在且默认是开的": J.hasCtl === true && J.gratOnBefore === true && J.gratLines >= 4,
+    "网格线带光晕（芯线与光晕成对，2026-10-18 起两层画法）": I.gratHalo === I.gratLines && I.gratLines >= 4,
+    /* J2：用户那句"打开了还是看不到"的可执行形式。数 <line> 元素永远绿得出来，
+       反差不会撒谎 —— 旧画法实测 17/255，形同不存在。 */
+    "经纬网线芯与邻像素反差 ≥28（用户真的看得见）": !!J2 && J2.lineN > 0 && J2.lineVsNeighbor >= 28,
     "关掉经纬网：SVG 隐藏，但等值线不受影响":
       J.dispOff === "none" && J.gratOnOff === false && J.layOnOff === true && J.contN > 0,
     "重新打开经纬网能完全恢复": J.gratOnBack === true && J.dispOn !== "none",
@@ -1183,10 +1318,14 @@ function gen(v, la, lo, hh, isAQ, dof) {
     "云纹层存在且有内容（画出了云影）": K.hasLayer === true && K.on === true
       && K.stripN > 0 && K.painted > 0,
     "云纹层序：压在色面之上、等值线之下": K.z === 2 && K.rlZ === 1 && K.clZ === 3,
-    "云纹峰值 alpha ≤ 0.18（看得见，但不参与档位判决）": K.peak > 0 && K.peak <= K.cap,
+    "云纹峰值 alpha ≤ 边线档上限（TX_EDGE_ALPHA×色面峰值；两档取大）": K.peak > 0 && K.peak <= K.cap,
     "云纹一个像素都不探出色面（逐格对齐核对）": K.outOfField === 0,
     "云纹颜色恒为云影色（不掺色面颜色；预乘取整容差 ±10）": K.rgbN > 0 && K.rgbBad === 0,
     "云纹默认勾选且开关可逆": K.defChecked === true && K.toggleOk === true,
+    /* K3 云纹的边（2026-10-18）：把"一团均匀灰"变成"有边界的一片云"。
+       三条：边存在 / 每格都是边界（四邻有对比）/ 边是少数（否则是底色不是边）。 */
+    "云纹逐格与画图公式一致（边线档与普通淡纹都精确对得上）": K.edgeN > 0 && K.edgeMis === 0,
+    "云纹边线格是少数（≤30% 的云影像素）": K.edgeN > 0 && K.edgeN <= K.painted * 0.3,
     /* V3 有机边缘：三条纪律 + 一条"真的上了图"的假绿防线。 */
     "边缘噪声确定（同栅格永远同一边缘）": K.nzDet === true,
     "边缘噪声有值域且非常数": K.nzRange === true && K.nzVaries === true,
@@ -1205,6 +1344,13 @@ function gen(v, la, lo, hh, isAQ, dof) {
       && L.afterEsc.keyGone === true,
     "全屏中色面画布与当前投影合一（refit 在尺寸变化后真的跑了）":
       !!L2 && L2.fs === true && L2.n > 0 && L2.worst < 2 && Math.abs(L2.mapH - L2.ch) < 2,
+    /* M：深色底图跟随全局主题（2026-10-18 起 #dimBase 复选框已删）。 */
+    "深色主题时地图切到深色底图（反相 + 压暗层都在）":
+      M.darkOn.dark === true && M.darkOn.dim === true && M.darkOn.theme === "dark",
+    "浅色主题时地图不残留深色类":
+      M.lightOn.dark === false && M.lightOn.dim === false && M.lightOn.theme === "light",
+    "切回原主题偏好后完全复原": M.restored.dark === (M.pref0 === "dark"
+      || (M.pref0 === "auto" && M.restored.theme === "dark")),
   };
   const bad = Object.keys(checks).filter(k => !checks[k]);
   console.log("\n" + "-".repeat(74));

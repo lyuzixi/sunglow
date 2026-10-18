@@ -16,11 +16,14 @@
 - `MAP_TZ` 恒等于 API `timezone=auto`；默认城市只有 `State` 一个来源；初始化只调用一次 `setLocation`。
 - 地图代理仅占位符 `__TMAP_SERVICE_HOST__`；产物不得含密钥或未替换占位符。429 必须经统一友好文案区分日额度耗尽与短时限流。
 - 可信度、模型分歧、档位及配色统一走 `dvI`、`ensConfOf`、`ENS_CONF_BANDS`、`bandColor()`；少于两套有效模型时分歧为 `null`。
+- **深色底图已并入全局主题（2026-10-18）**：`#dimBase` 复选框已删，`.mapwrap.dark` 唯一来源是 `isDarkTheme()`，执行器 `applyMapDark()`（幂等，三点挂：applyMapLayerPrefs 兜底 / rerenderForTheme / 地图初始化）。偏好白名单无 `dimBase`，两词典无「深色底图」键；地图深浅不再有第二套开关。
 - 色面值域是**固定 0–100 绝对刻度**：当日值域拉伸机制（`scaleRange`/`scaleT`/`mapRangeOf`）已删，`cv = clamp(dimOf(pts[i],dim,mk),0,100)` 恒等——图上颜色可跨日对比。`HEAT_RAMP`（`_p4.js` 唯一定义）= 天色色阶 8 锚点 Variant C（暮蓝→暮灰→金→橙红→深红），与首屏 `--dusk-*` 同语汇；harness 色阶断言按新设计意图守（实测依据在 `_scratch/measure_ramp.py`），换肤要重写断言而非改期望值。
 
 ## 渲染与交互
 - 图层顺序：底图压暗(0)→色面(1)→**云纹(2)**→等值线/经纬网/范围线(3)→可信度纱(4)→方位环(5)→直标(6)→图钉(7)→遮罩(8)→提示卡(20)；全屏 `.mapwrap.fs` z=2100（高于 top 60 / tip.dock 2000）。新增层同步 template 注释表、z-index、深色 filter 名单。**色面双降走 CSS 层透明度 `.rlayer{opacity:.75}`**，不写进画布 alpha——保 alpha 峰值 207，否则 mapaudit/zoomprobe 的「≥200 不透明区」像素断言基线失效。
 - 色面边界取采样点凸包并仅向外羽化；掩膜与排行榜共用 `mapVisibleAt()` 口径。等值线是独立屏幕空间矢量层，插值基于连续值场；经纬网投影只依赖 `projectToContainer`。羽化边缘带有机噪声（`EDGE_NOISE_KM=26`，格哈希确定性，**按羽化进度缩放 ⇒ 包内/包界恒 0**，三对齐数学上不破；mapaudit 假绿防线查外带掐格）。
+- **经纬网两层画法（2026-10-18）**：3px 近白光晕（55%）+ 1px 深灰芯线（62%），`line.h` 区分，整像素中心对齐——单层 34% 线实测反差仅 17/255（形同不存在）。判据是像素级反差 ≥28 + 芯线/光晕成对；**数 `<line>` 元素永远绿，反差不会撒谎**。
+- **云纹边线（2026-10-18）**：`TX_EDGE_AT=50`/`TX_EDGE_ALPHA=0.52`，与四邻过不过半不同即边线格（晴空侧也描）；TX_ALPHA=0.3 峰值淡纹不变。探针判据是**逐格按画图公式比对**（边线 round(TX_EDGE_ALPHA×aF)、淡纹 round(TX_ALPHA×v/100×aF)，容差 ±2）——「四邻必有更淡格」启发式在干区孤岛必误报（孤岛四周湿格全是边线格）。
 - “藏提示卡”只能走 `hideMapTip()`，同时清 on/dock、`pinLL` 和悬停帧。悬停双重节流；清空图钉层同时清 `pinSig`。
 - ≤760px：顶部单行压缩；提示卡 dock 底部且不透明、z-index 2000；地图 `touch-action:none`，卡片 `pan-y`；拖动超过 12px 收卡；`#map` 高 460px（图例与排行榜紧凑化换来的），排行榜默认前 4 条 + 「查看全部」展开（`RANK_NARROW_N=4`，**复用 `TIP_DOCK_MQ` 760 断点不引第二常量**，展开态 `rankAll` 不进偏好）。`overflow-x:auto` 容器和 `.top-tx` 必须 `min-width:0`，越界用 `documentElement.clientWidth` 判定。
 - 偏好键 `sunsetbot.pref.v1`：白名单、先读后合并；`applyPrefs()` 必须早于 UI 派生状态，地图偏好早于缓存自动绘制。位置、日期、`mapPeriod` 不持久化。

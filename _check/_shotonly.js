@@ -186,7 +186,6 @@ const VALS = {
   }
   /* 关掉提示卡、把可能的叠加层状态复位，保证两边拍的是同一状态 */
   await ev(`(function(){ const t=document.getElementById('tip'); if(t) t.classList.remove('on');
-    const d=document.getElementById('dimBase'); if(d) d.checked=false;
     const md=document.querySelector('.mapwrap'); if(md) md.classList.remove('dark');
     window.scrollTo(0,0); })()`);
   await sleep(300);

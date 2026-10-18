@@ -236,7 +236,7 @@ let bulkN = 0;           // 其中"坐标数 ≥ 20"的（趋势 34 / 地图 57�
   const B = await ev(`(function(){
     const fire = (id, v) => { const e = document.getElementById(id); e.checked = v;
       e.dispatchEvent(new Event('change', { bubbles: true })); };
-    fire('numLabels', true); fire('dimBase', true); fire('showGrid', false);
+    fire('numLabels', true); fire('showTx', false); fire('showGrid', false);
     const seg = (sel, attr, val) => { const b = document.querySelector(sel + ' button[' + attr + '="' + val + '"]');
       b.click(); };
     seg('#unitSeg', 'data-u', 'imperial');
@@ -261,7 +261,7 @@ let bulkN = 0;           // 其中"坐标数 ≥ 20"的（趋势 34 / 地图 57�
   if (!await loadAndWait("第二次加载（读回偏好）")) { chrome.kill(); srv.close(); process.exit(1); }
   const C = await ev(`(function(){
     const g = id => { const e = document.getElementById(id); return e ? e.checked : null; };
-    return { numLabels: g('numLabels'), dimBase: g('dimBase'), showGrid: g('showGrid'),
+    return { numLabels: g('numLabels'), showTx: g('showTx'), showGrid: g('showGrid'),
       showPts: g('showPts'), showConf: g('showConf'),
       units: State.units, h12: State.hour12, dim: State.mapDim, model: State.mapModel,
       unitOn: document.querySelector('#unitSeg button.on').dataset.u,
@@ -269,8 +269,9 @@ let bulkN = 0;           // 其中"坐标数 ≥ 20"的（趋势 34 / 地图 57�
       dimSel: document.getElementById('mapDim').value,
       modelSel: document.getElementById('mapModel').value,
       gridOn: !!(typeof MapMod !== 'undefined' && MapMod.gratUser),
+      /* 2026-10-18：深色底图改为跟随全局主题（#dimBase 已删）。
+         默认主题下 .mapwrap.dark 必须不在 —— 浅色页面不该自带深色地图。 */
       dark: document.querySelector('.mapwrap').classList.contains('dark'),
-      dimbaseOn: (function(){ const e = document.getElementById('mapDimBase'); return e ? e.classList.contains('on') : null; })(),
       /* 第五轮 UI：折叠状态跨加载读回 —— 类 / aria-expanded / 按钮文案三处都要对 */
       rayFolded: document.getElementById('cardRay').classList.contains('folded'),
       rayBtnExp: document.getElementById('rayFoldBtn').getAttribute('aria-expanded'),
@@ -278,14 +279,14 @@ let bulkN = 0;           // 其中"坐标数 ≥ 20"的（趋势 34 / 地图 57�
       foldRay: State.folds.rayFold };
   })()`);
   console.log("\n=== C. 重新加载 ⇒ 偏好被读回 ===");
-  console.log("  控件：numLabels=" + C.numLabels + " dimBase=" + C.dimBase + " showGrid=" + C.showGrid
+  console.log("  控件：numLabels=" + C.numLabels + " showTx=" + C.showTx + " showGrid=" + C.showGrid
     + " · units 高亮=" + C.unitOn + " · clock 高亮=" + C.clockOn
     + " · mapDim=" + C.dimSel + " · mapModel=" + C.modelSel);
   console.log("  State：units=" + C.units + " hour12=" + C.h12 + " mapDim=" + C.dim + " mapModel=" + C.model);
   console.log("  折叠态：⑤ folded=" + C.rayFolded + " · aria-expanded=" + C.rayBtnExp
     + " · 按钮文案=" + JSON.stringify(C.rayBtnTxt) + " · State.folds.rayFold=" + C.foldRay);
-  console.log("  依赖地图 DOM 的两项已生效：gratUser=" + C.gridOn + " · .mapwrap.dark=" + C.dark
-    + " · .dimbase.on=" + C.dimbaseOn);
+  console.log("  依赖地图 DOM 的偏好已生效：gratUser=" + C.gridOn
+    + " · .mapwrap.dark=" + C.dark + "（默认浅色主题下须 false —— 深色底图已并入主题）");
 
   /* ---------- D. 坏值 / 版本 ---------- */
   const D = await ev(`(function(){
@@ -396,20 +397,20 @@ let bulkN = 0;           // 其中"坐标数 ≥ 20"的（趋势 34 / 地图 57�
     "结论卡详情与图例说明的 details 默认收起":
       A.heroFoldOpen === false && A.legendFoldOpen === false,
     /* ---- ---- */
-    "拨动后偏好键出现且内容正确": !!B.j && B.j.numLabels === true && B.j.dimBase === true
+    "拨动后偏好键出现且内容正确": !!B.j && B.j.numLabels === true && B.j.showTx === false
       && B.j.showGrid === false && B.j.units === "imperial" && B.j.hour12 === true
       && B.j.mapDim === "q" && B.j.mapModel === "ec",
     "折叠状态写盘（点展开 ⇒ rayFold 进偏好键）": B.j.rayFold === true && B.state.foldRay === true,
     "偏好体积很小（几百字节级，不会挤占缓存配额）": B.size > 0 && B.size < 400,
     "重新加载后 State 被恢复": C.units === "imperial" && C.h12 === true
       && C.dim === "q" && C.model === "ec",
-    "重新加载后控件被恢复（控件与 State 不脱节）": C.numLabels === true && C.dimBase === true
+    "重新加载后控件被恢复（控件与 State 不脱节）": C.numLabels === true && C.showTx === false
       && C.showGrid === false && C.unitOn === "imperial" && C.clockOn === "12"
       && C.dimSel === "q" && C.modelSel === "ec",
     "折叠状态跨加载读回（类 / aria-expanded / 按钮文案三处一致）":
       C.rayFolded === false && C.rayBtnExp === "true" && C.rayBtnTxt === "收起" && C.foldRay === true,
-    "依赖地图 DOM 的两项也生效（经纬网 / 深色底图）": C.gridOn === false && C.dark === true
-      && C.dimbaseOn === true,
+    "依赖地图 DOM 的偏好也生效（经纬网；深色底图 2026-10-18 起并入主题，默认浅色不残留）":
+      C.gridOn === false && C.dark === false,
     "脏值与错类型被白名单挡掉（不污染 State）": JSON.stringify(D.dirty) === JSON.stringify({ showPts: true })
       && D.dirty.rayFold === undefined && D.dirty.heroFold === undefined,
     "非 JSON / 数组 / 版本不符一律降级为默认（不抛错）": Object.keys(D.broken).length === 0

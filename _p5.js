@@ -74,10 +74,10 @@ const PRESETS = [
    -------------------------------------------------------------------------
    在此之前项目**一个偏好键都没有**：localStorage 的全部使用点都落在两个缓存
    键族上（`sunsetbot.map.v5.*` / `sunsetbot.point.v1.*`）。于是下列 9 个状态
-   刷新一次全部回到默认 —— 用户把"深色底图 + 只看数值直标"调好之后，每次重开
+   刷新一次全部回到默认 —— 用户把"只看云纹 + 数值直标"调好之后，每次重开
    都要重调一遍：
 
-     图层开关 ×5   数值直标 / 采样点 / 可信度 / 经纬网 / 深色底图
+     图层开关 ×5   数值直标 / 采样点 / 云纹 / 可信度 / 经纬网
      显示选项 ×2   单位制（公制/英制）· 时间制（24h/12h）
      地图选择 ×2   着色依据（mapDim）· 算法模型（mapModel）
 
@@ -106,8 +106,10 @@ const PRESETS = [
    ========================================================================= */
 const PREF_KEY = "sunsetbot.pref.v1";
 /* 白名单：布尔字段（图层开关 / 时间制 / F4 关闭本地校准）。`calibOff` 在这里
-   而不在别处 —— 它就是一个普通的显示偏好，与"深色底图"同一性质。 */
-const PREF_BOOL = ["numLabels", "showPts", "showTx", "showConf", "showGrid", "dimBase", "hour12", "calibOff"];
+   而不在别处 —— 它就是一个普通的显示偏好。
+   【2026-10-18】`dimBase`（深色底图）已移出：地图深浅改为跟随全局主题
+   （`isDarkTheme()`，见 _p6.js 的 applyMapDark）—— 一个页面不该有两套"深浅"。 */
+const PREF_BOOL = ["numLabels", "showPts", "showTx", "showConf", "showGrid", "hour12", "calibOff"];
 /* 第五轮 UI · 折叠态白名单。与 PREF_BOOL 同性质（布尔、只影响显示），
    单独列一份是因为 applyPrefs 里对它们的铺法不同（见 FOLD_KEYS 与 applyFolds）——
    特别是**不能**走下面那个 `$("#"+k).checked` 的通用循环：
@@ -338,11 +340,13 @@ function initToc() {
 }
 /* initMap 末尾调用：把两个"依赖地图 DOM"的偏好真正挂上去。
    经纬网走 `setGratUser`（唯一入口，见 _p6.js）—— 它同时负责写 `MapMod.gratUser`
-   与让 `gratSig` 失效，别在这里再写一遍。 */
+   与让 `gratSig` 失效，别在这里再写一遍。
+   深色底图（2026-10-18 起）不是偏好而是**主题的投影**：这里兜底同步一次，
+   之后由 applyTheme → rerenderForTheme → applyMapDark 接管。 */
 function applyMapLayerPrefs() {
-  refreshDimBase();
   const g = $("#showGrid");
   setGratUser(!!(g && g.checked));
+  if (typeof applyMapDark === "function") applyMapDark();
 }
 
 /* =========================================================================
@@ -858,9 +862,8 @@ function initUI() {
   if (sgrid) sgrid.addEventListener("change", () => {
     setGratUser(sgrid.checked); prefWrite({ showGrid: sgrid.checked });
   });
-  /* 底图压暗：只改一层 CSS 的 opacity */
-  const db = $("#dimBase");
-  if (db) db.addEventListener("change", () => { refreshDimBase(); prefWrite({ dimBase: db.checked }); });
+  /* 深色底图已改为跟随全局主题（2026-10-18）：不再有 #dimBase 监听，
+     主题切换的同步见 _p6.js 的 applyMapDark / rerenderForTheme。 */
   /* S5 · 全屏看地图：只切 .mapwrap 的 .fs 类（fixed 占满视口）。
      与图层开关同一性质（纯显示、不取数），但**不进偏好** —— 全屏是一次性的
      观看状态，不是"我偏好全屏"；持久化它会让下次打开页面时地图突然占满屏幕。 */

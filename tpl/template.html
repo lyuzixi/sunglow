@@ -1144,12 +1144,13 @@ body.snapmode [data-snaphide]{display:none}
 .pin.q b,.pin.c b{padding:1px 5px;border-radius:6px;border:1px solid var(--line);
   background:rgba(255,255,255,.92);color:var(--tx)}
 
-/* ---------- 底图压暗 / 深色底图 ----------
+/* ---------- 深色底图（2026-10-18 起：跟随全局主题，不再是独立开关） ----------
    浅色底图对色面有两个实际影响：① 色阶低端是白色，与底图分不开，低值区看起来像"没数据"；
-   ② 一张浅底 + 淡色斑的图，彩色区域跳不出来。所以做一个**可选**的深色底衬。
-   做法分两步，都只在勾选时生效：
-     · `.dimbase` 夹在 TMap 画布与色面之间，把底图整体压暗（保留少量地图信息）；
-     · `.mapwrap.dark` 给 `#map` 加 `invert(1) hue-rotate(180deg)`，把整张浅色底图翻成深色
+   ② 一张浅底 + 淡色斑的图，彩色区域跳不出来。所以在**主题为深色**时给地图加深色底衬。
+   做法分两步，都由 `.mapwrap.dark` 驱动（这个类只由 `applyMapDark()` 按
+   `isDarkTheme()` 切换，见 _p6.js）：
+     · `.dimbase` 夹在 TMap 画布与色面之间，把（已反相的）底图再压暗一档；
+     · `.mapwrap.dark #map` 加 `invert(1) hue-rotate(180deg)`，把整张浅色底图翻成深色
        —— 只有这样，城市名这类**深色文字标签**才会变成浅色，读得出来。
    为什么要给叠加层也加同一个 filter：父元素的 filter 作用在**合成结果**上，会连子层一起翻。
    `invert∘invert = id`、`hue-rotate(180)∘hue-rotate(180) = id`，所以子层再套同一个 filter
@@ -1157,7 +1158,7 @@ body.snapmode [data-snaphide]{display:none}
    与 alpha 合成可交换，所以半透明的纱、提示卡也照样抵消。
    注意**不能**在链上加 contrast/saturate：它们不是对合的，子层就抵消不掉了。
    不用腾讯地图自定义样式（mapStyleId）：那需要一个样式 ID，且在本项目的联调环境里
-   （地图 API 是替身）根本发不出去，改了也无法验证。纯 CSS 没这个问题，且随时可关。 */
+   （地图 API 是替身）根本发不出去，改了也无法验证。纯 CSS 没这个问题。 */
 .dimbase{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;
   background:#0b1220;opacity:0;transition:opacity .18s;z-index:0}
 .dimbase.on{opacity:.3}
@@ -1458,7 +1459,6 @@ body.snapmode [data-snaphide]{display:none}
               <label class="chk"><input type="checkbox" id="showTx" checked> <span data-i18n="云纹">云纹</span></label>
               <label class="chk"><input type="checkbox" id="showConf"> <span data-i18n="可信度">可信度</span></label>
               <label class="chk"><input type="checkbox" id="showGrid" checked> <span data-i18n="经纬网">经纬网</span></label>
-              <label class="chk"><input type="checkbox" id="dimBase"> <span data-i18n="深色底图">深色底图</span></label>
             </div>
           </div>
         </div>

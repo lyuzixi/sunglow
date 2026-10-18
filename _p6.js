@@ -258,9 +258,18 @@ const FIELD_BAND_DEG = 4;                 // 纬度条带最大高度（度）
       一律透明 —— 于是"有机边缘"与三对齐都不受影响，云纹不会探到色面之外；
    ③ 目标 α ≤ TX_ALPHA：看得见，但绝不参与"这个像素是什么档位"的判决。
    深色底图（.mapwrap.dark）会给这一层套同一个 invert(1) hue-rotate(180deg)，
-   云影颜色随之翻成对应的亮调 —— 与其它叠加层同一口径（见 template 的 filter 名单）。 */
+   云影颜色随之翻成对应的亮调 —— 与其它叠加层同一口径（见 template 的 filter 名单）。
+   【2026-10-18 用户反馈后的修正】原峰值只有 0.18，实测开/关整图只差一层
+   "颜色变深、画面变闷"的薄纱 —— 用户原话"只是颜色深浅和清晰度的区别，
+   没有其他参考价值"。两层补救：① 峰值 0.18 → 0.30，让云量差真的读得出；
+   ② 云量过半处描一道**边线格**（TX_EDGE_AT/ALPHA）—— "有边界的一片云"
+   才是能拿来做判断的形状，无边界的均匀灰谁都读不出信息。边按**格子**
+   提 alpha 而不画矢量线：云量是格点插值出来的，矢量线会给出不存在的
+   精度；且边必须留在 tx 层里跟着云纹开关一起走。 */
 const TX_RGB = [30, 42, 68];              // 深云影 #1e2a44
-const TX_ALPHA = 0.18;                    // 云纹层峰值不透明度（画布 alpha = 该值 × 云量 × 色面 alpha）
+const TX_ALPHA = 0.30;                    // 云纹层峰值不透明度（画布 alpha = 该值 × 云量 × 色面 alpha）
+const TX_EDGE_AT = 50;                    // 云量过半处描边（%）
+const TX_EDGE_ALPHA = 0.52;               // 边线格的不透明度（× 色面 alpha）
 /* 等值线：沿档界描一条细线。
    分档之后档与档之间**本来就有一条边**（相邻档颜色不同），为什么还要画线：
    那条边是"色块碰色块"，在浅色底图上、尤其在低端几档（浅黄→橙）之间对比度很低，
@@ -867,10 +876,11 @@ document.addEventListener("pointerdown", e => {
   /* M1：排行榜每行 → 该处精细查询（委托绑定，只挂这一次） */
   bindRankClicks();
 
-  /* 展示偏好里有两项依赖地图 DOM（经纬网要 MapMod.gratUser、深色底图要
-     MapMod.dimBaseEl），在 initUI 里读偏好时还挂不上 —— 留到这里统一生效。
+  /* 展示偏好里有一项依赖地图 DOM（经纬网要 MapMod.gratUser），在 initUI 里
+     读偏好时还挂不上 —— 留到这里统一生效（深色底图 2026-10-18 起并入主题，
+     由 applyMapLayerPrefs → applyMapDark 在同一时点兕底同步一次）。
      必须排在 autoLoadMapFromCache **之前**：它可能立刻画出缓存色面，
-     而经纬网/底图应当在那一帧就是用户上次选择的样子，不能先闪一下默认态。 */
+     而经纬网/底图深浅应当在那一帧就是用户上次选择的样子，不能先闪一下默认态。 */
   applyMapLayerPrefs();
 
   /* 首屏：**已有缓存就直接画出来**（零额度），没有缓存才渲染待加载引导。
@@ -1346,22 +1356,36 @@ function drawGraticule() {
   }
   svg.style.display = "";                 // 关掉时被置成 none，重新打开要恢复
   const FONT = "ui-monospace,Menlo,Consolas,monospace";
-  const STROKE = "rgba(107,116,134,.34)";
-  const FILL = "rgba(107,116,134,.78)";
+  /* 线的两层画法（用户报"经纬网开了看不到"之后的修正）：
+     原先只有一层 34% 不透明度的 1px 灰线，实测**线与邻像素的反差只有 17/255**
+     （约 7%）—— 度数标注（78%）看得见、线看不见，尤其在真实底图（有路网、
+     绿地、地名）上必然被淹没。现在按制图惯例给线加一层**光晕**：先画一条
+     3px 的近白线（55%），再压上 1px 的深灰线（62%）。光晕保证线与**任何**
+     背景（浅色底图 / 天色色面 / 深色反相）都分得开，芯线保证"这是一条细线"
+     而不是一条灰带。深色模式下 #map 整体反相，白光晕翻成暗色，照样起分离作用。
+     光晕线与芯线用 class="h" 区分 —— 探针数网格线条数时只数芯线。 */
+  const HALO = "rgba(255,255,255,.55)";
+  const STROKE = "rgba(88,96,112,.62)";
+  const LFILL = "rgba(88,96,112,.85)";
   let inner = "";
   /* 落在整像素**中心**（+0.5）：1px 线压在半像素上会被浏览器糊成 2px 灰带 */
   for (let la = Math.ceil(la0 / GRAT_DEG) * GRAT_DEG; la <= la1 + 1e-9; la += GRAT_DEG) {
     const p = px(la, clo); if (!p) continue;
     const y = Math.round(p.y) + 0.5;
+    inner += `<line class="h" x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="${HALO}" stroke-width="3"/>`;
     inner += `<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="${STROKE}" stroke-width="1"/>`;
-    inner += `<text x="4" y="${(y - 3).toFixed(1)}" font-size="9.5" font-family="${FONT}" fill="${FILL}">`
+    /* 标注也带一圈白描边（paint-order:stroke）：压在色面上时才读得出 */
+    inner += `<text x="4" y="${(y - 3).toFixed(1)}" font-size="10" font-family="${FONT}" fill="${LFILL}"`
+      + ` stroke="rgba(255,255,255,.72)" stroke-width="2.6" paint-order="stroke">`
       + gratLatLab(Math.round(la)) + `</text>`;
   }
   for (let lo = Math.ceil(lo0 / GRAT_DEG) * GRAT_DEG; lo <= lo1 + 1e-9; lo += GRAT_DEG) {
     const p = px(cla, lo); if (!p) continue;
     const x = Math.round(p.x) + 0.5;
+    inner += `<line class="h" x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="${HALO}" stroke-width="3"/>`;
     inner += `<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="${STROKE}" stroke-width="1"/>`;
-    inner += `<text x="${(x + 3).toFixed(1)}" y="11" font-size="9.5" font-family="${FONT}" fill="${FILL}">`
+    inner += `<text x="${(x + 3).toFixed(1)}" y="11" font-size="10" font-family="${FONT}" fill="${LFILL}"`
+      + ` stroke="rgba(255,255,255,.72)" stroke-width="2.6" paint-order="stroke">`
       + gratLonLab(Math.round(lo)) + `</text>`;
   }
   svg.innerHTML = inner;
@@ -2404,15 +2428,26 @@ function buildTxStrips(f) {
     const ctx = s.ctx || (s.ctx = s.cv.getContext("2d"));
     const id = ctx.createImageData(f.cols, h);
     const D = id.data;
+    const cvA = f.cloud, cols = f.cols, rows = f.rows;
     for (let y = 0; y < h; y++) {
-      const o0 = (r0 + y) * f.cols;
-      for (let x = 0; x < f.cols; x++) {
+      const o0 = (r0 + y) * cols;
+      for (let x = 0; x < cols; x++) {
         const o = o0 + x;
         const aF = f.img[o * 4 + 3];              // 色面这一格的 alpha：0 ⇒ 没有色面，云纹也不画
         if (aF === 0) continue;
-        const v = f.cloud[o];
-        if (!isNum(v) || v <= 0) continue;
-        const a = TX_ALPHA * (v / 100) * (aF / 255);
+        const v = cvA[o];
+        if (!isNum(v)) continue;
+        let a = v > 0 ? TX_ALPHA * (v / 100) * (aF / 255) : 0;
+        /* 云量过半处描一道边：本格与任一四邻"过不过半"不同即是边线格。
+           晴空一侧也描（v 很小也有边）—— 边界线本来就该骑在边界上，不是只画在云里。
+           邻格查全量 f.cloud（跨条带边界也正确），全局行号 = r0 + y。 */
+        const wet = v >= TX_EDGE_AT;
+        const edge =
+          (x > 0 && (cvA[o - 1] >= TX_EDGE_AT) !== wet) ||
+          (x < cols - 1 && (cvA[o + 1] >= TX_EDGE_AT) !== wet) ||
+          (r0 + y > 0 && (cvA[o - cols] >= TX_EDGE_AT) !== wet) ||
+          (r0 + y < rows - 1 && (cvA[o + cols] >= TX_EDGE_AT) !== wet);
+        if (edge) { const e = TX_EDGE_ALPHA * (aF / 255); if (e > a) a = e; }
         if (a <= 0.004) continue;
         const q = (y * f.cols + x) * 4;
         D[q] = TX_RGB[0]; D[q + 1] = TX_RGB[1]; D[q + 2] = TX_RGB[2];
@@ -2472,17 +2507,20 @@ function mountGridLayer(box) {
   MapMod.contCv = cv;
   MapMod.gridLayer = el;
 }
-/* 底图处理（②-4，第 8 批扩成「深色底图」开关）：
+/* 底图处理（②-4，第 8 批扩成「深色底图」开关；2026-10-18 起**改为跟随全局主题**）：
    色阶的低值端接近白色，而底图也是浅色 —— 两者接近时，"数值很低"与"这块没数据"
-   在观感上分不开（图例里只能写一句"属正常现象"）。原来的做法是夹一层 `.dimbase`
-   把底图整体压暗；第 8 批起这个开关同时给 `#map` 与**全部叠加层**套同一个
-   `invert(1) hue-rotate(180deg)`（见 template 的 `.mapwrap.dark`）：底图变成深色，
-   而两层反相在色面这一侧恰好抵消 —— 色面像素一个都不变。复选框文案因此改成「深色底图」，
-   但 **id 仍是 `dimBase`**（沿用既有探针里的选择器）。
+   在观感上分不开（图例里只能写一句"属正常现象"）。做法是给 `#map` 与**全部叠加层**
+   套同一个 `invert(1) hue-rotate(180deg)`（见 template 的 `.mapwrap.dark`）：底图变成深色，
+   而叠加层各自反相一次、与 #map 的反相**互相抵消** —— 色面像素一个都不变，
+   图例与图面永远同色。早期还夹了一层 `.dimbase` 压暗（`#mapDimBase`），现在保留同一元素
+   但由主题驱动：深色主题时它把反相后的底图再压暗一档，城市名这类底色更沉。
+   【为什么收回独立开关】用户原话："把深色底图功能与设置的深浅色统一"。
+   一个页面里出现两套"深浅"本来就是分裂的：设置里选了深色，地图却还是浅底，
+   每换一个界面都要重新决定一次。现在**唯一来源是 `isDarkTheme()`**
+   （设置里的浅色/深色/跟随系统），地图不再有自己的一份深浅。
    不用腾讯地图的自定义样式：那需要一个样式 ID，而本项目的联调环境用的是
    地图 API 的替身，样式请求根本发不出去 —— 改了也无法验证，只能靠"看起来对"。
-   纯 CSS 层没有这个问题，且随时可关。默认关闭：它改变的是底图观感，
-   不该在用户没要求的时候悄悄换掉整张图的底子。 */
+   纯 CSS 层没有这个问题。 */
 function mountDimBase(box) {
   const el = document.createElement("div");
   el.className = "dimbase";
@@ -2492,12 +2530,15 @@ function mountDimBase(box) {
   else box.appendChild(el);
   MapMod.dimBaseEl = el;
 }
-function refreshDimBase() {
-  const c = $("#dimBase");
-  const on = !!(c && c.checked);
+/* 深浅色唯一入口的**地图侧执行器**：主题深 ⇒ 压暗层 + `.mapwrap.dark`。
+   三个调用点：initMap 末尾（地图建好时同步一次当前主题）、`rerenderForTheme()`
+   （用户切设置 / 跟随系统变化）、`applyMapLayerPrefs()`（偏好落地时兜底）。
+   注意它是**幂等**的 —— 主题没变时重复调用只是重复设同一个 class。 */
+function applyMapDark() {
+  const on = isDarkTheme();
   if (MapMod.dimBaseEl) MapMod.dimBaseEl.classList.toggle("on", on);
   /* 深色底图＝压暗层 + 给 #map 加反相（见 template 里 .mapwrap.dark 的注释）。
-     两件事由同一个勾选驱动：只压暗，城市名这类**深色文字标签**还是深的，读不出来。 */
+     两件事由同一个主题驱动：只压暗，城市名这类**深色文字标签**还是深的，读不出来。 */
   const w = document.querySelector(".mapwrap");
   if (w) w.classList.toggle("dark", on);
 }
@@ -3656,7 +3697,7 @@ function updateLegend(mode, mk) {
     radius: MAP_RADIUS_KM, mask: MASK_KEEP_KM
   });
   $("#lgNote").innerHTML = modelLine +
-    i18n("统一色阶：<b>天色色阶</b>（蓝灰＝天色已暗 → 灰 → 金 → 橙红＝霞光最浓），与首屏那条天色带同一套语汇。色面按 <b>{bands} 档分级填色</b>（同一档内同色），档与档之间描一条<b>等值线</b>把等级边界显式画出来 —— 低端几档颜色本来就接近，只有颜色变化时远看仍是一团，有一条线才数得清跨了几级。<b>固定 0–100 绝对刻度：颜色含义不随当天的数值范围拉伸</b>，今天和昨天、这里和那里可以直接比，图例刻度就是真实分数。{scale}朝霞 / 晚霞、各算法模型、各着色维度共用同一条色阶、同一套分档。<br>当前着色依据：<b>{dim}</b>。{mixRule}<br>局部网格约 <b>{pts} 个采样点</b>、间距 {grid} km。<br>颜色不是唯一的编码，六个勾选项：<b>数值直标</b>标出数值最高的一批网格点 · <b>采样点</b>画出全部采样点并标出查询点 · <b>云纹</b>按低中云遮挡量铺一层极淡的深云影 · <b>可信度</b>给外推区铺一层灰纱 · <b>深色底图</b>把底图整体翻成深色（天色色阶的低值端在深色底图上会与底图接近，深色模式下低值区可依靠等值线与范围边界线分辨）· <b>经纬网</b>开关底层那张 {gdeg}° 坐标网。<br>那张 <b>{gdeg}° 经纬网</b>（细灰线，标了度数与 N/E）是地图坐标参照、与色面无关：等值线告诉你“值跨了一级”，经纬网告诉你“这里是哪”。<br><b>虚线多边形＝数据范围边界</b>（{pts} 个采样点的凸包）：线内是<b>插值</b>，线外到色面淡出处（约 {out} km）是<b>外推</b>、越往外越不可信。颜色再浅，只要在虚线以内就代表<b>“这里算过、就是这个值”</b>，而不是空白。<br><b>悬停</b>查看该处数值与数据可信度；<b>点击地图、或下方榜单的任意一行</b>，都可以该处发起单点精细查询（含 400 km 样带与光追模型）。", {
+    i18n("统一色阶：<b>天色色阶</b>（蓝灰＝天色已暗 → 灰 → 金 → 橙红＝霞光最浓），与首屏那条天色带同一套语汇。色面按 <b>{bands} 档分级填色</b>（同一档内同色），档与档之间描一条<b>等值线</b>把等级边界显式画出来 —— 低端几档颜色本来就接近，只有颜色变化时远看仍是一团，有一条线才数得清跨了几级。<b>固定 0–100 绝对刻度：颜色含义不随当天的数值范围拉伸</b>，今天和昨天、这里和那里可以直接比，图例刻度就是真实分数。{scale}朝霞 / 晚霞、各算法模型、各着色维度共用同一条色阶、同一套分档。<br>当前着色依据：<b>{dim}</b>。{mixRule}<br>局部网格约 <b>{pts} 个采样点</b>、间距 {grid} km。<br>颜色不是唯一的编码，五个勾选项：<b>数值直标</b>标出数值最高的一批网格点 · <b>采样点</b>画出全部采样点并标出查询点 · <b>云纹</b>按低中云遮挡量铺一层极淡的深云影（云量过半处描一道边） · <b>可信度</b>给外推区铺一层灰纱 · <b>经纬网</b>开关底层那张 {gdeg}° 坐标网。地图的深浅色跟随设置的浅色 / 深色主题，不单独设开关。<br>那张 <b>{gdeg}° 经纬网</b>（细灰线，标了度数与 N/E）是地图坐标参照、与色面无关：等值线告诉你“值跨了一级”，经纬网告诉你“这里是哪”。<br><b>虚线多边形＝数据范围边界</b>（{pts} 个采样点的凸包）：线内是<b>插值</b>，线外到色面淡出处（约 {out} km）是<b>外推</b>、越往外越不可信。颜色再浅，只要在虚线以内就代表<b>“这里算过、就是这个值”</b>，而不是空白。<br><b>悬停</b>查看该处数值与数据可信度；<b>点击地图、或下方榜单的任意一行</b>，都可以该处发起单点精细查询（含 400 km 样带与光追模型）。", {
       bands: N_BANDS, dim: dimTxt, radius: MAP_RADIUS_KM, pts: mapPts().length, grid: MAP_GRID_KM,
       mask: MASK_KEEP_KM, gdeg: GRAT_DEG, out: FIELD_OUT_KM,
       scale: i18n(dim === "dv" ? "颜色越靠红代表<b>三套模型之间分歧越大</b>（越不确定）。" : "颜色越靠红代表概率越高、质量越好。"),
@@ -4062,6 +4103,8 @@ function rerenderForTheme() {
   /* F3/F2 的等级色是主题相关的（gradeColor），切主题要重画 */
   if (typeof renderTrendCal === "function") renderTrendCal();
   if (typeof renderSpotBody === "function") renderSpotBody();
+  /* 地图深浅色跟随全局主题（2026-10-18 起深色底图不再是独立开关） */
+  if (typeof applyMapDark === "function") applyMapDark();
   if (typeof hideMapTip === "function") hideMapTip();
   if (typeof refreshThemeSeg === "function") refreshThemeSeg();
 }

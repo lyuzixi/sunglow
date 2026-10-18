@@ -1142,19 +1142,17 @@ console.log = function (...a) {
       }
       out.veilWant=want; out.veilGot=got;
 
-      /* ---- ⑤ 底图压暗：必须在色面层之前（DOM 顺序 + z-index 双保险）---- */
+      /* ---- ⑤ 底图压暗：必须在色面层之前（DOM 顺序 + z-index 双保险）----
+         2026-10-18 起深色底图不再是独立开关，由全局主题驱动（见 _p6.js 的
+         applyMapDark）：默认浅色主题下压暗层 opacity 必须是 0、
+         .mapwrap.dark 必须不在。深色态的完整断言在 mapaudit M 段。 */
       const rl=document.querySelector('.rlayer'), dbEl=document.querySelector('.dimbase');
       out.dimExists = !!dbEl;
       out.dimBefore = !!(rl&&dbEl) && (dbEl.compareDocumentPosition(rl) & 4) !== 0;
       out.dimZ = dbEl ? getComputedStyle(dbEl).zIndex : '';
       out.rlZ = rl ? getComputedStyle(rl).zIndex : '';
-      out.dimPxOff = dbEl ? getComputedStyle(dbEl).opacity : '';
-      const dbc=document.querySelector('#dimBase');
-      dbc.checked=true; dbc.dispatchEvent(new Event('change'));
-      await sleep(300);
-      out.dimPxOn = dbEl ? getComputedStyle(dbEl).opacity : '';
-      dbc.checked=false; dbc.dispatchEvent(new Event('change'));
-      await sleep(250);
+      out.dimPxLight = dbEl ? getComputedStyle(dbEl).opacity : '';
+      out.darkByDefault = document.querySelector('.mapwrap').classList.contains('dark');
 
       /* ---- ⑥ 日期下拉的缓存标记：只标 textContent，不动 value ---- */
       const sel2=document.querySelector('#mapDateSel');
@@ -1183,7 +1181,7 @@ console.log = function (...a) {
     && B2.veilWant > 0 && B2.veilWant === B2.veilGot
     && B2.dimExists === true && B2.dimBefore === true
     && Number(B2.dimZ) < Number(B2.rlZ)
-    && B2.dimPxOff === "0" && Number(B2.dimPxOn) > 0
+    && B2.dimPxLight === "0" && B2.darkByDefault === false
     && B2.baseKept === true && B2.selValueOk === true && B2.optCount === 18
     && B2.readyCount >= 1;
   console.log("\n=== 第二批 · 分歧维度 / 图钉 / 可信度纱 / 底图压暗 / 缓存标记 ===");
@@ -1199,7 +1197,7 @@ console.log = function (...a) {
   console.log("  可信度纱: 画布=" + B2.confCanvas + " 开启前=" + B2.confOnBefore + " 开启后=" + B2.confOn
     + " 色面指纹不变=" + B2.fpSame + " 覆盖格 " + B2.veilGot + " 期望 " + B2.veilWant);
   console.log("  底图压暗: z " + B2.dimZ + " < 色面 " + B2.rlZ + " · 在色面之前=" + B2.dimBefore
-    + " · opacity " + B2.dimPxOff + " → " + B2.dimPxOn);
+    + " · 浅色主题下 opacity " + B2.dimPxLight + " · 默认深色态=" + B2.darkByDefault + "（须 false）");
   console.log("  缓存标记: " + JSON.stringify(B2.marked) + " · 选项数=" + B2.optCount
     + " · value 未受影响=" + B2.selValueOk + " · 基础文案保留=" + B2.baseKept);
   console.log("  " + (b2ok ? "PASS 第二批五项全部就位（分歧维度 / 图钉 / 可信度纱 / 底图压暗 / 缓存标记）"

@@ -224,7 +224,8 @@ const r1 = v => Math.round(v * 10) / 10;
   for (const rate of RATES) {
     /* ① 复绘：值场几何命中缓存（切模型/切维度/切图层走这条） */
     rows.push(await run("复绘", `(function(){
-      ['numLabels','showPts','showConf','dimBase'].forEach(id => {
+      /* 2026-10-18：dimBase 已删（深色底图并入主题），只拨四个真实开关 */
+      ['numLabels','showPts','showConf','showTx'].forEach(id => {
         const e = document.getElementById(id); if (e && e.checked) { e.checked = false;
           e.dispatchEvent(new Event('change', { bubbles: true })); }
       });
