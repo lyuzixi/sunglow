@@ -137,6 +137,61 @@ function confBadge(r) {
   </span>`;
 }
 
+/* =========================================================================
+   轴标签适配（fitAxis）
+   -------------------------------------------------------------------------
+   四道分界各挂一枚「名称 + 时刻」，标签宽度随语言与字号变化：手机 374px 上
+   中文四枚勉强排开，英文（Sunset 18:00 · Civil dusk 18:20 …）必然挤作一团。
+   任何"按字符数估宽"的写法在换语言时都会失准，所以全部**实测矩形**，阶梯降级：
+     ① 先全部居中于自己的分界；越出面板的改为朝内锚定（左越界→左锚，右越界→右锚）；
+     ② 仍有重叠或越界 → 隐去名称只留时刻（.tonly）；
+     ③ 仍挤 → 按「与最近邻居的间隙」从小到大舍弃中间标签（.off）。
+   首尾两枚（日落·天黑 / 日出·天亮）是这条轴的两个锚点，**永不舍弃**。
+   幂等：开头先清掉上一轮的降级状态再重测 —— resize / 换语言后直接重跑即可。
+   ========================================================================= */
+let fitAxisT = 0;
+function fitAxis() {
+  const ax = $("#hero .skyaxis");
+  if (!ax) return;
+  const mk = [...ax.querySelectorAll(".mk")];
+  if (!mk.length) return;
+  ax.classList.remove("tonly");
+  mk.forEach(e => e.classList.remove("off", "an-l", "an-r"));
+  const box = ax.getBoundingClientRect();
+  const live = () => mk.filter(e => !e.classList.contains("off"))
+    .map(e => ({ e, r: e.getBoundingClientRect() }));
+  const outOf = rs => rs.filter(x => x.r.left < box.left - 0.5 || x.r.right > box.right + 0.5);
+  const overlap = rs => rs.some((a, i) => rs.some((b, j) => j > i &&
+    a.r.left < b.r.right - 0.5 && a.r.right > b.r.left + 0.5));
+  /* ① 越界改锚：让标签回到面板里来 */
+  outOf(live()).forEach(x => x.e.classList.add(x.r.left < box.left ? "an-l" : "an-r"));
+  /* ② 名称降级：名称是"哪个阶段"，时刻才是这条轴的主角 */
+  if (outOf(live()).length || overlap(live())) ax.classList.add("tonly");
+  /* ③ 舍弃与邻居最贴近的中间标签，直到不再重叠（首尾不动） */
+  while (outOf(live()).length || overlap(live())) {
+    const mids = mk.filter(e => !e.classList.contains("off") && e.classList.contains("mid"));
+    if (!mids.length) break;
+    const rs = live();
+    let worst = null, worstGap = Infinity;
+    mids.forEach(e => {
+      const r = rs.find(x => x.e === e).r;
+      const gap = rs.filter(x => x.e !== e).reduce((g, x) =>
+        Math.min(g, x.r.left < r.left ? r.left - x.r.right : x.r.left - r.right), Infinity);
+      if (gap < worstGap) { worstGap = gap; worst = e; }
+    });
+    if (!worst) break;
+    worst.classList.add("off");
+  }
+}
+/* resize 重跑适配。守卫 typeof window：run_self 会在 Node 里裸载本文件
+   （无 window），顶层挂监听会把纯函数自测炸掉（实测 2026-10-17）。 */
+if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+  window.addEventListener("resize", () => {
+    clearTimeout(fitAxisT);
+    fitAxisT = setTimeout(fitAxis, 120);
+  });
+}
+
 function renderHero(r) {
   const grade = gradeOf(r.Q);
   const isAM = r.period === "am";
@@ -176,11 +231,22 @@ function renderHero(r) {
       ${band.win ? `<span class="win" style="left:${band.win.left.toFixed(2)}%;width:${band.win.width.toFixed(2)}%"></span>` : ""}
       ${band.nowPct != null ? `<span class="now" style="left:${band.nowPct.toFixed(2)}%"></span>` : ""}
     </div>
-    <div class="skyaxis">
-      <span style="left:${band.evPct.toFixed(2)}%"><b>${evName} ${evLocal}</b></span>
-      <span style="left:${band.darkPct.toFixed(2)}%;transform:translateX(-100%)">${i18n("天黑")} ${band.darkLocal}</span>
-      ${band.nowPct != null && Math.abs(band.nowPct - band.evPct) > 8
-        ? `<span class="nowlbl" style="left:${clamp(band.nowPct, 6, 94).toFixed(2)}%;transform:translateX(-50%)">${i18n("现在")} ${band.nowLocal}</span>` : ""}
+    <div class="skyaxis${band.nowPct != null ? " two" : ""}">
+      ${band.marks.map(m =>
+        `<span class="mk ${m.kind}" style="left:${m.p.toFixed(2)}%"><i class="nm">${m.name}</i> <b>${m.t}</b></span>`).join("")}
+      ${band.nowPct != null ? (() => {
+        /* 锚点：右端右锚、左端左锚、中段居中 —— 三种情形下标签都贴着自己的刻度线，
+           且都不会越出面板。阈值 12/88 对应"标签半宽约占带 12%"，与 11.5px 字号一致。 */
+        const an = band.nowPct >= 88 ? "an-r" : band.nowPct <= 12 ? "an-l" : "an-m";
+        /* 相对量只进 title：轴的正文保持绝对时刻，窄屏不因此被拉长。
+           朝霞的参照是「天亮」（t18 在日出前），晚霞才是「天黑」。 */
+        const d = band.darkDeltaMin;
+        const rel = (d == null || !isFinite(d)) ? ""
+          : (d >= 0 ? i18n(isAM ? "天亮已 {n} 分钟" : "天黑已 {n} 分钟", { n: Math.abs(d) })
+                    : i18n(isAM ? "距天亮 {n} 分钟" : "距天黑 {n} 分钟", { n: Math.abs(d) }));
+        return `<span class="nowlbl ${an}" style="left:${band.nowPct.toFixed(2)}%"
+          title="${esc(rel)}">${i18n("现在")} ${band.nowLocal}</span>`;
+      })() : ""}
     </div>` : ""}
   <div class="hero">
     <div class="hero-prob">
@@ -225,7 +291,9 @@ function renderHero(r) {
     </div>
     ${envStrip(r)}
   </details>`;
-  /* 详情层的开合态：innerHTML 整段替换会丢掉 details 的 open，所以每次重渲都按
+  fitAxis();
+
+/* 详情层的开合态：innerHTML 整段替换会丢掉 details 的 open，所以每次重渲都按
      State.folds 现铺一次（与 renderTrend 的 trendFold 同一手法）。 */
   const hf = $("#heroFold");
   if (hf && typeof State !== "undefined" && State.folds) hf.open = !!State.folds.heroFold;
@@ -333,8 +401,25 @@ function skyBand(r) {
   }
 
   /* 轴上的两个真时刻：事件（左对齐）、天文曙暮光结束＝天黑（右对齐） */
+  /* 四道分界的刻度（0 / −6 / −12 / −18°）：轴 = 一把时间尺，每道色块分界各挂
+     「名称 + 时刻」。名称随时段转向 —— 晚霞是各段的**终**，朝霞是**始**；
+     −18° 晚霞叫天黑、朝霞叫天亮。i18n 字面量直接写在三元里（静态扫描收三元
+     实参里的全部字符串，见 i18nprobe 的 usedKeys）。 */
+  const marks = [
+    { p: (evMs - tStart) / span * 100, t: localOf(evMs), kind: "ev",
+      name: isAM ? i18n("日出") : i18n("日落") },
+    { p: (t6 - tStart) / span * 100, t: localOf(t6), kind: "mid",
+      name: isAM ? i18n("渐亮") : i18n("渐暗") },
+    { p: (t12 - tStart) / span * 100, t: localOf(t12), kind: "mid",
+      name: isAM ? i18n("淡蓝") : i18n("深蓝") },
+    { p: (t18 - tStart) / span * 100, t: localOf(t18), kind: "dark",
+      name: isAM ? i18n("天亮") : i18n("天黑") }
+  ].sort((a, b) => a.p - b.p);
   return {
     segs: segs, win: win, veil: veil, nowPct: nowPct, nowLocal: nowLocal,
+    marks: marks,
+    /* 现在距天黑多少分钟（正＝已过，负＝还没到）—— 只用于悬停提示，不进版面 */
+    darkDeltaMin: nowPct == null ? null : Math.round((nowMs - t18) / 60000),
     evPct: (evMs - tStart) / span * 100,
     darkPct: (t18 - tStart) / span * 100,
     darkLocal: localOf(t18)
@@ -507,7 +592,7 @@ function modelCard(title, sub, P, Q, facts, color, extraClass) {
     <div class="mh"><span class="dot" style="background:${color}"></span><b>${title}</b>
       <span class="rt">${sub}</span></div>
     <div class="mrow">
-      <div class="mnum" style="color:${color}">${Math.round(P)}<small>%</small></div>
+      <div class="mnum">${Math.round(P)}<small>%</small></div>
       <div class="mmeta"><span class="grade g-${grade}">${i18n("质量 {q} 分 · {grade}", { q: Math.round(Q), grade: i18n(grade) })}</span></div>
     </div>
     <div class="bar"><i style="width:${clamp(P, 0, 100)}%;background:${gradeColor(grade)}"></i></div>

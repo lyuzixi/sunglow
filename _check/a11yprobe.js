@@ -139,10 +139,15 @@ const AUDIT = `(function(){
     const rows = btns.map(b => ({ on: b.classList.contains('on'),
       pressed: b.getAttribute('aria-pressed') }));
     const bad = rows.filter(r => r.pressed !== null && (r.pressed === 'true') !== r.on);
-    /* 一个组里最多只能有一个 .on（多选组除外：那种不用 aria-pressed） */
+    /* 一个组里最多只能有一个 .on。两种组分开判：
+       · **单选组**（.seg：单位/时间制/语言/主题/地图时段）—— 恒有且只有一个当前值；
+       · **记录器**（.cbseg：实况回填六档）—— "还没标注"是合法状态，所以只要求至多一个，
+         与 aria-pressed 的一致性由下一条守。名字里带 cb 是刻意的：它不是选择器，
+         点下去是**记一笔**，不是切频道。 */
     const nOn = rows.filter(r => r.on).length;
     const isPressedGroup = rows.some(r => r.pressed !== null);
     segs.push({ id: g.id, n: btns.length, nOn: nOn, mismatch: bad.length,
+      kind: g.classList.contains('cbseg') ? 'recorder' : 'radio',
       anyPressed: isPressedGroup, labelled: !!g.getAttribute('aria-label') });
   });
 
@@ -406,7 +411,7 @@ const AUDIT = `(function(){
     + "  " + x.el + "  " + x.px + "px  " + JSON.stringify(x.text)));
 
   console.log("\n=== E. 分段控件状态同步（" + A.segN + " 组）===");
-  (A.segs || []).forEach(s => console.log("    #" + s.id + "  按钮 " + s.n + " · .on " + s.nOn
+  (A.segs || []).forEach(s => console.log("    #" + s.id + "  [" + s.kind + "]  按钮 " + s.n + " · .on " + s.nOn
     + " · aria 错位 " + s.mismatch + " · 有 aria-pressed=" + s.anyPressed + " · 有组名=" + s.labelled));
 
   console.log("\n=== F. 结构 ===");
@@ -425,7 +430,14 @@ const AUDIT = `(function(){
     "对比度度量的覆盖面足够（不是被「无法判定」吞掉）": A.textN >= 100,
     "CSS 固定配色的文本对比度全部达标（D 组）": A.lowContrastN === 0,
     "分段控件的 .on 与 aria-pressed 一致（E 组）": (A.segs || []).length > 0 && (A.segs || []).every(s => s.mismatch === 0),
-    "分段控件有组名且每组至多一个选中": (A.segs || []).every(s => s.labelled && (s.anyPressed ? s.nOn === 1 : true)),
+    "分段控件有组名且每组至多一个选中": (A.segs || []).every(s => s.labelled && s.nOn <= 1),
+    /* 单选组按**身份**点名（不数总数）：这五组是"当前值"语义，任何时刻都必须恰有一个亮着。
+       记录器（.cbseg）不在名单里 —— 它的 0 选中正是"还没回填"的正常态，见 E 组注释。 */
+    "单选组恒有且只有一个当前值（单位/时间制/语言/主题/地图时段）":
+      ["unitSeg", "clockSeg", "langSeg", "themeSeg", "mapPeriod"].every(id => {
+        const s = (A.segs || []).find(x => x.id === id);
+        return !!s && s.kind === "radio" && s.nOn === 1;
+      }),
     "html[lang] 已设且是中文": /^zh/.test(A.struct.lang),
     "页面只有一个 h1": A.struct.h1 === 1,
     "img 都有 alt": A.struct.imgNoAlt === 0,

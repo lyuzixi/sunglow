@@ -576,6 +576,70 @@ function gen(v, la, lo, hh, isAQ, dof) {
     + " · sheet " + G.w + "×" + G.h + "（视口 " + G.vw + "×" + G.vh + "）贴底=" + G.sheet
     + " · 遮罩=" + G.veilOn + " · 点遮罩关闭=" + G.closed);
 
+  /* ---------- H. S6 手机地图可视面积 ----------
+     四件事：地图加高（420→460）、摘要两套长度（.d-wide/.d-narrow）、
+     窄屏榜单默认前 4 条 + 「查看全部」、跨断点回宽屏时榜单复位。
+     自校准口径：**不写死 8** —— 广州这一批可见点可能不足 8（掩膜会裁掉
+     海上的点），所以"全量条数"从页面自己读（H1），前两条断言都跟它比。
+     没有按钮时（可见点本就 ≤4）展开/收起两条按"跳过"处理，
+     与下面 C.touchCtor 的跳过写法同一惯例。 */
+  const H0 = await ev(`(function(){
+    return {
+      mapH: Math.round(document.querySelector('#map').getBoundingClientRect().height),
+      wide: getComputedStyle(document.querySelector('.d-wide')).display,
+      narrow: getComputedStyle(document.querySelector('.d-narrow')).display,
+      rankN: document.querySelectorAll('#rank .rr').length,
+      rankTop: ((document.querySelector('#rankTop')||{}).textContent||'').trim(),
+      hasMore: !!document.querySelector('#rankMore'),
+      moreTxt: ((document.querySelector('#rankMore')||{}).textContent||'').trim(),
+      moreAE: (document.querySelector('#rankMore')||{}).getAttribute('aria-expanded'),
+      scope: ((document.querySelector('#rankScope')||{}).textContent||'').trim()
+    };
+  })()`);
+  const H1 = await ev(`(function(){
+    var b = document.querySelector('#rankMore');
+    var out = { clicked:false };
+    if (b) { b.click(); out.clicked = true; }
+    out.rankN = document.querySelectorAll('#rank .rr').length;
+    out.rankTop = ((document.querySelector('#rankTop')||{}).textContent||'').trim();
+    out.moreTxt = ((document.querySelector('#rankMore')||{}).textContent||'').trim();
+    out.moreAE = (document.querySelector('#rankMore')||{}).getAttribute('aria-expanded');
+    return out;
+  })()`);
+  const H2 = await ev(`(function(){
+    var b = document.querySelector('#rankMore');
+    var out = { clicked:false };
+    if (b) { b.click(); out.clicked = true; }
+    out.rankN = document.querySelectorAll('#rank .rr').length;
+    out.rankTop = ((document.querySelector('#rankTop')||{}).textContent||'').trim();
+    out.moreTxt = ((document.querySelector('#rankMore')||{}).textContent||'').trim();
+    return out;
+  })()`);
+  /* 跨断点：把视口改回桌面宽。TID_DOCK_MQ 的 change 听众负责重排榜单
+     （renderRank），这里轮询等它到位 —— 不用固定 sleep。 */
+  await cdp.send("Emulation.setDeviceMetricsOverride",
+    { width: 1440, height: 900, screenWidth: 1440, screenHeight: 900, deviceScaleFactor: 1, mobile: false });
+  let H3 = null;
+  for (let i = 0; i < 25; i++) {
+    await sleep(100);
+    H3 = await ev(`(function(){
+      return { rankN: document.querySelectorAll('#rank .rr').length,
+        hasMore: !!document.querySelector('#rankMore'),
+        wide: getComputedStyle(document.querySelector('.d-wide')).display,
+        narrow: getComputedStyle(document.querySelector('.d-narrow')).display,
+        mapH: Math.round(document.querySelector('#map').getBoundingClientRect().height) };
+    })()`);
+    if (H3.rankN === H1.rankN && !H3.hasMore && H3.mapH === 560) break;
+  }
+  console.log("\n=== H. S6 手机地图可视面积 ===");
+  console.log("  窄屏 #map 高 " + H0.mapH + " px · 摘要：宽称 display=" + H0.wide + " 窄称 display=" + H0.narrow);
+  console.log("  榜单：默认 " + H0.rankN + " 条（标题「" + H0.rankTop + "」· 口径「" + H0.scope + "」）");
+  console.log("  「查看全部」→ " + H1.rankN + " 条 · 按钮「" + H1.moreTxt + "」aria-expanded=" + H1.moreAE
+    + " · 标题「" + H1.rankTop + "」");
+  console.log("  「收起」→ " + H2.rankN + " 条 · 按钮「" + H2.moreTxt + "」");
+  console.log("  跨断点回 1440 宽：榜单 " + H3.rankN + " 条 · 按钮在场=" + H3.hasMore
+    + " · #map 高 " + H3.mapH + " px（560＝桌面档，证明视口真的换了）");
+
   /* ---------- 汇总断言 ---------- */
   const T = { wrapW: B.wrapW, wrapH: B.wrapH };
   const o = {
@@ -604,6 +668,25 @@ function gen(v, la, lo, hh, isAQ, dof) {
     "关闭卡片后不残留隐形热区（原卡片位置已落回 #map，真机拖不动地图的根因）": C.probeInViewport === true && C.hitBackInMap === true,
     "关闭后摘掉 .dock（pointer-events 回到 none）": C.dockCleared === true && C.tipPEAfterHide === "none",
     "卡片可见时 touch-action=pan-y（双指落在卡片上不缩放整页）": C.dockTouchAction === "pan-y",
+    /* S6 · 地图加高：420 → 460。写死 460 是有意的 —— 它是"图例与排行榜
+       各让出 20 px 紧凑化"换来的那个数，悄悄改回去这里必须红。 */
+    "S6：窄屏地图加高到 460 px": H0.mapH === 460,
+    /* S6 · 摘要两套长度。判据取**可见性**而不是 display 的字面值：
+       .fmore summary 是 display:flex，span 作为弹性项会被 blockify
+       （inline 的 computed value 是 block）—— 写 "inline" 会永远红。 */
+    "S6：摘要两套长度，窄屏只见短称（长称被隐藏）": H0.wide === "none" && H0.narrow !== "none",
+    "S6：窄屏榜单默认只出前 4 条，口径文案仍在": H0.rankN === Math.min(4, H1.rankN)
+      && /点可见/.test(H0.scope),
+    "S6：收起态标题与实际画出的条数一致（前 N）": H0.rankTop === "（前 " + H0.rankN + "）",
+    "S6：「查看全部」展开到全量，按钮改名「收起」且 aria 同步（无按钮＝可见点≤4，跳过）":
+      !H0.hasMore || (H1.clicked === true && H1.rankN > 4 && H1.moreTxt === "收起"
+        && H1.moreAE === "true" && H1.rankTop === "（前 " + H1.rankN + "）"),
+    "S6：「收起」回到前 4 条（无按钮时跳过）":
+      !H0.hasMore || (H2.clicked === true && H2.rankN === Math.min(4, H1.rankN)
+        && H2.moreTxt === "查看全部" && H2.rankTop === "（前 " + H2.rankN + "）"),
+    "S6：跨断点回宽屏，榜单回全量、展开钮消失、摘要换回长称":
+      H3.rankN === H1.rankN && H3.hasMore === false
+      && H3.wide !== "none" && H3.narrow === "none" && H3.mapH === 560,
     "页面不可横向拖动（html.scrollWidth ≤ 布局视口，真机横拖空白根因）": F.deSW <= F.docW + 1,
     "body.scrollWidth 同样封在布局视口内": F.bodySW <= F.docW + 1,
     "#map touch-action=none（手势交给地图 SDK，真机可单指平移）": F.mapTA === "none",

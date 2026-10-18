@@ -107,7 +107,7 @@ const PRESETS = [
 const PREF_KEY = "sunsetbot.pref.v1";
 /* 白名单：布尔字段（图层开关 / 时间制 / F4 关闭本地校准）。`calibOff` 在这里
    而不在别处 —— 它就是一个普通的显示偏好，与"深色底图"同一性质。 */
-const PREF_BOOL = ["numLabels", "showPts", "showConf", "showGrid", "dimBase", "hour12", "calibOff"];
+const PREF_BOOL = ["numLabels", "showPts", "showTx", "showConf", "showGrid", "dimBase", "hour12", "calibOff"];
 /* 第五轮 UI · 折叠态白名单。与 PREF_BOOL 同性质（布尔、只影响显示），
    单独列一份是因为 applyPrefs 里对它们的铺法不同（见 FOLD_KEYS 与 applyFolds）——
    特别是**不能**走下面那个 `$("#"+k).checked` 的通用循环：
@@ -839,13 +839,16 @@ function initUI() {
     }));
   }
 
-  /* 图层开关（F6 第二编码 / C1）：纯重绘或只切叠加层显隐，都不取数。
-     五个开关一律"先应用、再落盘" —— 落盘失败（隐私模式）不影响本次生效。 */
+  /* 图层开关（F6 第二编码 / C1 / S1）：纯重绘或只切叠加层显隐，都不取数。
+     六个开关一律"先应用、再落盘" —— 落盘失败（隐私模式）不影响本次生效。 */
   const nl = $("#numLabels");
   if (nl) nl.addEventListener("change", () => { renderLabels(); prefWrite({ numLabels: nl.checked }); });
   /* 采样点图钉：纯 DOM 叠加，不取数、不重绘色面 */
   const sp = $("#showPts");
   if (sp) sp.addEventListener("change", () => { renderPins(); placePins(); prefWrite({ showPts: sp.checked }); });
+  /* 云量淡纹（S1）：只切换叠加层的显隐，色面像素一个也不动 */
+  const stx = $("#showTx");
+  if (stx) stx.addEventListener("change", () => { refreshTx(); prefWrite({ showTx: stx.checked }); });
   /* 可信度纱：只切换叠加层的显隐，色面像素一个也不动 */
   const sconf = $("#showConf");
   if (sconf) sconf.addEventListener("change", () => { refreshConf(); prefWrite({ showConf: sconf.checked }); });
@@ -858,6 +861,11 @@ function initUI() {
   /* 底图压暗：只改一层 CSS 的 opacity */
   const db = $("#dimBase");
   if (db) db.addEventListener("change", () => { refreshDimBase(); prefWrite({ dimBase: db.checked }); });
+  /* S5 · 全屏看地图：只切 .mapwrap 的 .fs 类（fixed 占满视口）。
+     与图层开关同一性质（纯显示、不取数），但**不进偏好** —— 全屏是一次性的
+     观看状态，不是"我偏好全屏"；持久化它会让下次打开页面时地图突然占满屏幕。 */
+  const fsb = $("#mapFs");
+  if (fsb) fsb.addEventListener("click", () => { setMapFs(!mapFsOn()); });
 
   /* 折叠按钮（第五轮 UI）：光追/数据质量两张技术卡默认收起，展开态进偏好白名单。
      纯显示、不取数、不重算 —— 与图层开关同一性质。 */

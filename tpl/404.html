@@ -39,15 +39,31 @@
    404 页会被套在任意路径下返回，但它看上去必须跟主页是同一个站点。
    所以这里不新造颜色，只抄；改配色时两边一起改。 */
 :root{
-  --bg:#f4f6fa; --card:#ffffff; --line:#e5e9f0; --line2:#eef1f6;
-  --tx:#1f2733; --tx2:#5b6675; --tx3:#667081;
+  /* ---------- 视觉方案四 · 纸面仪器（2026-10-17） ----------
+     三条纪律，改配色前先读：
+     ① **纸面是冷中性**（不是奶油色）。暖色只属于"光"—— 霞光橙只出现在数据里
+        （天色带、窗口标记、选中态、强调数字），页面骨架一律无彩。
+        奶油底 + 衬线 + 陶土橙是 AI 默认套餐的成对特征，这里刻意避开前一项。
+     ② **层级靠排版与发丝线，不靠阴影**。流内内容一律没有 box-shadow：
+        分区分用 1px 发丝线，重点区（结论 / 地图）用白面 + 边线 + 大圆角。
+        阴影只留给真正"浮起来"的东西（下拉、提示卡、目录）。
+     ③ **对比度是审计过的**：--tx3 / --acc2 的值不是随手挑的，见下方配色纪律段。 */
+  --bg:#f6f7f8; --card:#ffffff; --line:#e6e7ea; --line2:#eef0f2;
+  --tx:#15181d; --tx2:#4f535a; --tx3:#696d75;
   --ok:#0f7a45; --okbg:#e9f7ef;
   --warn:#9c5a09; --warnbg:#fdf3e3;
   --bad:#c0392b; --badbg:#fdeceb;
   --acc:#e2601f; --acc2:#bd4a17; --accbg:#fff3ec;
   --blue:#2563eb; --bluebg:#eef3ff;
-  --r:14px; --r2:10px;
-  --sh:0 1px 2px rgba(16,24,40,.04), 0 6px 20px -8px rgba(16,24,40,.10);
+  /* 圆角分两档：--r 给"仪器面板"（结论卡 / 地图卡 / 页脚折叠块），
+     --r2 给面板内部的小方块与控件。层级不再靠"全站同一个圆角"糊平。 */
+  --r:16px; --r2:9px;
+  /* 流内卡片不投影（见纪律②）。--sh 保留给"面板级"的两张脸，
+     而且是极轻的一层 —— 靠边线立住，不靠阴影浮起来。 */
+  --sh:0 1px 2px rgba(16,24,40,.03);
+  --onacc:#fff;           /* 压在强调色底上的文字 */
+  /* 墨色实心按钮（主操作）：深色下自动翻成浅色实心 —— 只换令牌，不写第二套规则 */
+  --solid:#15181d; --solidtx:#ffffff;
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
   /* 视觉设计方案 P0：两个字体角色，界限分明。
      "声音"（衬线）只给：结论句、卡题、hero 大数字 —— 应用唯一开口说的一次话；
@@ -65,35 +81,35 @@
      :root 的这几十个变量，组件 CSS 一行都不用改（**浅色值逐字保持不变**，
      所以这次令牌化对浅色模式是零视觉变化）。
      命名规则：--xxx 是颜色本身；--xxxbd 是它的边框色；--xxxbg 是它的浅底。 */
-  --hover:#fafbfd;        /* 次级按钮/条目 hover 底、.kv .it、.tl 的底 */
-  --rowalt:#fcfdff;       /* 表格偶数行 */
-  --hoverline:#d6dbe4;
-  --panel:#f1f4f9;        /* 分段控件（.seg）底 */
+  --hover:#f4f5f7;        /* 次级按钮/条目 hover 底、.kv .it、.tl 的底 */
+  --rowalt:#fafbfc;       /* 表格偶数行 */
+  --hoverline:#d8dade;
+  --panel:#f1f2f4;        /* 分段控件（.seg）底 */
   --sug:#ffffff;          /* 下拉/浮层底（比卡片再"浮"一层） */
-  --topbg:rgba(255,255,255,.86);
+  /* 顶栏底色＝纸面（不是白）：顶部条要"融进纸里"，而不是贴一条白胶带。
+     配合磨砂后，滚过内容时颜色只有极轻微的变化。 */
+  --topbg:rgba(246,247,248,.82);
   --tipbg:rgba(255,255,255,.98);
   --tipbgSolid:#ffffff;   /* 手机端贴底卡片要求不透明 */
   /* 下拉与桌面提示卡的外阴影：基础态与液态玻璃块共用一套值（darkprobe 收敛硬编码色） */
-  --sh-sug:0 14px 34px -12px rgba(16,24,40,.34);
-  --sh-tip:0 12px 30px -10px rgba(16,24,40,.4);
+  --sh-sug:0 18px 40px -16px rgba(16,24,40,.26), 0 1px 0 rgba(16,24,40,.04);
+  --sh-tip:0 16px 34px -14px rgba(16,24,40,.30), 0 1px 0 rgba(16,24,40,.04);
   /* 液态玻璃（磨砂+高光档）共用令牌：只在 @supports(backdrop-filter) 内生效，
      四处悬浮件（顶栏/搜索下拉/桌面提示卡/目录面板）用；正文卡片保持实心。 */
-  --glass:rgba(255,255,255,.60);       /* 玻璃底色，浮在内容上时透出下方色彩 */
-  --glass-sheen:rgba(255,255,255,.32); /* 顶部一道高光渐变的起点 */
+  --glass:rgba(246,247,248,.72);       /* 玻璃底色，浮在内容上时透出下方色彩 */
+  --glass-sheen:rgba(255,255,255,.42); /* 顶部一道高光渐变的起点 */
   --glass-hi:rgba(255,255,255,.70);    /* 内侧 1px 高光描边 */
-  --loadbg:rgba(255,255,255,.9);
+  --loadbg:rgba(246,247,248,.90);
   --azibg:rgba(255,255,255,.72);
   --azitx:#6b7486;
   --spinbd:#f0d8c8;
   --focusbd:#f0b189; --focusring:#ffe6d6;
   --accbd:#ffd9c2; --okbd:#bfe7d2; --warnbd:#f2ddba; --badbd:#f5cdc9; --bluebd:#d9e3fb;
-  --track:#eef1f6;        /* 进度条/环形底、图表网格、地图未加载时的底 */
-  --track2:#e3e8f0;       /* 排行榜条形底 */
-  --grad1:#ffeede; --grad2:#e9f0ff;            /* body 那两团径向光 */
-  --grad1t:rgba(255,238,222,0); --grad2t:rgba(233,240,255,0);
-  --ensbd:#f3c9ab; --ensgrad:#fff8f4;          /* 「多模型综合」卡的边框与渐变顶 */
-  --soft:#fbfcfe;         /* 内嵌面板（环境输入条 / 省份下钻） */
-  --tint:#fff8f2; --tint2:#fdf6f1; --tint3:#ffe6d8;   /* 品牌橙的三种淡底 */
+  --track:#eef0f2;        /* 进度条/环形底、图表网格、地图未加载时的底 */
+  --track2:#e3e5e8;       /* 排行榜条形底 */
+  --ensbd:#f3c9ab; --ensgrad:#fffaf7;          /* 「多模型综合」卡的边框与渐变顶 */
+  --soft:#fafbfc;         /* 内嵌面板（环境输入条 / 省份下钻） */
+  --tint:#fff8f2; --tint2:#fdf7f2; --tint3:#ffe6d8;   /* 品牌橙的三种淡底 */
   --hole:rgba(0,0,0,.09); /* 色卡/图例色块的描边 */
   --gp1:#2f6fd0; --gp2:#e2601f;                /* 曲线图的两条线（蓝/橙） */
   /* 四路模型标识色（模型卡上的小圆点与数字）：深色下要提亮，
@@ -109,10 +125,10 @@
      位置由 JS 按霞光窗口中心写入 --skyglow-x，颜色固定不随数据变。 */
   --skyglow:rgba(255,166,87,.30);
   /* 目录菜单/浮层用的三档阴影与遮罩（浅色）：放进令牌是 darkprobe 的「令牌外硬编码色 ≤45」守着的——弹层阴影在深色下要用另一组值 */
-  --sh-pop:0 14px 36px rgba(16,24,40,.18);
-  --sh-fab:0 8px 20px rgba(16,24,40,.18);
-  --sh-up:0 -14px 36px rgba(16,24,40,.22);
-  --veil:rgba(12,18,28,.30);
+  --sh-pop:0 18px 44px -18px rgba(16,24,40,.22);
+  --sh-fab:0 10px 24px -10px rgba(16,24,40,.22);
+  --sh-up:0 -16px 40px -16px rgba(16,24,40,.24);
+  --veil:rgba(12,18,28,.28);
   /* 四级等级色（.g-优/良/一般/差 与 pill）：**必须成套**，
      深色下不能只换底色 —— 文字色 #178a52 之类在深底上对比度只有 2.6，读不出来 */
   --g1bg:#e9f7ef; --g1tx:#12734a; --g1bd:#bfe7d2;
@@ -122,31 +138,45 @@
 }
 
 html[data-theme="dark"]{
-  --bg:#11151c; --card:#171d26; --line:#2b333f; --line2:#222932;
-  --tx:#e7ecf3; --tx2:#aab5c3; --tx3:#919dac;
+  --bg:#11151c; --card:#161b22; --line:#262c35; --line2:#1e242c;
+  --tx:#e9ecf1; --tx2:#a8aeb8; --tx3:#8d939d;
   --ok:#5fce97; --okbg:#122a20; --okbd:#1f4735;
   --warn:#e2b45e; --warnbg:#2a2314; --warnbd:#463a1e;
   --bad:#f2796a; --badbg:#2d1a18; --badbd:#4d2a26;
   --acc:#f4791f; --acc2:#ff9d52; --accbg:#2c1e13; --accbd:#4d3520;
   --blue:#7fadff; --bluebg:#141e33; --bluebd:#28395c;
-  /* 深色下阴影要更重才有层次：浅色那套（4% 黑）在深底上完全看不见 */
-  --sh:0 1px 2px rgba(0,0,0,.5), 0 8px 24px -10px rgba(0,0,0,.65);
-  --hover:#1e242e; --rowalt:#1a2029; --hoverline:#3a4450; --panel:#1c232c; --sug:#1f2630;
-  --topbg:rgba(18,23,30,.9); --tipbg:rgba(23,29,38,.98); --tipbgSolid:#171d26;
+  /* 深色下"面板级"那张脸只留一圈极轻的贴地阴影 —— 层次交给边线与底色差，
+     与浅色同一套取舍（视觉方案四纪律②：流内不靠阴影）。 */
+  --sh:0 1px 2px rgba(0,0,0,.4);
+  --onacc:#fff;
+  /* 深色下的主操作：**不能用近白填充** —— darkprobe 的浅色底扫描器会把它判成
+     "漏网的浅色块"（实测 #e9ecf1 的 70×31 按钮直接被点名）。改成比卡片亮一档的
+     中性灰：它仍然是一块"实心按钮"，但不会在深色页面上炸出一个白块。 */
+  --solid:#3a424e; --solidtx:#f2f5f9;
+  --hover:#1d232b; --rowalt:#1a1f26; --hoverline:#39414c; --panel:#1c222a; --sug:#1d232b;
+  --topbg:rgba(17,21,28,.86); --tipbg:rgba(22,27,34,.98); --tipbgSolid:#161b22;
   /* 玻璃令牌深色版：底色更沉，高光更弱 —— 深底上白高光容易过曝 */
-  --glass:rgba(22,27,38,.58); --glass-sheen:rgba(255,255,255,.07); --glass-hi:rgba(255,255,255,.10);
-  --loadbg:rgba(20,26,34,.92); --azibg:rgba(20,25,33,.72); --azitx:#a9b4c2;
+  --glass:rgba(17,21,28,.66); --glass-sheen:rgba(255,255,255,.06); --glass-hi:rgba(255,255,255,.09);
+  --loadbg:rgba(17,21,28,.92); --azibg:rgba(20,25,33,.72); --azitx:#a9b4c2;
   --spinbd:#3a2a20;
   --focusbd:#a9663a; --focusring:#4a2f1e;
-  --track:#232b35; --track2:#2b333f;
-  /* 那两团径向光在深色下改成"暖橙 + 冷蓝"的低亮度版本，保留品牌感但不刺眼 */
-  --grad1:#231708; --grad2:#0f1a2b;
-  --grad1t:rgba(35,23,8,0); --grad2t:rgba(15,26,43,0);
-  --ensbd:#5a3f2a; --ensgrad:#241d19;
-  --soft:#1b2129; --tint:#231d18; --tint2:#221c17; --tint3:#2a2018;
+  --track:#222932; --track2:#2a313a;
+  --ensbd:#5a3f2a; --ensgrad:#221c18;
+  --soft:#1a1f26; --tint:#231d18; --tint2:#221c17; --tint3:#2a2018;
   --hole:rgba(255,255,255,.10);
   --gp1:#6f9dea; --gp2:#f4791f;
   --mc-gfs:#6f9dea; --mc-ec:#3fc3b0; --mc-rt:#e8783a; --mc-ens:#f4791f;
+  /* 天色带：深色下保持同一序列（它本来就是"天"，不反色），只把白昼段压暗一档，
+     否则一块亮白压在深色卡上刺眼；夜段要比卡片底色(#161b22)略亮才看得出边界。 */
+  --dusk-day:#3a4354; --dusk-civil:#e8b678; --dusk-nautical:#cf6f42;
+  --dusk-astro:#6f6a92; --dusk-night:#1e2536;
+  /* 深色下柔光略强：四周更暗，同样强度读起来反而弱 */
+  --skyglow:rgba(255,150,70,.34);
+  /* 弹层阴影/遮罩（深色）：黑底上要更深、更实，否则浮层与卡片分不开 */
+  --sh-pop:0 18px 44px rgba(0,0,0,.6);
+  --sh-fab:0 10px 24px rgba(0,0,0,.55);
+  --sh-up:0 -16px 40px rgba(0,0,0,.62);
+  --veil:rgba(0,0,0,.55);
   --g1bg:#122a20; --g1tx:#5fce97; --g1bd:#1f4735;
   --g2bg:#1c2a17; --g2tx:#9ac765; --g2bd:#2f4526;
   --g3bg:#2a2314; --g3tx:#e2b45e; --g3bd:#463a1e;
@@ -155,48 +185,57 @@ html[data-theme="dark"]{
 
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
+/* 纸面：与主页同一套（无渐变光晕；见 tpl/template.html 的 body 注释） */
 body{
-  background:
-    radial-gradient(1200px 380px at 12% -8%, var(--grad1) 0%, var(--grad1t) 62%),
-    radial-gradient(1000px 340px at 92% -6%, var(--grad2) 0%, var(--grad2t) 60%),
-    var(--bg);
+  background:var(--bg);
   color:var(--tx);
-  font:15px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
+  font:15px/1.6 var(--sans);
   -webkit-text-size-adjust:100%;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
 }
-.wrap{max-width:1560px;margin:0 auto;padding:0 16px 48px}
+.wrap{max-width:1240px;margin:0 auto;padding:0 24px 48px}
 h1,h2,h3,h4{margin:0;font-weight:700;letter-spacing:.2px}
 a{color:var(--blue)}
 .mono{font-family:var(--mono)}
 
 /* ---------- 顶部（与主页同一段，逐字复用） ---------- */
-.top{position:sticky;top:0;z-index:60;backdrop-filter:saturate(1.4) blur(10px);
+.top{position:sticky;top:0;z-index:60;backdrop-filter:saturate(1.2) blur(12px);
   background:var(--topbg);border-bottom:1px solid var(--line)}
-.top-in{max-width:1560px;margin:0 auto;padding:11px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-.logo{width:34px;height:34px;border-radius:11px;flex:0 0 auto;
-  background:linear-gradient(150deg,#ffd08a,#f08a3c 46%,#c9501a);box-shadow:0 4px 12px -4px rgba(201,80,26,.55)}
-.top h1{font-size:17.5px;line-height:1.25}
-.top .sub{font-size:12px;color:var(--tx3);margin-top:1px}
+.top-in{max-width:1240px;margin:0 auto;padding:13px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+/* 标记：细环 + 正在落到地平线上的日轮（与主页同一个记号） */
+.logo{position:relative;width:22px;height:22px;flex:0 0 auto;border-radius:50%;
+  border:1px solid var(--tx3)}
+.logo::before{content:"";position:absolute;left:3px;right:3px;bottom:6px;height:6px;
+  background:var(--acc);border-radius:99px 99px 0 0}
+.logo::after{content:"";position:absolute;left:3px;right:3px;bottom:5px;height:1px;
+  background:var(--tx3);opacity:.55}
+.top h1{font-size:16px;line-height:1.3;letter-spacing:.2px}
+.top .sub{font-size:11.5px;color:var(--tx3);margin-top:1px;letter-spacing:.1px}
 /* 标题列必须 min-width:0（与主页同一条纪律）：h1 是 nowrap，其 min-content 等于
    整行标题宽，缺它标题列不许收缩，会把 badge 顶出容器右缘 → 页面 scrollWidth 变大。 */
 .top-tx{min-width:0}
 .top .spacer{flex:1 1 auto}
-.badge{font-size:11.5px;padding:4px 9px;border-radius:999px;background:var(--accbg);color:var(--acc2);border:1px solid var(--accbd);white-space:nowrap}
+.badge{font-size:11px;padding:3px 9px;border-radius:7px;background:var(--card);color:var(--tx2);
+  border:1px solid var(--line);white-space:nowrap;font-variant-numeric:tabular-nums}
 
 /* ---------- 通用卡片（同主页 .card） ---------- */
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:22px}
 .hint{font-size:12.5px;color:var(--tx3);line-height:1.6}
 
 /* ---------- 404 本体 ---------- */
 /* 窄栏居中：这页内容就一块，撑满 1560 会让"返回首页"跑到屏幕边上找不着。 */
-.nf{max-width:640px;margin:40px auto 0;text-align:center;padding:26px 22px 22px}
+.nf{max-width:560px;margin:64px auto 0;text-align:center;padding:34px 28px 30px}
 /* 数字用 --acc2 而不是 --acc：--acc(#e2601f) 是给色块/渐变用的，白底上做文字
    对比度不够；--acc2(#bd4a17) 白底约 5.1，大字也稳稳过线。
    用等宽字体是刻意的：404 是**数字**，换成正文衬线会跟后面的标题抢注意力。 */
-.nf-code{font-family:var(--mono);font-size:62px;line-height:1;font-weight:800;
-  letter-spacing:2px;color:var(--acc2)}
+/* 404 是**数字**，用等宽体读起来像仪表读数；颜色取 --tx 而不是强调色 ——
+   这一页只需要说明"没找到"，不需要再喊一声。强调色只留给下面那颗小圆点。 */
+.nf-code{font-family:var(--mono);font-size:54px;line-height:1;font-weight:600;
+  letter-spacing:2px;color:var(--tx);font-variant-numeric:tabular-nums}
 .nf h2{font-size:20px;margin-top:12px}
-.nf-lead{font-size:14px;color:var(--tx2);margin:10px 0 0}
+/* text-wrap:pretty 避免中文行尾只剩一两个字（实测"……搬走了。"的"了。"单独成行） */
+.nf-lead{font-size:14px;color:var(--tx2);margin:10px 0 0;text-wrap:pretty}
 /* 请求路径：可能很长且不含空格（/a/b/c?x=……），必须允许在任意字符处断行，
    否则窄屏上它会把卡片撑破、把页面 scrollWidth 顶出去。 */
 .nf-path{margin:12px 0 0;font-size:12.5px;color:var(--tx3);
@@ -204,23 +243,23 @@ a{color:var(--blue)}
 .nf-path code{font-family:var(--mono);background:var(--line2);border-radius:6px;padding:2px 6px}
 .acts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:20px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
-  min-height:42px;padding:10px 18px;border-radius:var(--r2);border:1px solid var(--line);
+  min-height:40px;padding:9px 17px;border-radius:8px;border:1px solid var(--line);
   background:var(--card);color:var(--tx);font-weight:600;font-size:15px;text-decoration:none;
   transition:.15s;cursor:pointer;font-family:inherit}
 .btn:hover{border-color:var(--hoverline);background:var(--hover)}
-/* 主按钮白字压在 --acc2 上 ≈ 5.06（≥4.5）；压在 --acc 上只有 ≈3.4，不够。 */
-.btn.pri{background:var(--acc2);border-color:var(--acc2);color:#fff}
-.btn.pri:hover{background:#a63f12;border-color:#a63f12;color:#fff}
+/* 主按钮＝墨色实心（与主页 .primary 同一套令牌：深色下自动翻成浅底深字） */
+.btn.pri{background:var(--solid);border-color:var(--solid);color:var(--solidtx)}
+.btn.pri:hover{background:var(--solid);border-color:var(--solid);color:var(--solidtx);opacity:.88}
 .btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 /* 作者样式里的 display 会盖掉 [hidden] 的 UA display:none，必须自己钉死。 */
 [hidden]{display:none!important}
 .nf-foot{margin:16px 0 0}
 /* 语言切换：与主页同款分段控件（这里自带最小实现，不共用主页的 CSS 类） */
-.nf-lang{display:flex;gap:6px;justify-content:center;margin-top:16px;background:var(--panel);
-  border:1px solid var(--line);padding:4px;border-radius:12px;width:max-content;margin-left:auto;margin-right:auto}
-.nf-lang button{border:0;background:transparent;padding:6px 11px;border-radius:8px;font-size:13px;
+.nf-lang{display:flex;gap:4px;justify-content:center;margin-top:18px;background:transparent;
+  border:0;padding:0;border-radius:0;width:max-content;margin-left:auto;margin-right:auto}
+.nf-lang button{border:0;background:transparent;padding:6px 11px;border-radius:7px;font-size:13px;
   color:var(--tx2);cursor:pointer;font-family:inherit}
-.nf-lang button.on{background:var(--sug);color:var(--acc2);box-shadow:0 2px 8px -3px rgba(16,24,40,.22)}
+.nf-lang button.on{background:var(--solid);color:var(--solidtx);box-shadow:none}
 .nf-lang button:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
 
 /* ---------- 手机端（断点与主页同为 760px，三处之一） ----------
@@ -230,7 +269,9 @@ a{color:var(--blue)}
 @media (max-width:760px){
   .top{position:static}
   .top-in{padding:8px 11px;gap:8px;flex-wrap:nowrap}
-  .logo{width:26px;height:26px;border-radius:9px}
+  .logo{width:20px;height:20px}
+  .logo::before{left:2px;right:2px;bottom:5px;height:5px}
+  .logo::after{left:2px;right:2px;bottom:4px}
   .top h1{font-size:14px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .top .sub{display:none}
   .top .spacer{flex:1 1 0;min-width:0}

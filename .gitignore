@@ -20,6 +20,8 @@ _check/preview.html
 _check/*.txt
 _check/*.log
 _check/*.png
+# 404probe 截图用的 404 页副本（每次跑批重写）
+_check/404shot.html
 # 探针事实行（由 all.py 增量写入，含探针源码 sha1；docfacts 每次重新核对）
 _check/.facts.json
 

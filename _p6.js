@@ -28,6 +28,8 @@ const MapMod = {
   pinLayer: null, pinSig: "", pins: null,
   /* 可信度叠加层：与 strips 同几何的独立画布集合（见 buildConfStrips） */
   confLayer: null, confStrips: null,
+  /* S1 · 云量淡纹层：与 strips 同几何、同条带划分的独立画布集合（见 buildTxStrips） */
+  txLayer: null, txStrips: null,
   /* 底图压暗层（插在底图与色面之间） */
   dimBaseEl: null,
   /* 日期下拉框里被标为「已就绪 / 已缓存」的选项数（供探针读取） */
@@ -45,6 +47,9 @@ const MapMod = {
   warnCount: 0,
   /* 排行榜当前渲染的城市序列签名，供 P6 的差量更新判断"是否只需改数值" */
   rankSig: "",
+  /* S6 · 窄屏排行榜是否已展开到全量（见 RANK_NARROW_N）。不随"列表变了"重置 ——
+     切模型/维度会整体重渲，但"我想看全部"是用户意图、与这批数据是什么无关。 */
+  rankAll: false,
   /* 数值直标（D5）当前按缩放定下的分级条数；0 表示尚未定级 */
   labelMax: 0,
   /* 当前局部网格的采样点（B13）与**网格中心**的坐标签名 —— 签名变了才重建。
@@ -62,8 +67,8 @@ const MapMod = {
   tipH: 0,
   /* M1 · 事件方位 / 距离环图层（见 drawAzimuthLayer） */
   aziLayer: null, aziSig: "", aziSvg: null,
-  /* 当日值域缓存 { d, dim, mk, R }（见 mapRangeOf） */
-  rangeCache: null
+  /* S5 · 全屏看地图：Esc 退出的 keydown 句柄（进入时挂、退出时摘） */
+  fsKey: null
 };
 /* 地图取数的时区口径：直接引用全局唯一的 API_TZ（见 _p4.js 的注释与 _check/tzprobe.js 实测）。
    原先这里硬编码 "Asia/Shanghai"，与单点侧的 "auto" 是两个口径 —— 因为取样点全在中国，
@@ -115,9 +120,12 @@ const MAP_FOLLOW_ZOOM = 6;
    缓存的 pts 数组就是点集本身，而 mapCacheGet 的结构校验只查"有没有 p/q 字段"，
    查不出点集变了，会把"北京周边的点"当成有效缓存喂给"上海周边"的栅格。
    升版本号是让旧缓存自然失效的**唯一**可靠手段。
+   v6（S1 · 云量淡纹）：pts 每点新增 `cld`（低+中云合成遮挡，0–100）。旧版缓存的点
+   没有这个字段 —— 结构校验同样查不出它，旧缓存会走"无纹理"路径静默降级
+   （cld 缺失按 0 处理，云纹层不画），行为安全但观感不完整，所以一并升版。
    注意：仅升版本号还不够 —— 同一版本内换地点仍会串数据，所以键里必须带坐标，
    见 mapKeyOf()。两者是两道独立的闸门，缺一不可。 */
-const MAP_CACHE_PREFIX = "sunsetbot.map.v5.";
+const MAP_CACHE_PREFIX = "sunsetbot.map.v6.";
 /* 键族前缀（不含版本号）。用途只有一个但很关键：**升版本时清掉上一版的残留**。
    版本号一升，旧前缀的键就再没人读、也再没人删 —— 它们只是静静占着 localStorage，
    直到 5 MB 写满让新缓存静默失败。这正是硬约束 14 那一类故障（配额被看不见的
@@ -144,6 +152,18 @@ const FIELD_STEP = 0.05;                  // 栅格分辨率（度，约 5.5 km�
    凸包把"哪块有数据"讲清楚：包内是插值、包外是外推，而且最多外推 FIELD_OUT_KM。
    边界从此是一条直的折线（模糊半径可以降到 2 格），雾圈随之消失。 */
 const FIELD_OUT_KM = 70;                  // 凸包外还画多远（羽化长度）
+/* 有机噪声边缘（V3 · 2026-10-18 地图改进优化方案）：羽化的**外沿**叠加一层
+   确定性低频噪声，色面边缘从"一条几何折线"变成"一片天气系统的覆盖区渐隐入地图"。
+   三条纪律：
+   ① 噪声按**羽化进度**（sd/FIELD_OUT_KM）缩放 —— 包内（sd≤0）与包界处噪声为 0，
+      所以"淡出的内边界"仍**数学上精确等于凸包**：B1 范围虚线、可信度纱的内边界、
+      色面淡出的内边界三对齐（约束 19）一个像素都不破；
+   ② 只用**确定性**值噪声（网格坐标哈希，禁 Math.random）—— 同一栅格永远同一边缘，
+      探针才可复现；
+   ③ 两层晶格（约 187 km 定形 + 约 72 km 破直）都**远大于羽化带宽**（70 km）——
+      相邻格的噪声连续，边缘是平滑波动而不是逐格抖动。
+   与"磨圆折角"（第三轮已判定回退）是两件事：不动顶点，只软化外沿。 */
+const EDGE_NOISE_KM = 26;
 /* 羽化为什么给到 70 km（而不是 30–40）：凸包实测是 **8 边形**（内角 135.0°、边长交替
    509 / 240 km —— 用 buildHull 的同一算法在 57 个网格点上实算），羽化短了它看上去就是
    一个**硬边的多边形**，比雾圈还假。70 km 摊到屏上约 **46 px**（按实拍图上的经纬网标定：
@@ -169,6 +189,13 @@ const TIP_RANGE_KM = FIELD_REACH_KM;      // 悬停取值的最大距离（另�
    （容器窄但视口宽的场合，如桌面浏览器拖窄侧栏，卡片仍应跟随指针）。 */
 const TIP_DOCK_MQ = window.matchMedia ? window.matchMedia("(max-width:760px)") : null;
 function tipDock() { return !!(TIP_DOCK_MQ && TIP_DOCK_MQ.matches); }
+/* S6 · 手机地图可视面积（2026-10-18 改进优化方案）：窄屏下排行榜默认只出前 4 条，
+   其余收进「查看全部 / 收起」—— 手机上 8 条榜单压在图例下面，首屏里地图只占一小块。
+   断点**复用** TIP_DOCK_MQ（760）：它与提示卡贴底是同一个"这是手机"的判据，
+   故意不引入第二个断点常量，改宽度仍然只有一处。
+   展开态（MapMod.rankAll）**不进偏好**：与全屏按钮同一理由（见 setMapFs 的注释）——
+   一次性视图状态写进 localStorage，换来的只是换设备后"为什么这里多一截"的困惑。 */
+const RANK_NARROW_N = 4;
 /* 「悬停卡里说『插值可信』」的那条距离线：到最近采样点不超过它就报"较高"。
    **它只管悬停卡的文案分级，不管可信度纱的边界** —— 纱的边界是凸包（见 buildConfStrips）。
    这两个量不是一回事：包内也有一半区域离最近点 50 km 以上，那里照样是**插值**；
@@ -219,6 +246,21 @@ function bandGradientCss(deg) {
   return "linear-gradient(" + (deg == null ? 90 : deg) + "deg," + st.join(",") + ")";
 }
 const FIELD_BAND_DEG = 4;                 // 纬度条带最大高度（度）
+/* ---- S1 · 云量淡纹（.txlayer，z-index 2）----
+   为什么要有这一层：色面只回答"霞光好不好"，不回答"天上有没有云"—— 而同一片
+   高分城里，"晴空万里"与"高云铺满"的观感完全不同。云况本来只存在于悬停卡的
+   一行文字里，要先怀疑一个地方、把鼠标移上去才知道。这里把它画成面：
+   低云与中云的合成遮挡越厚，一层极淡的深云影越明显。
+   三条硬约束（与可信度纱同一套纪律）：
+   ① **绝不动色面的一个像素** —— 云纹是独立画布、独立条带，"色面像素 → 数值"
+      的单值映射（zoomprobe / mapaudit 的像素级断言）因此不受影响；
+   ② 只画在**色面真的有像素的地方**（乘以色面 alpha），凸包外、掩膜裁掉的地方
+      一律透明 —— 于是"有机边缘"与三对齐都不受影响，云纹不会探到色面之外；
+   ③ 目标 α ≤ TX_ALPHA：看得见，但绝不参与"这个像素是什么档位"的判决。
+   深色底图（.mapwrap.dark）会给这一层套同一个 invert(1) hue-rotate(180deg)，
+   云影颜色随之翻成对应的亮调 —— 与其它叠加层同一口径（见 template 的 filter 名单）。 */
+const TX_RGB = [30, 42, 68];              // 深云影 #1e2a44
+const TX_ALPHA = 0.18;                    // 云纹层峰值不透明度（画布 alpha = 该值 × 云量 × 色面 alpha）
 /* 等值线：沿档界描一条细线。
    分档之后档与档之间**本来就有一条边**（相邻档颜色不同），为什么还要画线：
    那条边是"色块碰色块"，在浅色底图上、尤其在低端几档（浅黄→橙）之间对比度很低，
@@ -646,6 +688,8 @@ async function initMap() {
   mountPins(box);
   /* 可信度叠加层：与色面同几何、但像素完全独立的另一层画布 */
   mountConf(box);
+  /* S1 · 云量淡纹层：同样像素独立（z-index 在色面之上、等值线之下） */
+  mountTx(box);
   /* 等值线 + 经纬网层（第 9 批）：同样与色面同几何、像素独立（z-index 在色面之上、纱之下） */
   mountGridLayer(box);
   /* 底图压暗层：必须插在色面层之前，否则会盖住颜色 */
@@ -884,14 +928,15 @@ function hexA(h, a) {
   return `rgba(${r},${g},${b},${a})`;
 }
 /* 用省级色块渲染（热力层不可用时的降级方案） */
-function paintProvince(byProv, mode, R) {
+function paintProvince(byProv, mode) {
   const styles = PROV_STYLES(mode);
   const geos = MapMod.provGeoms.map(g => {
     const arr = byProv[g.id];
-    let sid = "sN";                       // 无数据 → 专用灰，不与"最低值（白）"混淆
+    let sid = "sN";                       // 无数据 → 专用灰，不与"最低值"混淆
     if (arr && arr.length) {
       const m = arr.reduce((a, b) => a + b, 0) / arr.length;
-      sid = "s" + clamp(Math.round(scaleT(m, R.lo, R.hi) * 23), 0, 23);
+      /* 固定 0–100 绝对刻度（V1）：23 个样式等分这条尺子，与色面的 N_BANDS 同源 */
+      sid = "s" + clamp(Math.round(m / 100 * 23), 0, 23);
     }
     return { id: g.id, styleId: sid, paths: g.paths };
   });
@@ -2001,6 +2046,27 @@ function buildGeom(pts, ok) {
   };
 }
 
+/* 确定性值噪声（V3 有机边缘用）：整数格哈希 + 双线性 smoothstep 插值。
+   Math.imul 保证 int32 乘法不丢精度；输入只来自格坐标 ⇒ 同栅格永远同一边缘。 */
+function vhash(i, j) {
+  let h = Math.imul(i | 0, 374761393) + Math.imul(j | 0, 668265263) | 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+/* 晶格值噪声：x/y 为晶格坐标（调用方已含缩放），返回 0–1 */
+function vlattice(x, y) {
+  const xi = Math.floor(x), yi = Math.floor(y);
+  const xf = x - xi, yf = y - yi;
+  const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+  const a = vhash(xi, yi), b = vhash(xi + 1, yi), c = vhash(xi, yi + 1), d = vhash(xi + 1, yi + 1);
+  return (a * (1 - u) + b * u) * (1 - v) + (c * (1 - u) + d * u) * v;
+}
+/* 边缘噪声：−1…1。两层晶格按 FIELD_STEP≈5.5 km/格 折算波长 ——
+   34 格 ≈ 187 km 定形、13 格 ≈ 72 km 破直，都远大于 70 km 羽化带宽，
+   所以整条羽化带上噪声是渐变的：边缘呈平滑波动，而不是逐格抖动的噪点。 */
+function edgeNoise(r, c) {
+  return (vlattice(r / 34, c / 34) * 0.72 + vlattice(r / 13 + 9.7, c / 13 + 3.3) * 0.28) * 2 - 1;
+}
 /* 取值层：只做"加权求和 + 查表"。cv[i] 按**原 pts 下标**索引（几何层保存的就是下标）。 */
 function evalField(g, cv, lut) {
   const { cols, rows, n, cellSeg, segOff, segCand, topA, topB, dlT, aMin, exact, land } = g;
@@ -2059,14 +2125,21 @@ function evalField(g, cv, lut) {
       const v = ex >= 0 ? cv[ex] : (sww > 0 ? svv / sww : fb);
       vals[o] = v;
       /* 分档：档内同色、档间成边（N_BANDS 的取值理由见常量旁）。
-         v 已经是"按当日值域拉伸到 0–100"的位置，所以这里直接按它切档。 */
+         v 就是 0–100 的绝对分数（固定刻度，V1），直接按它切档。 */
       const k = bandOf(v);
       bnd[o] = k;
       const q = o * 4;
       img[q] = lut[k * 3]; img[q + 1] = lut[k * 3 + 1]; img[q + 2] = lut[k * 3 + 2];
       /* 羽化：包内恒为 1（那里是插值），包外 FIELD_OUT_KM 内平滑到 0（那里是外推）。
-         原来这里是"到最近采样点 240 km 才衰减完"，那 165 km 的渐变就是屏幕上的雾圈。 */
-      let al = H ? (FIELD_OUT_KM - sd) / FIELD_OUT_KM : 1;
+         原来这里是"到最近采样点 240 km 才衰减完"，那 165 km 的渐变就是屏幕上的雾圈。
+         V3 · 有机边缘：外沿叠加确定性噪声（按羽化进度缩放，见 EDGE_NOISE_KM 注释）——
+         包内与包界处噪声为 0 ⇒ "淡出内边界＝凸包"数学上精确成立，三对齐不破；
+         噪声只在羽化带（sd>0）里算，包内一格都不调用。 */
+      let al;
+      if (H && sd > 0) {
+        const p = sd / FIELD_OUT_KM;                       // 羽化进度 0…1
+        al = (FIELD_OUT_KM - sd - edgeNoise(r, c) * p * EDGE_NOISE_KM) / FIELD_OUT_KM;
+      } else al = 1;
       if (al > 1) al = 1; else if (al < 0) al = 0;
       al = al * al * (3 - 2 * al);
       /* 海陆掩膜（D4）：只压 alpha，RGB 保持"数值 → 颜色"的原样，
@@ -2092,7 +2165,7 @@ function evalField(g, cv, lut) {
    用"球面距离平方的等比值"a=(d/R)² 代替真实距离：
    权重 1/a 与 1/d² 只差一个常数因子，归一化后加权平均结果完全相同，
    但几何层省掉了所有三角函数。 */
-function buildField(pts, dim, mk, R, mode) {
+function buildField(pts, dim, mk, mode) {
   const n = pts.length;
   const ok = new Uint8Array(n);
   let cnt = 0;
@@ -2112,9 +2185,14 @@ function buildField(pts, dim, mk, R, mode) {
   }
   const g = GEOM_CACHE.geom;
 
-  /* 取值层：城市数值 → 0–100 的色阶位置（按原 pts 下标对齐几何层） */
+  /* 取值层：城市数值 → 0–100 的色阶位置（按原 pts 下标对齐几何层）。
+     **固定 0–100 绝对刻度**（V1，2026-10-18）：dimOf 本身就产出 0–100 的量
+     （P/Q/综合指数都是分数，ΔI 是分数极差），直接 clamp 后切档。
+     旧实现按当日值域 scaleT 拉伸 —— 当天值域只有 9 分宽时整张图挤在色阶顶端 12%，
+     看上去就是一坨（源码旧注释自述），且颜色只表示"当天内部的相对好坏"、跨天不可比。
+     现在颜色含义永久固定：今天和昨天、这里和那里可以直接比。 */
   const cv = new Float64Array(n);
-  for (let i = 0; i < n; i++) if (ok[i]) cv[i] = 100 * scaleT(dimOf(pts[i], dim, mk), R.lo, R.hi);
+  for (let i = 0; i < n; i++) if (ok[i]) cv[i] = clamp(dimOf(pts[i], dim, mk), 0, 100);
 
   /* 色阶查找表：一次算好 N_BANDS 档 RGB，内层循环只做查表。
      取每档的**中点**色 —— 档内没有渐变，所以中点就是这一档的代表色。 */
@@ -2128,6 +2206,11 @@ function buildField(pts, dim, mk, R, mode) {
      所以挂在几何对象上只算一次 —— 可信度叠加层每次绘制都要读它。
      evalField 里已经算过同一个量（dKm = √a·R）来做遮罩，这里只是把它留出来。 */
   f.dkm = geomDistKm(g);
+  /* S1 · 云量值场（同一插值，只取 vals）。pts 缺 cld 字段（v5 旧缓存）按 0 处理
+     ⇒ 云纹层整幅不画，静默降级，不会把"没有云"错画成"没有数据"。 */
+  const ccv = new Float64Array(n);
+  for (let i = 0; i < n; i++) if (ok[i]) ccv[i] = isNum(pts[i].cld) ? clamp(pts[i].cld, 0, 100) : 0;
+  f.cloud = cloudValsOf(g, ccv);
   return f;
 }
 function geomDistKm(g) {
@@ -2136,6 +2219,55 @@ function geomDistKm(g) {
   const a = g.aMin;
   for (let o = 0; o < d.length; o++) d[o] = Math.sqrt(a[o]) * 6371.0088;
   return (g._dkm = d);
+}
+
+/* S1 · 云量值场：与 evalField **同一套插值**（同几何、同权重、同凸包闸门），
+   但只产出 vals（Float32Array，NaN＝不在色面范围内）。
+   为什么不直接复用 evalField：它每次调用都要分配并写满一张 img
+   （约 1 万格 × 4 B ≈ 40 KB）+ band + mask，还要跑一遍 boxBlur ——
+   而云纹只需要"每个格子的云量"：颜色由 TX_RGB 定死，alpha 要乘的是**色面**的
+   alpha（另一张图），跟云量自己的遮罩没有关系。
+   **纪律**：闸门与算式必须与 evalField 逐字同构（凸包判据、候选遍历顺序、
+   权重因式分解、exact 优先、兜底值）—— 两者解的是同一张栅格上的同一个插值问题，
+   任何一处漂移都会让"云纹的外沿"与"色面的外沿"对不上。 */
+function cloudValsOf(g, ccv) {
+  const { cols, rows, n, cellSeg, segOff, segCand, topA, topB, dlT, aMin, exact } = g;
+  const vals = new Float32Array(cols * rows);
+  vals.fill(NaN);
+  const hud = g.hud, hx = g.hx, H = hud ? hud.edges : null;
+  const aCut = Math.pow(FIELD_REACH_KM / 6371.0088, 2);               // 仅凸包退化时的兜底
+  const fb = ccv[g.fallback];
+  for (let r = 0; r < rows; r++) {
+    const o0 = r * cols, abase = r * n;
+    const Y = H ? ((g.laN - r * g.dLa) - hud.olat) * 110.574 : 0;
+    for (let c = 0; c < cols; c++) {
+      const o = o0 + c;
+      let sd = 0;
+      if (H) {
+        const X = hx[c];
+        sd = -1e9;
+        for (let k = 0; k < H.length; k += 3) {
+          const d = H[k] * X + H[k + 1] * Y + H[k + 2];
+          if (d > sd) sd = d;
+        }
+        if (sd > FIELD_OUT_KM) continue;
+      } else if (aMin[o] > aCut) continue;
+      const sg = cellSeg[o];
+      const e0 = segOff[sg], e1 = segOff[sg + 1];
+      const dbase = c * n;
+      let svv = 0, sww = 0;
+      for (let e = e0; e < e1; e++) {
+        const i = segCand[e];
+        const d = dlT[dbase + i];
+        const w = 1 / (topA[abase + i] + topB[abase + i] * d * d);
+        svv += w * ccv[i];
+        sww += w;
+      }
+      const ex = exact[o];
+      vals[o] = ex >= 0 ? ccv[ex] : (sww > 0 ? svv / sww : fb);
+    }
+  }
+  return vals;
 }
 
 /* 把栅格切成按纬度排列的条带。
@@ -2215,6 +2347,83 @@ function refreshConf() {
   const layer = MapMod.confLayer;
   if (!layer) return;
   layer.classList.toggle("on", confOn() && !!(MapMod.confStrips && MapMod.confStrips.length));
+}
+/* =========================================================================
+   S1 · 云量淡纹层（.txlayer，z-index 2）
+   -------------------------------------------------------------------------
+   与可信度纱是同一套纪律的第二次应用：**另起一层画布、绝不碰色面像素**。
+   差别只在内容与判据：
+     · 可信度纱回答"这儿的数可信吗"（包内/包外，二值）；
+     · 云纹回答"天上有云吗"（云量，连续）—— 所以它的 alpha 是渐变量，
+       而纱是常量 alpha。
+   条带划分与色面**逐条对应**（同 per / 同 count / 同覆盖范围），
+   于是 fitRaster 里可以直接复用色面的投影矩形（见那里的 refit），
+   不需要再投影一遍，也绝不可能对不齐。
+   ========================================================================= */
+function txOn() { const c = $("#showTx"); return !!(c && c.checked); }
+function mountTx(box) {
+  const el = document.createElement("div");
+  el.className = "txlayer";
+  el.id = "mapTx";
+  /* 插在色面层之后；具体层级交给 z-index，不依赖 DOM 顺序 */
+  const l = MapMod.layer;
+  if (l && l.parentNode === box && l.nextSibling) box.insertBefore(el, l.nextSibling);
+  else box.appendChild(el);
+  MapMod.txLayer = el;
+}
+function refreshTx() {
+  const layer = MapMod.txLayer;
+  if (!layer) return;
+  layer.classList.toggle("on", txOn() && !!(MapMod.txStrips && MapMod.txStrips.length));
+}
+/* 云纹条带：canvas 尺寸与色面条带完全相同（同 cols / 同 h），所以 transform
+   可以整条照抄色面的（见 fitRaster 的 refit）。像素算法见 TX_RGB / TX_ALPHA 旁
+   的三条硬约束 —— 其中"乘色面 alpha"这一条同时办成了两件事：
+   云纹不会探到色面之外（凸包外、掩膜裁掉处一律透明），
+   且跟着羽化一起淡出（有机边缘与三对齐一个像素都不破）。 */
+function buildTxStrips(f) {
+  const layer = MapMod.txLayer;
+  if (!layer || !f || !f.cloud) { if (layer) layer.classList.remove("on"); return null; }
+  const per = Math.max(1, Math.round(FIELD_BAND_DEG / f.dLa));
+  const count = Math.ceil(f.rows / per);
+  let strips = (MapMod.txStrips && MapMod.txStrips.length === count) ? MapMod.txStrips : null;
+  if (!strips) {
+    layer.innerHTML = "";
+    strips = [];
+    for (let i = 0; i < count; i++) {
+      const cv = document.createElement("canvas");
+      layer.appendChild(cv);
+      strips.push({ cv, ctx: null });
+    }
+  }
+  let si = 0;
+  for (let r0 = 0; r0 < f.rows; r0 += per, si++) {
+    const h = Math.min(per, f.rows - r0);
+    const s = strips[si];
+    if (s.cv.width !== f.cols || s.cv.height !== h) { s.cv.width = f.cols; s.cv.height = h; }
+    const ctx = s.ctx || (s.ctx = s.cv.getContext("2d"));
+    const id = ctx.createImageData(f.cols, h);
+    const D = id.data;
+    for (let y = 0; y < h; y++) {
+      const o0 = (r0 + y) * f.cols;
+      for (let x = 0; x < f.cols; x++) {
+        const o = o0 + x;
+        const aF = f.img[o * 4 + 3];              // 色面这一格的 alpha：0 ⇒ 没有色面，云纹也不画
+        if (aF === 0) continue;
+        const v = f.cloud[o];
+        if (!isNum(v) || v <= 0) continue;
+        const a = TX_ALPHA * (v / 100) * (aF / 255);
+        if (a <= 0.004) continue;
+        const q = (y * f.cols + x) * 4;
+        D[q] = TX_RGB[0]; D[q + 1] = TX_RGB[1]; D[q + 2] = TX_RGB[2];
+        D[q + 3] = Math.round(255 * Math.min(1, a));
+      }
+    }
+    ctx.putImageData(id, 0, 0);
+  }
+  MapMod.txStrips = strips;
+  refreshTx();
+  return strips;
 }
 /* =========================================================================
    等值线 + 经纬网层（第 9 批建层 / 第 10 批换成矢量）
@@ -2583,6 +2792,55 @@ function drawDataEdge(ctx, rect, f) {
   MapMod.edgeIn = inN;
 }
 
+/* =========================================================================
+   S5 · 全屏看地图
+   -------------------------------------------------------------------------
+   卡片里那一小条地图（桌面 560 px、手机 420 px）是"值不值得出门"这个决策
+   最大的视觉瓶颈 —— 缩不放、看不全。全屏是它的出口。
+   为什么用 CSS 展开式而不是浏览器 Fullscreen API：
+     ① headless 探针里 Fullscreen API 基本不可用，CSS 模式能被端到端断言；
+     ② iOS Safari 至今不给 <div> 开放 requestFullscreen，CSS 模式没这个分歧。
+   退出三条路：再点按钮 / Esc / 手机上无处可点（地图已占满视口，原本设计的
+   "点地图外退出"随之落空——fixed inset:0 之下没有"外"）。
+   尺寸变化不新造逻辑：initMap 里那个 ResizeObserver 会调 map.resize() +
+   scheduleFit()，这里只负责类名、文案与按键的挂摘。
+   ========================================================================= */
+function mapFsOn() {
+  const w = document.querySelector(".mapwrap");
+  return !!(w && w.classList.contains("fs"));
+}
+/* 按钮文案 + aria-pressed 的唯一定稿处。data-i18n 一起改，是为了语言切换时
+   applyI18nDom 按属性重铺文案不会把"退出全屏"刷回"全屏"（relang 也会调它）。 */
+function refreshFsBtn() {
+  const b = $("#mapFs");
+  if (!b) return;
+  const on = mapFsOn();
+  const key = on ? "退出全屏" : "全屏";
+  b.textContent = i18n(key);
+  b.setAttribute("data-i18n", key);
+  b.setAttribute("aria-pressed", on ? "true" : "false");
+}
+function setMapFs(on) {
+  const wrap = document.querySelector(".mapwrap");
+  if (!wrap) return;
+  wrap.classList.toggle("fs", !!on);
+  refreshFsBtn();
+  /* Esc 只在进入全屏时挂、退出时摘 —— 常驻 keydown 会在用户按 Esc 时
+     无意中劫持页面其它行为（比如输入框里取消编辑）。 */
+  if (on) {
+    if (!MapMod.fsKey) {
+      MapMod.fsKey = e => { if (e.key === "Escape") setMapFs(false); };
+      window.addEventListener("keydown", MapMod.fsKey);
+    }
+  } else if (MapMod.fsKey) {
+    window.removeEventListener("keydown", MapMod.fsKey);
+    MapMod.fsKey = null;
+  }
+  /* 容器尺寸变了：ResizeObserver 会异步补上 map.resize() + scheduleFit()，
+     这里先排一帧，让"点下去就变形"这件事在同一个事件循环里发生。 */
+  scheduleFit();
+}
+
 /* 逐条带把地理范围换算成容器像素，只改 CSS transform（不重算色值）。
    用 scale() 而不是 width/height：画布的布局尺寸保持真实像素小尺寸，
    放大只发生在合成阶段（对位图做双线性平滑），避免出现几十万像素宽的布局盒。 */
@@ -2641,6 +2899,7 @@ function fitRaster() {
   /* 叠加层与色面条带**逐条一一对应**（同 per / 同 count / 同覆盖范围），
      所以复用上面那份 rect，不必再投影一遍、也绝不可能对不齐：
        · 可信度纱：画布尺寸与色面**完全相同** ⇒ 直接复制 transform 字符串（最省）；
+       · 云纹（S1）：同上，画布尺寸也与色面完全相同 ⇒ 同样照抄 transform；
        · 等值线：不在栅格里，而是一张**容器分辨率**的画布 —— 用同一个 rect 把
          栅格坐标投影过去、按屏幕像素描边（见 drawContours）。它**不是**条带，
          所以不参与 refit，也不该有 transform。 */
@@ -2654,6 +2913,7 @@ function fitRaster() {
     }
   };
   refit(MapMod.confStrips);
+  refit(MapMod.txStrips);
   drawContours(rect);
   refreshConf();
   /* M1：方位/距离环也要跟着重新投影（拖动、缩放、换地点都会走到这里）。
@@ -2874,6 +3134,20 @@ function mapSet() {
   return box ? box[State.mapPeriod || "pm"] : null;
 }
 
+/* S1 · 云量淡纹的取值：低云与中云的**合成遮挡**（0–100）。
+   为什么不是"总云量"：总云量里含高云，而卷云对霞光只有增色、从不遮挡 ——
+   把卷云也画成云影会让"晚霞最美的那片天"看起来最脏。所以只取会挡光的两层。
+   为什么不是相加：两层在天空上重叠，相加在两层都厚时会超过 100，而"遮挡"
+   是有上限的；取**概率并集**（1−(1−a)(1−b)）才是"天上被挡了多少"的正确合成。
+   中云乘 0.85 降权：它更高更薄，遮挡略弱于低云。
+   缺失按 0（与 cloudDecks 的 nz(env.cLow, 0) 同一惯例）—— 于是旧版缓存
+   （v5，没有 cld 字段）走到这里得到 0，云纹层不画，静默降级。 */
+function cloudBlockOf(env) {
+  const a = isNum(env.cLow) ? clamp(env.cLow, 0, 100) : 0;
+  const b = (isNum(env.cMid) ? clamp(env.cMid, 0, 100) : 0) * 0.85;
+  return clamp(a + b - a * b / 100, 0, 100);
+}
+
 async function loadMapData(force, cacheOnly) {
   if (!MapMod.ok) { mapSetLoad(false); return false; }
   const dateS = $("#mapDateSel").value || State.dateStr;
@@ -3037,6 +3311,9 @@ async function loadMapData(force, cacheOnly) {
       };
       const envG = envOf(sG), envE = sE ? envOf(sE) : null, envM = envOf(sM);
       if (envE) ["fz", "blh", "vis", "cape", "precip"].forEach(k => { if (!isNum(envE[k]) && isNum(envG[k])) envE[k] = envG[k]; });
+      /* S1 · 云量淡纹的取值：低云与中云的合成遮挡（0–100），**综合口径**（与色面同源）。
+         高云（卷云）不遮挡霞光、反而增色，所以不进这个量。 */
+      const cld = cloudBlockOf(envM);
       const ctx = { v: meta[ci].v, omega: om, aod: aodUse };
       const rt = scoreRay(envM, analyseTransect(trM, primaryDeck(envM).primary.key), ctx);
       const sGs = scoreStat(envG, analyseTransect(trG, primaryDeck(envG).primary.key), ctx);
@@ -3057,7 +3334,7 @@ async function loadMapData(force, cacheOnly) {
         name: meta[ci].city.name, prov: meta[ci].city.region,
         lat: meta[ci].city.lat, lon: meta[ci].city.lon,
         P, Q, p, q, grade: gradeOf(Q), type: rt.primary.type, cover: rt.primary.cover,
-        base: rt.primary.base, d: rt.d, dur: rt.geom.dur, aod: aodUse,
+        base: rt.primary.base, d: rt.d, dur: rt.geom.dur, aod: aodUse, cld,
         T550: rt.peak.T550, color: hexA(rampColor("pm", mixedIndex(P, Q)), 0.95)
       };
     };
@@ -3168,20 +3445,6 @@ function dimOf(o, dim, mk) {
 }
 /* 兼容用法：默认取多模型综合 */
 function dimValue(o, dim) { return dimOf(o, dim, "ens"); }
-/* 当日值域（色阶拉伸区间）的缓存。
-   showMapTip 与 paintMap 都要它，而它的输入是"整份点集 × 当前维度 × 当前模型"——
-   每次重算就是一次 57 元素的数组分配加一遍 min/max，而悬停是每秒几十次的路径。
-   键用「数据对象引用 + 维度 + 模型」三元组：换日期或时段会换掉 mapSet() 返回的对象
-   引用，换维度或模型会改后两项，任一变化都必然失效，不需要额外的清理钩子
-   （换地点会整体作废数据，引用自然也变）。 */
-function mapRangeOf(d, dim, mk) {
-  const c = MapMod.rangeCache;
-  if (c && c.d === d && c.dim === dim && c.mk === mk) return c.R;
-  const R = scaleRange(d.pts.map(p => dimOf(p, dim, mk)));
-  MapMod.rangeCache = { d: d, dim: dim, mk: mk, R: R };
-  return R;
-}
-
 /* 当前该用哪个模型 —— **纯函数**：只读，不碰 State、不碰 DOM。
    只读路径（悬停、排行榜、图例）必须用这个：此前它们调用的是带副作用的版本，
    于是"鼠标在地图上划一下"就会把 State.mapModel 改回 ens 并清掉回退标记，
@@ -3303,28 +3566,24 @@ function paintMap() {
         (had ? i18n("地图上显示的是<b>上一次成功渲染的色面</b>（已置灰），请不要按当前日期与时段解读。") : "") +
         i18n("请点「刷新地图」重新取数。"));
     renderRank();
-    updateLegend({ lo: 0, hi: 100 }, mode, mk);
+    updateLegend(mode, mk);
     return;
   }
   /* 有数据了：解除陈旧标记 */
   MapMod.stale = false;
   if (MapMod.layer) MapMod.layer.classList.remove("stale");
-  /* 当日实际值域：色阶按它线性拉伸，地域差异才看得出来。
-     顺手把结果填进 mapRangeOf 的缓存（dimVals 这里已经算过，不额外开销），
-     悬停提示随即命中，不必自己再来一遍 57 元素的 map + min/max。 */
-  const R = scaleRange(dimVals);
-  MapMod.rangeCache = { d: d, dim: dim, mk: mk, R: R };
 
   /* 本次真正画出来的那张色面（降级渲染时为 null）—— 排行榜的可见性判据要用它，
      所以必须是**本次**的，不能读 MapMod.field 那个可能还停在上一次的对象。 */
   let fld = null;
   if (MapMod.rasterOK) {
-    const f = buildField(d.pts, dim, mk, R, mode);
+    const f = buildField(d.pts, dim, mk, mode);
     if (f) {
       MapMod.field = f;
       fld = f;
       MapMod.strips = buildStrips(f);
       buildConfStrips(f);
+      buildTxStrips(f);
       /* 几何只算一次（换日期/时段/模型才重算）；投影与描边每帧走 fitRaster → drawContours */
       buildContourGeometry(f);
       if (MapMod.gridLayer) MapMod.gridLayer.classList.remove("stale");
@@ -3337,24 +3596,26 @@ function paintMap() {
       const v = dimOf(o, dim, mk);
       if (isNum(v)) (byProv[o.prov] = byProv[o.prov] || []).push(v);
     });
-    paintProvince(byProv, mode, R);
+    paintProvince(byProv, mode);
   }
   refreshModelNote(d);
   /* 把**本次**的色面传进去：榜单只列图上真画出来的点（见 mapVisibleAt）。
      传参而不是读 MapMod.field，是因为"无可用数值"那条提前返回的路径上
      MapMod.field 还停在上一次的对象上。 */
   renderRank(fld);
-  updateLegend(R, mode, mk);
+  updateLegend(mode, mk);
   renderLabels();
   /* 数据换了一批，之前下钻出来的省份清单里的数值已经过期 —— 收起它，
      免得用户拿着旧数字做判断。 */
   renderDrill(null);
 }
 
-function updateLegend(R, mode, mk) {
+/* 图例：色条与等级行都从 bandColor 取色（与色面逐档同源）。
+   固定 0–100 绝对刻度（V1）之后，色条上的刻度就是真实数值 —— 旧实现按当日值域
+   拉伸色条、刻度显示映射后的真实值，同一根条上"20%"并不等于 20 分。 */
+function updateLegend(mode, mk) {
   mode = mode || (State.mapPeriod || "pm");
   mk = mk || State.mapModel || "ens";
-  const lo = R ? R.lo : 0, hi = R ? R.hi : 100;
   /* 色条＝与栅格**逐档同色**的硬停止渐变（见 bandGradientCss）。
      8 个 <i> 只是等分占位，本身不着色 —— 这样图例与地图上的颜色一定一致。
      用硬停止而不是热力渐变：地图上现在是 N_BANDS 档离散色，图例要是还画成连续过渡，
@@ -3363,9 +3624,9 @@ function updateLegend(R, mode, mk) {
   bar.style.background = bandGradientCss();
   bar.innerHTML = "<i></i>".repeat(8);
   const tick = bar.nextElementSibling;
-  /* 刻度直接标出真实数值（色阶两端＝当日最低/最高） */
+  /* 刻度直接标出真实数值（固定色阶：色条位置 = 绝对分数，一一对应） */
   if (tick) tick.innerHTML = [0, 20, 40, 60, 80, 100]
-    .map(v => `<span>${Math.round(lo + (hi - lo) * v / 100)}</span>`).join("");
+    .map(v => `<span>${v}</span>`).join("");
   const dim = State.mapDim || "mix";
   const dimTxt = dim === "p" ? i18n("出现概率 P") : dim === "q" ? i18n("观赏质量分 Q")
     : dim === "dv" ? i18n("模型分歧 ΔI") : i18n("综合指数 I");
@@ -3380,8 +3641,8 @@ function updateLegend(R, mode, mk) {
          [52, i18n("分歧中等（10–19 分）")], [26, i18n("分歧小（&lt;10 分）")]]
       : QUALITY_BANDS.map(b => [bandMid(b), i18n(b.key) + "（" + bandRangeHtml(b, i18n("分")) + "）"]);
   $("#lgRows").innerHTML = lv.map(x =>
-    `<span><i class="chipc" style="background:${bandColor(mode, 100 * scaleT(x[0], lo, hi))}"></i>${x[1]}</span>`).join("");
-  /* 色阶与算法模型无关（白＝低、红＝高），变的是各模型的数值本身；
+    `<span><i class="chipc" style="background:${bandColor(mode, x[0])}"></i>${x[1]}</span>`).join("");
+  /* 色阶与算法模型无关（天色色阶：蓝灰＝低、橙红＝高），变的是各模型的数值本身；
      所以图例只需把"当前用的是哪套模型、用的是它的哪个维度"说清楚。 */
   const modelLine = dim === "dv"
     ? i18n("当前着色依据是<b>模型分歧</b>：GFS / ECMWF / 光追 三套模型各自算出的综合指数 取<b>极差 ΔI = max − min</b>。<b>它与“当前选中哪个模型”无关</b>，所以算法模型下拉框在本维度下不可选。分歧大不等于霞光差，而是<b>这次预报本身没把握</b> —— 越红越应该以单点精细结果为准。")
@@ -3395,7 +3656,7 @@ function updateLegend(R, mode, mk) {
     radius: MAP_RADIUS_KM, mask: MASK_KEEP_KM
   });
   $("#lgNote").innerHTML = modelLine +
-    i18n("统一色阶：<b>白 → 黄 → 橙 → 红</b>，色面按 <b>{bands} 档分级填色</b>（同一档内同色），档与档之间描一条<b>等值线</b>把等级边界显式画出来 —— 低端几档颜色本来就接近，只有颜色变化时远看仍是一团，有一条线才数得清跨了几级。<b>最浅一档＝当日最低值、最红一档＝当日最高值</b>，{scale}朝霞 / 晚霞、各算法模型、各着色维度共用同一条色阶、同一套分档。<br>当前着色依据：<b>{dim}</b>。{mixRule}<br>局部网格约 <b>{pts} 个采样点</b>、间距 {grid} km。<br>颜色不是唯一的编码，五个勾选项：<b>数值直标</b>标出数值最高的一批网格点 · <b>采样点</b>画出全部采样点并标出查询点 · <b>可信度</b>给外推区铺一层灰纱 · <b>深色底图</b>把底图整体翻成深色，让接近白色的低值区更容易分辨 · <b>经纬网</b>开关底层那张 {gdeg}° 坐标网。<br>那张 <b>{gdeg}° 经纬网</b>（细灰线，标了度数与 N/E）是地图坐标参照、与色面无关：等值线告诉你“值跨了一级”，经纬网告诉你“这里是哪”。<br><b>虚线多边形＝数据范围边界</b>（{pts} 个采样点的凸包）：线内是<b>插值</b>，线外到色面淡出处（约 {out} km）是<b>外推</b>、越往外越不可信。颜色再浅，只要在虚线以内就代表<b>“这里算过、就是这个值”</b>，而不是空白。<br><b>悬停</b>查看该处数值与数据可信度；<b>点击地图、或下方榜单的任意一行</b>，都可以该处发起单点精细查询（含 400 km 样带与光追模型）。", {
+    i18n("统一色阶：<b>天色色阶</b>（蓝灰＝天色已暗 → 灰 → 金 → 橙红＝霞光最浓），与首屏那条天色带同一套语汇。色面按 <b>{bands} 档分级填色</b>（同一档内同色），档与档之间描一条<b>等值线</b>把等级边界显式画出来 —— 低端几档颜色本来就接近，只有颜色变化时远看仍是一团，有一条线才数得清跨了几级。<b>固定 0–100 绝对刻度：颜色含义不随当天的数值范围拉伸</b>，今天和昨天、这里和那里可以直接比，图例刻度就是真实分数。{scale}朝霞 / 晚霞、各算法模型、各着色维度共用同一条色阶、同一套分档。<br>当前着色依据：<b>{dim}</b>。{mixRule}<br>局部网格约 <b>{pts} 个采样点</b>、间距 {grid} km。<br>颜色不是唯一的编码，六个勾选项：<b>数值直标</b>标出数值最高的一批网格点 · <b>采样点</b>画出全部采样点并标出查询点 · <b>云纹</b>按低中云遮挡量铺一层极淡的深云影 · <b>可信度</b>给外推区铺一层灰纱 · <b>深色底图</b>把底图整体翻成深色（天色色阶的低值端在深色底图上会与底图接近，深色模式下低值区可依靠等值线与范围边界线分辨）· <b>经纬网</b>开关底层那张 {gdeg}° 坐标网。<br>那张 <b>{gdeg}° 经纬网</b>（细灰线，标了度数与 N/E）是地图坐标参照、与色面无关：等值线告诉你“值跨了一级”，经纬网告诉你“这里是哪”。<br><b>虚线多边形＝数据范围边界</b>（{pts} 个采样点的凸包）：线内是<b>插值</b>，线外到色面淡出处（约 {out} km）是<b>外推</b>、越往外越不可信。颜色再浅，只要在虚线以内就代表<b>“这里算过、就是这个值”</b>，而不是空白。<br><b>悬停</b>查看该处数值与数据可信度；<b>点击地图、或下方榜单的任意一行</b>，都可以该处发起单点精细查询（含 400 km 样带与光追模型）。", {
       bands: N_BANDS, dim: dimTxt, radius: MAP_RADIUS_KM, pts: mapPts().length, grid: MAP_GRID_KM,
       mask: MASK_KEEP_KM, gdeg: GRAT_DEG, out: FIELD_OUT_KM,
       scale: i18n(dim === "dv" ? "颜色越靠红代表<b>三套模型之间分歧越大</b>（越不确定）。" : "颜色越靠红代表概率越高、质量越好。"),
@@ -3405,8 +3666,8 @@ function updateLegend(R, mode, mk) {
      实测它单独占 480 px（整张地图卡片 1713 px）。 */
   $("#lgMore").innerHTML =
     (dim === "dv" ? i18n("某点只有一套模型有结果时 ΔI 无意义，该点不上色；<b>EC 取数失败时不是“分歧为 0”</b>，而是大面积不上色 —— 这是在提示“少了一套模型”。<br>") : "") +
-    i18n("为避免地域差异被压缩，色阶按<b>当日该模型实际值域 {lo}–{hi}</b> 线性拉伸（刻度即真实数值），再切成 {bands} 档 —— 所以要看清“哪一块和哪一块是一档”，看的是<b>区域</b>而不是色深；最低那一档接近白色、与浅色底图接近属正常现象（可勾选<b>「深色底图」</b>让低值区更容易分辨；也可以看那条<b>虚线数据范围边界</b> ——颜色再浅，只要落在虚线以内就是“算过且有值”）。<br>地图上只有<b>数值高低</b>这一种颜色含义，与结论卡片里按等级着色的徽章（优绿 / 差红）是两套独立配色，请勿混看。降级渲染（按省着色）时，<b>灰色省区＝该省所有城市都没有可用数据</b>，与“数值很低（白）”是两回事。<br>每个网格点取一次模式数据，其朝/晚霞方向 0–400 km 的云况由网格反距离加权插值推求（样带几何与单点一致，但取值非逐点精细样带）。单点精细结果请使用上方查询。<br><b>换一个查询地点会重新采样、重新取数</b>（挪动不超过 {keep} km 时沿用现有网格，不重复取数）；范围外的区域不参与计算，所以图上不会出现本范围之外的颜色。<br>色面按地理范围贴合底图，<b>颜色只由数值决定、与缩放级别无关</b>：放大只是看局部，不会丢失颜色。<br>勾选<b>「数值直标」</b>会在图上标出数值最高的一批网格点（随缩放级别 8–48 个，越小比例尺标得越少以免互相压盖）；勾选<b>「采样点」</b>会画出全部 {pts} 个采样点，并标出<b>查询点</b>（挪动不超过 {keep} km 而沿用旧网格时，值场中心会与查询点错开，错开超过 5 km 会额外标出<b>值场中心</b>）。<br>勾选<b>「可信度」</b>会在<b>虚线以外、色面淡出之前</b>的那一圈铺一层灰纱：那里已经在<b>外推</b>（不只在采样点的包围范围内），越靠边越不可信。纱只画在叠加层上，<b>不改变色面本身的像素</b>，所以“图上颜色 → 数值”的对应关系不受影响。悬停时给的“可信度”是另一个量 —— <b>该处离最近采样点有多远</b>（包内实测最远 85 km）。", {
-      lo: Math.round(lo), hi: Math.round(hi), bands: N_BANDS,
+    i18n("怎么读这张图：<b>色面</b>由 {pts} 个采样点反距离加权插值而成，按 {bands} 档着色，同一档内处处同色；<b>等值线</b>正好压在每条档界上，数线就能数清跨了几级；<b>色面外沿</b>带一层低频噪声渐隐入地图，越淡＝越接近外推的尽头（数据范围仍以虚线多边形为准）；<b>云纹</b>是低云与中云的合成遮挡，越深＝天上越可能挡住霞光（高云不挡光，不入画）；<b>小圆点</b>是采样点，整张图的颜色由它们插值而来；勾选<b>「可信度」</b>后的<b>灰纱</b>铺在虚线以外、色面淡出之前，那一圈已经属于外推。<br>色阶是<b>固定 0–100 绝对刻度</b>，切成 {bands} 档 —— 所以要看清“哪一块和哪一块是一档”，看的是<b>区域</b>而不是色深。颜色含义永久固定：85 分永远是同一个橙，不管其它地方是 20 分还是 90 分。<br>天色色阶的最低端是“天色已暗”的蓝灰，与浅色底图对比充分。<br>地图上只有<b>数值高低</b>这一种颜色含义，与结论卡片里按等级着色的徽章（优绿 / 差红）是两套独立配色，请勿混看。降级渲染（按省着色）时，<b>灰色省区＝该省所有城市都没有可用数据</b>，与“数值很低（蓝灰）”是两回事。<br>每个网格点取一次模式数据，其朝/晚霞方向 0–400 km 的云况由网格反距离加权插值推求（样带几何与单点一致，但取值非逐点精细样带）。单点精细结果请使用上方查询。<br><b>换一个查询地点会重新采样、重新取数</b>（挪动不超过 {keep} km 时沿用现有网格，不重复取数）；范围外的区域不参与计算，所以图上不会出现本范围之外的颜色。<br>色面按地理范围贴合底图，<b>颜色只由数值决定、与缩放级别无关</b>：放大只是看局部，不会丢失颜色。<br>勾选<b>「数值直标」</b>会在图上标出数值最高的一批网格点（随缩放级别 8–48 个，越小比例尺标得越少以免互相压盖）；勾选<b>「采样点」</b>会画出全部 {pts} 个采样点，并标出<b>查询点</b>（挪动不超过 {keep} km 而沿用旧网格时，值场中心会与查询点错开，错开超过 5 km 会额外标出<b>值场中心</b>）；勾选<b>「云纹」</b>会按低中云合成遮挡量铺一层很淡的深云影（峰值 α≤0.18）：它同样只画在叠加层上，且只出现在色面真的有像素的地方，<b>不改变色面本身的像素</b> —— “图上颜色 → 数值”的对应关系不受影响。<br>勾选<b>「可信度」</b>会在<b>虚线以外、色面淡出之前</b>的那一圈铺一层灰纱：那里已经在<b>外推</b>（不只在采样点的包围范围内），越靠边越不可信。纱只画在叠加层上，<b>不改变色面本身的像素</b>，所以“图上颜色 → 数值”的对应关系不受影响。悬停时给的“可信度”是另一个量 —— <b>该处离最近采样点有多远</b>（包内实测最远 85 km）。", {
+      bands: N_BANDS,
       pts: mapPts().length, keep: MAP_KEEP_KM
     }) +
     `<br><b>点击</b>地图可钉住提示，并看该处所属省份的城市清单；` +
@@ -3511,9 +3772,8 @@ function showMapTip(ll, isClick) {
   const cf = confOf(nearKm);
   const P = o ? modelP(o, mk) : null, Q = o ? modelQ(o, mk) : null;
   const grade = isNum(Q) ? gradeOf(Q) : gradeOf(v);
-  /* 与地图同源：用当日该模型值域拉伸后的位置取色，色块颜色与地图上该处一致 */
-  const R = mapRangeOf(d, dim, mk);
-  const c = bandColor(d.period, 100 * scaleT(v, R.lo, R.hi));
+  /* 与地图同源：固定 0–100 绝对刻度（V1），色块颜色与地图上该处一致 */
+  const c = bandColor(d.period, clamp(v, 0, 100));
   const mkTxt = dim === "dv" ? i18n("模型分歧") : (mk === "ens" ? i18n("多模型综合") : modelName(mk));
   /* 首行＝当前着色依据对应的那个量，避免与下方参考行重复 */
   const mainRow = dim === "p"
@@ -3556,15 +3816,21 @@ function showMapTip(ll, isClick) {
     ? `<div class="t3"><span>${d.period === "am" ? "朝霞" : "晚霞"}方位</span>`
       + `<b>${dirWordOf(azEv)} ${Math.round(azEv)}° · 样带 0–${MAP_AZ_KM} km</b></div>`
     : "";
+  /* S4 · 条目重排（2026-10-18）：① 距查询点（距离·方位）② 当前维度的数值
+     ③ 出现概率 / 观赏质量 ④ 主要云层 + 云底 / 云边界 ⑤ 数据可信度 ⑥ 来源说明。
+     旧顺序把"距离 / 方位"放在第 5 位，而它回答的是"我在哪儿、往哪边看"——
+     这是读这张卡时第一个想知道的问题（尤其刚拖动过地图之后）。
+     方位与距离沿用 M2-1 的既有通路（bearingOf / haversine / dirWordOf），
+     不新造三角函数；窄屏 dock、翻转判据、四条关闭路径都不动。 */
   const html = `
     <div class="t1"><i class="chipc" style="background:${c}"></i>${o ? o.name : (near || "该位置")}<button class="tclose" type="button" aria-label="关闭">×</button></div>
     <div class="t2">${o ? o.prov + " · " : ""}${d.dateS} ${d.period === "am" ? "朝霞" : "晚霞"} · ${mkTxt}${o ? "" : " · 插值估计"}</div>
-    ${mainRow}${extra}${dirRow}${azRow}
-    <div class="t3"><span>${dim === "dv" ? "参与模型" : "算法模型"}</span><b>${dim === "dv" ? "GFS / ECMWF / 光追" : mkTxt}</b></div>
-    <div class="t3"><span>数据可信度</span><b class="${cf.cls}">${cf.lv}</b></div>
-    <div class="t3 tflat"><span>${cf.txt}</span></div>
+    ${dirRow}${azRow}${mainRow}${extra}
     ${o ? `<div class="t3"><span>主要云层</span><b>${o.type} ${Math.round(o.cover)}%</b></div>
            <div class="t3"><span>云底 / 云边界</span><b>${uAlt(o.base * 1000)} / ${isNum(o.d) ? uDist(o.d) : "无"}</b></div>` : ""}
+    <div class="t3"><span>数据可信度</span><b class="${cf.cls}">${cf.lv}</b></div>
+    <div class="t3 tflat"><span>${cf.txt}</span></div>
+    <div class="t3"><span>${dim === "dv" ? "参与模型" : "算法模型"}</span><b>${dim === "dv" ? "GFS / ECMWF / 光追" : mkTxt}</b></div>
     ${isClick ? `<button class="tgo" type="button" data-lat="${ll.lat}" data-lon="${ll.lon}">在此处精细查询（400 km 样带 + 光追）</button>` : ""}
   `;
   /* 位置每次都更新（指针一直在动），但**内容不变就不动 DOM**：innerHTML 全量重写
@@ -3648,6 +3914,14 @@ if (TIP_DOCK_MQ && TIP_DOCK_MQ.addEventListener) {
     hideMapTip();
     if (ll) showMapTip(ll, true);
   });
+  /* S6 · 同一条断点的第二个听众：跨过 760 px 时重排排行榜
+     （窄屏 4 条 / 宽屏 8 条）。rankAll 原样带过去 —— 用户在手机上展开过，
+     转到平板/横屏应保持展开，不该被"屏幕变宽"偷偷收回去。
+     判活用 mapSet() + MapMod.field：没有数据时 renderRank 自己会走引导文案，
+     这里不抢它的分支。 */
+  TIP_DOCK_MQ.addEventListener("change", () => {
+    if (typeof renderRank === "function" && mapSet()) renderRank(MapMod.field);
+  });
 }
 
 /* ---- 排行榜 ----
@@ -3675,14 +3949,18 @@ function renderRank(fld) {
   /* M1 · 口径必须与图面一致：**榜上有的点，图上必须真的看得见**。
      掩膜裁掉（以及被模糊抹掉）的点 alpha 恒为 0，而这里原先只按"有没有值"筛选，
      于是出现"榜上有名、图上无影"（三亚榜前 8 全部不可见）。
-     注意色阶范围 R 仍按 all（含不可见点）算 —— 必须与 mapRangeOf 同源，
-     否则条形的颜色会和地图上同值的颜色对不上。 */
+     固定 0–100 绝对刻度（V1）之后，条形颜色直接用数值本身取色 —— 与地图、
+     悬停卡、图例四级同源，不再需要"按 all 算值域再对齐"那套间接层。 */
   const vis = o => mapVisibleAt(fld, o.lat, o.lon);
   const all = d.pts.map(o => dimOf(o, dim, mk)).filter(isNum);
-  const R = scaleRange(all);
   const shown = d.pts.filter(o => isNum(dimOf(o, dim, mk)) && vis(o));
   const list = shown.slice()
     .sort((a, b) => dimOf(b, dim, mk) - dimOf(a, dim, mk)).slice(0, 8);
+  /* S6 · 窄屏默认前 4 条（RANK_NARROW_N）；展开态在 MapMod.rankAll。
+     桌面（!narrow）恒为全量，visN === list.length，下面每条分支都与旧行为一致。 */
+  const narrow = tipDock();
+  const showAll = !narrow || MapMod.rankAll;
+  const visN = showAll ? list.length : Math.min(RANK_NARROW_N, list.length);
   const sc = $("#rankScope");
   /* 分歧维度下排名口径与模型无关：这里排的是"模型之间最不一致的地点"。
      如果不换文案，会读成"多模型综合最高的地点"，与榜单里的数字对不上。 */
@@ -3693,7 +3971,10 @@ function renderRank(fld) {
     + " · " + i18n("{n} 点可见", { n: shown.length })
     + (shown.length < all.length ? i18n("（另有 {n} 点不在显示范围内）", { n: all.length - shown.length }) : "");
   const rtop = $("#rankTop");
-  if (rtop) rtop.textContent = i18n("（前 {n}）", { n: 8 });
+  /* 数字跟着**实际画出来的条数**走：窄屏收起时写 4，展开时写 8。
+     空列表时保持 8（那段路走的是 hint，标题里的数字指"这份榜单的设计容量"，
+     写 0 会像在报错）。 */
+  if (rtop) rtop.textContent = i18n("（前 {n}）", { n: list.length ? visN : 8 });
   const host = $("#rank");
   if (!list.length) {
     /* 分歧维度下"没有可用结果"的含义完全不同：不是"这套模型没算出来"，
@@ -3713,14 +3994,17 @@ function renderRank(fld) {
   }
   const sig = list.map(o => o.name).join("\u0001");
   const rows = host.querySelectorAll(".rr");
-  if (sig === MapMod.rankSig && rows.length === list.length) {
+  /* 差量判据里加上 visN：窄屏从 4 条展开到 8 条（或反向）时 sig 没变、
+     行数变了，必须走重建 —— 否则"查看全部"点下去只会改前 4 条的数值。
+     桌面下 visN === list.length，判据与旧版逐字等价。 */
+  if (sig === MapMod.rankSig && rows.length === visN) {
     /* 同一批城市、同一顺序：只更新值，不动结构 */
-    for (let i = 0; i < list.length; i++) {
+    for (let i = 0; i < visN; i++) {
       const o = list[i], v = dimOf(o, dim, mk), r = rows[i];
       const bar = r.children[1].firstElementChild;
-      /* 条长按绝对值（0–100 的比例，便于直观读出大小），配色与地图同源（当日值域拉伸） */
+      /* 条长按绝对值（0–100 的比例，便于直观读出大小），配色与地图同源（固定刻度直取） */
       bar.style.width = clamp(v, 0, 100) + "%";
-      bar.style.background = bandColor(d.period, 100 * scaleT(v, R.lo, R.hi));
+      bar.style.background = bandColor(d.period, clamp(v, 0, 100));
       r.children[2].textContent = String(Math.round(v));
       const g = r.children[3];
       g.className = "grade g-" + o.grade;
@@ -3728,16 +4012,29 @@ function renderRank(fld) {
     }
     return;
   }
-  host.innerHTML = list.map(o => {
+  /* S6 · 收尾多一个「查看全部 / 收起」：只有窄屏、且确实还有没收进来的条目时
+     才出现（≤4 条时按钮没有意义，不画）。文案走 i18n 常量，不碰用户数据。 */
+  const more = narrow && list.length > RANK_NARROW_N;
+  host.innerHTML = list.slice(0, visN).map(o => {
     const v = dimOf(o, dim, mk);
     /* M1 · 每行都是"到该处精细查询"的入口（与点击地图走同一条通路）。
        role/tabindex 必须一起给，否则键盘用户拿不到这个入口。 */
     return `<div class="rr" role="button" tabindex="0" data-lat="${o.lat}" data-lon="${o.lon}"
       aria-label="查看 ${esc(o.name)} 的精细结果"><span class="nm">${esc(o.name)}</span>
-      <span class="b3"><i style="width:${clamp(v, 0, 100)}%;background:${bandColor(d.period, 100 * scaleT(v, R.lo, R.hi))}"></i></span>
+      <span class="b3"><i style="width:${clamp(v, 0, 100)}%;background:${bandColor(d.period, clamp(v, 0, 100))}"></i></span>
       <span class="vv">${Math.round(v)}</span>
       <span class="grade g-${o.grade}" style="transform:scale(.92)">${o.grade}</span></div>`;
-  }).join("");
+  }).join("") + (more
+    ? `<button class="sm rankmore" id="rankMore" aria-expanded="${showAll ? "true" : "false"}">`
+    + esc(i18n(showAll ? "收起" : "查看全部")) + `</button>`
+    : "");
+  const mb = host.querySelector("#rankMore");
+  /* 绑定在每次重建上（与提示卡 .tgo 同一套路）：按钮是这次 innerHTML 新建的节点，
+     旧句柄跟着旧节点一起被丢弃，不会累积。 */
+  if (mb) mb.addEventListener("click", () => {
+    MapMod.rankAll = !MapMod.rankAll;
+    renderRank(fld);
+  });
   MapMod.rankSig = sig;
 }
 
@@ -3798,6 +4095,8 @@ function relang() {
     if (typeof hideMapTip === "function") hideMapTip();
     /* 第五轮 UI：折叠按钮的文案（收起/展开）也过 i18n —— 切语言要重铺 */
     if (typeof refreshFoldBtns === "function") refreshFoldBtns();
+    /* S5：全屏按钮的文案跟着状态走（全屏中切语言必须还是"退出全屏"） */
+    if (typeof refreshFsBtn === "function") refreshFsBtn();
   } catch (e) { softWarn("语言切换后的重渲染失败", e); }
 }
 

@@ -243,6 +243,140 @@ let reqN = 0;            // 请求计数（只数 open-meteo）
     + " · 界面组：自动刷新=" + A.autoMap + " 语言=" + A.lang + " 主题=" + A.theme);
   console.log("  默认收起=" + A.moreHidden + " aria-expanded=" + A.ariaExp);
 
+  /* ---------- A2. 两级卡片：只有结论与地图「有面」（视觉方案四） ----------
+     九张卡拆成"两块面板 + 若干分区"是这套视觉的核心不变量。按**身份**判：
+     .card:not(.q) 的 id 集合恰为 cardHero/cardMap —— 以后新增分区不会假失败，
+     但只要有人给某个分区补回底色或阴影，dirty 就会非空、断言变红。
+     结论数字的"衬线大字、不加粗"同理：字号与字重一起判，防止退回粗黑体。 */
+  const A2 = await ev(`(function(){
+    var all = [].slice.call(document.querySelectorAll('.card'));
+    var panels = all.filter(function(c){ return !c.classList.contains('q'); })
+                    .map(function(c){ return c.id; }).sort();
+    var qs = all.filter(function(c){ return c.classList.contains('q'); });
+    var dirty = qs.filter(function(c){
+      var s = getComputedStyle(c);
+      return s.boxShadow !== 'none' || s.backgroundColor !== 'rgba(0, 0, 0, 0)';
+    }).map(function(c){ return c.id || '(匿名分区)'; });
+    var num = document.querySelector('#hero .hero-num');
+    var ns = num ? getComputedStyle(num) : null;
+    return {
+      panels: panels, dirty: dirty, qN: qs.length,
+      numSerif: !!ns && /serif/i.test(ns.fontFamily),
+      numPx: ns ? parseFloat(ns.fontSize) : 0,
+      numW: ns ? parseInt(ns.fontWeight, 10) : 0
+    };
+  })()`);
+  console.log("\n=== A2. 两级卡片（面板 / 分区）===");
+  console.log("  面板（有面）：" + JSON.stringify(A2.panels) + " · 分区 " + A2.qN + " 块");
+  console.log("  分区里还带底色/阴影的：" + JSON.stringify(A2.dirty));
+  console.log("  结论数字：" + A2.numPx + "px / 字重 " + A2.numW + " / 衬线=" + A2.numSerif);
+
+  /* ---------- A3. 轴标签：现在与太阳事件必须分行 ----------
+     傍晚天黑前一小时内，"现在"与"天黑"在时间上必然相邻，单行里任何避让写法都会
+     叠字（实拍：天黑 19:15 / 现在 19:18 压成"天黑 1现在 19:18"）。
+     判据不能等真实钟点撞上——那样同一天里会忽绿忽红。这里**克隆**真实轴节点，
+     把它摆到三个极端位置（0 / 50 / 100%）实测矩形：分行、贴刻度、不越界都是
+     CSS 合约，与跑批钟点无关。 */
+  const AX = await ev(`(function(){
+    var axis = document.querySelector('.skyaxis');
+    if (!axis) return { has: false };
+    var host = axis.parentNode;
+    var node = axis.cloneNode(true);
+    node.classList.add('two');
+    var nl = node.querySelector('.nowlbl');
+    if (!nl) { nl = document.createElement('span'); nl.className = 'nowlbl'; nl.textContent = '现在 00:00'; node.appendChild(nl); }
+    host.appendChild(node);
+    var other = [].slice.call(node.querySelectorAll('span:not(.nowlbl)'));
+    function at(p, cls){
+      nl.className = 'nowlbl ' + cls;
+      nl.style.left = p + '%';
+      var ar = node.getBoundingClientRect(), r = nl.getBoundingClientRect();
+      var tx = ar.left + ar.width * p / 100;
+      var hit = other.some(function(s){ var b = s.getBoundingClientRect();
+        return r.left < b.right - 0.5 && r.right > b.left + 0.5
+            && r.top < b.bottom - 0.5 && r.bottom > b.top + 0.5; });
+      var rows = Math.min.apply(null, other.map(function(s){
+        return Math.abs(s.getBoundingClientRect().top - r.top); }));
+      return { p: p, inBox: r.left >= ar.left - 0.5 && r.right <= ar.right + 0.5,
+               ticks: r.left - 1.5 <= tx && tx <= r.right + 1.5, hit: hit, rows: rows };
+    }
+    var cases = [at(0, 'an-l'), at(50, 'an-m'), at(100, 'an-r')];
+    /* 真实节点：有「现在」标签时，轴必须已经是两行 */
+    var realNow = axis.querySelector('.nowlbl');
+    var realTwo = axis.classList.contains('two');
+    host.removeChild(node);
+    return { has: true, cases: cases, realNow: !!realNow, realTwo: realTwo,
+             realOK: !realNow || realTwo };
+  })()`);
+  console.log("\n=== A3. 轴：现在 / 太阳事件 分两行 ===");
+  if (AX.has) {
+    AX.cases.forEach(c => console.log("  现在@" + String(c.p).padStart(3) + "% · 在框内=" + c.inBox
+      + " · 压住刻度=" + c.ticks + " · 与事件标签相交=" + c.hit
+      + " · 与最近事件标签的行距=" + c.rows.toFixed(1) + "px"));
+    console.log("  真实轴带「现在」标签=" + AX.realNow + " · 已两行=" + AX.realTwo);
+  } else console.log("  （本次渲染没有轴 —— A3 按缺失判失败）");
+
+  /* ---------- A4. 轴 = 时间尺：四道分界各挂「名称 + 时刻」 ----------
+     守三件事（全部实测矩形，不猜字宽）：
+     ① 四枚刻度齐全、时刻按时间递增、首尾（日落/天黑）永不舍弃；
+     ② 每枚标签的**中心压在相邻色块的交界上**（±2px）—— 这正是"给颜色间隔
+        标时间"的本体：标错位置比不标更糟；
+     ③ 降级阶梯真的能工作：把轴压窄到 180px 逼出 .tonly（隐名称只留时刻），
+        窄轴下仍无重叠；还原宽度后再跑 fitAxis 必须完全复位（幂等）。 */
+  const AX4 = await ev(`(function(){
+    var axis = document.querySelector('.skyaxis'), sky = document.querySelector('.sky');
+    if (!axis || !sky) return { has: false };
+    var segs = [].slice.call(sky.querySelectorAll('.s'));
+    var mks  = [].slice.call(axis.querySelectorAll('.mk'));
+    var box = axis.getBoundingClientRect();
+    var bounds = [], acc = box.left;
+    segs.forEach(function(s, i){ acc += s.getBoundingClientRect().width;
+      if (i < segs.length - 1) bounds.push(acc); });
+    var info = mks.map(function(m){
+      var r = m.getBoundingClientRect(), nm = m.querySelector('.nm');
+      return { r: r, cx: (r.left + r.right) / 2, off: m.classList.contains('off'),
+               nmShown: !!nm && getComputedStyle(nm).display !== 'none',
+               t: (m.textContent.match(/\\d{1,2}:\\d{2}/) || [""])[0] };
+    });
+    var vis = info.filter(function(x){ return !x.off; });
+    var mins = vis.map(function(x){ var a = x.t.split(':'); return +a[0] * 60 + +a[1]; });
+    var hit = vis.some(function(a, i){ return vis.some(function(b, j){ return j > i &&
+      a.r.left < b.r.right - 0.5 && a.r.right > b.r.left + 0.5; }); });
+    var edgeErr = 0, onEdge = vis.length === bounds.length &&
+      vis.every(function(x, i){ var e = Math.abs(x.cx - bounds[i]);
+        edgeErr = Math.max(edgeErr, e); return e <= 2; });
+    /* 降级阶梯：压窄 → fitAxis → 检查；还原 → fitAxis → 必须复位 */
+    var w = axis.style.width, tonly = false, narrowOK = false, restored = false;
+    /* 180px：中文四条全称在这条几何下必重叠（13/36.6/63.8/91% 处各 ~64px 宽），
+       逼出阶梯；实测 300px 时这条几何恰好排得开，测不出降级。 */
+    axis.style.width = '180px';
+    fitAxis();
+    tonly = axis.classList.contains('tonly');
+    var vis2 = [].slice.call(axis.querySelectorAll('.mk'))
+      .filter(function(m){ return !m.classList.contains('off'); })
+      .map(function(m){ return m.getBoundingClientRect(); });
+    narrowOK = vis2.length >= 2 && !vis2.some(function(a, i){ return vis2.some(function(b, j){
+      return j > i && a.left < b.right - 0.5 && a.right > b.left + 0.5; }); });
+    axis.style.width = w;
+    fitAxis();
+    restored = !axis.classList.contains('tonly') &&
+      [].slice.call(axis.querySelectorAll('.mk')).every(function(m){ return !m.classList.contains('off'); });
+    return { has: true, n: mks.length, boundsN: bounds.length,
+             onEdge: onEdge, edgeErr: Math.round(edgeErr * 10) / 10, hit: hit,
+             names: vis.every(function(x){ return x.nmShown; }),
+             tonly: tonly, narrowOK: narrowOK, restored: restored,
+             minsIncr: mins.every(function(v, i){ return !i || v > mins[i - 1]; }),
+             ends: info.length >= 2 && !info[0].off && !info[info.length - 1].off };
+  })()`);
+  console.log("\n=== A4. 轴 = 时间尺（四道分界） ===");
+  if (AX4.has) console.log("  刻度 " + AX4.n + "/" + AX4.boundsN + " · 时刻递增=" + AX4.minsIncr
+    + " · 首尾保留=" + AX4.ends + " · 全带名称=" + AX4.names);
+  if (AX4.has) console.log("  标签中心压在色块边界=" + AX4.onEdge + "（最大偏差 " + AX4.edgeErr + "px）"
+    + " · 重叠=" + AX4.hit);
+  if (AX4.has) console.log("  降级阶梯：压窄后 tonly=" + AX4.tonly + " · 窄轴无重叠=" + AX4.narrowOK
+    + " · 还原复位=" + AX4.restored);
+  else console.log("  （本次渲染没有轴/天色带 —— A4 按缺失判失败）");
+
   /* ---------- B. 地图工具条两组 ---------- */
   const B = await ev(`(function(){
     var tool = document.querySelector('.maptool');
@@ -254,14 +388,17 @@ let reqN = 0;            // 请求计数（只数 open-meteo）
       mapPeriod: g('mapPeriod'), mapDateSel: g('mapDateSel'), mapModel: g('mapModel'),
       mapDim: g('mapDim'), mapGo: g('mapGo'),
       numLabels: g('numLabels'), showPts: g('showPts'), showConf: g('showConf'),
-      showGrid: g('showGrid'), dimBase: g('dimBase')
+      showGrid: g('showGrid'), dimBase: g('dimBase'),
+      /* S1 云纹（第六个复选框）：不补这一读法，"显示层组有几个勾选"
+         就永远停留在五个 —— 新增控件静默漏守正是这条断言要防的。 */
+      showTx: g('showTx')
     };
   })()`);
   console.log("\n=== B. 地图工具条两组 ===");
   console.log("  标签=" + JSON.stringify(B.labels));
   console.log("  数据源组：时段=" + B.mapPeriod + " 日期=" + B.mapDateSel + " 模型=" + B.mapModel
     + " 着色=" + B.mapDim + " 刷新=" + B.mapGo);
-  console.log("  显示层组：直标=" + B.numLabels + " 采样点=" + B.showPts + " 可信度=" + B.showConf
+  console.log("  显示层组：直标=" + B.numLabels + " 采样点=" + B.showPts + " 云纹=" + B.showTx + " 可信度=" + B.showConf
     + " 经纬网=" + B.showGrid + " 深色底图=" + B.dimBase);
 
   /* ---------- C. 四处默认收起 + 分层结构 ---------- */
@@ -322,8 +459,16 @@ let reqN = 0;            // 请求计数（只数 open-meteo）
       titles: Array.prototype.slice.call(segs).map(function(s){ return s.getAttribute('title') || ""; }),
       winLeft: win ? parseFloat(win.style.left) : null,
       winWidth: win ? parseFloat(win.style.width) : null,
-      axisN: axis ? axis.querySelectorAll('span').length : 0,
+      /* 真时刻与"现在"标记**分开数**：.nowlbl 是 P2 加的第三种标签，
+         它出不出现取决于"跑探针的这一刻是否落在带内"——
+         把它一起数进 axisN，会让这条断言**按钟点随机变红**（实测 2026-10-17
+         18:5x 跑批时正好命中）。判据按**身份**（是不是 .nowlbl）分，不按总数。
+         2026-10-17 晚：轴升级为四道分界（0/−6/−12/−18° 各一枚 .mk），
+         axisN 因此是 4 —— 仍是身份集合（.mk），不是"span 总数"。 */
+      axisN: axis ? axis.querySelectorAll('.mk').length : 0,
       axisTxt: axis ? axis.textContent : "",
+      nowN: axis ? axis.querySelectorAll('span.nowlbl').length : 0,
+      nowTxt: axis && axis.querySelector('.nowlbl') ? axis.querySelector('.nowlbl').textContent : "",
       numTxt: num ? num.textContent : "",
       P: r ? Math.round(r.P) : null,
       geomOk: !!(r && r.sRT && r.sRT.geom && r.sRT.geom.ok),
@@ -384,6 +529,7 @@ let reqN = 0;            // 请求计数（只数 open-meteo）
   console.log("  存在=" + SK.hasSky + " · 分段 " + SK.segs + " 段（" + SK.titles.join(" / ") + "）");
   console.log("  霞光窗口 left=" + SK.winLeft + "% width=" + SK.winWidth + "% · 几何成立=" + SK.geomOk);
   console.log("  轴 " + SK.axisN + " 个时刻：" + JSON.stringify(SK.axisTxt)
+    + " · 现在标记 " + SK.nowN + " 个 " + JSON.stringify(SK.nowTxt)
     + " · 衬线数字=" + JSON.stringify(SK.numTxt) + "（State.P=" + SK.P + "）· 环=" + SK.dials + " 个");
 
   /* ---------- D. 折叠交互 + 快照兼容 + 零请求 ---------- */
@@ -595,6 +741,19 @@ let reqN = 0;            // 请求计数（只数 open-meteo）
       && A.autoMap === "界面" && A.lang === "界面" && A.theme === "界面",
     "更多选项默认收起（hidden + aria-expanded=false）":
       A.moreHidden === true && A.ariaExp === "false",
+    "两级卡片：只有结论与地图是「有面」的面板，其余分区透明无阴影":
+      A2.panels.join(",") === "cardHero,cardMap" && A2.dirty.length === 0,
+    "结论数字是衬线大字（≥56px、字重 ≤600 —— 不靠加粗撑分量）":
+      A2.numSerif === true && A2.numPx >= 56 && A2.numW <= 600,
+    "轴分两行：现在标签与两个太阳事件标签不重叠、贴住刻度、不越出面板":
+      AX.has === true && AX.realOK === true
+      && AX.cases.every(c => c.inBox && c.ticks && !c.hit && c.rows >= 10),
+    "四道分界各挂一枚刻度，时刻按时间递增，日落/天黑（首尾）永不舍弃":
+      AX4.has === true && AX4.n === 4 && AX4.minsIncr === true && AX4.ends === true,
+    "分界标签的中心压在色块边界上（±2px）且互不重叠，名称在桌面宽度下齐全":
+      AX4.has === true && AX4.onEdge === true && AX4.hit === false && AX4.names === true,
+    "名称放不下时自动降级：压窄轴 → 隐名称只留时刻且不重叠，还原后完全复位":
+      AX4.has === true && AX4.tonly === true && AX4.narrowOK === true && AX4.restored === true,
     "「更多选项」开合：点开面板可见且 aria 同步，再点恢复收起":
       Q1.before === true && Q1.open === true && Q1.exp1 === "true"
       && Q1.reclosed === true && Q1.exp2 === "false",
@@ -606,10 +765,11 @@ let reqN = 0;            // 请求计数（只数 open-meteo）
       A.ids === true,
     "工具条两组标签齐全（数据源 → 显示层）":
       B.labels.join(",") === "数据源,显示层",
-    "取数控件在「数据源」组、五个图层复选框在「显示层」组":
+    "取数控件在「数据源」组、六个图层复选框在「显示层」组":
       B.mapPeriod === "数据源" && B.mapDateSel === "数据源" && B.mapModel === "数据源"
       && B.mapDim === "数据源" && B.mapGo === "数据源"
-      && B.numLabels === "显示层" && B.showPts === "显示层" && B.showConf === "显示层"
+      && B.numLabels === "显示层" && B.showPts === "显示层" && B.showTx === "显示层"
+      && B.showConf === "显示层"
       && B.showGrid === "显示层" && B.dimBase === "显示层",
     "光追/数据质量卡默认折叠（folded + aria-expanded=false + 文案=展开）":
       C.rayFolded === true && C.notesFolded === true
@@ -648,8 +808,9 @@ let reqN = 0;            // 请求计数（只数 open-meteo）
       SK.geomOk ? (SK.winLeft != null && SK.winWidth != null && SK.winWidth > 0
         && SK.winLeft >= 0 && SK.winLeft + SK.winWidth <= 100.5)
         : (SK.winLeft == null),
-    "轴上有两个真时刻（事件 / 天黑），且是本地时钟格式":
-      SK.axisN === 2 && /\d{1,2}:\d{2}/.test(SK.axisTxt),
+    "轴上恰四道分界（0/−6/−12/−18° 各一枚刻度）+ 至多一个「现在」标记，都带本地时钟":
+      SK.axisN === 4 && /\d{1,2}:\d{2}/.test(SK.axisTxt)
+      && SK.nowN <= 1 && (SK.nowN === 0 || /\d{1,2}:\d{2}/.test(SK.nowTxt)),
     "概率环已从普通 hero 退役，衬线大字与 State 的概率一致":
       SK.dials === 0 && SK.P != null && SK.numTxt.indexOf(String(SK.P)) === 0,
     "图例长文默认收进 details，且图例本体（色条 / 等级行）在外":

@@ -871,6 +871,215 @@ function gen(v, la, lo, hh, isAQ, dof) {
   console.log("  对照：旧判据「dkm > FIELD_FULL」只命中 " + J.dkmOver + " 格 ＝ "
     + (100 * J.dkmOver / Math.max(1, J.painted)).toFixed(2)     + "% —— 这就是它形同没起作用的原因");
 
+  /* ---------- K. S1 云量淡纹 + V3 有机边缘 ----------
+     K1 云纹的三条硬约束（见 TX_RGB / TX_ALPHA 旁注释）：
+       ① 绝不动色面像素 —— 判据是"逐格同尺寸对齐"：tx 条带 si 画的就是
+          色面栅格第 si*per 行起的那批格，一个画素对一个格；
+       ② 只画在色面有像素处（alpha 乘色面 alpha）—— 逐格核对；
+       ③ 峰值 α ≤ TX_ALPHA。
+     K2 V3 有机边缘的三条纪律（见 EDGE_NOISE_KM 注释）：
+       ① 包内/包界噪声为 0 ⇒ 淡出内边界仍精确等于凸包（三对齐不破）；
+       ② 确定性（同栅格同一边缘）；
+       ③ 两层晶格波长远大于羽化带宽 ⇒ 平滑波动而非逐格抖动。
+     另外单独钉一条"噪声真的上了图"：外带里必须有被正噪声提前掐掉的格
+     （无噪声时 smoothstep 在 sd<OUT 内恒 > 0）—— 否则前面全过也可能是
+     edgeNoise 恒 0 的假绿。 */
+  const K = await ev(`(function(){
+    var out = {};
+    /* ---- K1 云纹 ---- */
+    var layer = MapMod.txLayer;
+    out.hasLayer = !!layer;
+    out.z = layer ? parseInt(getComputedStyle(layer).zIndex, 10) : null;
+    out.rlZ = (function(){ var e = MapMod.layer; return e ? parseInt(getComputedStyle(e).zIndex, 10) : null; })();
+    out.clZ = (function(){ var e = MapMod.gridLayer; return e ? parseInt(getComputedStyle(e).zIndex, 10) : null; })();
+    var strips = MapMod.txStrips || [];
+    out.stripN = strips.length;
+    out.on = layer ? layer.classList.contains('on') : null;
+    out.defChecked = (function(){ var c = document.getElementById('showTx'); return c ? c.checked : null; })();
+    var f = MapMod.field;
+    var painted = 0, peak = 0, outOfField = 0, rgbBad = 0, rgbN = 0;
+    if (f && f.cloud && strips.length) {
+      var per = Math.max(1, Math.round(FIELD_BAND_DEG / f.dLa));
+      for (var si = 0; si < strips.length; si++) {
+        var cv = strips[si].cv;
+        var dd = strips[si].ctx.getImageData(0, 0, cv.width, cv.height).data;
+        for (var y = 0; y < cv.height; y++) {
+          for (var x = 0; x < cv.width; x++) {
+            var q = (y * cv.width + x) * 4, a = dd[q + 3];
+            if (a <= 0) continue;
+            painted++;
+            if (a > peak) peak = a;
+            /* RGB 只查 alpha≥20 的像素：canvas 内部按**预乘** alpha 存储，
+               getImageData 读回时要反预乘，低 alpha 下这一来一回的取整误差
+               能把颜色整个吃掉（实测 a=1 读回 (0,0,0)、a=2 读回 (0,0,128)）。
+               a≥20 时逐通道误差 ≤7，给 ±10 的容差；掺了色面颜色（差 90+）
+               照样抓得到。 */
+            if (a >= 20) {
+              rgbN++;
+              if (Math.abs(dd[q] - TX_RGB[0]) > 10 || Math.abs(dd[q + 1] - TX_RGB[1]) > 10
+                || Math.abs(dd[q + 2] - TX_RGB[2]) > 10) rgbBad++;
+            }
+            var o = (si * per + y) * f.cols + x;
+            if (si * per + y >= f.rows || x >= f.cols) { outOfField++; continue; }
+            if (f.img[o * 4 + 3] === 0) outOfField++;
+          }
+        }
+      }
+    }
+    out.painted = painted; out.peak = peak; out.outOfField = outOfField; out.rgbBad = rgbBad; out.rgbN = rgbN;
+    /* 上限从页面常量现算（TX_ALPHA 是 _p6.js 的顶层 const，Node 侧取不到） */
+    out.cap = Math.ceil(TX_ALPHA * 255);
+    /* 开关：关掉应隐藏、再打开应恢复（refreshTx 的口径：.on 没了整层 display:none） */
+    var cb = document.getElementById('showTx');
+    out.toggleOk = null;
+    if (cb && layer) {
+      cb.checked = false; cb.dispatchEvent(new Event('change', { bubbles: true }));
+      var off = !layer.classList.contains('on');
+      cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true }));
+      out.toggleOk = off && layer.classList.contains('on');
+    }
+    /* ---- K2 V3 有机边缘 ---- */
+    out.nzDet = edgeNoise(3, 7) === edgeNoise(3, 7) && edgeNoise(11, -4) === edgeNoise(11, -4);
+    out.nzRange = Math.abs(edgeNoise(3, 7)) <= 1 && Math.abs(edgeNoise(0, 0)) <= 1;
+    out.nzVaries = Math.abs(edgeNoise(0, 0) - edgeNoise(5, 9)) > 0.05;
+    /* 平滑度：相邻格差应远小于 1（晶格 34/13 格波长 × smoothstep ⇒ 理论 ≤0.13） */
+    var maxStep = 0;
+    for (var r = 0; r < 40; r++) for (var c = 0; c < 40; c++) {
+      var d1 = Math.abs(edgeNoise(r + 1, c) - edgeNoise(r, c));
+      var d2 = Math.abs(edgeNoise(r, c + 1) - edgeNoise(r, c));
+      if (d1 > maxStep) maxStep = d1;
+      if (d2 > maxStep) maxStep = d2;
+    }
+    out.nzMaxStep = maxStep;
+    /* ① 淡出内边界 ＝ 凸包：深入包内 ≥25 km（远大于 FIELD_BLUR≈11 km 的模糊半径）
+          且 5×5 邻域全陆（排除海陆掩膜被模糊渗色）的有值格，alpha 必须恒为满值。
+          包内 al≡1、噪声一格都不调用 —— 这条就是"三对齐没被 V3 打破"的判据。 */
+    var g = GEOM_CACHE.geom, hud = g && g.hud, land = g ? g.land : null;
+    var insideFull = 0, insideBad = 0, cut = 0, band = 0;
+    if (f && hud) {
+      var H = hud.edges;
+      for (var r2 = 0; r2 < f.rows; r2++) {
+        var Y = ((f.laN - r2 * f.dLa) - hud.olat) * 110.574;
+        for (var c2 = 0; c2 < f.cols; c2++) {
+          var o2 = r2 * f.cols + c2;
+          if (!isNum(f.vals[o2])) continue;
+          var X = (f.loW + c2 * f.dLo - hud.olon) * hud.kx;
+          var sd = -1e9;
+          for (var k = 0; k < H.length; k += 3) {
+            var d = H[k] * X + H[k + 1] * Y + H[k + 2];
+            if (d > sd) sd = d;
+          }
+          var nbLand = true;
+          if (land) {
+            for (var rr = r2 - 2; rr <= r2 + 2 && nbLand; rr++) {
+              if (rr < 0 || rr >= f.rows) { nbLand = false; break; }
+              for (var cc = c2 - 2; cc <= c2 + 2; cc++) {
+                if (cc < 0 || cc >= f.cols || land[rr * f.cols + cc] !== 1) { nbLand = false; break; }
+              }
+            }
+          }
+          if (!nbLand) continue;
+          var alpha = f.img[o2 * 4 + 3];
+          if (sd <= -25) {
+            var want = Math.round(255 * Math.min(1, land ? land[o2] : 1) * FIELD_OPACITY);
+            if (alpha === want) insideFull++; else insideBad++;
+          } else if (sd > FIELD_OUT_KM - 25 && sd < FIELD_OUT_KM - 2) {
+            band++;
+            if (alpha === 0) cut++;      // 无噪声时这里恒 > 0（smoothstep 未到 0）
+          }
+        }
+      }
+    }
+    out.insideFull = insideFull; out.insideBad = insideBad;
+    out.band = band; out.cut = cut;
+    return out;
+  })()`);
+  console.log("\n=== K. S1 云量淡纹 + V3 有机边缘 ===");
+  console.log("  云纹层：z=" + K.z + "（色面 " + K.rlZ + " / 等值线 " + K.clZ + "）· 条带 " + K.stripN
+    + " 条 · 可见=" + K.on + " · 默认勾选=" + K.defChecked + " · 开关可逆=" + K.toggleOk);
+  console.log("  云纹像素 " + K.painted + " 个 · 峰值 alpha " + K.peak + "（上限 " + K.cap + "）"
+    + " · 探出色面的 " + K.outOfField + " 个 · 非云影色的 " + K.rgbBad + "/" + K.rgbN + " 个（α≥20 才查）");
+  console.log("  有机边缘：确定性=" + K.nzDet + " · 值域=" + K.nzRange + " · 非常数=" + K.nzVaries
+    + " · 相邻格最大跳变 " + K.nzMaxStep.toFixed(3) + "（应远小于 1 ⇒ 平滑波动）");
+  console.log("  淡出内边界＝凸包：深入包内的有值格 " + K.insideFull + " 个满 alpha · 不符 " + K.insideBad + " 个");
+  console.log("  噪声真的上了图：外带（OUT−25…OUT−2 km）" + K.band + " 格中被提前掐掉 " + K.cut + " 格（>0 才不是假绿）");
+
+  /* ---------- L. S5 全屏看地图 ----------
+     四条：进入（fixed + 卡片满高 + 按钮文案/aria 同步）、Esc 退出、
+     退出后完全复原、以及"画布与容器合一"在两次尺寸变化后都成立
+     （fitRaster 的 refit 靠 ResizeObserver 触发，这里轮询等它到位）。 */
+  const L = await ev(`(function(){
+    var wrap = document.querySelector('.mapwrap'), map = document.querySelector('#map');
+    var btn = document.getElementById('mapFs');
+    var out = {};
+    out.before = { fs: wrap.classList.contains('fs'),
+      pos: getComputedStyle(wrap).position,
+      mapH: Math.round(map.getBoundingClientRect().height),
+      btn: (btn.textContent || '').trim(), aria: btn.getAttribute('aria-pressed') };
+    btn.click();
+    out.entered = { fs: wrap.classList.contains('fs'),
+      pos: getComputedStyle(wrap).position,
+      mapH: Math.round(map.getBoundingClientRect().height),
+      /* fixed 的包含块是**去掉滚动条**的视口，所以参照取 clientHeight
+         而不是 innerHeight（有经典滚动条时两者差 15 px）。 */
+      ch: document.documentElement.clientHeight,
+      btn: (btn.textContent || '').trim(), aria: btn.getAttribute('aria-pressed') };
+    /* Esc 退出（走 setMapFs 挂的那个 keydown） */
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    out.afterEsc = { fs: wrap.classList.contains('fs'),
+      pos: getComputedStyle(wrap).position,
+      btn: (btn.textContent || '').trim(), aria: btn.getAttribute('aria-pressed'),
+      keyGone: MapMod.fsKey === null };
+    return out;
+  })()`);
+  /* 画布与**当前投影**合一：进入全屏后等 refit（ResizeObserver 异步 + scheduleFit 排一帧）。
+     判据不是"画布宽＝容器宽"—— 条带按**地理范围**定尺，缩放级别下网格比视口宽时
+     画布本来就该比容器宽（由 .rlayer 的 overflow:hidden 裁掉）。
+     真正的失效模式是**transform 过期**：容器变宽后投影中心从 W/2 挪到 W'/2，
+     过期 transform 会把整幅色面错开几百 px（实测错开 466 px）。
+     所以逐条带重算投影，比左边距与宽度。 */
+  await ev(`(function(){ document.getElementById('mapFs').click(); return 1; })()`);
+  let L2 = null;
+  for (let i = 0; i < 30; i++) {
+    await sleep(100);
+    L2 = await ev(`(function(){
+      var host = MapMod.host;
+      if (!host) return { n: 0, worst: 99 };
+      var hr = host.getBoundingClientRect();
+      var worst = 0, n = 0, hidden = 0;
+      (MapMod.strips || []).forEach(function(s){
+        var a = null, b = null;
+        try {
+          a = ptOf(MapMod.map.projectToContainer(new TMap.LatLng(s.laTop, s.loL)));
+          b = ptOf(MapMod.map.projectToContainer(new TMap.LatLng(s.laBot, s.loR)));
+        } catch (e) { return; }
+        if (!a || !b || !(b.x - a.x > 0)) return;
+        var r = s.cv.getBoundingClientRect();
+        if (r.width <= 0) { hidden++; return; }
+        n++;
+        worst = Math.max(worst, Math.abs((r.left - hr.left) - a.x), Math.abs(r.width - (b.x - a.x)));
+      });
+      var map = document.querySelector('#map');
+      return { n: n, hidden: hidden, worst: worst, mapH: Math.round(map.getBoundingClientRect().height),
+               ch: document.documentElement.clientHeight,
+               fs: document.querySelector('.mapwrap').classList.contains('fs') };
+    })()`);
+    if (L2 && L2.fs && L2.n > 0 && L2.worst < 2 && Math.abs(L2.mapH - L2.ch) < 2) break;
+  }
+  /* 退出，复原现场（后面的实拍与断言都按非全屏量） */
+  await ev(`(function(){ document.getElementById('mapFs').click(); return 1; })()`);
+  await sleep(300);
+  console.log("\n=== L. S5 全屏看地图 ===");
+  console.log("  进入前：fs=" + L.before.fs + " · position=" + L.before.pos + " · #map 高 " + L.before.mapH
+    + " · 按钮「" + L.before.btn + "」aria=" + L.before.aria);
+  console.log("  进入后：fs=" + L.entered.fs + " · position=" + L.entered.pos + " · #map 高 " + L.entered.mapH
+    + "＝视口 " + L.entered.ch + " · 按钮「" + L.entered.btn + "」aria=" + L.entered.aria);
+  console.log("  Esc 退出：fs=" + L.afterEsc.fs + " · position=" + L.afterEsc.pos
+    + " · 按钮「" + L.afterEsc.btn + "」aria=" + L.afterEsc.aria + " · keydown 句柄已摘=" + L.afterEsc.keyGone);
+  console.log("  全屏中色面画布与当前投影合一：画布 " + L2.n + " 张（隐藏 " + (L2 ? L2.hidden : "?")
+    + " 张）· 最大偏差 " + (L2 ? L2.worst.toFixed(2) : "?")
+    + " px · #map 高 " + (L2 ? L2.mapH : "?") + "＝视口 " + (L2 ? L2.ch : "?"));
+
   try {
     await ev(`setLocation(${shotCity[1]}, ${shotCity[2]}, ${JSON.stringify(shotCity[0])}, "")`);
     await ev(`(async()=>{ await loadMapData(true); })()`, true);
@@ -969,6 +1178,33 @@ function gen(v, la, lo, hh, isAQ, dof) {
     "重新打开经纬网能完全恢复": J.gratOnBack === true && J.dispOn !== "none",
     /* C2：起纱 ≡ 淡出 ≡ 外推。判据是凸包外，不是"距最近采样点 > 阈值"。 */
     "可信度纱覆盖＝凸包外（起纱≡淡出≡外推）": J.veilWant > 0 && J.veilWant === J.veilGot,
+    /* S1 云纹：三条硬约束（不动色面像素 / 只在色面有像素处 / 峰值 α≤0.18）
+       + 层序（色面 1 < 云纹 2 < 等值线 3）+ 默认勾选且开关可逆。 */
+    "云纹层存在且有内容（画出了云影）": K.hasLayer === true && K.on === true
+      && K.stripN > 0 && K.painted > 0,
+    "云纹层序：压在色面之上、等值线之下": K.z === 2 && K.rlZ === 1 && K.clZ === 3,
+    "云纹峰值 alpha ≤ 0.18（看得见，但不参与档位判决）": K.peak > 0 && K.peak <= K.cap,
+    "云纹一个像素都不探出色面（逐格对齐核对）": K.outOfField === 0,
+    "云纹颜色恒为云影色（不掺色面颜色；预乘取整容差 ±10）": K.rgbN > 0 && K.rgbBad === 0,
+    "云纹默认勾选且开关可逆": K.defChecked === true && K.toggleOk === true,
+    /* V3 有机边缘：三条纪律 + 一条"真的上了图"的假绿防线。 */
+    "边缘噪声确定（同栅格永远同一边缘）": K.nzDet === true,
+    "边缘噪声有值域且非常数": K.nzRange === true && K.nzVaries === true,
+    "边缘噪声平滑（相邻格跳变远小于 1 ⇒ 不是逐格抖动）": K.nzMaxStep > 0 && K.nzMaxStep <= 0.2,
+    "淡出内边界仍精确等于凸包（包内有值格恒为满 alpha，三对齐不破）":
+      K.insideBad === 0 && K.insideFull > 0,
+    "噪声真的上了图（外带里有被提前掐掉的格，防 edgeNoise 恒 0 的假绿）": K.cut > 0,
+    /* S5 全屏：CSS 展开式。进入 fixed + 满视口高 + 文案/aria 同步；
+       Esc 退出且句柄摘除；画布在尺寸两次大变（560→视口→560）后仍与容器合一。 */
+    "全屏：进入后 fixed 且 #map 满视口高，按钮文案与 aria 同步":
+      L.entered.fs === true && L.entered.pos === "fixed"
+      && Math.abs(L.entered.mapH - L.entered.ch) < 2
+      && L.entered.btn === "退出全屏" && L.entered.aria === "true",
+    "全屏：Esc 能退出，按钮文案/aria 复位且 keydown 句柄已摘":
+      L.afterEsc.fs === false && L.afterEsc.btn === "全屏" && L.afterEsc.aria === "false"
+      && L.afterEsc.keyGone === true,
+    "全屏中色面画布与当前投影合一（refit 在尺寸变化后真的跑了）":
+      !!L2 && L2.fs === true && L2.n > 0 && L2.worst < 2 && Math.abs(L2.mapH - L2.ch) < 2,
   };
   const bad = Object.keys(checks).filter(k => !checks[k]);
   console.log("\n" + "-".repeat(74));

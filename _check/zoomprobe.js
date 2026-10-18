@@ -116,14 +116,15 @@ const PROBE = `(async function(z, lat, lon){
   var d = null; try { d = mapSet(); } catch(e){}
   if (!d || !d.pts || !d.pts.length) { out.err = 'no-data'; return JSON.stringify(out); }
   var dim = State.mapDim || 'mix';
-  var R = scaleRange(d.pts.map(function(o){ return dimValue(o, dim); }));
+  /* V1 · 固定刻度：当天值域拉伸（scaleRange/scaleT）已从页面删除，
+     采样点自身数值 = 0–100 绝对刻度，直接 clamp 即可。 */
   var fv = (typeof fieldValue === 'function') ? fieldValue(lat, lon) : null;
   var best = null, bd = 1e9;
   for (var i = 0; i < d.pts.length; i++) {
     var p = d.pts[i], dd = haversineKm(lat, lon, p.lat, p.lon);
     if (dd < bd) { bd = dd; best = p; }
   }
-  var own = best ? 100 * scaleT(dimValue(best, dim), R.lo, R.hi) : null;
+  var own = best ? clamp(dimValue(best, dim), 0, 100) : null;
   var px = (typeof sampleRaster === 'function') ? sampleRaster(lat, lon) : null;
   /* 期望色必须走 bandColor()：分档之后"数值 → 颜色"不再是单射，
      同一个档位区间内的任意数值都该渲染成同一个颜色。 */
@@ -296,13 +297,13 @@ const rgbTxt = c => c ? ("rgb(" + c[0] + "," + c[1] + "," + c[2] + ")" + (c[3] !
         var a = performance.now(); fn(); var b = performance.now(); if (b - a < best) best = b - a; } return best; }
       var d = mapSet();
       var dim = State.mapDim || 'mix', mk = State.mapModel || 'ens';
-      var R = scaleRange(d.pts.map(function(o){ return dimOf(o, dim, mk); }));
+      /* V1 · 固定刻度：buildField 不再收 R 参数（当天值域拉伸已删除） */
       /* ① 全流程 paintMap（含取值 + 条带 + 贴合） */
       var paintMs = minOf(3, function(){ paintMap(); });
       var f = MapMod.field;
-      var f2 = buildField(d.pts, dim, mk, R, d.period);
+      var f2 = buildField(d.pts, dim, mk, d.period);
       /* ② 取值层热路径（命中几何缓存）—— 切模型/切维度真正走的路径 */
-      var buildFieldMs = minOf(5, function(){ buildField(d.pts, dim, mk, R, d.period); });
+      var buildFieldMs = minOf(5, function(){ buildField(d.pts, dim, mk, d.period); });
       var stripsMs = minOf(3, function(){ buildStrips(f2); });
       var fitMs = minOf(3, function(){ fitRaster(); });
       /* ③ 模拟"新建 canvas + 只更新像素"的代价（取前 30 行做样本再折算），
@@ -319,7 +320,7 @@ const rgbTxt = c => c ? ("rgb(" + c[0] + "," + c[1] + "," + c[2] + ")" + (c[3] !
       var gA = buildGeom(d.pts, okA);
       var buildGeomMs = minOf(2, function(){ gA = buildGeom(d.pts, okA); });
       var cvA = new Float64Array(d.pts.length);
-      for (q = 0; q < d.pts.length; q++) if (okA[q]) cvA[q] = 100 * scaleT(dimOf(d.pts[q], dim, mk), R.lo, R.hi);
+      for (q = 0; q < d.pts.length; q++) if (okA[q]) cvA[q] = clamp(dimOf(d.pts[q], dim, mk), 0, 100);
       var lutA = new Uint8Array(N_BANDS * 3);
       for (q = 0; q < N_BANDS; q++) { var cx = hex2rgb(rampColor(d.period, (q + 0.5) / N_BANDS * 100));
         lutA[q*3] = cx[0]; lutA[q*3+1] = cx[1]; lutA[q*3+2] = cx[2]; }
@@ -371,6 +372,27 @@ const rgbTxt = c => c ? ("rgb(" + c[0] + "," + c[1] + "," + c[2] + ")" + (c[3] !
      全程逐格比对 vals 与 img：完全相等，不容任何容差。 */
   const equiv = await cdp.send("Runtime.evaluate", {
     expression: `(function(){
+      /* ↓↓↓ refScaleT / refScaleRange：改造前 scaleT/scaleRange 的**冻结副本**。
+         V1（固定刻度）把这两个函数从页面里删了，探针不能跟着一起没——
+         尺子自检（refThird 旧语义 vs refField）量的就是"当天值域拉伸"这套旧语义，
+         公式必须留在探针里、逐字冻结，不随页面漂移。
+         原式（取自 _backup/before-batch1/_p4.js:526-541）： ↓↓↓ */
+      function refScaleT(v, lo, hi) { return clamp((v - lo) / ((hi - lo) || 1), 0, 1); }
+      function refScaleRange(vals) {
+        var a = vals.filter(isNum);
+        if (!a.length) return { lo: 0, hi: 100 };
+        var lo = Math.min.apply(null, a), hi = Math.max.apply(null, a);
+        var pad = Math.max(3, (hi - lo) * 0.06);
+        lo = Math.max(0, Math.floor(lo - pad));
+        hi = Math.min(100, Math.ceil(hi + pad));
+        if (hi - lo < 12) {
+          var c = (hi + lo) / 2;
+          lo = Math.max(0, Math.round(c - 6));
+          hi = Math.min(100, lo + 12);
+        }
+        return { lo: lo, hi: hi };
+      }
+
       /* ↓↓↓ refField：改造前 buildField 的原样复制，仅去掉注释。
          它用的常量（FIELD_STEP=0.1 / FIELD_RANGE=240 / FIELD_FULL=75 /
          FIELD_BLUR=8 / FIELD_OPACITY=0.82）现在已经从页面里删掉了，所以这里
@@ -393,7 +415,7 @@ const rgbTxt = c => c ? ("rgb(" + c[0] + "," + c[1] + "," + c[2] + ")" + (c[3] !
         var cla=new Float64Array(n), clo=new Float64Array(n), ccos=new Float64Array(n), cv=new Float64Array(n);
         for (var i=0;i<n;i++){ var p=src[i];
           cla[i]=p.lat; clo[i]=p.lon; ccos[i]=Math.cos(p.lat*Math.PI/180);
-          cv[i]=100*scaleT(dimOf(p,dim,mk), R.lo, R.hi); }
+          cv[i]=100*refScaleT(dimOf(p,dim,mk), R.lo, R.hi); }
         var lut=new Uint8Array(256*3);
         for (var i2=0;i2<256;i2++){ var cc=hex2rgb(rampColor(mode, i2/255*100));
           lut[i2*3]=cc[0]; lut[i2*3+1]=cc[1]; lut[i2*3+2]=cc[2]; }
@@ -476,7 +498,10 @@ const rgbTxt = c => c ? ("rgb(" + c[0] + "," + c[1] + "," + c[2] + ")" + (c[3] !
         var win=REACH/110.574+0.15, aCut=Math.pow(REACH/6371.0088,2);
         var ccos=new Float64Array(n), cv=new Float64Array(n);
         for (var ic=0; ic<n; ic++){ ccos[ic]=Math.cos(pts[ic].lat*D2R);
-          cv[ic]= ok[ic] ? 100*scaleT(dimOf(pts[ic],dim,mk), R.lo, R.hi) : 0; }
+          /* 数值归一化随语义分叉：新语义（固定刻度）= clamp(v,0,100)；
+             旧语义（当天值域拉伸）= 冻结的 refScaleT。 */
+          cv[ic]= ok[ic] ? (useNew ? clamp(dimOf(pts[ic],dim,mk),0,100)
+                                  : 100*refScaleT(dimOf(pts[ic],dim,mk), R.lo, R.hi)) : 0; }
         /* 色阶查表：新语义 N_BANDS 档（取档中点色），旧语义 256 档连续 */
         var NL = useNew ? N_BANDS : 256;
         var lut=new Uint8Array(NL*3);
@@ -683,8 +708,8 @@ const rgbTxt = c => c ? ("rgb(" + c[0] + "," + c[1] + "," + c[2] + ")" + (c[3] !
           var dim=DIMS[a2], mk=MKS[b2];
           var vv=d.pts.map(function(o){ return dimOf(o,dim,mk); }).filter(isNum);
           if (!vv.length){ out.cases.push(dim+'/'+mk+' → 本期无数据（跳过）'); continue; }
-          var R=scaleRange(vv);
-          var nf   = buildField(d.pts, dim, mk, R, d.period);                  // 新实现
+          var R=refScaleRange(vv);
+          var nf   = buildField(d.pts, dim, mk, d.period);                          // 新实现
           var of   = refField(d.pts, dim, mk, R, d.period);                    // 旧实现（冻结）
           var tOld = refThird(d.pts, dim, mk, R, d.period, false, false);      // 第三方 · 旧语义
           var tNew = refThird(d.pts, dim, mk, R, d.period, true,  true);       // 第三方 · 新语义
@@ -711,8 +736,8 @@ const rgbTxt = c => c ? ("rgb(" + c[0] + "," + c[1] + "," + c[2] + ")" + (c[3] !
         }
         /* 快照取 mix/ens 这一组：它同时含三模型，代表性最强 */
         var vv0=d.pts.map(function(o){ return dimOf(o,'mix','ens'); }).filter(isNum);
-        var R0=scaleRange(vv0);
-        var nf0=buildField(d.pts,'mix','ens',R0,d.period);
+        var R0=refScaleRange(vv0);
+        var nf0=buildField(d.pts,'mix','ens',d.period);
         var of0=refField(d.pts,'mix','ens',R0,d.period);
         /* 差异图必须两侧同栅格：新的 0.05° 与旧的 0.1° 行列数不同，
            逐格相减是没意义的。所以 diff 用「新语义·有分段」对「新语义·无分段」，
