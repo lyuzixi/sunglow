@@ -77,28 +77,25 @@ console.log("  检索 'sanya' ->",searchCity("sanya",3).map(c=>c.name).join(",")
 console.log("  检索库总数",ALL_CITIES.length);
 console.log("  最近城市(31.23,121.47) ->",JSON.stringify((function(){const n=nearestCity(31.23,121.47,CN_CITIES);return [n.city.name,Math.round(n.distKm)];})()));
 
-/* ---------------- 地图统一色阶：天色色阶（V1 换肤） ----------------
-   旧尺是"热力图"式的 白→黄→橙→红：低分＝白，靠**亮度递减**表达强弱。
-   地图换成了**天色色阶** —— 颜色就是天空颜色：差＝天色已暗（暮蓝）→
-   一般＝暮灰 → 良＝金 → 优＝橙红 → 深红。它与首屏天色带（--dusk-*）同语汇，
-   "地图颜色即天空颜色"这件事第一次成立。
-   语义变了，断言必须整套重写：旧尺的"通道单调递减 / 色相 60°→0° /
-   白端最亮"在新尺下**全部不成立** —— 新尺的亮度是**弧线**（中段暮灰最亮，
-   两端暗），通道先升后降。拿着旧断言改期望值等于没测。
-   新设计式的不变量（每条都先用 _scratch/measure_ramp.py 实测过再落笔）：
-    ① 端点与身份锚点逐值对齐（暮蓝 / 暮灰 / 金 / 深橙 / 深红）；
-    ② 朝霞/晚霞同一把尺（地图不区分早晚霞，与首屏天色带同构）；
+/* ---------------- 地图统一色阶：暖沙单色阶（第三轮反馈换肤） ----------------
+   天色色阶（暮蓝→暮灰→金→橙红→深红）用户反馈"符合主题但不美观、读感奇怪"：
+   低饱和的蓝灰过渡段在数据图上就是闷，"值→深浅"的通道被色相占了。
+   换成**暖沙单色阶**（奶油→浅杏→杏金→琥珀→橙赭→赭红）：保留霞光暖色语汇
+   （全程 R≥G≥B），把强弱还给明度 —— 低值淡出、高值浓重，一眼读得出轻重。
+   语义变了，断言必须整套重写：旧天色尺的"亮度弧线 / 上暖下冷 / 冷端蓝带 /
+   白底 ≥2.5"在新尺下**全部不成立** —— 新尺亮度单调下降（这正是语义本身），
+   白底最差对比度降到 1.18（低值淡出是设计意图，图例渐变条有 1px 描边兜底）。
+   拿着旧断言改期望值等于没测。
+   新设计式的不变量（每条都先核算过再落笔）：
+    ① 端点与身份锚点逐值对齐（奶油 / 杏金 / 橙赭 / 烧赭 / 赭红）；
+    ② 朝霞/晚霞同一把尺（地图不区分早晚霞）；
     ③ 1% 步进无跳变（相邻插值不出现 >8 的通道阶跃）；
-    ④ 亮度弧线：峰落在中段暮灰带（30–55%），两端各低于峰 40 以上；
-    ⑤ 上暖下冷：v≤40 蓝≥红（冷），v≥60 红>蓝（暖），分界在 45% 附近；
-    ⑥ 暖端色相**单向**向红（实测 36.8°→14.3°，不容回摆）；
-       冷端色相稳在蓝带（实测 207.9–219.3°）—— 冷端不做单调要求：
-       sRGB 上"暮蓝→暮灰"的直线不是等色相线，会有几度漂移；
-    ⑦ 顶端确为红色；3/7 处是**中性**暮灰（低饱和，色相无定义）；
-       4/7 处确为金色；
-    ⑧ 双模对比度下限：白底最差 ≥2.5（图例画在卡片上）、
-       深色底图（#3a424e）最差 ≥1.2 —— 后者是方案里记账的"深色模式代价"，
-       立下限是为了将来换色时**必须显式**越过这条线，而不是悄悄滑坡。 */
+    ④ 亮度单调下降（低值淡、高值浓；允许 ≤0.5 的插值噪声）；
+    ⑤ 单色暖阶的定义性特征：全程 R≥G≥B（通道有序）；
+    ⑥ 色相全程暖带（0–50°）且单向向红，不容回摆；
+    ⑦ 顶端确为深暖色（赭红，R≤170 防"亮红误读"回潮）；
+    ⑧ 双模对比度：白底最差 ≥1.1（淡出设计下限，只保证"不是纯白"）、
+       深色底图 #3a424e 最差 ≥1.2 —— 记账线不变，赭红端 #96421f 实测 1.49。 */
 (function(){
   const lum = c => { const r=hex2rgb(c); return 0.2126*r[0]+0.7152*r[1]+0.0722*r[2]; };
   const hueOf = c => { const r=hex2rgb(c); const R=r[0]/255,G=r[1]/255,B=r[2]/255;
@@ -110,10 +107,10 @@ console.log("  最近城市(31.23,121.47) ->",JSON.stringify((function(){const n
   const eqc=(n,a,b)=>console.log((a===b?"PASS":"FAIL"),n,"=",a,"期望",b);
   const ok=(n,c,d)=>console.log((c?"PASS":"FAIL"),n,d==null?"":" "+d);
 
-  eqc("色阶起点＝暮蓝", rampColor("pm",0), "#3c5178");
-  eqc("色阶终点＝深红", rampColor("pm",100), "#d14418");
-  eqc("朝霞起点＝暮蓝", rampColor("am",0), "#3c5178");
-  eqc("朝霞终点＝深红", rampColor("am",100), "#d14418");
+  eqc("色阶起点＝奶油", rampColor("pm",0), "#f7ecd0");
+  eqc("色阶终点＝赭红", rampColor("pm",100), "#96421f");
+  eqc("朝霞起点＝奶油", rampColor("am",0), "#f7ecd0");
+  eqc("朝霞终点＝赭红", rampColor("am",100), "#96421f");
 
   let same=true, cont=true;
   let prev=null;
@@ -127,65 +124,60 @@ console.log("  最近城市(31.23,121.47) ->",JSON.stringify((function(){const n
   ok("朝霞/晚霞色阶完全一致（统一色阶）", same);
   ok("1% 步进无跳变（连续渐变）", cont);
 
-  /* ④ 亮度弧线：中段最亮、两端暗。旧尺的判据是"白端 > 红端"（单调），
-     新尺必须整套换成弧线判据。 */
+  /* ④ 亮度单调下降：暖沙单色阶把"值→深浅"还给明度 —— 低值淡（弱信号在
+     浅色底图上本就该弱存在）、高值浓。旧尺的"中段最亮"弧线判据整体作废。 */
   const L=[]; for(let i=0;i<=100;i++) L.push(lum(rampColor("pm",i)));
-  let lmax=-1, lmaxAt=0;
-  for(let i=0;i<=100;i++) if(L[i]>lmax){ lmax=L[i]; lmaxAt=i; }
-  ok("亮度峰落在中段暮灰带（30–55%）", lmaxAt>=30 && lmaxAt<=55,
-     "峰 "+lmax.toFixed(1)+" @"+lmaxAt+"%");
-  ok("亮度弧线：两端各低于峰 40 以上", lmax-L[0]>=40 && lmax-L[100]>=40,
-     "峰-起 "+(lmax-L[0]).toFixed(1)+" / 峰-终 "+(lmax-L[100]).toFixed(1));
+  let mono=true, worstUp=0;
+  for(let i=1;i<=100;i++){
+    if(L[i]>L[i-1]+0.5) mono=false;
+    if(L[i]-L[i-1]>worstUp) worstUp=L[i]-L[i-1];
+  }
+  ok("亮度单调下降（低值淡、高值浓）", mono, "最大回升 "+worstUp.toFixed(2));
 
-  /* ⑤ 上暖下冷 + ⑥ 色相分带。sat>0.15 的门与旧尺相同：白色附近彩度极低，
-     色相在数值上不稳定，拿它断单调是自找假失败。 */
-  let coldAll=true, warmAll=true, firstWarm=-1;
+  /* ⑤ 单色暖阶的定义性特征：全程 R≥G≥B（通道有序）。旧尺的"上暖下冷"
+     分段判据随冷端一起作废。 */
+  let orderAll=true;
   for(let i=0;i<=100;i++){
     const r=hex2rgb(rampColor("pm",i));
-    if(i<=40 && r[2]<r[0]) coldAll=false;
-    if(i>=60 && !(r[0]>r[2])) warmAll=false;
-    if(firstWarm<0 && r[0]>r[2]) firstWarm=i;
+    if(!(r[0]>=r[1] && r[1]>=r[2])) orderAll=false;
   }
-  ok("上暖下冷：v≤40 全冷（蓝≥红）", coldAll);
-  ok("上暖下冷：v≥60 全暖（红>蓝）", warmAll);
-  ok("冷暖分界在 45% 附近", firstWarm>=40 && firstWarm<=55, "首个暖点 @"+firstWarm+"%");
+  ok("单色暖阶：全程 R≥G≥B（通道有序）", orderAll);
 
-  let warmBack=0, coldBand=true, prevH=null;
-  for(let i=60;i<=100;i++){
-    const c=rampColor("pm",i), h=hueOf(c);
-    if(!isNaN(h) && satOf(c)>0.15){ if(prevH!=null && h>prevH+1.5) warmBack++; prevH=h; }
-  }
-  ok("暖端色相单向向红（不容回摆）", warmBack===0, "回摆 "+warmBack+" 次");
-  prevH=null;
-  for(let i=0;i<=35;i++){
+  /* ⑥ 色相全程暖带且单向向红。sat>0.15 的门与旧尺相同：白色附近彩度极低，
+     色相在数值上不稳定，拿它断单调是自找假失败。 */
+  let warmBack=0, prevH=null, hMin=360, hMax=0;
+  for(let i=0;i<=100;i++){
     const c=rampColor("pm",i), h=hueOf(c);
     if(!isNaN(h) && satOf(c)>0.15){
-      if(h<195 || h>230) coldBand=false;
+      hMin=Math.min(hMin,h); hMax=Math.max(hMax,h);
+      if(prevH!=null && h>prevH+1.5) warmBack++;
       prevH=h;
     }
   }
-  ok("冷端色相稳在蓝带（195–230°）", coldBand);
+  ok("全程暖色相（0–50°）", hMin>=0 && hMax<=50, "色相带 "+hMin.toFixed(0)+"–"+hMax.toFixed(0)+"°");
+  ok("色相单向向红（不容回摆）", warmBack===0, "回摆 "+warmBack+" 次");
 
-  /* ⑦ 身份锚点：中性暮灰 / 金 / 红端 */
+  /* ⑦ 身份锚点：杏金 / 橙赭 / 烧赭 + 端点身份 */
   const at=k=>rampColor("pm",100*k/7);
-  eqc("锚点3/7＝暮灰", at(3), "#9b97a4");
-  eqc("锚点4/7＝金", at(4), "#b8924a");
-  eqc("锚点6/7＝深橙", at(6), "#e05a1f");
-  ok("3/7 处为中性暮灰（低饱和）", satOf(at(3))<0.2, "饱和 "+satOf(at(3)).toFixed(3));
-  ok("4/7 处确为金色", hueOf(at(4))>=30 && hueOf(at(4))<=48,
-     "色相 "+hueOf(at(4)).toFixed(0)+"°  rgb("+hex2rgb(at(4)).join(",")+")");
-  ok("末端确为红色", hueOf(at(7))<20, "色相 "+hueOf(at(7)).toFixed(0)+"°");
+  eqc("锚点2/7＝杏金", at(2), "#eec679");
+  eqc("锚点4/7＝橙赭", at(4), "#d68536");
+  eqc("锚点6/7＝烧赭", at(6), "#a54e23");
+  ok("起点确为低饱和奶油（淡出端）", satOf(at(0))<0.2, "饱和 "+satOf(at(0)).toFixed(3));
+  ok("末端确为赭红（暖色相）", hueOf(at(7))<25, "色相 "+hueOf(at(7)).toFixed(0)+"°");
   const top=hex2rgb(rampColor("pm",100));
-  ok("最高值确为红色 rgb("+top.join(",")+")", top[0]>150&&top[0]-top[1]>120&&top[0]-top[2]>120);
+  ok("最高值确为深暖色 rgb("+top.join(",")+")",
+     top[0]<=170 && top[0]-top[2]>90 && top[1]<top[0]-60);
 
-  /* ⑧ 双模对比度下限（WCAG）。白底对应图例/卡片，深色底对应压暗后的底图。 */
+  /* ⑧ 双模对比度下限（WCAG）。白底对应图例/卡片，深色底对应压暗后的底图。
+     白底下限从旧尺的 2.5 降到 1.1：低值淡出是暖沙单色阶的设计意图，
+     图例渐变条有 1px 描边（.bar2 border）兜底；深色底 1.2 的记账线不变。 */
   const cr=(a,b)=>{ const f=x=>{x/=255;return x<=0.03928?x/12.92:Math.pow((x+0.055)/1.055,2.4);};
     const L1=f(a[0])*0.2126+f(a[1])*0.7152+f(a[2])*0.0722, L2=f(b[0])*0.2126+f(b[1])*0.7152+f(b[2])*0.0722;
     const hi=Math.max(L1,L2), lo=Math.min(L1,L2); return (hi+0.05)/(lo+0.05); };
   let wWorst=1e9, dWorst=1e9;
   HEAT_RAMP.forEach(h=>{ wWorst=Math.min(wWorst,cr(hex2rgb(h),[255,255,255]));
     dWorst=Math.min(dWorst,cr(hex2rgb(h),[58,66,78])); });
-  ok("白底最差对比度 ≥2.5（图例在卡片上）", wWorst>=2.5, "实测 "+wWorst.toFixed(2));
+  ok("白底最差对比度 ≥1.1（低值淡出设计，图例描边兜底）", wWorst>=1.1, "实测 "+wWorst.toFixed(2));
   ok("深色底图最差对比度 ≥1.2（已记账的代价下限）", dWorst>=1.2, "实测 "+dWorst.toFixed(2));
 
   const mid=hex2rgb(rampColor("pm",33)), or_=hex2rgb(rampColor("pm",67));

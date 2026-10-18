@@ -1064,8 +1064,9 @@ function gen(v, la, lo, hh, isAQ, dof) {
   console.log("  噪声真的上了图：外带（OUT−25…OUT−2 km）" + K.band + " 格中被提前掐掉 " + K.cut + " 格（>0 才不是假绿）");
 
   /* ---------- L. S5 全屏看地图 ----------
-     四条：进入（fixed + 卡片满高 + 按钮文案/aria 同步）、Esc 退出、
-     退出后完全复原、以及"画布与容器合一"在两次尺寸变化后都成立
+     进入（fixed + 卡片满高 + 按钮文案/aria 同步）、Esc 退出、层内「✕ 退出全屏」
+     按钮可见且可退出（第三轮反馈补的手机出口）、退出后完全复原、
+     以及"画布与容器合一"在两次尺寸变化后都成立
      （fitRaster 的 refit 靠 ResizeObserver 触发，这里轮询等它到位）。 */
   const L = await ev(`(function(){
     var wrap = document.querySelector('.mapwrap'), map = document.querySelector('#map');
@@ -1082,7 +1083,19 @@ function gen(v, la, lo, hh, isAQ, dof) {
       /* fixed 的包含块是**去掉滚动条**的视口，所以参照取 clientHeight
          而不是 innerHeight（有经典滚动条时两者差 15 px）。 */
       ch: document.documentElement.clientHeight,
-      btn: (btn.textContent || '').trim(), aria: btn.getAttribute('aria-pressed') };
+      btn: (btn.textContent || '').trim(), aria: btn.getAttribute('aria-pressed'),
+      /* 第三轮反馈：层内退出按钮。判"真的可见"而不是只判 display ——
+         数 <button> 元素永远绿，可见性会撒谎。要求：非 none、有面积、
+         完整落在视口内（fixed 全屏下它不该被裁掉或跑出屏）。 */
+      fseVis: (function(){
+        var b = document.getElementById('fsExit');
+        if (!b) return 'missing';
+        var cs = getComputedStyle(b), r = b.getBoundingClientRect();
+        if (cs.display === 'none' || r.width <= 0 || r.height <= 0) return 'hidden';
+        if (r.left < 0 || r.top < 0 || r.right > window.innerWidth + 1 || r.bottom > window.innerHeight + 1) return 'clipped';
+        return 'visible';
+      })(),
+      fseTxt: ((document.getElementById('fsExit') || {}).textContent || '').trim() };
     /* Esc 退出（走 setMapFs 挂的那个 keydown） */
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     out.afterEsc = { fs: wrap.classList.contains('fs'),
@@ -1125,9 +1138,15 @@ function gen(v, la, lo, hh, isAQ, dof) {
     })()`);
     if (L2 && L2.fs && L2.n > 0 && L2.worst < 2 && Math.abs(L2.mapH - L2.ch) < 2) break;
   }
-  /* 退出，复原现场（后面的实拍与断言都按非全屏量） */
-  await ev(`(function(){ document.getElementById('mapFs').click(); return 1; })()`);
+  /* 退出走**层内退出按钮**（第三轮反馈的新出口），顺手验证它真的能退出并摘句柄。
+     复原现场（后面的实拍与断言都按非全屏量）。 */
+  await ev(`(function(){ var b = document.getElementById('fsExit');
+    if (!b) return 0; b.click(); return 1; })()`);
   await sleep(300);
+  const L3 = await ev(`(function(){
+    var w = document.querySelector('.mapwrap');
+    return { fs: w.classList.contains('fs'), keyGone: MapMod.fsKey === null };
+  })()`);
   console.log("\n=== L. S5 全屏看地图 ===");
   console.log("  进入前：fs=" + L.before.fs + " · position=" + L.before.pos + " · #map 高 " + L.before.mapH
     + " · 按钮「" + L.before.btn + "」aria=" + L.before.aria);
@@ -1135,6 +1154,8 @@ function gen(v, la, lo, hh, isAQ, dof) {
     + "＝视口 " + L.entered.ch + " · 按钮「" + L.entered.btn + "」aria=" + L.entered.aria);
   console.log("  Esc 退出：fs=" + L.afterEsc.fs + " · position=" + L.afterEsc.pos
     + " · 按钮「" + L.afterEsc.btn + "」aria=" + L.afterEsc.aria + " · keydown 句柄已摘=" + L.afterEsc.keyGone);
+  console.log("  层内退出按钮：全屏中 " + L.entered.fseVis + "（文案「" + L.entered.fseTxt + "」）"
+    + " · 点击退出 fs=" + L3.fs + " · keydown 句柄已摘=" + L3.keyGone);
   console.log("  全屏中色面画布与当前投影合一：画布 " + L2.n + " 张（隐藏 " + (L2 ? L2.hidden : "?")
     + " 张）· 最大偏差 " + (L2 ? L2.worst.toFixed(2) : "?")
     + " px · #map 高 " + (L2 ? L2.mapH : "?") + "＝视口 " + (L2 ? L2.ch : "?"));
@@ -1295,6 +1316,9 @@ function gen(v, la, lo, hh, isAQ, dof) {
     "全屏：Esc 能退出，按钮文案/aria 复位且 keydown 句柄已摘":
       L.afterEsc.fs === false && L.afterEsc.btn === "全屏" && L.afterEsc.aria === "false"
       && L.afterEsc.keyGone === true,
+    "全屏：层内「✕ 退出全屏」按钮全屏中真的可见、点击可退出且句柄摘除（手机唯一出口）":
+      L.entered.fseVis === "visible" && L.entered.fseTxt.indexOf("退出全屏") >= 0
+      && L3.fs === false && L3.keyGone === true,
     "全屏中色面画布与当前投影合一（refit 在尺寸变化后真的跑了）":
       !!L2 && L2.fs === true && L2.n > 0 && L2.worst < 2 && Math.abs(L2.mapH - L2.ch) < 2,
     /* M：深色底图跟随全局主题（2026-10-18 起 #dimBase 复选框已删）。 */

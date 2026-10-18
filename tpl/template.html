@@ -682,6 +682,19 @@ button.sm{padding:5px 10px;font-size:12px;font-weight:600;border-radius:7px}
    这里只管"占满视口"这一件事。 */
 .mapwrap.fs{position:fixed;inset:0;z-index:2100;border-radius:0;border:0}
 .mapwrap.fs #map{height:100%}
+/* S5 · 全屏退出按钮（第三轮反馈修复）：标题栏的全屏按钮 #mapFs 不在 .mapwrap 内，
+   全屏后被这层 fixed 盖住 —— 桌面还有 Esc 兜底，手机（无键盘）就彻底没了出口。
+   这个按钮住在 .mapwrap **内部**，全屏时才显示。半透明深胶囊压在地图上，
+   深浅主题同款（深色反相 filter 只作用于 #map 及其叠加层，不含它）；
+   z=30：在提示卡(20)之上，仍在本层叠上下文内部。 */
+.fsExit{display:none;position:absolute;z-index:30;
+  top:calc(10px + env(safe-area-inset-top,0px));
+  right:calc(10px + env(safe-area-inset-right,0px));
+  align-items:center;gap:6px;padding:7px 14px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.42);background:rgba(24,28,36,.72);
+  color:#fff;font-size:12.5px;cursor:pointer}
+.fsExit:active{background:rgba(24,28,36,.92)}
+.mapwrap.fs .fsExit{display:inline-flex}
 #map{width:100%;height:560px;touch-action:none}
 /* touch-action:none：真机上"地图无法左右滑"的另一半根因 —— 页面一旦有横向
    溢出（见 .top-tx），浏览器的横向平移手势会跟地图拖动竞争，单指横滑被
@@ -699,7 +712,8 @@ button.sm{padding:5px 10px;font-size:12px;font-weight:600;border-radius:7px}
    分「纬度条带」逐条定位，用来抵消墨卡托投影纵向的非线性拉伸。 */
 /* 图层顺序（全部在 .mapwrap 的层叠上下文里，不依赖 DOM 顺序）：
    0 底图压暗 → 1 色面 → 2 云纹 → 3 等值线 + 经纬网 → 5 事件方位·距离环
-   → 6 数值直标 → 7 图钉 → 8 加载遮罩 → 20 提示卡。（原 4 可信度纱层 2026-10-18 起删除，
+   → 6 数值直标 → 7 图钉 → 8 加载遮罩 → 20 提示卡 → 30 全屏退出按钮
+   （.fsExit 常态 display:none，全屏时才现身；原 4 可信度纱层 2026-10-18 起删除，
    层号不回收 —— 回收会让"层号=史"的注释全错一次。）
    「深色底图」开关（第 8 批）**不改层号**：它给 #map 和全部叠加层套同一个
    invert(1) hue-rotate(180deg)，两次翻转互相抵消 ⇒ 色面像素一个都不变（见 .mapwrap.dark）。
@@ -1464,6 +1478,9 @@ body.snapmode [data-snaphide]{display:none}
           <div class="mload" id="mapLoad"><div class="spin"></div><span id="mapLoadTxt">地图资源加载中…</span></div>
           <div class="tip" id="tip" role="tooltip"></div>
           <div class="mlayer" id="mapLabels" aria-hidden="true"></div>
+          <!-- S5 · 全屏退出按钮：全屏层内右上角，手机端唯一的可见出口（无键盘无 Esc）。
+               文案走 data-i18n（「退出全屏」键已在 i18nprobe DYNAMIC_KEYS 登记）。 -->
+          <button type="button" class="fsExit" id="fsExit"><span aria-hidden="true">✕</span><span data-i18n="退出全屏">退出全屏</span></button>
         </div>
         <div class="drill" id="drill"></div>
         <div class="legend">

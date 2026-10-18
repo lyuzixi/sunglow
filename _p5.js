@@ -867,6 +867,11 @@ function initUI() {
      观看状态，不是"我偏好全屏"；持久化它会让下次打开页面时地图突然占满屏幕。 */
   const fsb = $("#mapFs");
   if (fsb) fsb.addEventListener("click", () => { setMapFs(!mapFsOn()); });
+  /* S5 · 全屏退出按钮（第三轮反馈修复）：住在 .mapwrap 内、全屏时才显示的右上角
+     胶囊 —— 标题栏的 #mapFs 在全屏后被 fixed 层盖住，手机（无键盘）原本没有出口。
+     它只做一件事：退出。不做切换（全屏里不存在"再进全屏"）。 */
+  const fse = $("#fsExit");
+  if (fse) fse.addEventListener("click", () => setMapFs(false));
 
   /* 折叠按钮（第五轮 UI）：光追/数据质量两张技术卡默认收起，展开态进偏好白名单。
      纯显示、不取数、不重算 —— 与图层开关同一性质。 */
