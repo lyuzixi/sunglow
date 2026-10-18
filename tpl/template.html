@@ -686,16 +686,29 @@ button.sm{padding:5px 10px;font-size:12px;font-weight:600;border-radius:7px}
    全屏后被这层 fixed 盖住 —— 桌面还有 Esc 兜底，手机（无键盘）就彻底没了出口。
    这个按钮住在 .mapwrap **内部**，全屏时才显示。半透明深胶囊压在地图上，
    深浅主题同款（深色反相 filter 只作用于 #map 及其叠加层，不含它）；
-   z=30：在提示卡(20)之上，仍在本层叠上下文内部。 */
+   z=30：在提示卡(20)之上，仍在本层叠上下文内部。
+   放**左上**而不是右上：腾讯 SDK 自带的罗盘 / 缩放控件都驻在右上角，
+   放右上会跟它们叠在一起（真机截图实锤）。
+   点击无反应的根因与修法：#map 自己不建层叠上下文时，SDK 内部控件的高
+   z-index 会**逃出 #map** 直接参与 .mapwrap 的层叠竞争，把本按钮（z=30）
+   压下去、它的透明手势层还会截走点击 —— 已用 `#map{position:relative;
+   z-index:0}` 把 SDK 全部内部层钳进层 0（深色模式 filter 本来就会建上下文，
+   所以那个模式下从未复现）。mapaudit L 段守 computed z-index。 */
 .fsExit{display:none;position:absolute;z-index:30;
   top:calc(10px + env(safe-area-inset-top,0px));
-  right:calc(10px + env(safe-area-inset-right,0px));
+  left:calc(10px + env(safe-area-inset-left,0px));
   align-items:center;gap:6px;padding:7px 14px;border-radius:999px;
   border:1px solid rgba(255,255,255,.42);background:rgba(24,28,36,.72);
   color:#fff;font-size:12.5px;cursor:pointer}
 .fsExit:active{background:rgba(24,28,36,.92)}
 .mapwrap.fs .fsExit{display:inline-flex}
-#map{width:100%;height:560px;touch-action:none}
+/* position:relative + z-index:0：给 #map 建**层叠上下文**（见上面 .fsExit 注释）。
+   没有它，SDK 内部控件（罗盘 / 缩放，z-index 很高）会逃出 #map 参与外层层叠，
+   把 z=30 的全屏退出按钮盖住、还截走它的点击。深色模式因 filter 已有上下文
+   所以从未复现 —— 这正是"只在浅色模式出现"的原因。钳进层 0 后，SDK 控件
+   与底图同层：视觉上可被色面罩住半透明的一层，事件不受影响（叠加层全部
+   pointer-events:none，点按钮是按钮、点地图是地图）。 */
+#map{position:relative;z-index:0;width:100%;height:560px;touch-action:none}
 /* touch-action:none：真机上"地图无法左右滑"的另一半根因 —— 页面一旦有横向
    溢出（见 .top-tx），浏览器的横向平移手势会跟地图拖动竞争，单指横滑被
    浏览器抢走。none 把 #map 内的全部手势判定交给腾讯地图 SDK 自己处理。

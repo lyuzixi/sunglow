@@ -1095,7 +1095,14 @@ function gen(v, la, lo, hh, isAQ, dof) {
         if (r.left < 0 || r.top < 0 || r.right > window.innerWidth + 1 || r.bottom > window.innerHeight + 1) return 'clipped';
         return 'visible';
       })(),
-      fseTxt: ((document.getElementById('fsExit') || {}).textContent || '').trim() };
+      fseTxt: ((document.getElementById('fsExit') || {}).textContent || '').trim(),
+      /* #map 必须自建层叠上下文（computed z-index 为 "0"）：没有它，SDK 内部
+         控件的高 z-index 会逃出 #map 把 fsExit 盖住、还截走点击 —— 浅色模式
+         真机实锤过的 bug。深色模式 filter 本来就建上下文，所以那条路径测不出。 */
+      mapZ: (function(){
+        var m = document.getElementById('map');
+        return m ? getComputedStyle(m).zIndex : 'missing';
+      })() };
     /* Esc 退出（走 setMapFs 挂的那个 keydown） */
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     out.afterEsc = { fs: wrap.classList.contains('fs'),
@@ -1155,6 +1162,7 @@ function gen(v, la, lo, hh, isAQ, dof) {
   console.log("  Esc 退出：fs=" + L.afterEsc.fs + " · position=" + L.afterEsc.pos
     + " · 按钮「" + L.afterEsc.btn + "」aria=" + L.afterEsc.aria + " · keydown 句柄已摘=" + L.afterEsc.keyGone);
   console.log("  层内退出按钮：全屏中 " + L.entered.fseVis + "（文案「" + L.entered.fseTxt + "」）"
+    + " · #map z-index=" + L.entered.mapZ
     + " · 点击退出 fs=" + L3.fs + " · keydown 句柄已摘=" + L3.keyGone);
   console.log("  全屏中色面画布与当前投影合一：画布 " + L2.n + " 张（隐藏 " + (L2 ? L2.hidden : "?")
     + " 张）· 最大偏差 " + (L2 ? L2.worst.toFixed(2) : "?")
@@ -1319,6 +1327,8 @@ function gen(v, la, lo, hh, isAQ, dof) {
     "全屏：层内「✕ 退出全屏」按钮全屏中真的可见、点击可退出且句柄摘除（手机唯一出口）":
       L.entered.fseVis === "visible" && L.entered.fseTxt.indexOf("退出全屏") >= 0
       && L3.fs === false && L3.keyGone === true,
+    "全屏：#map 自建层叠上下文（computed z-index=0，钳住 SDK 内部控件不外逃盖按钮/截点击）":
+      L.entered.mapZ === "0",
     "全屏中色面画布与当前投影合一（refit 在尺寸变化后真的跑了）":
       !!L2 && L2.fs === true && L2.n > 0 && L2.worst < 2 && Math.abs(L2.mapH - L2.ch) < 2,
     /* M：深色底图跟随全局主题（2026-10-18 起 #dimBase 复选框已删）。 */
