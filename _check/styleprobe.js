@@ -165,7 +165,7 @@ const VALS = {
     let a0 = 0, aFull = 0, veilDkm = 0, colored = 0;
     /* C2 之后纱的判据是**凸包外**，不再是"距最近采样点 > FIELD_FULL"。
        这里同时量两个，好让"纱覆盖多少"永远带着那个 dkm 对照数一起看 ——
-       实测两者差了一个数量级（1.25% vs 25.35%），原因见 _p6.js buildConfStrips。 */
+       实测两者差了一个数量级（1.25% vs 25.35%）。 */
     const gg = GEOM_CACHE.geom, hud = gg && gg.hud, HH = hud ? hud.edges : null;
     let veilHull = 0;
     for (let r = 0; r < f.rows; r++) {

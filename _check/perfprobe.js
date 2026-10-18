@@ -225,7 +225,7 @@ const r1 = v => Math.round(v * 10) / 10;
     /* ① 复绘：值场几何命中缓存（切模型/切维度/切图层走这条） */
     rows.push(await run("复绘", `(function(){
       /* 2026-10-18：dimBase 已删（深色底图并入主题），只拨四个真实开关 */
-      ['numLabels','showPts','showConf','showTx'].forEach(id => {
+      ['numLabels','showPts','showTx'].forEach(id => {
         const e = document.getElementById(id); if (e && e.checked) { e.checked = false;
           e.dispatchEvent(new Event('change', { bubbles: true })); }
       });
@@ -235,7 +235,7 @@ const r1 = v => Math.round(v * 10) / 10;
     rows.push(await run("首次（重建值场）", `void 0;`, `GEOM_CACHE.sig = "";`, rate));
     /* ③ 全开：五个图层全开的最坏情况 */
     rows.push(await run("复绘 · 全图层", `(function(){
-      ['numLabels','showPts','showConf'].forEach(id => {
+      ['numLabels','showPts','showTx'].forEach(id => {
         const e = document.getElementById(id); if (e && !e.checked) { e.checked = true;
           e.dispatchEvent(new Event('change', { bubbles: true })); }
       });

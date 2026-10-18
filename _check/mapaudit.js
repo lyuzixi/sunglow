@@ -530,7 +530,7 @@ function gen(v, la, lo, hh, isAQ, dof) {
     const z = el => (el ? Number(getComputedStyle(el).zIndex) : NaN);
     return { hasRing: /azilayer|azim|bearing|compass|ring|sector/i.test(hay),
              aziOn: !!(lay && lay.classList.contains('on')),
-             aziZ: z(lay), confZ: z(host.querySelector('.conflayer')), mlZ: z(ml),
+             aziZ: z(lay), confZ: z(host.querySelector('.txlayer')), mlZ: z(ml),
              paths: svg ? svg.querySelectorAll('path').length : 0,
              lines: svg ? svg.querySelectorAll('line').length : 0,
              texts: svg ? [...svg.querySelectorAll('text')].map(t => t.textContent) : [],
@@ -541,7 +541,7 @@ function gen(v, la, lo, hh, isAQ, dof) {
   console.log("  存在方位/距离环图层：" + (F.hasRing ? "有" : "无") + "（.on=" + F.aziOn + "）"
     + " · 环 " + F.paths + " 条 · 方位线 " + F.lines + " 条");
   console.log("  环上的文字：" + JSON.stringify(F.texts));
-  console.log("  图层次序：色面 1 / 可信度纱 " + F.confZ + " / 方位环 " + F.aziZ + " / 数值直标 " + F.mlZ);
+  console.log("  图层次序：色面 1 / 云纹 " + F.confZ + " / 方位环 " + F.aziZ + " / 数值直标 " + F.mlZ);
   console.log("  .mapwrap 内层类名：" + JSON.stringify(F.layerNames));
 
   /* ---------- G. 掩膜对用户是否可见 ----------
@@ -607,7 +607,7 @@ function gen(v, la, lo, hh, isAQ, dof) {
   const I = await ev(`(function(){
     var out = {};
     var gl = document.querySelector('.clayer');
-    var rl = document.querySelector('.rlayer'), cf = document.querySelector('.conflayer');
+    var rl = document.querySelector('.rlayer'), cf = document.querySelector('.txlayer');
     var z = function(el){ return el ? Number(getComputedStyle(el).zIndex) : NaN; };
     out.hasLayer = !!gl;
     out.on = gl ? gl.classList.contains('on') : false;
@@ -783,7 +783,7 @@ function gen(v, la, lo, hh, isAQ, dof) {
   })()`);
   console.log("\n=== I. 等值线 + 经纬网（第 10 批：矢量描边）===");
   console.log("  等值线层：" + (I.hasLayer ? "有" : "无") + "（.on=" + I.on + " · z=" + I.z
-    + "，色面 " + I.rlZ + " / 可信度纱 " + I.confZ + "）· 折线 " + I.contN + " 段"
+    + "，色面 " + I.rlZ + " / 云纹 " + I.confZ + "）· 折线 " + I.contN + " 段"
     + " · 总长 " + I.pathLen.toFixed(0) + " px（色面 " + I.colorN + " 条带）");
   console.log("  画布：" + I.cvW + "×" + I.cvH + " 设备像素 ＝ 容器 " + I.hostW + "×" + I.hostH
     + " × dpr " + I.dpr + " ⇒ " + (I.cvW === Math.round(I.hostW * I.dpr)
@@ -802,16 +802,14 @@ function gen(v, la, lo, hh, isAQ, dof) {
     + "（须相等；顶点数随浮点噪声在 8/10/12 间浮动，几何都是同一八边形）"
     + " · 落在色面有像素处的采样点 " + I.edgeIn + "（掩膜裁断后真正画出来的部分）");
 
-  /* ---------- J. C1 经纬网开关 + C2 可信度纱的边界 ----------
+  /* ---------- J. C1 经纬网开关 ----------
      C1： gratOn 曾经兼两职（"网画了没"的派生位 + gridOn() 读的图层可见性），
      所以加用户开关时**必须先拆开**。这里钉的是拆开之后仍然成立的三件事：
        ① 关掉后那张 SVG **真的隐藏** —— 不能只靠 .clayer 的 .on，因为等值线还在的
           时候整层不会被关掉（.on 的语义是"等值线或经纬网有其一即显示"）；
        ② 关掉经纬网**不影响等值线**（层仍 .on、折线还在）；
        ③ 再打开能完全恢复（签名要失效，否则视野没动时会卡在 none 上回不来）。
-     C2： 纱的边界改为**凸包外**（与色面淡出边界、B1 那条虚线同一条）。断言是
-          "纱的覆盖格数逐格等于「色面有像素 ∧ 凸包外」"，即"起纱 ≡ 淡出 ≡ 外推"
-          这条不变量。判据为什么不能是"距最近采样点 > FIELD_FULL"见输出里的数。 */
+     （C2 可信度纱层 2026-10-18 起删除，原 C2 断言一并移除。） */
   const J = await ev(`(function(){
     var out = {};
     var cb = document.getElementById('showGrid');
@@ -830,36 +828,8 @@ function gen(v, la, lo, hh, isAQ, dof) {
       out.gratOnBack = !!MapMod.gratOn;
     }
     out.contN = (MapMod.contGeo && MapMod.contGeo.n) || 0;
-
-    var f = MapMod.field, hud = GEOM_CACHE.geom && GEOM_CACHE.geom.hud;
-    var H = hud ? hud.edges : null;
-    var want = 0, painted = 0, inside = 0, dkmOver = 0;
-    if (f && H) {
-      for (var r = 0; r < f.rows; r++) {
-        var Y = ((f.laN - r * f.dLa) - hud.olat) * 110.574;
-        for (var c = 0; c < f.cols; c++) {
-          var o = r * f.cols + c;
-          if (f.img[o * 4 + 3] === 0) continue;
-          painted++;
-          var X = (f.loW + c * f.dLo - hud.olon) * hud.kx;
-          var sd = -1e9;
-          for (var k = 0; k < H.length; k += 3) {
-            var d = H[k] * X + H[k + 1] * Y + H[k + 2];
-            if (d > sd) sd = d;
-          }
-          if (sd > 0) want++; else inside++;
-          if (f.dkm[o] > FIELD_FULL) dkmOver++;
-        }
-      }
-    }
-    var got = 0;
-    var cs = MapMod.confStrips || [];
-    for (var i = 0; i < cs.length; i++) {
-      var dd = cs[i].ctx.getImageData(0, 0, cs[i].cv.width, cs[i].cv.height).data;
-      for (var q = 3; q < dd.length; q += 4) if (dd[q] > 0) got++;
-    }
-    out.veilWant = want; out.veilGot = got; out.painted = painted; out.hullInside = inside;
-    out.dkmOver = dkmOver;
+    /* C2 可信度纱已删（2026-10-18 用户决策）：外推区改由范围虚线 + 悬停卡文字表达，
+       这里不再有覆盖格数断言。凸包口径本身仍由 K 段"淡出内边界＝凸包"守着。 */
     return out;
   })()`);
   console.log("\n=== J. C1 经纬网开关 + C2 可信度纱边界 ===");
@@ -868,11 +838,6 @@ function gen(v, la, lo, hh, isAQ, dof) {
   console.log("  关掉后：SVG display=" + JSON.stringify(J.dispOff) + "（须 \"none\"）· gratOn=" + J.gratOnOff
     + "（须 false）· .clayer 仍 .on=" + J.layOnOff + " · 等值线折线 " + J.contN + " 段（须 >0，不受影响）");
   console.log("  再打开：SVG display=" + JSON.stringify(J.dispOn) + "（须非 none）· gratOn=" + J.gratOnBack);
-  console.log("  可信度纱：实测覆盖 " + J.veilGot + " 格 ＝ 期望（色面有像素 ∧ 凸包外）" + J.veilWant
-    + " 格 · 已上色 " + J.painted + " 格 ⇒ 覆盖 " + (100 * J.veilGot / Math.max(1, J.painted)).toFixed(2)
-    + "%（包内 " + J.hullInside + " 格不纱）");
-  console.log("  对照：旧判据「dkm > FIELD_FULL」只命中 " + J.dkmOver + " 格 ＝ "
-    + (100 * J.dkmOver / Math.max(1, J.painted)).toFixed(2)     + "% —— 这就是它形同没起作用的原因");
 
   /* ---------- J2. 经纬网可见度（2026-10-18 用户报"开了还是看不到"后的像素级判据） ----------
      根因实测：旧画法（单层 34% 不透明度 1px 线）**线与邻像素的反差只有 17/255** ——
@@ -920,11 +885,11 @@ function gen(v, la, lo, hh, isAQ, dof) {
     + J2.lineVsNeighbor + "/255（旧画法实测 17 ⇒ 形同不存在；判据 ≥28）");
 
   /* ---------- K. S1 云量淡纹 + V3 有机边缘 ----------
-     K1 云纹的三条硬约束（见 TX_RGB / TX_ALPHA 旁注释）：
+     K1 云纹的三条硬约束（见 TX_RGB / TX_BAND_A 旁注释）：
        ① 绝不动色面像素 —— 判据是"逐格同尺寸对齐"：tx 条带 si 画的就是
           色面栅格第 si*per 行起的那批格，一个画素对一个格；
        ② 只画在色面有像素处（alpha 乘色面 alpha）—— 逐格核对；
-       ③ 峰值 α ≤ TX_ALPHA。
+       ③ 峰值 α ≤ 最深档 TX_BAND_A[3]。
      K2 V3 有机边缘的三条纪律（见 EDGE_NOISE_KM 注释）：
        ① 包内/包界噪声为 0 ⇒ 淡出内边界仍精确等于凸包（三对齐不破）；
        ② 确定性（同栅格同一边缘）；
@@ -975,23 +940,17 @@ function gen(v, la, lo, hh, isAQ, dof) {
       }
     }
     out.painted = painted; out.peak = peak; out.outOfField = outOfField; out.rgbBad = rgbBad; out.rgbN = rgbN;
-    /* 上限从页面常量现算（TX_ALPHA/TX_EDGE_ALPHA 是 _p6.js 的顶层 const，Node 侧取不到）。
-       2026-10-18 起云纹有两档不透明度：云影（≤TX_ALPHA）与过半边线（≤TX_EDGE_ALPHA）。 */
-    out.cap = Math.ceil(Math.max(TX_ALPHA, TX_EDGE_ALPHA) * 255);
-    out.veilCap = Math.ceil(TX_ALPHA * 255);
-    out.edgeCap = Math.ceil(TX_EDGE_ALPHA * 255);
-    /* K3 云纹的边（2026-10-18 新增）：用户反馈"开不开都只是颜色深浅"之后，
-       云量过半处描了一道边线格。这里钉三件事：
-       ① 边线格真的存在（否则又是"一团均匀灰"）；
-       ② 每个边线格都严格按公式画（逐格精确比对，见下）—— 不是一片加深；
-       ③ 边线格是少数（≤30%）—— 否则等于整图蒙上一层，那不是边是底色。
-
-       【为什么不用“四邻必有更淡格”的启发式】第一版这么写，实测 edgeBad=59：
-       云量过半等值线把一小块干区围成孤岛时，干区周围的湿格**全是**边线格
-       （它们各自都有干邻），四邻 alpha 全同级 —— 那是正确渲染，启发式误报。
-       改为逐格精确比对：按画图公式（边线格 round(TX_EDGE_ALPHA×aF)、
-       普通淡纹 round(TX_ALPHA×v/100×aF)）重算期望 alpha，容差 ±2（预乘取整）。 */
-    var edgeN = 0, edgeMis = 0;
+    /* 上限从页面常量现算（TX_BAND_A 是 _p6.js 的顶层 const，Node 侧取不到）。
+       2026-10-18 二次反馈起云纹是四档分档：档内 alpha 恒定（TX_BAND_A[档] × aF/255），
+       最深档 0.35 × 色面峰值 alpha（Math.round(255*FIELD_OPACITY)）。 */
+    out.cap = Math.ceil(TX_BAND_A[3] * Math.round(255 * FIELD_OPACITY));
+    /* K3 云纹四档逐格比对（2026-10-18 二次反馈）：分档后不再有"边线格"，
+       判据升级为**每个有值格**都按画图公式精确比对：
+         期望 alpha = round(TX_BAND_A[txBandOf(v)] × aF)，晴档（v<25）为 0。
+       容差 ±2（canvas 预乘 alpha 的 put/get 取整损失）。
+       【历史教训】上一版边线的"四邻必有更淡格"启发式在干区孤岛误报
+       （孤岛四周湿格全是边线格，是正确渲染）—— 逐格公式比对不依赖邻域，无此问题。 */
+    var edgeN = 0, edgeMis = 0, bandSeen = 0;
     if (f && f.cloud && strips.length) {
       var cols = f.cols, rows = f.rows, per2 = Math.max(1, Math.round(FIELD_BAND_DEG / f.dLa));
       /* 先把整张 tx 的 alpha 读进一个矩阵（每 strip 只 getImageData 一次） */
@@ -1015,22 +974,18 @@ function gen(v, la, lo, hh, isAQ, dof) {
           if (aF === 0) continue;
           var v2 = f.cloud[o2];
           if (!isNum(v2)) continue;
-          var wet2 = v2 >= TX_EDGE_AT;
-          var edge2 =
-            (gi > 0 && ((f.cloud[o2 - 1] >= TX_EDGE_AT) !== wet2)) ||
-            (gi < cols - 1 && ((f.cloud[o2 + 1] >= TX_EDGE_AT) !== wet2)) ||
-            (gj > 0 && ((f.cloud[o2 - cols] >= TX_EDGE_AT) !== wet2)) ||
-            (gj < rows - 1 && ((f.cloud[o2 + cols] >= TX_EDGE_AT) !== wet2));
-          /* 与 _p6.js 画图公式逐字对应：边线档恒 TX_EDGE_ALPHA×aF（0.52 > 0.3 ≥ TX_ALPHA×v/100，
-             v≤100 时边线总胜出）；普通格 TX_ALPHA×(v/100)×aF，v≤0 为 0。 */
-          var aExp = edge2 ? Math.round(TX_EDGE_ALPHA * aF)
-                           : Math.round(TX_ALPHA * (v2 > 0 ? v2 / 100 : 0) * aF);
-          if (edge2) edgeN++;
+          /* 与 _p6.js 画图公式逐字对应：四档分档，档内 alpha 恒定。
+             晴档（v<25）不画，期望 0。 */
+          var b2 = Math.min(3, Math.max(0, Math.floor(v2 / TX_BAND_HI)));
+          var aExp = Math.round(TX_BAND_A[b2] * aF);
+          if (b2 > 0) edgeN++;
+          bandSeen |= (1 << b2);
           if (Math.abs(am[o2] - aExp) > 2) edgeMis++;
         }
       }
     }
     out.edgeN = edgeN; out.edgeMis = edgeMis;
+    out.bandSeen = (bandSeen & 2 ? 1 : 0) + (bandSeen & 4 ? 1 : 0) + (bandSeen & 8 ? 1 : 0);
     /* 开关：关掉应隐藏、再打开应恢复（refreshTx 的口径：.on 没了整层 display:none） */
     var cb = document.getElementById('showTx');
     out.toggleOk = null;
@@ -1099,10 +1054,10 @@ function gen(v, la, lo, hh, isAQ, dof) {
   console.log("\n=== K. S1 云量淡纹 + V3 有机边缘 ===");
   console.log("  云纹层：z=" + K.z + "（色面 " + K.rlZ + " / 等值线 " + K.clZ + "）· 条带 " + K.stripN
     + " 条 · 可见=" + K.on + " · 默认勾选=" + K.defChecked + " · 开关可逆=" + K.toggleOk);
-  console.log("  云纹像素 " + K.painted + " 个 · 云影峰值 alpha " + K.peak + "（上限 " + K.veilCap
-    + "）· 边线档上限 " + K.edgeCap + " · 探出色面的 " + K.outOfField + " 个 · 非云影色的 " + K.rgbBad + "/" + K.rgbN + " 个（α≥20 才查）");
-  console.log("  云纹边线：" + K.edgeN + " 个边线格（云影像素的 " + (100 * K.edgeN / Math.max(1, K.painted)).toFixed(1)
-    + "%，须 ≤30%）· 逐格按公式比对不符 " + K.edgeMis + " 个（容差 ±2，须 0）");
+  console.log("  云纹像素 " + K.painted + " 个 · 峰值 alpha " + K.peak + "（最深档上限 " + K.cap
+    + "）· 探出色面的 " + K.outOfField + " 个 · 非云影色的 " + K.rgbBad + "/" + K.rgbN + " 个（α≥20 才查）");
+  console.log("  四档分档：" + K.edgeN + " 个非晴档格 · 出现档数 " + K.bandSeen + "/3（须 ≥2，分档真的生效）"
+    + " · 全部有值格逐格按公式比对不符 " + K.edgeMis + " 个（容差 ±2，须 0）");
   console.log("  有机边缘：确定性=" + K.nzDet + " · 值域=" + K.nzRange + " · 非常数=" + K.nzVaries
     + " · 相邻格最大跳变 " + K.nzMaxStep.toFixed(3) + "（应远小于 1 ⇒ 平滑波动）");
   console.log("  淡出内边界＝凸包：深入包内的有值格 " + K.insideFull + " 个满 alpha · 不符 " + K.insideBad + " 个");
@@ -1283,7 +1238,7 @@ function gen(v, la, lo, hh, isAQ, dof) {
     "方位环在色面之上、数值直标之下": F.aziZ > 1 && F.aziZ < F.mlZ,
     /* 等值线：8 条。前两条是结构，第 3 条是"细"能成立的前提，第 4/5 条是"细且干净"。 */
     "等值线层有内容（抽出了档位边界折线）": I.hasLayer && I.on === true && I.contN > 0 && I.pathLen > 0,
-    "等值线在色面之上、可信度纱之下": I.z > I.rlZ && I.z < I.confZ,
+    "等值线在色面之上、云纹之上": I.z > I.rlZ && I.z > I.confZ,
     /* 栅格时代的线宽绑在栅格上 ⇒ 放大 4 倍线就粗 4 倍，这是用户连说两次"还粗"的根因。
        画布跟着容器走之后线宽是屏幕常数，这条是那个解法的**结构前提**，必须正面守住。 */
     "等值线画布＝容器分辨率（线宽与缩放解耦）":
@@ -1311,21 +1266,19 @@ function gen(v, la, lo, hh, isAQ, dof) {
     "关掉经纬网：SVG 隐藏，但等值线不受影响":
       J.dispOff === "none" && J.gratOnOff === false && J.layOnOff === true && J.contN > 0,
     "重新打开经纬网能完全恢复": J.gratOnBack === true && J.dispOn !== "none",
-    /* C2：起纱 ≡ 淡出 ≡ 外推。判据是凸包外，不是"距最近采样点 > 阈值"。 */
-    "可信度纱覆盖＝凸包外（起纱≡淡出≡外推）": J.veilWant > 0 && J.veilWant === J.veilGot,
     /* S1 云纹：三条硬约束（不动色面像素 / 只在色面有像素处 / 峰值 α≤0.18）
        + 层序（色面 1 < 云纹 2 < 等值线 3）+ 默认勾选且开关可逆。 */
     "云纹层存在且有内容（画出了云影）": K.hasLayer === true && K.on === true
       && K.stripN > 0 && K.painted > 0,
     "云纹层序：压在色面之上、等值线之下": K.z === 2 && K.rlZ === 1 && K.clZ === 3,
-    "云纹峰值 alpha ≤ 边线档上限（TX_EDGE_ALPHA×色面峰值；两档取大）": K.peak > 0 && K.peak <= K.cap,
+    "云纹峰值 alpha ≤ 最深档上限（TX_BAND_A[3]×色面峰值）": K.peak > 0 && K.peak <= K.cap,
     "云纹一个像素都不探出色面（逐格对齐核对）": K.outOfField === 0,
     "云纹颜色恒为云影色（不掺色面颜色；预乘取整容差 ±10）": K.rgbN > 0 && K.rgbBad === 0,
     "云纹默认勾选且开关可逆": K.defChecked === true && K.toggleOk === true,
     /* K3 云纹的边（2026-10-18）：把"一团均匀灰"变成"有边界的一片云"。
        三条：边存在 / 每格都是边界（四邻有对比）/ 边是少数（否则是底色不是边）。 */
-    "云纹逐格与画图公式一致（边线档与普通淡纹都精确对得上）": K.edgeN > 0 && K.edgeMis === 0,
-    "云纹边线格是少数（≤30% 的云影像素）": K.edgeN > 0 && K.edgeN <= K.painted * 0.3,
+    "云纹逐格与四档公式一致（每个有值格的 alpha 都精确对得上）": K.edgeN > 0 && K.edgeMis === 0,
+    "四档分档真的生效（图面上出现 ≥2 个非晴档，不是均匀一片）": K.bandSeen >= 2,
     /* V3 有机边缘：三条纪律 + 一条"真的上了图"的假绿防线。 */
     "边缘噪声确定（同栅格永远同一边缘）": K.nzDet === true,
     "边缘噪声有值域且非常数": K.nzRange === true && K.nzVaries === true,

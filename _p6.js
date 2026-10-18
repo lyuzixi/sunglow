@@ -26,8 +26,6 @@ const MapMod = {
   labels: [],
   /* 采样点 / 查询点图钉层（第一批补充）：DOM 叠加，见 renderPins */
   pinLayer: null, pinSig: "", pins: null,
-  /* 可信度叠加层：与 strips 同几何的独立画布集合（见 buildConfStrips） */
-  confLayer: null, confStrips: null,
   /* S1 · 云量淡纹层：与 strips 同几何、同条带划分的独立画布集合（见 buildTxStrips） */
   txLayer: null, txStrips: null,
   /* 底图压暗层（插在底图与色面之间） */
@@ -197,7 +195,6 @@ function tipDock() { return !!(TIP_DOCK_MQ && TIP_DOCK_MQ.matches); }
    一次性视图状态写进 localStorage，换来的只是换设备后"为什么这里多一截"的困惑。 */
 const RANK_NARROW_N = 4;
 /* 「悬停卡里说『插值可信』」的那条距离线：到最近采样点不超过它就报"较高"。
-   **它只管悬停卡的文案分级，不管可信度纱的边界** —— 纱的边界是凸包（见 buildConfStrips）。
    这两个量不是一回事：包内也有一半区域离最近点 50 km 以上，那里照样是**插值**；
    而贴着凸包顶点外侧一点 dkm 只有 1.4 km，却已经是**外推**了。
    取 90 的依据是实测：包内 dkm 最大 85.3 km（≈ 格心到最近格点 = 120 × 0.707），
@@ -256,20 +253,22 @@ const FIELD_BAND_DEG = 4;                 // 纬度条带最大高度（度）
       的单值映射（zoomprobe / mapaudit 的像素级断言）因此不受影响；
    ② 只画在**色面真的有像素的地方**（乘以色面 alpha），凸包外、掩膜裁掉的地方
       一律透明 —— 于是"有机边缘"与三对齐都不受影响，云纹不会探到色面之外；
-   ③ 目标 α ≤ TX_ALPHA：看得见，但绝不参与"这个像素是什么档位"的判决。
+   ③ 目标 α ≤ TX_BAND_A 最深档（0.35）：看得见、分得出档，但绝不参与
+      "这个像素是什么档位"的判决。
    深色底图（.mapwrap.dark）会给这一层套同一个 invert(1) hue-rotate(180deg)，
    云影颜色随之翻成对应的亮调 —— 与其它叠加层同一口径（见 template 的 filter 名单）。
-   【2026-10-18 用户反馈后的修正】原峰值只有 0.18，实测开/关整图只差一层
-   "颜色变深、画面变闷"的薄纱 —— 用户原话"只是颜色深浅和清晰度的区别，
-   没有其他参考价值"。两层补救：① 峰值 0.18 → 0.30，让云量差真的读得出；
-   ② 云量过半处描一道**边线格**（TX_EDGE_AT/ALPHA）—— "有边界的一片云"
-   才是能拿来做判断的形状，无边界的均匀灰谁都读不出信息。边按**格子**
-   提 alpha 而不画矢量线：云量是格点插值出来的，矢量线会给出不存在的
-   精度；且边必须留在 tx 层里跟着云纹开关一起走。 */
-const TX_RGB = [30, 42, 68];              // 深云影 #1e2a44
-const TX_ALPHA = 0.30;                    // 云纹层峰值不透明度（画布 alpha = 该值 × 云量 × 色面 alpha）
-const TX_EDGE_AT = 50;                    // 云量过半处描边（%）
-const TX_EDGE_ALPHA = 0.52;               // 边线格的不透明度（× 色面 alpha）
+   【2026-10-18 用户反馈：读不出云的轻重】连续淡纹的问题是人眼对"深一点 vs 深两点"
+   极不敏感 —— 开/关整图只差一层"变闷"的薄纱。改**四档分档**（与主色面同一套
+   视觉语言：分档 + 图例）：晴 0–25 / 少云 25–50 / 多云 50–75 / 阴 75–100，
+   档内 alpha 恒定（TX_BAND_A），档与档的色差就是边界 —— 上一版的"过半边线"
+   （TX_EDGE_AT/ALPHA）被档界替代，机制退场。浓度取**克制档**：最深的"阴"档
+   也只有 0.35，热力图永远是主角；"晴"档不画（图上没有云纹的地方就是晴），
+   避免全图蒙一层变闷的底。云量字段 cld 与缓存 v6 都不变 —— 纯渲染层改动。 */
+const TX_RGB = [30, 42, 68];              // 深云影 #1e2a44（四档共用一色，深浅只由 alpha 表达）
+const TX_BAND_HI = 25;                    // 档宽（%）：0–25 晴 / 25–50 少云 / 50–75 多云 / 75–100 阴
+const TX_BAND_A = [0, 0.13, 0.22, 0.35];  // 各档不透明度（× 色面 alpha/255）；晴档 0 = 不画
+function txBandOf(v) { return Math.min(3, Math.max(0, Math.floor(v / TX_BAND_HI))); }
+const TX_BAND_NAMES = ["晴", "少云", "多云", "阴"];   // 档名（图例/悬停用，经 i18n 取词）
 /* 等值线：沿档界描一条细线。
    分档之后档与档之间**本来就有一条边**（相邻档颜色不同），为什么还要画线：
    那条边是"色块碰色块"，在浅色底图上、尤其在低端几档（浅黄→橙）之间对比度很低，
@@ -509,15 +508,12 @@ function mapOnPlaceChanged() {
   /* 三个叠加层也要跟着作废，否则旧地点的东西会留在新地点上：
      可信度纱是旧网格的、图钉是旧网格的。pinSig 必须一起清空 ——
      只清 DOM 不清签名，renderPins 会认为"已经画过了"而永远不再重建。 */
-  MapMod.confStrips = null;
   MapMod.pinSig = ""; MapMod.pins = null;
   /* 换地点顺手收一遍跨地点缓存（见 mapCacheSweep）：LRU 只在当前地点内按日期淘汰，
      旧地点的键它永远命中不到，不收就会一路涨到配额耗尽。 */
   mapCacheSweep();
   try { if (MapMod.layer) { MapMod.layer.innerHTML = ""; MapMod.layer.classList.remove("on", "stale"); } }
   catch (e) { mWarn("清空色面失败", e); }
-  try { if (MapMod.confLayer) { MapMod.confLayer.innerHTML = ""; MapMod.confLayer.classList.remove("on"); } }
-  catch (e) { mWarn("清空可信度层失败", e); }
   try { if (MapMod.pinLayer) { MapMod.pinLayer.innerHTML = ""; MapMod.pinLayer.classList.remove("on"); } }
   catch (e) { mWarn("清空图钉层失败", e); }
   try { const lb = $("#mapLabels"); if (lb) { lb.innerHTML = ""; lb.classList.remove("on"); } }
@@ -695,8 +691,6 @@ async function initMap() {
   mountLabels(box);
   /* 采样点 / 查询点图钉层（第一批补充） */
   mountPins(box);
-  /* 可信度叠加层：与色面同几何、但像素完全独立的另一层画布 */
-  mountConf(box);
   /* S1 · 云量淡纹层：同样像素独立（z-index 在色面之上、等值线之下） */
   mountTx(box);
   /* 等值线 + 经纬网层（第 9 批）：同样与色面同几何、像素独立（z-index 在色面之上、纱之下） */
@@ -2340,39 +2334,6 @@ function buildStrips(f) {
 }
 
 /* =========================================================================
-   可信度叠加层
-   -------------------------------------------------------------------------
-   在此之前，"可信度"只存在于悬停卡的一行文字里 —— 用户必须先怀疑某个地方、
-   再把鼠标移上去，才能知道那里的数值是插值还是外推。而一张色面上最容易被误读的
-   恰恰是**外围那一圈**：它看起来和中心一样实心、一样"确定"。
-   这里把那份不确定性画出来：**凸包之外**（＝色面开始淡出的那一圈）铺一层中性灰纱。
-   于是"实心＝包内插值（有观测支撑）"、"起纱＝包外外推"。纱的边界与色面淡出的边界、
-   与 B1 画的那条虚线**是同一条**，三者在图上永远对齐。
-
-   两条硬约束：
-   ① **绝不动色面的像素**。灰纱是独立画布，`sampleRaster` / `zoomprobe` 读的
-      仍然是 MapMod.strips 里的原始像素，"像素颜色 → 数值"依旧是单值映射。
-      这也正是当初否掉"让色面透明度随可信度变化"的原因。
-   ② **边界直接取色面的淡出边界（凸包外）**，不新造判据 —— 淡出区与低可信区
-      因此天然是同一片区域，不会出现"纱与淡出对不齐"。
-   ========================================================================= */
-function confOn() { const c = $("#showConf"); return !!(c && c.checked); }
-function mountConf(box) {
-  const el = document.createElement("div");
-  el.className = "conflayer";
-  el.id = "mapConf";
-  /* 插在色面层之后，保证盖在它上面；具体层级交给 z-index，不依赖 DOM 顺序 */
-  const l = MapMod.layer;
-  if (l && l.parentNode === box && l.nextSibling) box.insertBefore(el, l.nextSibling);
-  else box.appendChild(el);
-  MapMod.confLayer = el;
-}
-function refreshConf() {
-  const layer = MapMod.confLayer;
-  if (!layer) return;
-  layer.classList.toggle("on", confOn() && !!(MapMod.confStrips && MapMod.confStrips.length));
-}
-/* =========================================================================
    S1 · 云量淡纹层（.txlayer，z-index 2）
    -------------------------------------------------------------------------
    与可信度纱是同一套纪律的第二次应用：**另起一层画布、绝不碰色面像素**。
@@ -2401,7 +2362,7 @@ function refreshTx() {
   layer.classList.toggle("on", txOn() && !!(MapMod.txStrips && MapMod.txStrips.length));
 }
 /* 云纹条带：canvas 尺寸与色面条带完全相同（同 cols / 同 h），所以 transform
-   可以整条照抄色面的（见 fitRaster 的 refit）。像素算法见 TX_RGB / TX_ALPHA 旁
+   可以整条照抄色面的（见 fitRaster 的 refit）。像素算法见 TX_RGB / TX_BAND_A 旁
    的三条硬约束 —— 其中"乘色面 alpha"这一条同时办成了两件事：
    云纹不会探到色面之外（凸包外、掩膜裁掉处一律透明），
    且跟着羽化一起淡出（有机边缘与三对齐一个像素都不破）。 */
@@ -2436,18 +2397,10 @@ function buildTxStrips(f) {
         const aF = f.img[o * 4 + 3];              // 色面这一格的 alpha：0 ⇒ 没有色面，云纹也不画
         if (aF === 0) continue;
         const v = cvA[o];
-        if (!isNum(v)) continue;
-        let a = v > 0 ? TX_ALPHA * (v / 100) * (aF / 255) : 0;
-        /* 云量过半处描一道边：本格与任一四邻"过不过半"不同即是边线格。
-           晴空一侧也描（v 很小也有边）—— 边界线本来就该骑在边界上，不是只画在云里。
-           邻格查全量 f.cloud（跨条带边界也正确），全局行号 = r0 + y。 */
-        const wet = v >= TX_EDGE_AT;
-        const edge =
-          (x > 0 && (cvA[o - 1] >= TX_EDGE_AT) !== wet) ||
-          (x < cols - 1 && (cvA[o + 1] >= TX_EDGE_AT) !== wet) ||
-          (r0 + y > 0 && (cvA[o - cols] >= TX_EDGE_AT) !== wet) ||
-          (r0 + y < rows - 1 && (cvA[o + cols] >= TX_EDGE_AT) !== wet);
-        if (edge) { const e = TX_EDGE_ALPHA * (aF / 255); if (e > a) a = e; }
+        if (!isNum(v) || v <= 0) continue;
+        /* 四档分档：档内 alpha 恒定（TX_BAND_A[档] × 色面 alpha/255），
+           档界即边界 —— 晴档不画（没有云纹的地方就是晴）。 */
+        const a = TX_BAND_A[txBandOf(v)] * (aF / 255);
         if (a <= 0.004) continue;
         const q = (y * f.cols + x) * 4;
         D[q] = TX_RGB[0]; D[q + 1] = TX_RGB[1]; D[q + 2] = TX_RGB[2];
@@ -2541,72 +2494,6 @@ function applyMapDark() {
      两件事由同一个主题驱动：只压暗，城市名这类**深色文字标签**还是深的，读不出来。 */
   const w = document.querySelector(".mapwrap");
   if (w) w.classList.toggle("dark", on);
-}
-function buildConfStrips(f) {
-  const layer = MapMod.confLayer;
-  if (!layer || !f.dkm) return null;
-  /* 纱的边界＝**色面的淡出边界**，也就是凸包外那一条 —— 与 drawDataEdge 画的那条
-     虚线同一条。这条"起纱 ≡ 淡出 ≡ 外推"的不变量本来就在注释里写着，但实现一直
-     用的是 `dkm > FIELD_FULL`（凸包改造**之前**的写法：当时色面边界是"距最近采样点
-     FULL(75) 起淡出、RANGE(240) 归零"，所以两者碰巧重合）。换了凸包之后淡出边界
-     挪到了凸包上、判据没跟着走，覆盖率就从 46% 掉到 1% 左右。
-     实测（广州默认取景，栅格 217×200，已上色 31,342 格）证得判据选错了，不只是阈值：
-       · 包内 dkm 最大只有 **85.3 km**（≈ 格心到最近格点的 120×0.707）⇒ `dkm > 90`
-         只可能在羽化带里触发；
-       · 羽化带里 dkm 最小只有 **1.4 km** —— 贴着凸包顶点外侧一点明明已经是外推，
-         dkm 却是 1.4 km。
-     ⇒ **dkm 根本无法表达"外推"**（它是"离最近观测点多远"，不是"在不在采样区里"）。
-     另外两个量本来也不是一回事：包内也有一半区域 dkm > 50 km，那里是**插值**。 */
-  const g = GEOM_CACHE.geom, hud = g && g.hud, H = hud ? hud.edges : null;
-  const per = Math.max(1, Math.round(FIELD_BAND_DEG / f.dLa));
-  const count = Math.ceil(f.rows / per);
-  let strips = (MapMod.confStrips && MapMod.confStrips.length === count) ? MapMod.confStrips : null;
-  if (!strips) {
-    layer.innerHTML = "";
-    strips = [];
-    for (let i = 0; i < count; i++) {
-      const cv = document.createElement("canvas");
-      layer.appendChild(cv);
-      strips.push({ cv, ctx: null });
-    }
-  }
-  let si = 0;
-  for (let r0 = 0; r0 < f.rows; r0 += per, si++) {
-    const h = Math.min(per, f.rows - r0);
-    const s = strips[si];
-    if (s.cv.width !== f.cols || s.cv.height !== h) { s.cv.width = f.cols; s.cv.height = h; }
-    const ctx = s.ctx || (s.ctx = s.cv.getContext("2d"));
-    const id = ctx.createImageData(f.cols, h);
-    const D = id.data;
-    for (let y = 0; y < h; y++) {
-      const o0 = (r0 + y) * f.cols;
-      /* 该行的投影 Y（公里）——与 evalField 里算 sd 的同一套局部等距投影 */
-      const Y = H ? ((f.laN - (r0 + y) * f.dLa) - hud.olat) * 110.574 : 0;
-      for (let x = 0; x < f.cols; x++) {
-        const o = o0 + x;
-        /* 只看两件事：这一格色面是否真的画了东西、以及它是否在凸包**之外**。
-           不满足就整格透明，所以纱不会铺到边界之外的空白上。 */
-        if (f.img[o * 4 + 3] === 0) continue;
-        if (H) {
-          const X = (f.loW + x * f.dLo - hud.olon) * hud.kx;
-          let sd = -1e9;
-          for (let k = 0; k < H.length; k += 3) {
-            const d = H[k] * X + H[k + 1] * Y + H[k + 2];
-            if (d > sd) sd = d;
-          }
-          if (!(sd > 0)) continue;                 // 包内＝插值，不起纱
-        } else if (!(f.dkm[o] > FIELD_FULL)) {
-          continue;                                // 无凸包（几何退化）时的兜底：沿用旧判据
-        }
-        const q = (y * f.cols + x) * 4;
-        D[q] = 100; D[q + 1] = 116; D[q + 2] = 139; D[q + 3] = 96;
-      }
-    }
-    ctx.putImageData(id, 0, 0);
-  }
-  MapMod.confStrips = strips;
-  refreshConf();
-  return strips;
 }
 
 /* =========================================================================
@@ -2953,10 +2840,8 @@ function fitRaster() {
       cv.style.transform = strips[i].cv.style.transform;
     }
   };
-  refit(MapMod.confStrips);
   refit(MapMod.txStrips);
   drawContours(rect);
-  refreshConf();
   /* M1：方位/距离环也要跟着重新投影（拖动、缩放、换地点都会走到这里）。
      放在 fitRaster 末尾而不是各处单独调用，是为了让"所有叠加层一起重贴合"这件事
      只有一个入口 —— 少一个入口就少一处会忘记同步的地方。 */
@@ -3623,7 +3508,6 @@ function paintMap() {
       MapMod.field = f;
       fld = f;
       MapMod.strips = buildStrips(f);
-      buildConfStrips(f);
       buildTxStrips(f);
       /* 几何只算一次（换日期/时段/模型才重算）；投影与描边每帧走 fitRaster → drawContours */
       buildContourGeometry(f);
@@ -3683,6 +3567,18 @@ function updateLegend(mode, mk) {
       : QUALITY_BANDS.map(b => [bandMid(b), i18n(b.key) + "（" + bandRangeHtml(b, i18n("分")) + "）"]);
   $("#lgRows").innerHTML = lv.map(x =>
     `<span><i class="chipc" style="background:${bandColor(mode, x[0])}"></i>${x[1]}</span>`).join("");
+  /* 云量四档行（2026-10-18）：与主色阶同一套"分档色块"语言，读云的轻重。
+     色块 alpha 用与图面相同的方式叠在白底上（TX_RGB 按档 alpha 混白），
+     保证图例色块与图面观感一致；"晴"档画成空心描边 —— 图上没有云纹处即晴。 */
+  $("#lgTx").innerHTML = i18n("云量") +
+    TX_BAND_A.map((a, b) => {
+      const lo = b * TX_BAND_HI, hi = (b + 1) * TX_BAND_HI;
+      const mix = TX_RGB.map(c => Math.round(c * a + 255 * (1 - a)));
+      const sw = a === 0
+        ? `<i class="chipc" style="background:transparent;border:1.5px dashed rgba(${TX_RGB.join(",")},.45)"></i>`
+        : `<i class="chipc" style="background:rgb(${mix.join(",")})"></i>`;
+      return `<span>${sw}${i18n(TX_BAND_NAMES[b])} ${lo}–${hi}%</span>`;
+    }).join("");
   /* 色阶与算法模型无关（天色色阶：蓝灰＝低、橙红＝高），变的是各模型的数值本身；
      所以图例只需把"当前用的是哪套模型、用的是它的哪个维度"说清楚。 */
   const modelLine = dim === "dv"
@@ -3697,7 +3593,7 @@ function updateLegend(mode, mk) {
     radius: MAP_RADIUS_KM, mask: MASK_KEEP_KM
   });
   $("#lgNote").innerHTML = modelLine +
-    i18n("统一色阶：<b>天色色阶</b>（蓝灰＝天色已暗 → 灰 → 金 → 橙红＝霞光最浓），与首屏那条天色带同一套语汇。色面按 <b>{bands} 档分级填色</b>（同一档内同色），档与档之间描一条<b>等值线</b>把等级边界显式画出来 —— 低端几档颜色本来就接近，只有颜色变化时远看仍是一团，有一条线才数得清跨了几级。<b>固定 0–100 绝对刻度：颜色含义不随当天的数值范围拉伸</b>，今天和昨天、这里和那里可以直接比，图例刻度就是真实分数。{scale}朝霞 / 晚霞、各算法模型、各着色维度共用同一条色阶、同一套分档。<br>当前着色依据：<b>{dim}</b>。{mixRule}<br>局部网格约 <b>{pts} 个采样点</b>、间距 {grid} km。<br>颜色不是唯一的编码，五个勾选项：<b>数值直标</b>标出数值最高的一批网格点 · <b>采样点</b>画出全部采样点并标出查询点 · <b>云纹</b>按低中云遮挡量铺一层极淡的深云影（云量过半处描一道边） · <b>可信度</b>给外推区铺一层灰纱 · <b>经纬网</b>开关底层那张 {gdeg}° 坐标网。地图的深浅色跟随设置的浅色 / 深色主题，不单独设开关。<br>那张 <b>{gdeg}° 经纬网</b>（细灰线，标了度数与 N/E）是地图坐标参照、与色面无关：等值线告诉你“值跨了一级”，经纬网告诉你“这里是哪”。<br><b>虚线多边形＝数据范围边界</b>（{pts} 个采样点的凸包）：线内是<b>插值</b>，线外到色面淡出处（约 {out} km）是<b>外推</b>、越往外越不可信。颜色再浅，只要在虚线以内就代表<b>“这里算过、就是这个值”</b>，而不是空白。<br><b>悬停</b>查看该处数值与数据可信度；<b>点击地图、或下方榜单的任意一行</b>，都可以该处发起单点精细查询（含 400 km 样带与光追模型）。", {
+    i18n("统一色阶：<b>天色色阶</b>（蓝灰＝天色已暗 → 灰 → 金 → 橙红＝霞光最浓），与首屏那条天色带同一套语汇。色面按 <b>{bands} 档分级填色</b>（同一档内同色），档与档之间描一条<b>等值线</b>把等级边界显式画出来 —— 低端几档颜色本来就接近，只有颜色变化时远看仍是一团，有一条线才数得清跨了几级。<b>固定 0–100 绝对刻度：颜色含义不随当天的数值范围拉伸</b>，今天和昨天、这里和那里可以直接比，图例刻度就是真实分数。{scale}朝霞 / 晚霞、各算法模型、各着色维度共用同一条色阶、同一套分档。<br>当前着色依据：<b>{dim}</b>。{mixRule}<br>局部网格约 <b>{pts} 个采样点</b>、间距 {grid} km。<br>颜色不是唯一的编码，四个勾选项：<b>数值直标</b>标出数值最高的一批网格点 · <b>采样点</b>画出全部采样点并标出查询点 · <b>云纹</b>按云量分四档铺灰蓝底（晴 0–25 / 少云 25–50 / 多云 50–75 / 阴 75–100，图例有对应色块） · <b>经纬网</b>开关底层那张 {gdeg}° 坐标网。地图的深浅色跟随设置的浅色 / 深色主题，不单独设开关。<br>那张 <b>{gdeg}° 经纬网</b>（细灰线，标了度数与 N/E）是地图坐标参照、与色面无关：等值线告诉你“值跨了一级”，经纬网告诉你“这里是哪”。<br><b>虚线多边形＝数据范围边界</b>（{pts} 个采样点的凸包）：线内是<b>插值</b>，线外到色面淡出处（约 {out} km）是<b>外推</b>、越往外越不可信。颜色再浅，只要在虚线以内就代表<b>“这里算过、就是这个值”</b>，而不是空白。<br><b>悬停</b>查看该处数值与数据可信度；<b>点击地图、或下方榜单的任意一行</b>，都可以该处发起单点精细查询（含 400 km 样带与光追模型）。", {
       bands: N_BANDS, dim: dimTxt, radius: MAP_RADIUS_KM, pts: mapPts().length, grid: MAP_GRID_KM,
       mask: MASK_KEEP_KM, gdeg: GRAT_DEG, out: FIELD_OUT_KM,
       scale: i18n(dim === "dv" ? "颜色越靠红代表<b>三套模型之间分歧越大</b>（越不确定）。" : "颜色越靠红代表概率越高、质量越好。"),
@@ -3707,7 +3603,7 @@ function updateLegend(mode, mk) {
      实测它单独占 480 px（整张地图卡片 1713 px）。 */
   $("#lgMore").innerHTML =
     (dim === "dv" ? i18n("某点只有一套模型有结果时 ΔI 无意义，该点不上色；<b>EC 取数失败时不是“分歧为 0”</b>，而是大面积不上色 —— 这是在提示“少了一套模型”。<br>") : "") +
-    i18n("怎么读这张图：<b>色面</b>由 {pts} 个采样点反距离加权插值而成，按 {bands} 档着色，同一档内处处同色；<b>等值线</b>正好压在每条档界上，数线就能数清跨了几级；<b>色面外沿</b>带一层低频噪声渐隐入地图，越淡＝越接近外推的尽头（数据范围仍以虚线多边形为准）；<b>云纹</b>是低云与中云的合成遮挡，越深＝天上越可能挡住霞光（高云不挡光，不入画）；<b>小圆点</b>是采样点，整张图的颜色由它们插值而来；勾选<b>「可信度」</b>后的<b>灰纱</b>铺在虚线以外、色面淡出之前，那一圈已经属于外推。<br>色阶是<b>固定 0–100 绝对刻度</b>，切成 {bands} 档 —— 所以要看清“哪一块和哪一块是一档”，看的是<b>区域</b>而不是色深。颜色含义永久固定：85 分永远是同一个橙，不管其它地方是 20 分还是 90 分。<br>天色色阶的最低端是“天色已暗”的蓝灰，与浅色底图对比充分。<br>地图上只有<b>数值高低</b>这一种颜色含义，与结论卡片里按等级着色的徽章（优绿 / 差红）是两套独立配色，请勿混看。降级渲染（按省着色）时，<b>灰色省区＝该省所有城市都没有可用数据</b>，与“数值很低（蓝灰）”是两回事。<br>每个网格点取一次模式数据，其朝/晚霞方向 0–400 km 的云况由网格反距离加权插值推求（样带几何与单点一致，但取值非逐点精细样带）。单点精细结果请使用上方查询。<br><b>换一个查询地点会重新采样、重新取数</b>（挪动不超过 {keep} km 时沿用现有网格，不重复取数）；范围外的区域不参与计算，所以图上不会出现本范围之外的颜色。<br>色面按地理范围贴合底图，<b>颜色只由数值决定、与缩放级别无关</b>：放大只是看局部，不会丢失颜色。<br>勾选<b>「数值直标」</b>会在图上标出数值最高的一批网格点（随缩放级别 8–48 个，越小比例尺标得越少以免互相压盖）；勾选<b>「采样点」</b>会画出全部 {pts} 个采样点，并标出<b>查询点</b>（挪动不超过 {keep} km 而沿用旧网格时，值场中心会与查询点错开，错开超过 5 km 会额外标出<b>值场中心</b>）；勾选<b>「云纹」</b>会按低中云合成遮挡量铺一层很淡的深云影（峰值 α≤0.18）：它同样只画在叠加层上，且只出现在色面真的有像素的地方，<b>不改变色面本身的像素</b> —— “图上颜色 → 数值”的对应关系不受影响。<br>勾选<b>「可信度」</b>会在<b>虚线以外、色面淡出之前</b>的那一圈铺一层灰纱：那里已经在<b>外推</b>（不只在采样点的包围范围内），越靠边越不可信。纱只画在叠加层上，<b>不改变色面本身的像素</b>，所以“图上颜色 → 数值”的对应关系不受影响。悬停时给的“可信度”是另一个量 —— <b>该处离最近采样点有多远</b>（包内实测最远 85 km）。", {
+    i18n("怎么读这张图：<b>色面</b>由 {pts} 个采样点反距离加权插值而成，按 {bands} 档着色，同一档内处处同色；<b>等值线</b>正好压在每条档界上，数线就能数清跨了几级；<b>色面外沿</b>带一层低频噪声渐隐入地图，越淡＝越接近外推的尽头（数据范围仍以虚线多边形为准）；<b>云纹</b>是低云与中云的合成遮挡，越深＝天上越可能挡住霞光（高云不挡光，不入画）；<b>小圆点</b>是采样点，整张图的颜色由它们插值而来；勾选<b>「可信度」</b>后的<b>灰纱</b>铺在虚线以外、色面淡出之前，那一圈已经属于外推。<br>色阶是<b>固定 0–100 绝对刻度</b>，切成 {bands} 档 —— 所以要看清“哪一块和哪一块是一档”，看的是<b>区域</b>而不是色深。颜色含义永久固定：85 分永远是同一个橙，不管其它地方是 20 分还是 90 分。<br>天色色阶的最低端是“天色已暗”的蓝灰，与浅色底图对比充分。<br>地图上只有<b>数值高低</b>这一种颜色含义，与结论卡片里按等级着色的徽章（优绿 / 差红）是两套独立配色，请勿混看。降级渲染（按省着色）时，<b>灰色省区＝该省所有城市都没有可用数据</b>，与“数值很低（蓝灰）”是两回事。<br>每个网格点取一次模式数据，其朝/晚霞方向 0–400 km 的云况由网格反距离加权插值推求（样带几何与单点一致，但取值非逐点精细样带）。单点精细结果请使用上方查询。<br><b>换一个查询地点会重新采样、重新取数</b>（挪动不超过 {keep} km 时沿用现有网格，不重复取数）；范围外的区域不参与计算，所以图上不会出现本范围之外的颜色。<br>色面按地理范围贴合底图，<b>颜色只由数值决定、与缩放级别无关</b>：放大只是看局部，不会丢失颜色。<br>勾选<b>「数值直标」</b>会在图上标出数值最高的一批网格点（随缩放级别 8–48 个，越小比例尺标得越少以免互相压盖）；勾选<b>「采样点」</b>会画出全部 {pts} 个采样点，并标出<b>查询点</b>（挪动不超过 {keep} km 而沿用旧网格时，值场中心会与查询点错开，错开超过 5 km 会额外标出<b>值场中心</b>）；勾选<b>「云纹」</b>会把云量分成四档（晴 0–25 / 少云 25–50 / 多云 50–75 / 阴 75–100）铺灰蓝底，档位越深云越厚：它同样只画在叠加层上，且只出现在色面真的有像素的地方，<b>不改变色面本身的像素</b> —— “图上颜色 → 数值”的对应关系不受影响。悬停时给的“可信度”是另一个量 —— <b>该处离最近采样点有多远</b>（包内实测最远 85 km）。", {
       bands: N_BANDS,
       pts: mapPts().length, keep: MAP_KEEP_KM
     }) +
@@ -3718,7 +3614,7 @@ function updateLegend(mode, mk) {
 /* 数据可信度分级（B12）：入参是"到最近采样点的距离 km"。
    同一张色面上，采样点附近与外圈的颜色看起来一样"确定"，但后者是 IDW 外推出来的。
    这里把这份不确定性显式写出来。
-   注：只做文字（+ 一层独立的灰纱，见 buildConfStrips），**不改色面的像素** ——
+   注：只做文字，**不改色面的像素** ——
    色面的透明度若随可信度变化，"像素颜色→数值"就不再是单值映射，
    zoomprobe 的像素级断言会失去意义。
    这里是**逐点的距离读数**，与"纱铺在哪"用的是**两个不同的量**：

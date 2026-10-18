@@ -698,17 +698,17 @@ button.sm{padding:5px 10px;font-size:12px;font-weight:600;border-radius:7px}
 /* 霞光值场覆盖层：自绘栅格，按地理范围贴合底图（与缩放级别无关）。
    分「纬度条带」逐条定位，用来抵消墨卡托投影纵向的非线性拉伸。 */
 /* 图层顺序（全部在 .mapwrap 的层叠上下文里，不依赖 DOM 顺序）：
-   0 底图压暗 → 1 色面 → 2 云纹 → 3 等值线 + 经纬网 → 4 可信度纱 → 5 事件方位·距离环
-   → 6 数值直标 → 7 图钉 → 8 加载遮罩 → 20 提示卡。
+   0 底图压暗 → 1 色面 → 2 云纹 → 3 等值线 + 经纬网 → 5 事件方位·距离环
+   → 6 数值直标 → 7 图钉 → 8 加载遮罩 → 20 提示卡。（原 4 可信度纱层 2026-10-18 起删除，
+   层号不回收 —— 回收会让"层号=史"的注释全错一次。）
    「深色底图」开关（第 8 批）**不改层号**：它给 #map 和全部叠加层套同一个
    invert(1) hue-rotate(180deg)，两次翻转互相抵消 ⇒ 色面像素一个都不变（见 .mapwrap.dark）。
    色面层此前是 z-index:auto、数值直标是 6，而加载遮罩是 5 —— 于是"加载中"的遮罩
    压在色面之上、却被数值直标压在下面，是个说不过去的次序；一并归位。
    M1 又插进"方位环"这一层（它要压在色面之上、数值直标之下），而 3 已被占用，
    所以 4/5/6 整体后移一位。
-   第 9 批再插进"等值线 + 经纬网"（`.clayer`），它要压在色面之上、可信度纱之下 ——
-   纱盖住的恰是"外推"区，那里的等值线本就该被压淡，所以让纱压在线之上。
-   于是 3/4/5/6 再整体后移一位。
+   第 9 批再插进"等值线 + 经纬网"（`.clayer`），压在色面之上（当时纱之下；
+   纱层删除后此句只剩历史意义）。于是 3/4/5/6 再整体后移一位。
    S1 再插进"云量淡纹"（`.txlayer`）：它要压在色面之上、等值线之下 —— 云是
    **天上的东西**，该在"读值的线"下面，且与色面的关系比线与纱更近（同源于同一批
    采样点的插值）。于是 2 起整体后移一位。**改这张表就要同步**：它是全项目图层号的唯一来源。 */
@@ -745,10 +745,8 @@ button.sm{padding:5px 10px;font-size:12px;font-weight:600;border-radius:7px}
    单独留在那儿会被当成当前结果。这里只用 opacity，不用 filter ——
    .mapwrap.dark 已经把 invert 挂在同一个元素上，再加一条 filter 会把它顶掉。 */
 .clayer.stale{opacity:.4}
-/* 可信度纱：独立画布，像素与色面完全分离（见 buildConfStrips 的两条硬约束） */
-.conflayer{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden;pointer-events:none;display:none;z-index:4}
-.conflayer.on{display:block}
-.conflayer canvas{position:absolute;left:0;top:0;transform-origin:0 0;display:block}
+/* 可信度纱层已删除（2026-10-18 用户决策）——外推区改由范围虚线 + 悬停卡文字表达。
+   等值线/经纬网层： */
 /* M1 · 事件方位线 + 距离环：这套模型的核心几何就是"沿日出/日落方位量到 400 km"，
    而图面上此前没有任何方向或距离参照 —— 提示卡写着"云边界 425 km"却不说是往哪边量的，
    而"西边 300 km 那片云会挡光"与"东边 300 km 完全无关"是两回事。
@@ -1167,7 +1165,6 @@ body.snapmode [data-snaphide]{display:none}
 .mapwrap.dark .rlayer,
 .mapwrap.dark .txlayer,
 .mapwrap.dark .clayer,
-.mapwrap.dark .conflayer,
 .mapwrap.dark .azilayer,
 .mapwrap.dark .mlayer,
 .mapwrap.dark .pinlayer{filter:invert(1) hue-rotate(180deg)}
@@ -1457,7 +1454,6 @@ body.snapmode [data-snaphide]{display:none}
               <label class="chk"><input type="checkbox" id="numLabels"> <span data-i18n="数值直标">数值直标</span></label>
               <label class="chk"><input type="checkbox" id="showPts" checked> <span data-i18n="采样点">采样点</span></label>
               <label class="chk"><input type="checkbox" id="showTx" checked> <span data-i18n="云纹">云纹</span></label>
-              <label class="chk"><input type="checkbox" id="showConf"> <span data-i18n="可信度">可信度</span></label>
               <label class="chk"><input type="checkbox" id="showGrid" checked> <span data-i18n="经纬网">经纬网</span></label>
             </div>
           </div>
@@ -1474,6 +1470,9 @@ body.snapmode [data-snaphide]{display:none}
           <div class="bar2" id="lgBar"></div>
           <div class="ticks"><span>0</span><span>20</span><span>40</span><span>60</span><span>80</span><span>100</span></div>
           <div class="lgm-rows" id="lgRows"></div>
+          <!-- 云量四档色块行（2026-10-18）：与主色阶同一套"分档色块"语言。
+               空档（晴）的色块画成描边空心 —— 图上"没有云纹"就是晴，得有个锚。 -->
+          <div class="lgm-rows" id="lgTx"></div>
           <!-- 第五轮 UI：掩膜说明**常驻可见**（不折进下面的 details）。
                它存在的原因是一条硬约束：被裁掉的那一片，用户看到的只是"什么都没有"，
                与"没有数据"完全无法区分（mapaudit G 段守着这句话必须在场）。

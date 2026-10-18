@@ -109,7 +109,7 @@ const PREF_KEY = "sunsetbot.pref.v1";
    而不在别处 —— 它就是一个普通的显示偏好。
    【2026-10-18】`dimBase`（深色底图）已移出：地图深浅改为跟随全局主题
    （`isDarkTheme()`，见 _p6.js 的 applyMapDark）—— 一个页面不该有两套"深浅"。 */
-const PREF_BOOL = ["numLabels", "showPts", "showTx", "showConf", "showGrid", "hour12", "calibOff"];
+const PREF_BOOL = ["numLabels", "showPts", "showTx", "showGrid", "hour12", "calibOff"];   // showConf 2026-10-18 起随灰纱层一并移除
 /* 第五轮 UI · 折叠态白名单。与 PREF_BOOL 同性质（布尔、只影响显示），
    单独列一份是因为 applyPrefs 里对它们的铺法不同（见 FOLD_KEYS 与 applyFolds）——
    特别是**不能**走下面那个 `$("#"+k).checked` 的通用循环：
@@ -853,9 +853,7 @@ function initUI() {
   /* 云量淡纹（S1）：只切换叠加层的显隐，色面像素一个也不动 */
   const stx = $("#showTx");
   if (stx) stx.addEventListener("change", () => { refreshTx(); prefWrite({ showTx: stx.checked }); });
-  /* 可信度纱：只切换叠加层的显隐，色面像素一个也不动 */
-  const sconf = $("#showConf");
-  if (sconf) sconf.addEventListener("change", () => { refreshConf(); prefWrite({ showConf: sconf.checked }); });
+  /* 可信度纱层已删除（2026-10-18，用户决策）：结论卡徽标与悬停卡保留 */
   /* 经纬网开关（C1）：只切这一层里那张 SVG 的显隐，**不动等值线**（两者共用 .clayer）。
      走 setGratUser 这个唯一入口 —— 它负责把"用户偏好"与"网画出来了没"两位分开。 */
   const sgrid = $("#showGrid");

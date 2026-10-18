@@ -1034,7 +1034,7 @@ console.log = function (...a) {
   await cdp.send("Runtime.evaluate", { expression: `(function(){renderDrill(null);return 1;})()`, returnByValue: true });
 
   /* =========================================================================
-     第二批：分歧维度 / 图层叠加（图钉 · 可信度纱 · 底图压暗 · 缓存标记）
+     第二批：分歧维度 / 图层叠加（图钉 · 底图压暗 · 缓存标记）
      -------------------------------------------------------------------------
      放在 B1 之前 —— B1 会把 #map 清空并留下兜底文案。
      ========================================================================= */
@@ -1043,7 +1043,7 @@ console.log = function (...a) {
       const sleep=ms=>new Promise(r=>setTimeout(r,ms));
       const out={};
       const d=mapSet();
-      /* 色面指纹：只读 .rlayer 的画布像素 —— 可信度纱是**另一层**画布，
+      /* 色面指纹：只读 .rlayer 的画布像素 —— 叠加层都是**独立的**画布，
          如果它偷偷改动了色面，这个指纹就会变，断言即失败。 */
       const fp=()=>{ try{
         const cvs=[...document.querySelectorAll('.rlayer canvas')];
@@ -1105,42 +1105,6 @@ console.log = function (...a) {
       await sleep(150);
       out.pinAfterOff = pin.querySelectorAll('.pin.s').length;
 
-      /* ---- ④ 可信度纱：独立画布，色面像素一个都不能变 ---- */
-      const fpBefore = fp();
-      const sconf=document.querySelector('#showConf'), conf=document.querySelector('#mapConf');
-      out.confCanvas = conf ? conf.querySelectorAll('canvas').length : -1;
-      out.confOnBefore = conf ? conf.classList.contains('on') : null;
-      sconf.checked=true; sconf.dispatchEvent(new Event('change'));
-      await sleep(300);
-      out.confOn = conf ? conf.classList.contains('on') : null;
-      out.fpSame = fp() === fpBefore;
-      /* 纱的覆盖范围必须与几何完全一致：非透明格子数 = 「色面有像素 且 在凸包之外」的格子数。
-         判据与 buildConfStrips 同源（凸包，不是"距最近采样点 > FIELD_FULL"）：
-         凸包改造之后淡出边界挪到了凸包上，纱必须跟着走，否则两者对不齐
-         （见 _p6.js buildConfStrips 顶上那段实测）。 */
-      const fd = MapMod.field;
-      let want=0;
-      const gg=GEOM_CACHE.geom, hud=gg&&gg.hud, HH=hud?hud.edges:null;
-      if (fd && HH) for(let r=0;r<fd.rows;r++){
-        const Y=((fd.laN - r*fd.dLa) - hud.olat) * 110.574;
-        for(let c=0;c<fd.cols;c++){
-          const o=r*fd.cols+c;
-          if(fd.img[o*4+3]===0) continue;
-          const X=(fd.loW + c*fd.dLo - hud.olon) * hud.kx;
-          let sd=-1e9;
-          for(let k=0;k<HH.length;k+=3){
-            const d=HH[k]*X+HH[k+1]*Y+HH[k+2];
-            if(d>sd) sd=d;
-          }
-          if(sd>0) want++;
-        }
-      }
-      let got=0;
-      if (conf) for(const c of conf.querySelectorAll('canvas')){
-        const g=c.getContext('2d'); const dd=g.getImageData(0,0,c.width,c.height).data;
-        for(let i=3;i<dd.length;i+=4) if(dd[i]>0) got++;
-      }
-      out.veilWant=want; out.veilGot=got;
 
       /* ---- ⑤ 底图压暗：必须在色面层之前（DOM 顺序 + z-index 双保险）----
          2026-10-18 起深色底图不再是独立开关，由全局主题驱动（见 _p6.js 的
@@ -1177,14 +1141,12 @@ console.log = function (...a) {
     && B2.pinLayer === true && B2.pinQuery === 1
     && B2.pinSamples === B2.pinGrid && B2.pinGrid === 57 && B2.pinAfterOff === 0
     && B2.pinMoved === true && B2.pinSameNode === true
-    && B2.confCanvas > 0 && B2.confOnBefore === false && B2.confOn === true && B2.fpSame === true
-    && B2.veilWant > 0 && B2.veilWant === B2.veilGot
     && B2.dimExists === true && B2.dimBefore === true
     && Number(B2.dimZ) < Number(B2.rlZ)
     && B2.dimPxLight === "0" && B2.darkByDefault === false
     && B2.baseKept === true && B2.selValueOk === true && B2.optCount === 18
     && B2.readyCount >= 1;
-  console.log("\n=== 第二批 · 分歧维度 / 图钉 / 可信度纱 / 底图压暗 / 缓存标记 ===");
+  console.log("\n=== 第二批 · 分歧维度 / 图钉 / 底图压暗 / 缓存标记 ===");
   console.log("  分歧纯函数: 极差=" + B2.dv1 + " 缺一模型=" + B2.dv2 + " 仅一套=" + B2.dv3
     + " 无数据=" + B2.dv4 + " 完全一致=" + B2.dv5);
   console.log("  分歧维度: 与所选模型无关=" + B2.dvIndep + " 与综合指数不同值=" + B2.dvDiffers
@@ -1194,13 +1156,11 @@ console.log = function (...a) {
   console.log("  图例等级行: " + JSON.stringify(B2.lgRows));
   console.log("  图钉: 层=" + B2.pinLayer + " 查询点=" + B2.pinQuery + " 采样点=" + B2.pinSamples + "/" + B2.pinGrid
     + " 关闭后=" + B2.pinAfterOff + " 移动后重定位=" + B2.pinMoved + " 节点复用=" + B2.pinSameNode);
-  console.log("  可信度纱: 画布=" + B2.confCanvas + " 开启前=" + B2.confOnBefore + " 开启后=" + B2.confOn
-    + " 色面指纹不变=" + B2.fpSame + " 覆盖格 " + B2.veilGot + " 期望 " + B2.veilWant);
   console.log("  底图压暗: z " + B2.dimZ + " < 色面 " + B2.rlZ + " · 在色面之前=" + B2.dimBefore
     + " · 浅色主题下 opacity " + B2.dimPxLight + " · 默认深色态=" + B2.darkByDefault + "（须 false）");
   console.log("  缓存标记: " + JSON.stringify(B2.marked) + " · 选项数=" + B2.optCount
     + " · value 未受影响=" + B2.selValueOk + " · 基础文案保留=" + B2.baseKept);
-  console.log("  " + (b2ok ? "PASS 第二批五项全部就位（分歧维度 / 图钉 / 可信度纱 / 底图压暗 / 缓存标记）"
+  console.log("  " + (b2ok ? "PASS 第二批四项全部就位（分歧维度 / 图钉 / 底图压暗 / 缓存标记）"
     : "FAIL 第二批存在未通过的项"));
 
 

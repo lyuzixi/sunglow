@@ -387,12 +387,10 @@ let reqN = 0;            // 请求计数（只数 open-meteo）
       labels: labels,
       mapPeriod: g('mapPeriod'), mapDateSel: g('mapDateSel'), mapModel: g('mapModel'),
       mapDim: g('mapDim'), mapGo: g('mapGo'),
-      numLabels: g('numLabels'), showPts: g('showPts'), showConf: g('showConf'),
+      numLabels: g('numLabels'), showPts: g('showPts'),
       showGrid: g('showGrid'),
-      /* S1 云纹（第六个复选框）：不补这一读法，"显示层组有几个勾选"
-         就永远停留在五个 —— 新增控件静默漏守正是这条断言要防的。
-         【2026-10-18】深色底图改为跟随全局主题，#dimBase 与它的读法一并删除 ——
-         显示层从六个复选框回到五个；若日后再加图层，改的是这个数字。 */
+      /* 【2026-10-18】深色底图并入主题、可信度纱层删除 —— 显示层现为四个复选框；
+         若日后再加图层，改的是这个数字与断言里的数量。 */
       showTx: g('showTx')
     };
   })()`);
@@ -400,7 +398,7 @@ let reqN = 0;            // 请求计数（只数 open-meteo）
   console.log("  标签=" + JSON.stringify(B.labels));
   console.log("  数据源组：时段=" + B.mapPeriod + " 日期=" + B.mapDateSel + " 模型=" + B.mapModel
     + " 着色=" + B.mapDim + " 刷新=" + B.mapGo);
-  console.log("  显示层组：直标=" + B.numLabels + " 采样点=" + B.showPts + " 云纹=" + B.showTx + " 可信度=" + B.showConf
+  console.log("  显示层组：直标=" + B.numLabels + " 采样点=" + B.showPts + " 云纹=" + B.showTx
     + " 经纬网=" + B.showGrid);
 
   /* ---------- C. 四处默认收起 + 分层结构 ---------- */
@@ -767,11 +765,10 @@ let reqN = 0;            // 请求计数（只数 open-meteo）
       A.ids === true,
     "工具条两组标签齐全（数据源 → 显示层）":
       B.labels.join(",") === "数据源,显示层",
-    "取数控件在「数据源」组、五个图层复选框在「显示层」组":
+    "取数控件在「数据源」组、四个图层复选框在「显示层」组":
       B.mapPeriod === "数据源" && B.mapDateSel === "数据源" && B.mapModel === "数据源"
       && B.mapDim === "数据源" && B.mapGo === "数据源"
       && B.numLabels === "显示层" && B.showPts === "显示层" && B.showTx === "显示层"
-      && B.showConf === "显示层"
       && B.showGrid === "显示层",
     "光追/数据质量卡默认折叠（folded + aria-expanded=false + 文案=展开）":
       C.rayFolded === true && C.notesFolded === true

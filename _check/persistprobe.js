@@ -262,7 +262,7 @@ let bulkN = 0;           // 其中"坐标数 ≥ 20"的（趋势 34 / 地图 57�
   const C = await ev(`(function(){
     const g = id => { const e = document.getElementById(id); return e ? e.checked : null; };
     return { numLabels: g('numLabels'), showTx: g('showTx'), showGrid: g('showGrid'),
-      showPts: g('showPts'), showConf: g('showConf'),
+      showPts: g('showPts'),
       units: State.units, h12: State.hour12, dim: State.mapDim, model: State.mapModel,
       unitOn: document.querySelector('#unitSeg button.on').dataset.u,
       clockOn: document.querySelector('#clockSeg button.on').dataset.c,
