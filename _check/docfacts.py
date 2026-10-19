@@ -217,6 +217,11 @@ DECL = [
      [("README.md", r"`snapprobe\.js`[^\n]*?\*\*(\d+) 条", [1])]),
     ("probe.calibprobe", "`calibprobe` 断言条数",
      [("README.md", r"`calibprobe\.js`[^\n]*?\*\*(\d+) 条", [1])]),
+    # 教程页独立于构建链，主页那套探针盖不到它 —— 它的条数同样要有机器守着，
+    # 否则"文档说 34 条"会随着探针增删慢慢变成谎话。
+    ("probe.tutorialprobe", "`tutorialprobe` 断言条数",
+     [("README.md", r"`tutorialprobe\.js`[^\n]*?\*\*(\d+) 条", [1]),
+      ("README.md", r"由 `tutorialprobe\.js` 的\n?  (\d+) 条断言", [1])]),
 
     # ---- 一键序列规模 ----
     ("suite.size", "`all.py` 序列项数",
@@ -260,6 +265,7 @@ def build_truth(pf):
     t["probe.a11yprobe"] = _probe(pf, "a11yprobe")
     t["probe.snapprobe"] = _probe(pf, "snapprobe")
     t["probe.calibprobe"] = _probe(pf, "calibprobe")
+    t["probe.tutorialprobe"] = _probe(pf, "tutorialprobe")
     t["suite.size"] = suite_size()
     return t
 

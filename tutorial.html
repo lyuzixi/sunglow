@@ -1,390 +1,625 @@
 <!doctype html>
-<html lang="zh-CN" data-theme="dark">
+<html lang="zh-CN" data-theme="light" data-theme-pref="auto">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>霞光预报 · 使用教程</title>
-<meta name="description" content="霞光预报（朝霞 / 晚霞火烧云概率与质量预报）的使用教程：用户上手指南、开发者工程说明、创作者演示素材，三档合一。">
+<meta name="description" content="霞光预报（朝霞 / 晚霞火烧云概率与质量预报）的使用教程：四档合一 —— 概览、用户版、开发者版、创作者版。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f6f7f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#11151c" media="(prefers-color-scheme: dark)">
+<!-- 主题引导：与主页同一段逻辑、同一个偏好键。必须在 CSS 之前跑完，
+     否则刷新时会先闪一帧浅色（FOUC）。
+     教程与主程序**共用** sunsetbot.pref.v1：在主页选的语言/主题，进教程就是那个；
+     在教程里改，回主页也是那个。写回时只补 lang / theme 两个字段、
+     其余字段原样保留（见文件末尾 prefPatch）。 -->
+<script>
+(function () {
+  var root = document.documentElement, pref = "auto";
+  try {
+    var raw = localStorage.getItem("sunsetbot.pref.v1");
+    var p = raw ? JSON.parse(raw) : null;
+    if (p && (p.theme === "dark" || p.theme === "light" || p.theme === "auto")) pref = p.theme;
+  } catch (e) { /* 隐私模式 / 坏 JSON：按跟随系统处理，不抛错 */ }
+  root.setAttribute("data-theme-pref", pref);
+  var dark = pref === "dark" ||
+    (pref === "auto" && !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches));
+  var eff = dark ? "dark" : "light";
+  root.setAttribute("data-theme", eff);
+  root.style.colorScheme = eff;
+})();
+</script>
+<!-- 图标与主页同一枚（细环 + 落到地平线上的日轮）。教程是独立文件、不引外部图片，
+     所以内联成 data-URI；# 必须写成 %23，否则浏览器把后面当 URL 片段丢掉。 -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23ffcf6b'/%3E%3Cstop offset='.55' stop-color='%23f4791f'/%3E%3Cstop offset='1' stop-color='%23a8200d'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' fill='url(%23g)'/%3E%3Cpath d='M22 40A18 18 0 0 1 58 40z' fill='%23fff2cc'/%3E%3C/svg%3E">
 <style>
-  :root{
-    --ink:#0B1020; --ink-2:#141B2E; --ink-3:#1E2840;
-    --line:rgba(180,200,255,.12); --line-2:rgba(180,200,255,.20);
-    --text:#E8ECF5; --muted:#9AA7C2; --faint:#6B7894;
-    --glow-1:#FFB36B; --glow-2:#FF7A59; --glow-3:#FFD9A0;
-    --cool:#7FA8D9; --ok:#7FD6A0;
-    --font-display:'Georgia','Songti SC','Noto Serif SC','Source Han Serif SC',serif;
-    --font-body:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif;
-    --font-mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
-    --maxw:1080px;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0}
-  body{
-    background:var(--ink);
-    color:var(--text);
-    font-family:var(--font-body);
-    line-height:1.7;
-    -webkit-font-smoothing:antialiased;
-    font-size:16px;
-  }
-  a{color:var(--glow-1);text-decoration:none}
-  a:hover{text-decoration:underline}
-  ::selection{background:rgba(255,122,89,.30)}
-  :focus-visible{outline:2px solid var(--glow-1);outline-offset:2px;border-radius:2px}
+/* =========================================================================
+   教程页样式 · 与主页同一套「纸面仪器」令牌（2026-10-19）
+   -------------------------------------------------------------------------
+   三条纪律照抄主页，改配色前先读：
+   ① 纸面是**冷中性**，不是奶油色；暖色只属于"光"（天色带、色阶、强调数字）。
+   ② 层级靠排版与发丝线，不靠阴影。卡片只有两类：有面的 .card 与透明的 .card.q。
+   ③ 对比度按主页同一组值：--tx3 / --acc2 不是随手挑的。
 
-  /* ---------- top bar ---------- */
-  .topbar{
-    position:sticky;top:0;z-index:50;
-    background:rgba(11,16,32,.82);
-    backdrop-filter:saturate(160%) blur(10px);
-    border-bottom:1px solid var(--line);
-  }
-  .topbar-inner{
-    max-width:var(--maxw);margin:0 auto;padding:14px 22px;
-    display:flex;align-items:center;gap:20px;flex-wrap:wrap;
-  }
-  .brand{display:flex;align-items:center;gap:11px;font-family:var(--font-display);font-size:19px;letter-spacing:.3px;color:var(--text)}
-  .brand .dot{width:13px;height:13px;border-radius:50%;
-    background:radial-gradient(circle at 35% 30%,var(--glow-3),var(--glow-2) 70%,#b8432e);
-    box-shadow:0 0 14px rgba(255,122,89,.55)}
-  .nav{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
-  .nav button{
-    font-family:var(--font-body);font-size:14.5px;color:var(--muted);
-    background:transparent;border:0;padding:8px 13px;border-radius:7px;cursor:pointer;
-    transition:color .15s,background .15s;
-  }
-  .nav button:hover{color:var(--text);background:var(--ink-2)}
-  .nav button.is-active{color:var(--ink);background:linear-gradient(180deg,var(--glow-3),var(--glow-1));font-weight:600}
-  .nav button:focus-visible{outline-offset:3px}
+   教程与主页唯一的"越界"是**开篇那块深色**（用户拍板保留暮色光带）：
+   它是一块"天"，不是一块"面板" —— 所以在浅色主题下也保持深色，
+   令牌走 --hero-* 三件套，不跟 data-theme 变；深色主题下压得更深一档，
+   靠底部一条发丝线与纸面分开。
+   ========================================================================= */
+:root{
+  --bg:#f6f7f8; --card:#ffffff; --line:#e6e7ea; --line2:#eef0f2;
+  --tx:#15181d; --tx2:#4f535a; --tx3:#696d75;
+  --ok:#0f7a45; --okbg:#e9f7ef;
+  --warn:#9c5a09; --warnbg:#fdf3e3; --warnbd:#f2ddba;
+  --bad:#c0392b;
+  --acc:#e2601f; --acc2:#bd4a17; --accbg:#fff3ec; --accbd:#ffd9c2;
+  --panel:#f1f2f4; --hover:#f4f5f7; --soft:#fafbfc; --tint:#fff8f2;
+  --solid:#15181d; --solidtx:#ffffff;
+  --r:16px; --r2:9px;
+  --sh:0 1px 2px rgba(16,24,40,.03);
+  --sh-pop:0 18px 44px -20px rgba(16,24,40,.26), 0 1px 0 rgba(16,24,40,.04);
+  /* 天色带：固定的曙暮光序列（按太阳高度角分段），只给 hero 与图例用 */
+  --dusk-day:#dde5ee; --dusk-civil:#f0c48c; --dusk-nautical:#d9784a;
+  --dusk-astro:#7a759f; --dusk-night:#2b3450;
+  /* 开篇的"那块天"：两套主题都深，只差在深色主题下更沉一档 */
+  --hero-bg:#0b1020; --hero-tx:#eef1f7; --hero-tx2:#a9b4c9; --hero-line:rgba(255,255,255,.10);
+  --hero-glow:rgba(255,127,79,.55);
+  --toph:64px;              /* 顶栏实测高度：padding 13 + 按钮 38 = 64 */
+  --serif:"Songti SC","STSong","SimSun","Noto Serif CJK SC","Source Han Serif SC",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+html[data-theme="dark"]{
+  --bg:#11151c; --card:#161b22; --line:#262c35; --line2:#1e242c;
+  --tx:#e9ecf1; --tx2:#a8aeb8; --tx3:#8d939d;
+  --ok:#5fce97; --okbg:#122a20;
+  --warn:#e2b45e; --warnbg:#2a2314; --warnbd:#463a1e;
+  --bad:#f2796a;
+  --acc:#f4791f; --acc2:#ff9d52; --accbg:#2c1e13; --accbd:#4d3520;
+  --panel:#1c222a; --hover:#1d232b; --soft:#1a1f26; --tint:#231d18;
+  --solid:#3a424e; --solidtx:#f2f5f9;
+  --sh:0 1px 2px rgba(0,0,0,.4);
+  --sh-pop:0 18px 44px -18px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.04);
+  --dusk-day:#3a4354; --dusk-civil:#e8b678; --dusk-nautical:#cf6f42;
+  --dusk-astro:#6f6a92; --dusk-night:#1e2536;
+  --hero-bg:#080b14; --hero-tx:#eef1f7; --hero-tx2:#a3aec4; --hero-line:rgba(255,255,255,.10);
+  --hero-glow:rgba(255,140,86,.42);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg);color:var(--tx);font-family:var(--sans);
+  font-size:16px;line-height:1.72;-webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+a{color:var(--acc2);text-decoration:none}
+a:hover{text-decoration:underline}
+a:focus-visible,button:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:3px}
+::selection{background:var(--accbd);color:var(--tx)}
+code{font-family:var(--mono);font-size:.9em;background:var(--soft);border:1px solid var(--line);
+  border-radius:4px;padding:.1em .35em;color:var(--tx)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
-  /* ---------- layout ---------- */
-  main{max-width:var(--maxw);margin:0 auto;padding:0 22px 90px}
-  .view{display:block}
-  .view[hidden]{display:none}
-  section.block{padding:46px 0;border-bottom:1px solid var(--line)}
-  section.block:last-of-type{border-bottom:0}
-  h1,h2,h3{font-family:var(--font-display);font-weight:600;line-height:1.25;color:var(--text)}
-  h1{font-size:clamp(34px,6vw,56px);margin:0 0 .25em;letter-spacing:.4px}
-  h2{font-size:clamp(25px,3.4vw,33px);margin:0 0 .5em}
-  h3{font-size:20px;margin:1.6em 0 .5em;color:var(--glow-3)}
-  p{margin:.55em 0;color:var(--text)}
-  .lead{font-size:18.5px;color:var(--muted);max-width:62ch}
-  .muted{color:var(--muted)}
-  .eyebrow{font-family:var(--font-mono);font-size:12.5px;letter-spacing:1.5px;color:var(--cool);text-transform:none;margin:0 0 10px}
+/* ---------- 顶栏：报头 ----------
+   教程页不做"白胶带"：底色＝纸面，只有一条发丝线收口。这里**不写 backdrop-filter** ——
+   它会让开篇的深色从底下透出来变成一层灰，而且会成为 fixed 后代的包含块。 */
+.top{position:sticky;top:0;z-index:60;background:var(--bg);border-bottom:1px solid var(--line)}
+.top-in{max-width:1080px;margin:0 auto;padding:13px 24px;display:flex;align-items:center;
+  gap:6px 12px;flex-wrap:wrap}
+.topbtn{flex:0 0 auto;height:38px;min-width:38px;padding:0 9px;border:1px solid var(--line);
+  border-radius:var(--r2);background:var(--card);color:var(--tx2);font:inherit;font-size:13px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;text-decoration:none}
+.topbtn:hover{background:var(--hover);text-decoration:none}
+.topbtn[aria-expanded="true"]{background:var(--accbg);color:var(--acc2);border-color:var(--accbd)}
+.topbtn .ico{font-size:15px;line-height:1}
+.logo{position:relative;width:22px;height:22px;flex:0 0 auto;border-radius:50%;
+  border:1px solid var(--tx3)}
+.logo::before{content:"";position:absolute;left:3px;right:3px;bottom:6px;height:6px;
+  background:var(--acc);border-radius:99px 99px 0 0}
+.logo::after{content:"";position:absolute;left:3px;right:3px;bottom:5px;height:1px;
+  background:var(--tx3);opacity:.55}
+.top-tx{min-width:0}
+.top h1{font-family:var(--serif);font-size:16px;font-weight:600;line-height:1.3;margin:0;
+  letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spacer{flex:1 1 auto}
+/* 下拉菜单：**挂 body 级**。放进 .top 也能用，但为了与主页同一套 DOM 习惯、
+   以及将来给顶栏加毛玻璃时不被"包含块"坑到，这里照主页的做法放外面。 */
+.topmenu{position:fixed;z-index:80;min-width:150px;background:var(--card);
+  border:1px solid var(--line);border-radius:var(--r2);box-shadow:var(--sh-pop);padding:8px}
+.topmenu[hidden]{display:none}
+.topmenu .cap{font-size:11.5px;color:var(--tx3);padding:2px 8px 6px}
+.menulist{display:flex;flex-direction:column;gap:2px}
+.menulist button{
+  display:flex;align-items:center;gap:8px;width:100%;text-align:left;
+  background:transparent;border:0;border-radius:6px;padding:8px 9px;
+  font:inherit;font-size:14px;color:var(--tx);cursor:pointer}
+.menulist button:hover{background:var(--hover)}
+.menulist button.on,.menulist button[aria-pressed="true"]{background:var(--accbg);color:var(--acc2);font-weight:600}
+.menulist button .tick{margin-left:auto;font-size:12px;opacity:0}
+.menulist button[aria-pressed="true"] .tick{opacity:1}
 
-  /* ---------- hero ---------- */
-  .hero{position:relative;padding:72px 0 64px;overflow:hidden}
-  .hero .glowband{
-    position:absolute;left:-10%;right:-10%;bottom:8%;height:300px;z-index:0;
-    background:linear-gradient(90deg,
-      rgba(127,168,217,0) 0%,
-      rgba(255,211,160,.10) 30%,
-      rgba(255,179,107,.55) 52%,
-      rgba(255,122,89,.65) 68%,
-      rgba(184,67,46,.30) 86%,
-      rgba(127,168,217,0) 100%);
-    filter:blur(26px);
-    transform:translateX(-8%) scaleX(1.05);opacity:0;
-    animation:glowsweep 1.5s cubic-bezier(.2,.7,.2,1) .15s forwards;
-  }
-  @keyframes glowsweep{from{opacity:0;transform:translateX(-22%) scaleX(1.12)}to{opacity:1;transform:translateX(-8%) scaleX(1.05)}}
-  .hero-inner{position:relative;z-index:1;max-width:760px}
-  .hero h1 .accent{color:var(--glow-1)}
-  .hero .lead{margin-top:18px}
-  .hero .meta{margin-top:26px;display:flex;gap:26px;flex-wrap:wrap;font-family:var(--font-mono);font-size:13px;color:var(--muted)}
-  .hero .meta b{display:block;font-family:var(--font-display);font-size:27px;color:var(--text);font-weight:600}
+/* ---------- 四档切换 ----------
+   顶栏下一条分段控件，滚到哪都在（sticky）。当前档恒有且只有一个 .on /
+   aria-pressed=true —— 与主页的分段控件同一套语义。
+   窄屏横向滑动：容器 min-width:0 + 子项 flex:none，否则英文档名会把页宽顶出去。 */
+.tabs{position:sticky;top:var(--toph);z-index:50;background:var(--bg);
+  border-bottom:1px solid var(--line)}
+.tabs-in{max-width:1080px;margin:0 auto;padding:9px 24px;display:flex;gap:6px;
+  overflow-x:auto;min-width:0;scrollbar-width:none}
+.tabs-in::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;height:32px;padding:0 13px;border:1px solid transparent;border-radius:999px;
+  background:transparent;color:var(--tx2);font:inherit;font-size:13.5px;cursor:pointer;
+  white-space:nowrap}
+.tab:hover{background:var(--hover);color:var(--tx)}
+.tab.on{background:var(--solid);color:var(--solidtx);border-color:var(--solid)}
+.tab:focus-visible{outline-offset:2px}
 
-  /* ---------- entry panels (home) ---------- */
-  .panels{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:14px}
-  .panel{
-    border:1px solid var(--line);border-radius:12px;background:var(--ink-2);
-    padding:22px 20px 20px;display:flex;flex-direction:column;gap:10px;
-    transition:border-color .18s,transform .18s;
-  }
-  .panel:hover{border-color:var(--line-2);transform:translateY(-3px)}
-  .panel .k{font-family:var(--font-mono);font-size:12px;color:var(--cool);letter-spacing:1px}
-  .panel h3{margin:.1em 0 .2em;font-size:21px;color:var(--text)}
-  .panel p{font-size:14.5px;color:var(--muted);margin:0}
-  .panel .go{margin-top:auto;font-size:14px;color:var(--glow-1);font-weight:600}
-  .panel .go::after{content:" ›"}
+/* ---------- 布局 ---------- */
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 90px}
+.view[hidden]{display:none}
+/* 章节之间一根发丝线（不是卡片）：教程是"读的东西"，不是"面板堆" */
+.sec{padding:34px 0 30px;border-top:1px solid var(--line)}
+.sec:first-of-type{border-top:0}
+.sec h2{font-family:var(--serif);font-size:clamp(20px,2.5vw,26px);font-weight:600;
+  line-height:1.3;margin:0 0 .55em;letter-spacing:.2px}
+.sec h3{font-size:15px;font-weight:600;margin:1.5em 0 .4em;color:var(--tx)}
+.sec p{margin:.6em 0;color:var(--tx2);max-width:74ch}
+.sec p b,.sec li b,.sec dd b{color:var(--tx);font-weight:600}
+.lead{font-size:17px;line-height:1.75;color:var(--tx2);max-width:62ch}
+.muted{color:var(--tx3)}
+.eyebrow{font-size:11.5px;letter-spacing:.4px;color:var(--tx3);margin:0 0 10px}
 
-  /* ---------- generic components ---------- */
-  .ribbon{height:12px;border-radius:6px;margin:8px 0 4px;
-    background:linear-gradient(90deg,#ffffff,#ffe27a,#ffb24d,#ff7a59,#d51313);
-    border:1px solid var(--line)}
-  .ribbon-legend{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:11.5px;color:var(--faint);margin-bottom:18px}
+/* 章节导语：一行小字 + 该档的小节目录（锚点）。
+   桌面折成两列，窄屏横向滑动 —— 都是"读之前先看见有什么"。 */
+.head{padding:26px 0 6px}
+.head h1{font-family:var(--serif);font-size:clamp(26px,3.6vw,36px);font-weight:600;
+  line-height:1.3;margin:0 0 .4em;letter-spacing:.3px}
+.sectoc{margin:16px 0 0;padding:0;list-style:none;display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));gap:0 26px}
+.sectoc a{display:flex;gap:9px;padding:6px 0;font-size:13.5px;color:var(--tx2);
+  border-bottom:1px solid var(--line2)}
+.sectoc a:hover{color:var(--acc2);text-decoration:none}
+.sectoc .n{font-family:var(--mono);font-size:11.5px;color:var(--tx3);min-width:1.4em}
+.sec[id]{scroll-margin-top:calc(var(--toph) + 52px)}
 
-  ol.steps{counter-reset:s;list-style:none;padding:0;margin:14px 0}
-  ol.steps>li{position:relative;padding:0 0 18px 46px;margin:0}
-  ol.steps>li::before{
-    counter-increment:s;content:counter(s);
-    position:absolute;left:0;top:1px;width:30px;height:30px;border-radius:50%;
-    display:grid;place-items:center;font-family:var(--font-display);font-size:15px;font-weight:600;
-    color:var(--ink);background:linear-gradient(180deg,var(--glow-3),var(--glow-1));
-  }
-  ol.steps>li b{color:var(--text)}
+/* ---------- 开篇：一块深色的天 ----------
+   全幅出血（桌面 -24px，手机 -16px），下面接纸面。唯一的一次入场动画：
+   霞光带从左扫入，1.4s 一次，之后静止。 */
+.hero{position:relative;background:var(--hero-bg);color:var(--hero-tx);
+  margin:0 -24px;padding:54px 24px 0;overflow:hidden}
+.hero-in{max-width:1032px;margin:0 auto;position:relative;z-index:2}
+.hero .kicker{font-size:11.5px;letter-spacing:.5px;color:var(--hero-tx2);margin:0 0 14px}
+.hero h1{font-family:var(--serif);font-size:clamp(30px,4.6vw,44px);font-weight:600;
+  line-height:1.26;margin:0;letter-spacing:.6px;color:var(--hero-tx)}
+.hero .lead{color:var(--hero-tx2);margin:16px 0 0;max-width:58ch;font-size:16.5px}
+.hero .lead b{color:#fff;font-weight:600}
+.stats{display:flex;gap:34px;flex-wrap:wrap;margin:26px 0 0;padding:0;list-style:none}
+.stats b{display:block;font-family:var(--serif);font-size:25px;font-weight:600;
+  color:var(--hero-tx);line-height:1.2}
+.stats span{font-size:11.5px;color:var(--hero-tx2)}
+.skybox{position:relative;margin:34px -24px 0;height:132px}
+/* 刻度与说明落在**纸面**上，不压在深色里：色带本身就是那块天的下缘，
+   文字跟主页天色带一样用 tx3，读起来才不费劲。 */
+.skymeta{margin:0 -24px}
 
-  dl.terms{margin:14px 0;display:grid;grid-template-columns:200px 1fr;gap:0}
-  dl.terms>div{border-top:1px solid var(--line);padding:14px 0;display:contents}
-  dl.terms dt{padding:14px 0;color:var(--glow-3);font-weight:600;font-family:var(--font-display);font-size:16px}
-  dl.terms dd{margin:0;padding:14px 0;color:var(--muted)}
-  dl.terms dd b{color:var(--text)}
+.sky{position:absolute;inset:0;display:flex}
+.sky i{display:block;height:100%}
+.sky .s-day{background:var(--dusk-day)}
+.sky .s-civil{background:var(--dusk-civil)}
+.sky .s-naut{background:var(--dusk-nautical)}
+.sky .s-astro{background:var(--dusk-astro)}
+.sky .s-night{background:var(--dusk-night)}
+/* 霞光：一条横向柔光，压在色带之上。这是全页唯一一处"光"，
+   位置与颜色固定，不随数据变 —— 它是示意，不是结果。 */
+.glow{position:absolute;left:-8%;right:-8%;top:6%;height:120%;
+  background:linear-gradient(90deg,transparent 0%,rgba(255,211,160,.10) 26%,
+    var(--hero-glow) 54%,rgba(255,122,89,.62) 68%,rgba(184,67,46,.24) 84%,transparent 100%);
+  filter:blur(22px);opacity:0;transform:translateX(-16%);
+  animation:sweep 1.4s cubic-bezier(.2,.7,.2,1) .15s forwards;pointer-events:none}
+@keyframes sweep{to{opacity:1;transform:translateX(0)}}
+@media (prefers-reduced-motion:reduce){.glow{animation:none;opacity:1;transform:none}}
+/* 刻度：标签中心压在色块边界上（与主页天色带同一条纪律）。 */
+.skyaxis{position:relative;height:38px;margin:0;font-size:11px;
+  line-height:15px;color:var(--tx3);padding-top:6px}
+.skyaxis span{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap;
+  text-align:center}
+.skyaxis em{font-style:normal;display:block;font-family:var(--mono);font-size:10.5px;
+  opacity:.72}
+.skycap{max-width:1080px;margin:0 auto;padding:2px 24px 18px;font-size:11.5px;
+  color:var(--tx3);line-height:1.65}
 
-  .codeblock{background:var(--ink-3);border:1px solid var(--line);border-radius:10px;padding:16px 18px;overflow:auto;margin:14px 0}
-  .codeblock pre{margin:0;font-family:var(--font-mono);font-size:13.5px;line-height:1.65;color:var(--text);white-space:pre}
-  .codeblock .c{color:var(--faint)}
-  .codeblock .v{color:var(--glow-3)}
+/* ---------- 入口卡（只给三档入口，其余一切不用卡） ---------- */
+.panels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:18px 0 0}
+.panel{display:flex;flex-direction:column;gap:6px;background:var(--card);
+  border:1px solid var(--line);border-radius:var(--r);padding:20px 18px 16px;
+  color:inherit;text-decoration:none;transition:border-color .16s}
+.panel:hover{border-color:var(--tx3);text-decoration:none}
+.panel .k{font-size:11px;color:var(--tx3);letter-spacing:.4px}
+.panel h3{font-family:var(--serif);font-size:18px;font-weight:600;margin:2px 0 0;color:var(--tx)}
+.panel p{font-size:13.5px;color:var(--tx2);margin:0;line-height:1.65}
+.panel .go{margin-top:auto;padding-top:10px;font-size:13px;color:var(--acc2);font-weight:600}
 
-  .note{border-left:3px solid var(--cool);background:rgba(127,168,217,.07);padding:13px 16px;border-radius:0 8px 8px 0;margin:16px 0;color:var(--muted);font-size:14.5px}
-  .note.warn{border-left-color:var(--glow-2);background:rgba(255,122,89,.08)}
-  .note b{color:var(--text)}
+/* ---------- 通用块 ---------- */
+.steps{counter-reset:s;list-style:none;padding:0;margin:14px 0 0}
+.steps>li{position:relative;padding:0 0 16px 40px}
+.steps>li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:2px;
+  width:26px;height:26px;border-radius:50%;display:grid;place-items:center;
+  font-family:var(--serif);font-size:13px;font-weight:600;
+  background:var(--accbg);color:var(--acc2);border:1px solid var(--accbd)}
+.terms{margin:14px 0 0;display:grid;grid-template-columns:190px 1fr}
+.terms>div{display:contents}
+.terms dt{padding:12px 0;border-top:1px solid var(--line);font-family:var(--serif);
+  font-size:15px;font-weight:600;color:var(--tx)}
+.terms dd{margin:0;padding:12px 0;border-top:1px solid var(--line);color:var(--tx2);
+  font-size:14.5px}
+.code{background:var(--soft);border:1px solid var(--line);border-radius:var(--r2);
+  padding:14px 16px;overflow:auto;margin:14px 0}
+.code pre{margin:0;font-family:var(--mono);font-size:12.5px;line-height:1.7;
+  color:var(--tx);white-space:pre}
+.code .c{color:var(--tx3)}
+.code .v{color:var(--acc2)}
+.note{border-left:3px solid var(--acc);background:var(--tint);padding:12px 15px;
+  border-radius:0 var(--r2) var(--r2) 0;margin:16px 0;color:var(--tx2);font-size:14px}
+.note.warn{border-left-color:var(--warn);background:var(--warnbg)}
+.note b{color:var(--tx)}
+.tbl{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px}
+.tbl th,.tbl td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);
+  vertical-align:top}
+.tbl th{font-weight:600;color:var(--tx);font-size:12.5px;background:var(--soft)}
+.tbl td{color:var(--tx2)}
+.tbl td b{color:var(--tx)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 28px}
+.lit{border-top:1px solid var(--line);padding:16px 0}
+.lit h3{margin:6px 0 .3em}
+.lit p{font-size:14px;margin:0}
+.tag{display:inline-block;font-size:11px;color:var(--acc2);background:var(--accbg);
+  border:1px solid var(--accbd);border-radius:999px;padding:1px 9px}
+/* 热力色阶：与地图同一套"白→黄→橙→红"，只在讲解色阶的地方出现 */
+.heat{height:12px;border-radius:6px;margin:16px 0 0;border:1px solid var(--line);
+  background:linear-gradient(90deg,#ffffff,#ffe27a,#ffb24d,#ff7a59,#d51313)}
+.heat-l{display:flex;justify-content:space-between;font-size:11px;color:var(--tx3);
+  margin-top:6px}
+footer{border-top:1px solid var(--line);margin-top:20px}
+.foot{max-width:1080px;margin:0 auto;padding:22px 24px 56px;color:var(--tx3);
+  font-size:12px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.foot a{color:var(--tx2)}
 
-  table.tbl{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
-  table.tbl th,table.tbl td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top}
-  table.tbl th{color:var(--glow-3);font-family:var(--font-display);font-weight:600;font-size:14px}
-  table.tbl td{color:var(--muted)}
-  table.tbl td b{color:var(--text)}
-
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-  .card-line{border-top:1px solid var(--line);padding:18px 0}
-  .card-line h3{margin-top:0}
-  .tag{display:inline-block;font-family:var(--font-mono);font-size:11.5px;color:var(--cool);border:1px solid var(--line);border-radius:20px;padding:2px 10px;margin:0 6px 6px 0}
-
-  footer{border-top:1px solid var(--line);margin-top:40px}
-  .footer-inner{max-width:var(--maxw);margin:0 auto;padding:28px 22px 50px;color:var(--faint);font-size:13px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
-  .footer-inner a{color:var(--muted)}
-
-  @media (max-width:760px){
-    .panels{grid-template-columns:1fr}
-    .grid2{grid-template-columns:1fr}
-    dl.terms{grid-template-columns:1fr}
-    dl.terms>div{display:block;border-top:1px solid var(--line)}
-    dl.terms dt{padding-bottom:2px}
-    dl.terms dd{padding-top:2px}
-    .topbar-inner{padding:12px 16px;gap:12px}
-    main{padding:0 16px 70px}
-    .nav button{padding:7px 10px;font-size:13.5px}
-  }
-  @media (prefers-reduced-motion:reduce){
-    .hero .glowband{animation:none;opacity:1}
-    *{transition:none!important}
-  }
+/* ---------- 窄屏 ---------- */
+@media (max-width:760px){
+  :root{--toph:50px}
+  .top-in{padding:8px 14px;gap:6px 8px}
+  .topbtn{height:34px;min-width:34px;padding:0 7px;font-size:12.5px}
+  .logo{width:20px;height:20px}
+  .top h1{font-size:14px}
+  .tabs-in{padding:7px 14px}
+  .tab{height:30px;padding:0 10px;font-size:12.5px}
+  .wrap{padding:0 16px 70px}
+  .hero{margin:0 -16px;padding:34px 16px 0}
+  .skybox{margin:26px -16px 0;height:104px}
+  .skyaxis{height:34px;font-size:10px}
+  .skymeta{margin:0 -16px}
+  .skycap{padding:2px 16px 16px}
+  .panels{grid-template-columns:1fr}
+  .terms{grid-template-columns:1fr}
+  .terms dt{padding-bottom:2px;border-top:1px solid var(--line)}
+  .terms dd{padding-top:0;border-top:0}
+  .grid2{grid-template-columns:1fr}
+  /* 手机端小节目录：横向滑动的胶囊条，不占一整屏（9 项竖排会吃掉 350px） */
+  .sectoc{display:flex;gap:8px;overflow-x:auto;min-width:0;margin:14px -16px 0;
+    padding:0 16px 6px;scrollbar-width:none}
+  .sectoc::-webkit-scrollbar{display:none}
+  .sectoc li{flex:0 0 auto}
+  .sectoc a{border-bottom:0;border:1px solid var(--line);border-radius:999px;
+    padding:5px 12px;font-size:12.5px;white-space:nowrap;color:var(--tx2)}
+  .sec{padding:26px 0 22px}
+  .tbl{font-size:12.5px}
+  .tbl th,.tbl td{padding:8px 9px}
+}
 </style>
 </head>
 <body>
 
-<header class="topbar">
-  <div class="topbar-inner">
-    <div class="brand"><span class="dot"></span>霞光预报 · 教程</div>
-    <nav class="nav" aria-label="教程版本切换">
-      <button data-view="home" class="is-active" aria-current="page">首页</button>
-      <button data-view="users">用户版</button>
-      <button data-view="dev">开发者版</button>
-      <button data-view="creator">创作者版</button>
-    </nav>
+<div class="top">
+  <div class="top-in">
+    <!-- 返回主页：与主页汉堡同位置（左上第一枚）。用真链接而不是按钮 ——
+         中键/右键"在新标签打开"照样成立，且没脚本时也能回。 -->
+    <a class="topbtn" id="backBtn" href="index.html" aria-label="返回主页" data-i18n-aria="返回主页" title="返回主页" data-i18n-title="返回主页">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M9.5 3.5L5 8l4.5 4.5"/><path d="M5 8h8"/></svg>
+    </a>
+    <div class="logo" aria-hidden="true"></div>
+    <div class="top-tx"><h1 data-i18n="使用教程">使用教程</h1></div>
+    <div class="spacer"></div>
+    <!-- 语言 / 主题：与主页同款（显示当前值，点开三选一）。
+         菜单挂 body 级，见下面的 .topmenu。 -->
+    <button type="button" class="topbtn" id="langBtn" aria-haspopup="true" aria-expanded="false"
+      aria-controls="langMenu" aria-label="语言" data-i18n-aria="语言">中</button>
+    <button type="button" class="topbtn" id="themeBtn" aria-haspopup="true" aria-expanded="false"
+      aria-controls="themeMenu" aria-label="主题" data-i18n-aria="主题"><span class="ico" aria-hidden="true">◐</span></button>
   </div>
-</header>
+</div>
 
-<main>
+<div class="topmenu" id="langMenu" hidden>
+  <div class="cap" data-i18n="语言">语言</div>
+  <div class="menulist" id="langSeg" role="group" aria-label="语言" data-i18n-aria="语言"></div>
+</div>
+<div class="topmenu" id="themeMenu" hidden>
+  <div class="cap" data-i18n="主题">主题</div>
+  <div class="menulist" id="themeSeg" role="group" aria-label="主题" data-i18n-aria="主题"></div>
+</div>
 
-  <!-- ============ HOME ============ -->
-  <section id="home" class="view">
-    <div class="hero">
-      <div class="glowband" aria-hidden="true"></div>
-      <div class="hero-inner">
-        <p class="eyebrow">TWILIGHT CONSOLE · 使用教程</p>
-        <h1>读懂<span class="accent">朝霞</span>与<span class="accent">晚霞</span>的预报</h1>
-        <p class="lead">霞光预报是一个单文件 Web 应用：输入地点与日期，预测朝霞 / 晚霞（火烧云）出现的概率与观赏质量，并能在周边 500 km 画出霞光分布热力图。这份教程分三档——按需取用。</p>
-        <div class="meta">
-          <div><b>3</b>套模型合成</div>
-          <div><b>500 km</b>周边网格</div>
-          <div><b>0</b>注册 · 纯前端</div>
-        </div>
-      </div>
+<div class="tabs">
+  <div class="tabs-in" id="tabs" role="group" aria-label="教程分档" data-i18n-aria="教程分档">
+    <button type="button" class="tab on" data-view="overview" aria-pressed="true" data-i18n="概览">概览</button>
+    <button type="button" class="tab" data-view="users" aria-pressed="false" data-i18n="用户版">用户版</button>
+    <button type="button" class="tab" data-view="dev" aria-pressed="false" data-i18n="开发者版">开发者版</button>
+    <button type="button" class="tab" data-view="creator" aria-pressed="false" data-i18n="创作者版">创作者版</button>
+  </div>
+</div>
+
+<main class="wrap">
+
+<!-- ==================== 概览 ==================== -->
+<section class="view" id="overview">
+
+  <div class="hero">
+    <div class="hero-in">
+      <h1 data-i18n="读懂朝霞与晚霞的预报">读懂朝霞与晚霞的预报</h1>
+      <p class="lead" data-i18n-html="ov.lead">霞光预报是一个<b>单文件 Web 应用</b>：输入地点与日期，预测朝霞 / 晚霞（火烧云）出现的概率与观赏质量，并在周边 500 km 画出霞光分布。这份教程分四档，按身份取用。</p>
+      <ul class="stats">
+        <li><b>3</b><span data-i18n="套模型合成">套模型合成</span></li>
+        <li><b>500 km</b><span data-i18n="周边网格">周边网格</span></li>
+        <li><b>0</b><span data-i18n="注册 · 纯前端">注册 · 纯前端</span></li>
+      </ul>
     </div>
-
-    <section class="block">
-      <p class="eyebrow">选你的入口</p>
-      <h2>三档教程，各取所需</h2>
-      <div class="panels">
-        <a class="panel" href="#users" data-jump="users">
-          <span class="k">FOR USERS</span>
-          <h3>用户版</h3>
-          <p>摄影爱好者与日常使用者：怎么查一次预报、怎么看地图与趋势、怎么分享与在手机上使用。</p>
-          <span class="go">上手指南</span>
-        </a>
-        <a class="panel" href="#dev" data-jump="dev">
-          <span class="k">FOR DEVELOPERS</span>
-          <h3>开发者版</h3>
-          <p>贡献者与部署者：源码结构、拼装流程、回归套件、静态 / 带地图 / PWA 部署与已知边界。</p>
-          <span class="go">工程说明</span>
-        </a>
-        <a class="panel" href="#creator" data-jump="creator">
-          <span class="k">FOR CREATORS</span>
-          <h3>创作者版</h3>
-          <p>自媒体与内容创作者：最值得拍的亮点功能、演示叙事线、可引用的卖点与注意事项。</p>
-          <span class="go">演示素材</span>
-        </a>
+    <div class="skybox">
+      <div class="sky" aria-hidden="true">
+        <i class="s-day" style="width:34%"></i><i class="s-civil" style="width:22%"></i><i class="s-naut" style="width:18%"></i><i class="s-astro" style="width:14%"></i><i class="s-night" style="width:12%"></i>
       </div>
-    </section>
+      <div class="glow" aria-hidden="true"></div>
+    </div>
+  </div>
+  <div class="skymeta">
+    <div class="skyaxis" aria-hidden="true">
+      <span style="left:34%"><b data-i18n="日落">日落</b><em>0°</em></span>
+      <span style="left:56%"><b data-i18n="民用暮光">民用暮光</b><em>−6°</em></span>
+      <span style="left:74%"><b data-i18n="航海暮光">航海暮光</b><em>−12°</em></span>
+      <span style="left:88%"><b data-i18n="天文暮光">天文暮光</b><em>−18°</em></span>
+    </div>
+    <p class="skycap" data-i18n="霞光只发生在太阳落到地平线以下几度到十几度之间。朝霞与晚霞的大气条件不同，所以应用分开预报、可分别切换。">霞光只发生在太阳落到地平线以下几度到十几度之间。朝霞与晚霞的大气条件不同，所以应用分开预报、可分别切换。</p>
+  </div>
 
-    <section class="block">
-      <h2>它到底在算什么</h2>
-      <p class="lead">一句话：把「今晚有没有火烧云」从玄学变成可量化的概率与质量分。</p>
-      <dl class="terms">
-        <div><dt>朝霞 / 晚霞</dt><dd>日出前与日落后的低空霞光（火烧云）。两者的大气条件不同，所以应用分开预报、可分别切换。</dd></div>
-        <div><dt>概率 %</dt><dd>出现霞光的可能性，由天气条件（云量、湿度、能见度等）推算，不是「会不会出太阳」。</dd></div>
-        <div><dt>质量评分</dt><dd>在「会出现」的前提下，霞光的<b>观赏质量</b>（色彩浓度、覆盖范围），分 优 / 良 / 一般 / 差 四档。</dd></div>
-        <div><dt>多模型合成</dt><dd>GFS / ECMWF / 光追算法三路各自出分，再按 <b>0.30 / 0.34 / 0.36</b> 的权重合成，降低单一来源偏差。</dd></div>
-      </dl>
-      <div class="ribbon" aria-hidden="true"></div>
-      <div class="ribbon-legend"><span>弱 / 无霞</span><span>色阶：白 → 黄 → 橙 → 红</span><span>强霞</span></div>
-      <p class="muted">地图上那条从白到红的热力色阶，本教程也沿用为视觉线索——看到这条带子，就代表「霞光强度」。</p>
-    </section>
+  <section class="sec">
+    <h2 data-i18n="三档教程，各取所需">三档教程，各取所需</h2>
+    <div class="panels">
+      <a class="panel" href="#users">
+        <span class="k" data-i18n="给使用者">给使用者</span>
+        <h3 data-i18n="用户版">用户版</h3>
+        <p data-i18n="怎么查一次预报、怎么看地图与趋势、怎么分享、怎么在手机上用。">怎么查一次预报、怎么看地图与趋势、怎么分享、怎么在手机上用。</p>
+        <span class="go" data-i18n="上手指南">上手指南</span>
+      </a>
+      <a class="panel" href="#dev">
+        <span class="k" data-i18n="给贡献者">给贡献者</span>
+        <h3 data-i18n="开发者版">开发者版</h3>
+        <p data-i18n="源码结构、拼装流程、回归套件、三种部署方式与已知边界。">源码结构、拼装流程、回归套件、三种部署方式与已知边界。</p>
+        <span class="go" data-i18n="工程说明">工程说明</span>
+      </a>
+      <a class="panel" href="#creator">
+        <span class="k" data-i18n="给创作者">给创作者</span>
+        <h3 data-i18n="创作者版">创作者版</h3>
+        <p data-i18n="最值得讲的五个亮点、演示叙事线、可放心引用的卖点。">最值得讲的五个亮点、演示叙事线、可放心引用的卖点。</p>
+        <span class="go" data-i18n="演示素材">演示素材</span>
+      </a>
+    </div>
   </section>
 
-  <!-- ============ USERS ============ -->
-  <section id="users" class="view" hidden>
-    <section class="block" style="border-top:0;padding-top:30px">
-      <p class="eyebrow">FOR USERS · 上手指南</p>
-      <h1>用户版：从一次查询到一张分享图</h1>
-      <p class="lead">面向摄影爱好者与日常使用者。下面的顺序，基本就是一次完整使用的路径。</p>
-    </section>
-
-    <section class="block">
-      <h2>1 · 查一次朝霞 / 晚霞预报</h2>
-      <ol class="steps">
-        <li><b>选地点。</b>在查询区搜索城市名，或允许浏览器定位，或点开「收藏机位」直接选常用点。地名走白名单，外源地名的异常字符会被安全处理。</li>
-        <li><b>选日期与时段。</b>默认今天；时段在「朝霞 / 晚霞」之间切换（两者大气条件不同，分开算）。</li>
-        <li><b>读结论卡。</b>核心三格：<b>概率 %</b>、<b>质量评分</b>、<b>等级</b>（优 / 良 / 一般 / 差）。下方还有「主要影响因素」逐项分解，告诉你这次是云量、湿度还是能见度在拖后腿。</li>
-        <li><b>看多模型。</b>卡内列出 GFS / ECMWF / 光追三路各自的分数与合成结果；模型间分歧大时会在悬停信息里提示不确定性。</li>
-      </ol>
-      <div class="note">首屏只取<b>单点</b>结果（约 65 个加权调用）。地图数据必须由你显式点击才取，所以初次打开不会悄悄花掉你的额度。</div>
-    </section>
-
-    <section class="block">
-      <h2>2 · 看懂周边地图</h2>
-      <p>地图把查询点周边 <b>500 km</b> 的霞光强度画成热力图，是「今天去哪个方向拍」最直观的答案。</p>
-      <div class="ribbon" aria-hidden="true"></div>
-      <div class="ribbon-legend"><span>白</span><span>黄</span><span>橙</span><span>红 = 强霞</span></div>
-      <h3>怎么把它画出来</h3>
-      <ul>
-        <li><b>有缓存时自动画。</b>上次看过的城市 + 日期，新开页会<b>零请求</b>直接画出来（走缓存快路径，不占额度）。</li>
-        <li><b>没缓存时点击加载。</b>点「加载周边地图」才会发起请求（约 171 个加权调用）。勾选框默认不勾选，因为它会直接影响你自己的日额度。</li>
-      </ul>
-      <h3>图上的几层信息</h3>
-      <dl class="terms">
-        <div><dt>色面</dt><dd>采样点插值出的霞光强度，白→黄→橙→红分档。</dd></div>
-        <div><dt>等值线</dt><dd>档与档之间一条 1px 线（屏幕空间矢量，放大不变粗），帮你看清梯度。</dd></div>
-        <div><dt>数据范围虚线</dt><dd>采样点凸包外缘的虚线：<b>线内是插值、线外是外推</b>，外推区可信度更低。</dd></div>
-        <div><dt>经纬网</dt><dd>1° 网格底衬，可在图层开关里关闭。</dd></div>
-      </dl>
-      <h3>五个图层开关</h3>
-      <p class="muted">数值直标 / 采样点 / 可信度 / 经纬网 / 深色底图——按需开关，偏好会写进本地存储、重开页恢复。</p>
-      <h3>交互</h3>
-      <p class="muted">支持日期、时段、模型切换；鼠标悬停或点击地图出具体数值；外推区会附「离最近采样点多远」的距离口径。</p>
-      <div class="note warn"><b>可信范围别混用两个量：</b>「在不在采样区里」（凸包）和「离最近采样点多远」是两个不同的概念。包内实测最远 85 km，贴着凸包顶点外侧只有 1.4 km 却已是外推。</div>
-    </section>
-
-    <section class="block">
-      <h2>3 · 趋势与最佳窗口</h2>
-      <h3>趋势曲线</h3>
-      <p>未来若干天逐日打分曲线，可切换朝霞 / 晚霞。算好的结果会<b>落盘缓存</b>，重开页命中时零请求直接画出。</p>
-      <h3>F3 · 最佳窗口日历</h3>
-      <p>趋势的另一种读法：把未来 N 天按「哪天值得去」排成日历格（朝 / 晚两个色块 + 质量分），标出最值得去的前三名。点格子直接切过去——<b>渲染这张日历零取数</b>，只有点格子（你的显式意图）才走一次单点取数。</p>
-    </section>
-
-    <section class="block">
-      <h2>4 · 多观测点对比（F2）</h2>
-      <p>回答「今天去哪儿拍」：收藏最多 <b>5 个机位</b>，一次取数横向按质量分排序。</p>
-      <ul>
-        <li>取数只能由「对比这些点」按钮触发；命中单点缓存的点<b>不进请求</b>（先单独查过的点零成本）。</li>
-        <li>默认只比当前时段；界面会写明「本次将消耗约 N 个计费调用」。</li>
-        <li>位置 / 日期 / 时段任一变化，对比结果作废（避免显示上一个地点的数字）。</li>
-      </ul>
-    </section>
-
-    <section class="block">
-      <h2>5 · 分享与导出</h2>
-      <h3>一键分享卡 PNG</h3>
-      <p>把结论卡导出为图片（纯 canvas 绘制，与页面同一套文案与配色），直接发到聊天工具。分享卡固定浅色底，发到任何环境都稳妥。</p>
-      <h3>结果快照链接</h3>
-      <p>链接带 <code>snap=</code> 参数，<b>零气象请求</b>即可还原结论（解码前限长并逐字段校验，恶意载荷只作纯文本落地）。语言、时段等随界面走。</p>
-    </section>
-
-    <section class="block">
-      <h2>6 · 偏好设置</h2>
-      <dl class="terms">
-        <div><dt>单位制 / 12 小时制</dt><dd>温度单位、时间显示方式，按习惯切换。</dd></div>
-        <div><dt>语言</dt><dd>简体中文 / 繁體中文（中国台湾·香港用语）/ English，写进偏好与分享链接。优先级：URL &gt; 偏好 &gt; 浏览器语言 &gt; 简体。</dd></div>
-        <div><dt>主题</dt><dd>浅色 / 深色 / 跟随系统三态。<b>刷新不闪</b>（引导脚本早于样式执行）。主题不进 URL——别人发的链接不该强制你的界面变黑。</dd></div>
-        <div><dt>9 个显示状态</dt><dd>数值直标 / 采样点 / 可信度 / 经纬网 / 深色底图 / 12 小时制 / 单位制 / 地图着色依据 / 算法模型，写进同一个本地键，重开页恢复。</dd></div>
-      </dl>
-      <div class="note"><b>刻意不持久化两类：</b>位置与日期（由 URL 承载，避免与分享链接打架）；地图时段（由单点时段派生，存了会让「地图看晚霞、上方算朝霞」成为常态）。</div>
-    </section>
-
-    <section class="block">
-      <h2>7 · 本地校准（F4）</h2>
-      <p>事后回来点一档「实际看到了什么」（6 档），本机累积后在结论卡下方多出一行<b>本地校准</b>：模型在这一档平均报多少、你标注了几次、实际出现率多少、偏差多少。</p>
-      <ul>
-        <li><b>只展示、不回改</b>模型概率 / 等级 / 因素表任何一个字。</li>
-        <li><b>只存本机</b>——数据不出设备、可一键关闭、可清空。</li>
-        <li><b>样本不够不给结论</b>：累计 ≥8 次、且当前这一档 ≥3 次才显示，之前只显示进度。</li>
-        <li><b>关掉 ≠ 删除</b>：开关只关入口与展示，已存标注不删；清空是另一个按钮，且要二次确认。</li>
-        <li>「没看到（无法判断）」不计入统计，以免系统性拉低校准。</li>
-      </ul>
-    </section>
-
-    <section class="block">
-      <h2>8 · 移动端</h2>
-      <ul>
-        <li>窄屏顶部信息条收成一行（不换行摊开），不挤占地图。</li>
-        <li>地图提示卡改成<b>贴底通栏</b>并自带 × 关闭；可再点一次、点卡片外、或直接拖动地图收起。</li>
-        <li>关闭后不留隐形热区（触摸交还地图）；拖动超过 12px 视为收卡、以下是点击。</li>
-        <li>页面不可横向拖出空白；地图区单指可拖（手势交给地图 SDK）。</li>
-      </ul>
-    </section>
-
-    <section class="block">
-      <h2>9 · 常见疑问</h2>
-      <dl class="terms">
-        <div><dt>为什么地图有时直接显示、有时要点击？</dt><dd>有缓存（看过同城市同日期）开页自动画、零额度；无缓存仍需你点「加载周边地图」。</dd></div>
-        <div><dt>额度怎么算？</dt><dd>免费层按<b>访客自己的出口 IP</b>计（10000 次/天/人）。静态站不做代转，站点本身不消耗配额。</dd></div>
-        <div><dt>本地双击打开地图不显示？</dt><dd>预期行为：地图代理地址默认是占位符，双击打开时不起来，页面会说明原因；单点查询不受影响。要联调完整功能需本地预览构建。</dd></div>
-        <div><dt>深色的「深色底图」和主题切换是一回事吗？</dt><dd>不是。底图深色是地图数据图层开关；界面浅/深是主题。两者各管各的。</dd></div>
-      </dl>
-    </section>
+  <section class="sec">
+    <h2 data-i18n="它到底在算什么">它到底在算什么</h2>
+    <p class="lead" data-i18n="一句话：把「今晚有没有火烧云」从玄学变成可量化的概率与质量分。">一句话：把「今晚有没有火烧云」从玄学变成可量化的概率与质量分。</p>
+    <dl class="terms">
+      <div><dt data-i18n="朝霞 / 晚霞">朝霞 / 晚霞</dt>
+        <dd data-i18n="日出前与日落后的低空霞光（火烧云）。两者的大气条件不同，所以应用分开预报、可分别切换。">日出前与日落后的低空霞光（火烧云）。两者的大气条件不同，所以应用分开预报、可分别切换。</dd></div>
+      <div><dt data-i18n="概率 %">概率 %</dt>
+        <dd data-i18n="出现霞光的可能性，由云量、湿度、能见度等条件推算 —— 不是「会不会出太阳」。">出现霞光的可能性，由云量、湿度、能见度等条件推算 —— 不是「会不会出太阳」。</dd></div>
+      <div><dt data-i18n="质量评分">质量评分</dt>
+        <dd data-i18n="在「会出现」的前提下，霞光的观赏质量（色彩浓度、覆盖范围），分优 / 良 / 一般 / 差四档。">在「会出现」的前提下，霞光的观赏质量（色彩浓度、覆盖范围），分优 / 良 / 一般 / 差四档。</dd></div>
+      <div><dt data-i18n="多模型合成">多模型合成</dt>
+        <dd data-i18n="GFS / ECMWF / 光追算法三路各自出分，再按 0.30 / 0.34 / 0.36 的权重合成，降低单一来源偏差。">GFS / ECMWF / 光追算法三路各自出分，再按 0.30 / 0.34 / 0.36 的权重合成，降低单一来源偏差。</dd></div>
+    </dl>
+    <div class="heat" aria-hidden="true"></div>
+    <div class="heat-l"><span data-i18n="弱 / 无霞">弱 / 无霞</span><span data-i18n="色阶：白 → 黄 → 橙 → 红">色阶：白 → 黄 → 橙 → 红</span><span data-i18n="强霞">强霞</span></div>
+    <p class="muted" style="font-size:14px;margin-top:12px" data-i18n="地图上那条从白到红的热力色阶，本教程沿用为视觉线索：看到这条带子，就代表「霞光强度」。">地图上那条从白到红的热力色阶，本教程沿用为视觉线索：看到这条带子，就代表「霞光强度」。</p>
   </section>
 
-  <!-- ============ DEV ============ -->
-  <section id="dev" class="view" hidden>
-    <section class="block" style="border-top:0;padding-top:30px">
-      <p class="eyebrow">FOR DEVELOPERS · 工程说明</p>
-      <h1>开发者版：结构、构建与部署</h1>
-      <p class="lead">霞光预报的产物是 <code>index.html</code>——一个自包含 HTML（内联全部 JS 与城市/高程数据），可直接部署为静态站点；地图模块另有一个可选的同源服务端中转端点。</p>
-    </section>
+  <section class="sec">
+    <h2 data-i18n="语言与主题">语言与主题</h2>
+    <p data-i18n="右上角两个按钮管整页：左边切语言（简体中文 / 繁體中文 / English），右边切主题（跟随系统 / 浅色 / 深色）。选择会写进主程序同一个偏好键 —— 在这里改成英文，回主页也是英文。">右上角两个按钮管整页：左边切语言（简体中文 / 繁體中文 / English），右边切主题（跟随系统 / 浅色 / 深色）。选择会写进主程序同一个偏好键 —— 在这里改成英文，回主页也是英文。</p>
+    <p class="muted" data-i18n="主题不进链接：别人分享给你的地址不该强行改你的界面颜色。">主题不进链接：别人分享给你的地址不该强行改你的界面颜色。</p>
+  </section>
 
-    <section class="block">
-      <h2>1 · 源码结构</h2>
-      <p>单文件产物由脚本拼装，<b>不要手改产物</b>。</p>
-      <div class="codeblock"><pre><span class="c"># 源（改这些）</span>
-tpl/template.html     版式来源（HTML + CSS + 3 个内联 &lt;script&gt; 占位块）
+</section>
+<!-- ==================== 用户版 ==================== -->
+<section class="view" id="users" hidden>
+
+  <div class="head">
+    <p class="eyebrow" data-i18n="用户版 · 上手指南">用户版 · 上手指南</p>
+    <h1 data-i18n="从一次查询到一张分享图">从一次查询到一张分享图</h1>
+    <p class="lead" data-i18n="面向摄影爱好者与日常使用者。下面的顺序，基本就是一次完整使用的路径。">面向摄影爱好者与日常使用者。下面的顺序，基本就是一次完整使用的路径。</p>
+    <ol class="sectoc">
+      <li><a href="#u1"><span class="n">1</span><span data-i18n="查一次预报">查一次预报</span></a></li>
+      <li><a href="#u2"><span class="n">2</span><span data-i18n="看懂周边地图">看懂周边地图</span></a></li>
+      <li><a href="#u3"><span class="n">3</span><span data-i18n="趋势与最佳窗口">趋势与最佳窗口</span></a></li>
+      <li><a href="#u4"><span class="n">4</span><span data-i18n="多观测点对比">多观测点对比</span></a></li>
+      <li><a href="#u5"><span class="n">5</span><span data-i18n="分享与导出">分享与导出</span></a></li>
+      <li><a href="#u6"><span class="n">6</span><span data-i18n="偏好设置">偏好设置</span></a></li>
+      <li><a href="#u7"><span class="n">7</span><span data-i18n="本地校准">本地校准</span></a></li>
+      <li><a href="#u8"><span class="n">8</span><span data-i18n="手机端">手机端</span></a></li>
+      <li><a href="#u9"><span class="n">9</span><span data-i18n="常见疑问">常见疑问</span></a></li>
+    </ol>
+  </div>
+
+  <section class="sec" id="u1">
+    <h2 data-i18n="1 · 查一次朝霞 / 晚霞预报">1 · 查一次朝霞 / 晚霞预报</h2>
+    <ol class="steps">
+      <li><b data-i18n="选地点。">选地点。</b><span data-i18n="在查询区搜索城市名，或允许浏览器定位，或点开预设里的常用地点。地名走白名单，外源地名的异常字符会被安全处理。">在查询区搜索城市名，或允许浏览器定位，或点开预设里的常用地点。地名走白名单，外源地名的异常字符会被安全处理。</span></li>
+      <li><b data-i18n="选日期与时段。">选日期与时段。</b><span data-i18n="默认今天；时段在「朝霞 / 晚霞」之间切换 —— 两者大气条件不同，分开算。">默认今天；时段在「朝霞 / 晚霞」之间切换 —— 两者大气条件不同，分开算。</span></li>
+      <li><b data-i18n="读结论卡。">读结论卡。</b><span data-i18n="核心三格：概率 %、质量评分、等级（优 / 良 / 一般 / 差）。下方「主要影响因素」逐项分解，告诉你这次是云量、湿度还是能见度在拖后腿。">核心三格：概率 %、质量评分、等级（优 / 良 / 一般 / 差）。下方「主要影响因素」逐项分解，告诉你这次是云量、湿度还是能见度在拖后腿。</span></li>
+      <li><b data-i18n="看多模型。">看多模型。</b><span data-i18n="卡内列出 GFS / ECMWF / 光追三路各自的分数与合成结果；模型之间分歧大时，悬停信息里会提示不确定性。">卡内列出 GFS / ECMWF / 光追三路各自的分数与合成结果；模型之间分歧大时，悬停信息里会提示不确定性。</span></li>
+    </ol>
+    <div class="note" data-i18n-html="u1.note">首屏只取<b>单点</b>结果（约 65 个加权调用）。地图数据必须由你显式点击才取，所以初次打开不会悄悄花掉你的额度。</div>
+  </section>
+
+  <section class="sec" id="u2">
+    <h2 data-i18n="2 · 看懂周边地图">2 · 看懂周边地图</h2>
+    <p data-i18n-html="u2.p">地图把查询点周边 <b>500 km</b> 的霞光强度画成热力图，是「今天去哪个方向拍」最直观的答案。</p>
+
+    <h3 data-i18n="怎么把它画出来">怎么把它画出来</h3>
+    <ul>
+      <li data-i18n-html="u2.how1"><b>有缓存时自动画。</b>上次看过的城市 + 日期，新开页会零请求直接画出来（走缓存快路径，不占额度）。</li>
+      <li data-i18n-html="u2.how2"><b>没缓存时点击加载。</b>点地图面板里的「刷新地图」才发起请求（约 171 个加权调用）—— 它直接影响你自己的日额度。</li>
+    </ul>
+
+    <h3 data-i18n="图上是什么">图上是什么</h3>
+    <dl class="terms">
+      <div><dt data-i18n="色面">色面</dt>
+        <dd data-i18n="采样点插值出的霞光强度，白 → 黄 → 橙 → 红分档。色阶是固定的 0–100 绝对刻度，所以同一片区域的深浅可以跨日期直接对比。">采样点插值出的霞光强度，白 → 黄 → 橙 → 红分档。色阶是固定的 0–100 绝对刻度，所以同一片区域的深浅可以跨日期直接对比。</dd></div>
+      <div><dt data-i18n="云纹">云纹</dt>
+        <dd data-i18n="采样点上的云量，按四档画成斜纹。晴天不画（否则整张图都是纹路，等于没有信息），有云才显形。">采样点上的云量，按四档画成斜纹。晴天不画（否则整张图都是纹路，等于没有信息），有云才显形。</dd></div>
+      <div><dt data-i18n="等值线">等值线</dt>
+        <dd data-i18n="档与档之间一条 1px 线（屏幕空间矢量，放大不变粗），帮你看清梯度往哪边走。">档与档之间一条 1px 线（屏幕空间矢量，放大不变粗），帮你看清梯度往哪边走。</dd></div>
+      <div><dt data-i18n="数据范围虚线">数据范围虚线</dt>
+        <dd data-i18n="采样点凸包外缘的虚线：线内是插值、线外是外推，外推区可信度更低。">采样点凸包外缘的虚线：线内是插值、线外是外推，外推区可信度更低。</dd></div>
+      <div><dt data-i18n="经纬网">经纬网</dt>
+        <dd data-i18n="1° 网格底衬，可在显示层里关闭。">1° 网格底衬，可在显示层里关闭。</dd></div>
+    </dl>
+
+    <h3 data-i18n="四个显示层开关">四个显示层开关</h3>
+    <p data-i18n="数值直标 / 采样点 / 云纹 / 经纬网 —— 按需开关，偏好写进本地存储，重开页恢复。">数值直标 / 采样点 / 云纹 / 经纬网 —— 按需开关，偏好写进本地存储，重开页恢复。</p>
+
+    <h3 data-i18n="交互">交互</h3>
+    <p data-i18n="地图面板里可切时段、日期、模型与着色依据；鼠标悬停或点击出具体数值，外推区会附「离最近采样点多远」的距离口径；右下角可全屏。">地图面板里可切时段、日期、模型与着色依据；鼠标悬停或点击出具体数值，外推区会附「离最近采样点多远」的距离口径；右下角可全屏。</p>
+
+    <div class="note warn" data-i18n-html="u2.warn"><b>可信范围别混用两个量：</b>「在不在采样区里」（凸包）和「离最近采样点多远」是两个不同的概念。包内实测最远 85 km，贴着凸包顶点外侧只有 1.4 km 却已经是外推。</div>
+  </section>
+
+  <section class="sec" id="u3">
+    <h2 data-i18n="3 · 趋势与最佳窗口">3 · 趋势与最佳窗口</h2>
+    <h3 data-i18n="趋势曲线">趋势曲线</h3>
+    <p data-i18n="未来十天逐日打分，可切换朝霞 / 晚霞。算好的结果会落盘缓存，重开页命中时零请求直接画出。">未来十天逐日打分，可切换朝霞 / 晚霞。算好的结果会落盘缓存，重开页命中时零请求直接画出。</p>
+    <h3 data-i18n="最佳窗口日历">最佳窗口日历</h3>
+    <p data-i18n="趋势的另一种读法：把未来几天按「哪天值得去」排成日历格（朝 / 晚两个色块 + 质量分），并标出前三名。点格子直接切过去 —— 渲染这张日历零取数，只有点格子（你的显式意图）才走一次单点取数。">趋势的另一种读法：把未来几天按「哪天值得去」排成日历格（朝 / 晚两个色块 + 质量分），并标出前三名。点格子直接切过去 —— 渲染这张日历零取数，只有点格子（你的显式意图）才走一次单点取数。</p>
+  </section>
+
+  <section class="sec" id="u4">
+    <h2 data-i18n="4 · 多观测点对比">4 · 多观测点对比</h2>
+    <p data-i18n="回答「今天去哪儿拍」：收藏最多 5 个机位，一次取数横向按质量分排序。">回答「今天去哪儿拍」：收藏最多 5 个机位，一次取数横向按质量分排序。</p>
+    <ul>
+      <li data-i18n-html="u4.li1">取数只能由「对比这些点」按钮触发；命中单点缓存的点<b>不进请求</b>（先单独查过的点零成本）。</li>
+      <li data-i18n="默认只比当前时段；界面会写明「本次将消耗约 N 个计费调用」。">默认只比当前时段；界面会写明「本次将消耗约 N 个计费调用」。</li>
+      <li data-i18n="位置 / 日期 / 时段任一变化，对比结果作废 —— 避免显示上一个地点的数字。">位置 / 日期 / 时段任一变化，对比结果作废 —— 避免显示上一个地点的数字。</li>
+    </ul>
+  </section>
+
+  <section class="sec" id="u5">
+    <h2 data-i18n="5 · 分享与导出">5 · 分享与导出</h2>
+    <h3 data-i18n="一键分享卡 PNG">一键分享卡 PNG</h3>
+    <p data-i18n="把结论卡导出为图片（纯 canvas 绘制，与页面同一套文案与配色），直接发到聊天工具。分享卡固定浅色底，发到任何环境都稳妥。">把结论卡导出为图片（纯 canvas 绘制，与页面同一套文案与配色），直接发到聊天工具。分享卡固定浅色底，发到任何环境都稳妥。</p>
+    <h3 data-i18n="结果快照链接">结果快照链接</h3>
+    <p data-i18n-html="u5.p">链接带 <code>snap=</code> 参数，<b>零气象请求</b>即可还原结论（解码前限长并逐字段校验，恶意载荷只作纯文本落地）。语言、时段随链接走。">链接带 <code>snap=</code> 参数，<b>零气象请求</b>即可还原结论（解码前限长并逐字段校验，恶意载荷只作纯文本落地）。语言、时段随链接走。</p>
+  </section>
+
+  <section class="sec" id="u6">
+    <h2 data-i18n="6 · 偏好设置">6 · 偏好设置</h2>
+    <dl class="terms">
+      <div><dt data-i18n="语言">语言</dt>
+        <dd data-i18n="简体中文 / 繁體中文（中国台湾·香港用语）/ English，写进偏好与分享链接。优先级：链接参数 > 偏好 > 浏览器语言 > 简体。">简体中文 / 繁體中文（中国台湾·香港用语）/ English，写进偏好与分享链接。优先级：链接参数 > 偏好 > 浏览器语言 > 简体。</dd></div>
+      <div><dt data-i18n="主题">主题</dt>
+        <dd data-i18n="跟随系统 / 浅色 / 深色三态，刷新不闪（引导脚本早于样式执行）。主题不进链接 —— 别人发的链接不该强制你的界面变黑。地图深浅跟随主题，不再有第二个开关。">跟随系统 / 浅色 / 深色三态，刷新不闪（引导脚本早于样式执行）。主题不进链接 —— 别人发的链接不该强制你的界面变黑。地图深浅跟随主题，不再有第二个开关。</dd></div>
+      <div><dt data-i18n="单位与时间制">单位与时间制</dt>
+        <dd data-i18n="公制 / 英制、24 时 / 12 时，按习惯切换，写进同一份偏好。">公制 / 英制、24 时 / 12 时，按习惯切换，写进同一份偏好。</dd></div>
+      <div><dt data-i18n="显示层与折叠">显示层与折叠</dt>
+        <dd data-i18n="数值直标 / 采样点 / 云纹 / 经纬网，以及几张技术卡的开合状态，都写进同一个本地键，重开页恢复。">数值直标 / 采样点 / 云纹 / 经纬网，以及几张技术卡的开合状态，都写进同一个本地键，重开页恢复。</dd></div>
+    </dl>
+    <div class="note" data-i18n-html="u6.note"><b>刻意不持久化两类：</b>位置与日期（由链接承载，避免与分享链接打架）；地图时段（由单点时段派生 —— 存了会让「地图看晚霞、上方算朝霞」成为常态）。</div>
+  </section>
+
+  <section class="sec" id="u7">
+    <h2 data-i18n="7 · 本地校准">7 · 本地校准</h2>
+    <p data-i18n="事后回来点一档「实际看到了什么」，本机累积之后，结论卡下方会多出一行本地校准：模型在这一档平均报多少、你标注了几次、实际出现率多少、偏差多少。">事后回来点一档「实际看到了什么」，本机累积之后，结论卡下方会多出一行本地校准：模型在这一档平均报多少、你标注了几次、实际出现率多少、偏差多少。</p>
+    <ul>
+      <li data-i18n-html="u7.li1"><b>只展示、不回改</b>模型概率 / 等级 / 因素表任何一个字。</li>
+      <li data-i18n-html="u7.li2"><b>只存本机</b> —— 数据不出设备、可一键关闭、可清空。</li>
+      <li data-i18n-html="u7.li3"><b>样本不够不给结论</b>：累计 ≥8 次、且当前这一档 ≥3 次才显示，之前只显示进度。</li>
+      <li data-i18n-html="u7.li4"><b>关掉 ≠ 删除</b>：开关只关入口与展示，已存标注不删；清空是另一个按钮，且要二次确认。</li>
+      <li data-i18n="「没看到（无法判断）」不计入统计，以免系统性拉低校准。">「没看到（无法判断）」不计入统计，以免系统性拉低校准。</li>
+    </ul>
+  </section>
+
+  <section class="sec" id="u8">
+    <h2 data-i18n="8 · 手机端">8 · 手机端</h2>
+    <ul>
+      <li data-i18n="顶部两行：第一行是目录、标题、语言与主题按钮，第二行是当前结果徽标。滚到哪都能开目录。">顶部两行：第一行是目录、标题、语言与主题按钮，第二行是当前结果徽标。滚到哪都能开目录。</li>
+      <li data-i18n="地图提示卡改成贴底通栏并自带关闭；可再点一次、点卡片外，或直接拖动地图收起。">地图提示卡改成贴底通栏并自带关闭；可再点一次、点卡片外，或直接拖动地图收起。</li>
+      <li data-i18n="关闭后不留隐形热区（触摸交还地图）；拖动超过 12px 视为收卡，以下算点击。">关闭后不留隐形热区（触摸交还地图）；拖动超过 12px 视为收卡，以下算点击。</li>
+      <li data-i18n="页面不能横向拖出空白；地图区单指可拖，手势交给地图 SDK。">页面不能横向拖出空白；地图区单指可拖，手势交给地图 SDK。</li>
+    </ul>
+  </section>
+
+  <section class="sec" id="u9">
+    <h2 data-i18n="9 · 常见疑问">9 · 常见疑问</h2>
+    <dl class="terms">
+      <div><dt data-i18n="为什么地图有时直接显示、有时要点击？">为什么地图有时直接显示、有时要点击？</dt>
+        <dd data-i18n="有缓存（看过同城市同日期）开页自动画、零额度；无缓存仍需你点「刷新地图」。">有缓存（看过同城市同日期）开页自动画、零额度；无缓存仍需你点「刷新地图」。</dd></div>
+      <div><dt data-i18n="额度怎么算？">额度怎么算？</dt>
+        <dd data-i18n-html="u9.a2">免费层按<b>访客自己的出口 IP</b> 计（10000 次 / 天 / 人）。静态站不做代转，站点本身不消耗配额。</dd></div>
+      <div><dt data-i18n="本地双击打开地图不显示？">本地双击打开地图不显示？</dt>
+        <dd data-i18n="预期行为：地图代理地址在没有部署时是一个占位符，页面会说明原因；单点查询不受影响。要联调完整功能需按开发者版的说明构建一次。">预期行为：地图代理地址在没有部署时是一个占位符，页面会说明原因；单点查询不受影响。要联调完整功能需按开发者版的说明构建一次。</dd></div>
+      <div><dt data-i18n="地图的深浅和界面主题是一回事吗？">地图的深浅和界面主题是一回事吗？</dt>
+        <dd data-i18n="现在是一回事：底图深浅跟随界面主题（浅色主题配浅底图，深色配深底图）。原先那个独立的「深色底图」开关已取消 —— 一个页面不该有两套深浅。">现在是一回事：底图深浅跟随界面主题（浅色主题配浅底图，深色配深底图）。原先那个独立的「深色底图」开关已取消 —— 一个页面不该有两套深浅。</dd></div>
+    </dl>
+  </section>
+
+</section>
+
+<!-- ==================== 开发者版 ==================== -->
+<section class="view" id="dev" hidden>
+
+  <div class="head">
+    <p class="eyebrow" data-i18n="开发者版 · 工程说明">开发者版 · 工程说明</p>
+    <h1 data-i18n="结构、构建与部署">结构、构建与部署</h1>
+    <p class="lead" data-i18n-html="d.intro">产物是 <code>index.html</code> —— 一个自包含 HTML（内联全部 JS 与城市 / 高程数据），可直接部署为静态站点；地图模块另有一个可选的同源服务端中转端点。</p>
+    <ol class="sectoc">
+      <li><a href="#d1"><span class="n">1</span><span data-i18n="源码结构">源码结构</span></a></li>
+      <li><a href="#d2"><span class="n">2</span><span data-i18n="构建命令">构建命令</span></a></li>
+      <li><a href="#d3"><span class="n">3</span><span data-i18n="部署">部署</span></a></li>
+      <li><a href="#d4"><span class="n">4</span><span data-i18n="回归套件">回归套件</span></a></li>
+      <li><a href="#d5"><span class="n">5</span><span data-i18n="已知边界">已知边界</span></a></li>
+      <li><a href="#d6"><span class="n">6</span><span data-i18n="合规">合规</span></a></li>
+    </ol>
+  </div>
+
+  <section class="sec" id="d1">
+    <h2 data-i18n="1 · 源码结构">1 · 源码结构</h2>
+    <p data-i18n-html="d1.p">单文件产物由脚本拼装，<b>不要手改产物</b>。教程页是唯一例外：它是独立手写文件，不进拼装流程。</p>
+    <div class="code"><pre><span class="c"># 源（改这些）</span>
+tpl/template.html     版式来源（HTML + CSS + 4 个内联 &lt;script&gt; 占位块）
 tpl/404.html          404 页模板（第二个产物，共用设计令牌）
 _p2.js … _p6.js       业务代码片段
-_pi18n.js             多语言词典（简/繁/英）
+_pi18n.js             多语言词典（简 / 繁 / 英）
 refs/*.txt            内联数据（城市表 / 地名别名 / 0.5° 高程网格 b64）
+tutorial.html         本教程（独立文件，不参与拼装）
 
 <span class="c"># 构建与产物</span>
 functions/            Cloudflare Pages Functions（地图代理，可选）
 assemble.py           拼装 → index.html 与 404.html
 mkpreview.py          拼装 → _check/preview.html（用 SDK 桩替换腾讯地图脚本）
 _check/               回归套件</pre></div>
-      <div class="note warn">改动任何 <code>_p*.js</code> / <code>tpl/</code> / <code>refs/</code> 之后都必须重跑 <code>assemble.py</code> 与 <code>mkpreview.py</code>。两个产物都不许手改。</div>
-    </section>
+    <div class="note warn" data-i18n-html="d1.note">改动任何 <code>_p*.js</code> / <code>tpl/</code> / <code>refs/</code> 之后都必须重跑 <code>assemble.py</code> 与 <code>mkpreview.py</code>。两个产物都不许手改。</div>
+  </section>
 
-    <section class="block">
-      <h2>2 · 构建命令</h2>
-      <div class="codeblock"><pre><span class="c"># 默认构建（站点在域名根 /）</span>
+  <section class="sec" id="d2">
+    <h2 data-i18n="2 · 构建命令">2 · 构建命令</h2>
+    <div class="code"><pre><span class="c"># 默认构建（站点在域名根 /）</span>
 python assemble.py
 
 <span class="c"># GitHub Pages 项目页（子路径 /sunglow/）</span>
@@ -393,228 +628,1154 @@ python assemble.py
 <span class="c"># 带地图代理（同源路径，key 走环境变量，不进产物）</span>
 <span class="v">TMAP_SERVICE_HOST</span>=https://你的域名/_TMapService python assemble.py
 
-<span class="c"># 可选 PWA（多产 manifest/sw/图标，单文件约束默认仍成立）</span>
+<span class="c"># 可选 PWA（多产 manifest / sw / 图标，单文件约束默认仍成立）</span>
 <span class="v">PWA</span>=1 <span class="v">SITE_BASE</span>=sunglow python assemble.py
 
 <span class="c"># 生成带 SDK 桩的预览文件（回归套件跑这个）</span>
 python mkpreview.py</pre></div>
-      <p class="muted">不设 <code>TMAP_SERVICE_HOST</code> 时，<code>assemble.py</code> 回落到本地预览用的占位符形态，开发行为不变。</p>
-    </section>
+    <p class="muted" data-i18n-html="d2.p">不设 <code>TMAP_SERVICE_HOST</code> 时，<code>assemble.py</code> 回落到本地预览用的占位符形态，开发行为不变。</p>
+  </section>
 
-    <section class="block">
-      <h2>3 · 部署</h2>
-      <h3>3.1 纯静态（地图不可用）</h3>
-      <p>把 <code>index.html</code> 丢到任意静态托管（Cloudflare Pages、GitHub Pages、对象存储）。查询、趋势、分享卡全部可用；地图模块因为没有腾讯地图 key 会显示一段说明。</p>
-      <div class="note">免费层配额按<b>访客自己的出口 IP</b>计。静态站不做任何代转，站点本身不消耗配额。</div>
+  <section class="sec" id="d3">
+    <h2 data-i18n="3 · 部署">3 · 部署</h2>
+    <h3 data-i18n="3.1 纯静态（地图不可用）">3.1 纯静态（地图不可用）</h3>
+    <p data-i18n-html="d3.p1">把 <code>index.html</code>（以及可选的 <code>tutorial.html</code>、<code>404.html</code>）丢到任意静态托管：Cloudflare Pages、GitHub Pages、对象存储。查询、趋势、分享卡全部可用；地图模块因为没有腾讯地图 key 会显示一段说明。</p>
+    <div class="note" data-i18n-html="d3.note1">免费层配额按<b>访客自己的出口 IP</b> 计。静态站不做任何代转，站点本身不消耗配额。</div>
 
-      <h3>3.2 带地图（Cloudflare Pages + Pages Functions）</h3>
-      <p>腾讯地图 JS API 的 key <b>不能明文写进产物</b>（单文件 HTML 谁都能看到 key 并刷配额）。已实现代理方案：</p>
-      <ol class="steps">
-        <li>去 <a href="https://lbs.qq.com" target="_blank" rel="noopener">lbs.qq.com</a> 申请 Web 端 (JS API) key，把站点域名加进白名单。</li>
-        <li>把本目录作为 Pages 项目（构建命令留空，产物目录 <code>/</code>）。<code>functions/_TMapService/[[path]].js</code> 会被自动识别为 Function。</li>
-        <li>Pages 的 Settings → Environment variables 加 <code>TMAP_KEY = 你的 key</code>。</li>
-        <li>构建时把地图代理指到同源路径：<code>TMAP_SERVICE_HOST=https://你的域名/_TMapService python assemble.py</code>。</li>
-      </ol>
-      <p class="muted">代理与前端同源 ⇒ 无 CORS、无混合内容。key 只存在于服务端环境变量，永不进入产物。</p>
+    <h3 data-i18n="3.2 带地图（Cloudflare Pages + Pages Functions）">3.2 带地图（Cloudflare Pages + Pages Functions）</h3>
+    <p data-i18n-html="d3.p2">腾讯地图 JS API 的 key <b>不能明文写进产物</b>（单文件 HTML 谁都能看到，拿去刷配额）。已实现代理方案：</p>
+    <ol class="steps">
+      <li data-i18n="去 lbs.qq.com 申请 Web 端（JS API）key，把站点域名加进白名单。">去 lbs.qq.com 申请 Web 端（JS API）key，把站点域名加进白名单。</li>
+      <li data-i18n-html="d3.li2">把本目录作为 Pages 项目（构建命令留空，产物目录 <code>/</code>）。<code>functions/_TMapService/[[path]].js</code> 会被自动识别为 Function。</li>
+      <li data-i18n-html="d3.li3">Pages 的 Settings → Environment variables 加 <code>TMAP_KEY = 你的 key</code>。</li>
+      <li data-i18n-html="d3.li4">构建时把地图代理指到同源路径：<code>TMAP_SERVICE_HOST=https://你的域名/_TMapService python assemble.py</code>。</li>
+    </ol>
+    <p class="muted" data-i18n="代理与前端同源 ⇒ 无 CORS、无混合内容。key 只存在于服务端环境变量，永不进入产物。">代理与前端同源 ⇒ 无 CORS、无混合内容。key 只存在于服务端环境变量，永不进入产物。</p>
 
-      <h3>3.3 404 页</h3>
-      <p>纯静态站没有前端路由，「访问不存在的路径」由托管平台兜底（Cloudflare Pages / GitHub Pages / Netlify 都取站点根下的 <code>404.html</code> 并以 404 返回）。<code>assemble.py</code> 一并生成，无需 rewrite 配置。页内地址写成站点根的绝对形式，由构建期注入 <code>SITE_BASE</code>。</p>
+    <h3 data-i18n="3.3 404 页">3.3 404 页</h3>
+    <p data-i18n-html="d3.p4">纯静态站没有前端路由，「访问不存在的路径」由托管平台兜底（Cloudflare Pages / GitHub Pages / Netlify 都取站点根下的 <code>404.html</code> 并以 404 返回）。<code>assemble.py</code> 一并生成，无需 rewrite 配置；页内地址写成站点根的绝对形式，由构建期注入 <code>SITE_BASE</code>。</p>
 
-      <h3>3.4 可选 PWA</h3>
-      <p><code>PWA=1</code> 会多产 <code>manifest.json</code> / <code>sw.js</code> / <code>icon-192.png</code> / <code>icon-512.png</code>，可被「添加到主屏幕」且离线能打开。三条纪律：① SW <b>绝不缓存气象响应</b>（只认预缓存名单）；② 缓存名带产物 sha256 前 12 位，内容一变旧缓存作废；③ 注册是「增强」——失败 / <code>file://</code> 打开全部静默跳过。默认不开，因为它与「单文件产物」核心约束冲突。</p>
+    <h3 data-i18n="3.4 可选 PWA">3.4 可选 PWA</h3>
+    <p data-i18n-html="d3.p5"><code>PWA=1</code> 会多产 <code>manifest.json</code> / <code>sw.js</code> / 两枚图标，可被「添加到主屏幕」且离线能打开。三条纪律：① SW <b>绝不缓存气象响应</b>（只认预缓存名单）；② 缓存名带产物 sha256 前 12 位，内容一变旧缓存作废；③ 注册是「增强」—— 失败或 <code>file://</code> 打开全部静默跳过。默认不开，因为它与「单文件产物」的核心约束冲突。</p>
 
-      <h3>3.5 本地预览</h3>
-      <div class="codeblock"><pre>python assemble.py          <span class="c"># 生成 index.html</span>
+    <h3 data-i18n="3.5 本地预览">3.5 本地预览</h3>
+    <div class="code"><pre>python assemble.py          <span class="c"># 生成 index.html</span>
 python mkpreview.py         <span class="c"># 生成 _check/preview.html（SDK 桩）</span></pre></div>
-      <p class="muted"><code>_check/preview.html</code> 的地图 SDK 是桩实现（复刻 Heat 核函数叠加与投影），可离线、可断言、不消耗额度。回归套件全部跑这个文件。</p>
-    </section>
+    <p class="muted" data-i18n-html="d3.p6"><code>_check/preview.html</code> 的地图 SDK 是桩实现（复刻 Heat 核函数叠加与投影），可离线、可断言、不消耗额度。回归套件全部跑这个文件。</p>
+  </section>
 
-    <section class="block">
-      <h2>4 · 回归套件</h2>
-      <div class="codeblock"><pre>python _check/all.py            <span class="c"># 总表（25 项）</span>
+  <section class="sec" id="d4">
+    <h2 data-i18n="4 · 回归套件">4 · 回归套件</h2>
+    <div class="code"><pre>python _check/all.py            <span class="c"># 总表</span>
 python _check/all.py -v         <span class="c"># 附完整输出</span>
 python _check/all.py --fast     <span class="c"># cdp 只跑快段（跳过两段最慢）</span>
 python _check/all.py -k cdp     <span class="c"># 只跑名字含 cdp 的</span></pre></div>
-      <table class="tbl">
-        <thead><tr><th>探针</th><th>覆盖要点</th></tr></thead>
-        <tbody>
-          <tr><td>syntax / globals</td><td>4 个内联 script 块语法；跨块命名冲突（静默覆盖最难查）</td></tr>
-          <tr><td>run_self / datacheck</td><td>色阶 / 等级纯函数自测；城市表不变量 + 港澳台合规</td></tr>
-          <tr><td>localgrid / timeoutprobe</td><td>局部网格几何 / 缓存闸门 / 首屏地图加载；请求超时 + 429 双分类</td></tr>
-          <tr><td>mapaudit / mobileprobe</td><td>地图审计（48 断言）；手机端适配（两档视口 35+35 断言）</td></tr>
-          <tr><td>persist / uiprobe</td><td>偏好写盘↔读回；第五轮 UI 默认态 / 天色带 / 液态玻璃</td></tr>
-          <tr><td>a11y / i18n / dark</td><td>无障碍 16；多语言 23；深色模式 19（含浅色漏网扫描）</td></tr>
-          <tr><td>spot / snap / calib</td><td>F3/F2 额度纪律 21；快照零请求 24；F4 校准 25</td></tr>
-          <tr><td>xss / 404 / docfacts</td><td>XSS 防护 18；404 页 21；文档↔代码一致性</td></tr>
-        </tbody>
-      </table>
-      <div class="note warn">探针一律跑 <code>_check/preview.html</code>。<b>改了源码忘了重新生成 preview，会让整套断言测的是旧代码</b>——本项目踩过多次的坑。</div>
-      <p class="muted">不进一键序列（会花真实额度或依赖实时接口）：<code>consistency.js</code> / <code>shotdefault.js</code> / <code>tzprobe.js</code> 等。</p>
-    </section>
-
-    <section class="block">
-      <h2>5 · 已知边界（改动前必读）</h2>
-      <dl class="terms">
-        <div><dt>额度</dt><dd>首屏只取单点（≈65）。地图必须由用户显式点击才取（≈171）。唯一例外是缓存命中自动画（零请求、零额度）。这条由 <code>loadMapData</code> 里「缓存快路径之后、网络调用之前」的一行 <code>return false</code> 保证。</dd></div>
-        <div><dt>可信范围</dt><dd>色面边界＝采样点凸包 + 70km 羽化；凸包之外即外推，叠可信度纱（覆盖已上色面积约 21.6%）。悬停卡另有「离最近采样点多远」的 90km 口径——与「在不在采样区」是两个量。</dd></div>
-        <div><dt>模型分歧</dt><dd>地图「模型分歧」只取三套模型极差；少于两套有值时返回「无数据」而非 0。</dd></div>
-        <div><dt>偏好持久化</dt><dd>9 个显示状态写进同一键（实测 112 字节）；应用顺序硬约束：必须在任何控件初值 / 派生状态赋值前调用。</dd></div>
-        <div><dt>趋势缓存</dt><dd>算好的 rows 落盘（≈1.9KB/条，上限 3 条），重开页命中零请求；不存原始响应（≈5MB 会撑爆配额）。权重/阈值一改用版本号兜住。</dd></div>
-        <div><dt>深色模式</dt><dd>三态；刷新不闪（引导脚本在 &lt;style&gt; 前）；<code>color-scheme</code> 跟着切；写进 DOM 的语义色要重画。分享卡固定浅色；主题不进 URL。</dd></div>
-        <div><dt>XSS</dt><dd>输出侧 <code>esc()</code> + 输入侧 <code>safeLabel()</code>（URL 地名白名单）。新增 render 代码必须走这两个函数。仍未做：CSP 与其余 44 处分批替换。</dd></div>
-        <div><dt>F2 / F3 / F4</dt><dd>F3 日历渲染零取数，点格子才取数；F2 取数只能由按钮触发、命中缓存不进请求、上限 5 点；F4 只展示不回改、样本不够不给结论、关掉≠删除。</dd></div>
-        <div><dt>手机端布局</dt><dd>任何横向滚动容器必须 <code>min-width:0</code>；<code>#map</code> 必须 <code>touch-action:none</code> 且不能设在 <code>.mapwrap</code>；判越界用 <code>documentElement.clientWidth</code> 而非 <code>innerWidth</code>。</dd></tr>
-      </dl>
-    </section>
-
-    <section class="block">
-      <h2>6 · 合规</h2>
-      <p>在中国境内展示地图，底图服务需具备测绘资质。腾讯地图是合规的；为省一个 key 换成 OSM 等境外底图会把合规问题一起换进来，不建议。数据源：气象 / 空气质量来自 Open-Meteo（免费公开、非商业），省界来自阿里云 DataV，地图来自腾讯位置服务——请遵守各自服务条款。</p>
-    </section>
+    <table class="tbl">
+      <thead><tr><th data-i18n="探针">探针</th><th data-i18n="覆盖要点">覆盖要点</th></tr></thead>
+      <tbody>
+        <tr><td><b>syntax / globals</b></td><td data-i18n="内联 script 块语法；跨块命名冲突（静默覆盖最难查）">内联 script 块语法；跨块命名冲突（静默覆盖最难查）</td></tr>
+        <tr><td><b>run_self / datacheck</b></td><td data-i18n="色阶 / 等级纯函数自测；城市表不变量 + 港澳台合规">色阶 / 等级纯函数自测；城市表不变量 + 港澳台合规</td></tr>
+        <tr><td><b>localgrid / timeoutprobe</b></td><td data-i18n="局部网格几何 / 缓存闸门 / 首屏地图加载；请求超时 + 429 双分类">局部网格几何 / 缓存闸门 / 首屏地图加载；请求超时 + 429 双分类</td></tr>
+        <tr><td><b>mapaudit / mobileprobe</b></td><td data-i18n="地图审计（图层、缩放、全屏出口）；手机端适配合成两档视口">地图审计（图层、缩放、全屏出口）；手机端适配合成两档视口</td></tr>
+        <tr><td><b>persist / uiprobe</b></td><td data-i18n="偏好写盘↔读回；默认态 / 天色带 / 顶栏与目录">偏好写盘↔读回；默认态 / 天色带 / 顶栏与目录</td></tr>
+        <tr><td><b>a11y / i18n / dark</b></td><td data-i18n="无障碍；多语言键覆盖；深色模式（含浅色漏网扫描）">无障碍；多语言键覆盖；深色模式（含浅色漏网扫描）</td></tr>
+        <tr><td><b>spot / snap / calib</b></td><td data-i18n="F3 / F2 额度纪律；快照零请求；F4 校准">F3 / F2 额度纪律；快照零请求；F4 校准</td></tr>
+        <tr><td><b>xss / 404 / docfacts</b></td><td data-i18n="XSS 防护；404 页；文档↔代码一致性">XSS 防护；404 页；文档↔代码一致性</td></tr>
+        <tr><td><b>tutorialprobe</b></td><td data-i18n="本教程：三语键覆盖、主题三态、窄屏无溢出、四档切换、偏好共享">本教程：三语键覆盖、主题三态、窄屏无溢出、四档切换、偏好共享</td></tr>
+      </tbody>
+    </table>
+    <div class="note warn" data-i18n-html="d4.note">探针一律跑 <code>_check/preview.html</code>。<b>改了源码忘了重新生成 preview，整套断言测的就是旧代码</b> —— 本项目踩过多次的坑。</div>
+    <p class="muted" data-i18n-html="d4.p">不进一键序列（会花真实额度或依赖实时接口）：<code>consistency.js</code> / <code>shotdefault.js</code> / <code>tzprobe.js</code> 等。</p>
   </section>
 
-  <!-- ============ CREATOR ============ -->
-  <section id="creator" class="view" hidden>
-    <section class="block" style="border-top:0;padding-top:30px">
-      <p class="eyebrow">FOR CREATORS · 演示素材</p>
-      <h1>创作者版：怎么把霞光预报讲给人看</h1>
-      <p class="lead">面向自媒体与内容创作者。下面是最适合拿出来说的亮点、演示叙事线，以及可以放心引用的卖点。</p>
-    </section>
+  <section class="sec" id="d5">
+    <h2 data-i18n="5 · 已知边界（改动前必读）">5 · 已知边界（改动前必读）</h2>
+    <dl class="terms">
+      <div><dt data-i18n="额度">额度</dt>
+        <dd data-i18n-html="d5.t1">首屏只取单点（约 65）。地图必须由用户显式点击才取（约 171）。唯一例外是缓存命中自动画（零请求、零额度）—— 由「缓存快路径之后、网络调用之前」的一行提前返回保证。</dd></div>
+      <div><dt data-i18n="色面与范围">色面与范围</dt>
+        <dd data-i18n="色面值域是固定的 0–100 绝对刻度（不做当日拉伸），边缘取采样点凸包并仅向外羽化；凸包之外即外推，用虚线标出。悬停卡另有「离最近采样点多远」的口径 —— 与「在不在采样区」是两个量。">色面值域是固定的 0–100 绝对刻度（不做当日拉伸），边缘取采样点凸包并仅向外羽化；凸包之外即外推，用虚线标出。悬停卡另有「离最近采样点多远」的口径 —— 与「在不在采样区」是两个量。</dd></div>
+      <div><dt data-i18n="云纹">云纹</dt>
+        <dd data-i18n="按云量分四档画斜纹，晴档不画（否则整张图都变闷）。档界同时是图例边界；图例里「晴」是空心描边，代表「这里没有纹路是因为没有云」。">按云量分四档画斜纹，晴档不画（否则整张图都变闷）。档界同时是图例边界；图例里「晴」是空心描边，代表「这里没有纹路是因为没有云」。</dd></div>
+      <div><dt data-i18n="模型分歧">模型分歧</dt>
+        <dd data-i18n="地图的「模型分歧」只取三套模型的极差；少于两套有值时返回「无数据」而不是 0。">地图的「模型分歧」只取三套模型的极差；少于两套有值时返回「无数据」而不是 0。</dd></div>
+      <div><dt data-i18n="偏好持久化">偏好持久化</dt>
+        <dd data-i18n="所有显示类偏好写进同一个本地键；应用顺序有硬约束 —— 必须在任何控件初值 / 派生状态赋值之前调用。">所有显示类偏好写进同一个本地键；应用顺序有硬约束 —— 必须在任何控件初值 / 派生状态赋值之前调用。</dd></div>
+      <div><dt data-i18n="趋势缓存">趋势缓存</dt>
+        <dd data-i18n="算好的 rows 落盘（约 1.9KB / 条，上限 3 条），重开页命中零请求；不存原始响应（约 5MB，会撑爆配额）。权重 / 阈值一改就用版本号兜住。">算好的 rows 落盘（约 1.9KB / 条，上限 3 条），重开页命中零请求；不存原始响应（约 5MB，会撑爆配额）。权重 / 阈值一改就用版本号兜住。</dd></div>
+      <div><dt data-i18n="深色模式">深色模式</dt>
+        <dd data-i18n-html="d5.t7">三态；刷新不闪（引导脚本在 <code>&lt;style&gt;</code> 之前）；<code>color-scheme</code> 跟着切；写进 DOM 的语义色要重画。分享卡固定浅色；主题不进链接。">三态；刷新不闪（引导脚本在 <code>&lt;style&gt;</code> 之前）；<code>color-scheme</code> 跟着切；写进 DOM 的语义色要重画。分享卡固定浅色；主题不进链接。</dd></div>
+      <div><dt data-i18n="XSS">XSS</dt>
+        <dd data-i18n-html="d5.t8">输出侧 <code>esc()</code> + 输入侧 <code>safeLabel()</code>（URL 地名白名单）。新增渲染代码必须走这两个函数；仍未做：CSP 与其余分批替换。</dd></div>
+      <div><dt data-i18n="F2 / F3 / F4">F2 / F3 / F4</dt>
+        <dd data-i18n="F3 日历渲染零取数，点格子才取数；F2 取数只能由按钮触发、命中缓存不进请求、上限 5 点；F4 只展示不回改、样本不够不给结论、关掉≠删除。">F3 日历渲染零取数，点格子才取数；F2 取数只能由按钮触发、命中缓存不进请求、上限 5 点；F4 只展示不回改、样本不够不给结论、关掉≠删除。</dd></div>
+      <div><dt data-i18n="手机端布局">手机端布局</dt>
+        <dd data-i18n-html="d5.t10">任何横向滚动容器必须 <code>min-width:0</code>；<code>#map</code> 必须 <code>touch-action:none</code> 且不能设在 <code>.mapwrap</code>；判越界用 <code>documentElement.clientWidth</code> 而不是 <code>innerWidth</code>。</dd></div>
+    </dl>
+  </section>
 
-    <section class="block">
-      <h2>1 · 一句话开场</h2>
-      <div class="note"><b>「它是一个把『今晚有没有火烧云』从玄学变成概率和评分的工具——而且免费、不用注册、纯网页。」</b></div>
-      <p class="muted">这句同时覆盖了差异化（量化而非玄学）、易得性（免费/无注册/纯前端），适合做短视频开头或图文首段。</p>
-    </section>
+  <section class="sec" id="d6">
+    <h2 data-i18n="6 · 合规">6 · 合规</h2>
+    <p data-i18n="在中国境内展示地图，底图服务需具备测绘资质。腾讯地图是合规的；为省一个 key 换成 OSM 等境外底图，会把合规问题一起换进来，不建议。">在中国境内展示地图，底图服务需具备测绘资质。腾讯地图是合规的；为省一个 key 换成 OSM 等境外底图，会把合规问题一起换进来，不建议。</p>
+    <p data-i18n="数据源：气象与空气质量来自 Open-Meteo（免费公开、非商业），省界来自阿里云 DataV，地图来自腾讯位置服务 —— 请遵守各自的服务条款。">数据源：气象与空气质量来自 Open-Meteo（免费公开、非商业），省界来自阿里云 DataV，地图来自腾讯位置服务 —— 请遵守各自的服务条款。</p>
+  </section>
 
-    <section class="block">
-      <h2>2 · 最值得拍的 5 个亮点</h2>
-      <div class="grid2">
-        <div class="card-line">
-          <span class="tag">结论卡</span>
-          <h3>概率 + 质量评分，数字衬线大字</h3>
-          <p class="muted">结论卡用大号衬线数字呈现概率 % 与质量分，配优/良/一般/差等级与「主要影响因素」分解——截图即干货，观众一眼看懂。</p>
-        </div>
-        <div class="card-line">
-          <span class="tag">地图</span>
-          <h3>周边 500 km 霞光分布</h3>
-          <p class="muted">热力图把「去哪个方向拍」画出来。白→黄→橙→红色阶 + 等值线 + 数据范围虚线，演示时直接说「红色那片就是今晚最该去的地方」。</p>
-          <div class="ribbon" aria-hidden="true"></div>
-        </div>
-        <div class="card-line">
-          <span class="tag">F3 日历</span>
-          <h3>最佳窗口：哪天去直接排好</h3>
-          <p class="muted">未来 N 天按「哪天值得去」排成日历格，标出前三名。适合做「未来一周什么时候拍照最好」这类选题。</p>
-        </div>
-        <div class="card-line">
-          <span class="tag">F2 对比</span>
-          <h3>多机位对比：今天去哪儿拍</h3>
-          <p class="muted">收藏最多 5 个机位一次取数横向排序。演示「家附近 vs 海边 vs 山顶，今晚哪个出片」最直观。</p>
-        </div>
-        <div class="card-line">
-          <span class="tag">分享</span>
-          <h3>一键分享卡 / 快照链接</h3>
-          <p class="muted">结论卡导出 PNG 直接发群；<code>snap=</code> 链接零请求还原结论，别人点开就是同一张预报。降低观众「我也想试试」的门槛。</p>
-        </div>
-        <div class="card-line">
-          <span class="tag">本地校准</span>
-          <h3>越用越懂你那片天</h3>
-          <p class="muted">事后回填「实际看到了什么」，本机累积出本地校准。强调「纯展示不回改模型、数据不出设备」——隐私友好，适合做信任感叙事。</p>
-        </div>
+</section>
+
+<!-- ==================== 创作者版 ==================== -->
+<section class="view" id="creator" hidden>
+
+  <div class="head">
+    <p class="eyebrow" data-i18n="创作者版 · 演示素材">创作者版 · 演示素材</p>
+    <h1 data-i18n="怎么把霞光预报讲给人看">怎么把霞光预报讲给人看</h1>
+    <p class="lead" data-i18n="面向自媒体与内容创作者：最值得讲的亮点、演示叙事线，以及可以放心引用的卖点。">面向自媒体与内容创作者：最值得讲的亮点、演示叙事线，以及可以放心引用的卖点。</p>
+    <ol class="sectoc">
+      <li><a href="#c1"><span class="n">1</span><span data-i18n="一句话开场">一句话开场</span></a></li>
+      <li><a href="#c2"><span class="n">2</span><span data-i18n="五个亮点">五个亮点</span></a></li>
+      <li><a href="#c3"><span class="n">3</span><span data-i18n="适合的题材">适合的题材</span></a></li>
+      <li><a href="#c4"><span class="n">4</span><span data-i18n="演示叙事线">演示叙事线</span></a></li>
+      <li><a href="#c5"><span class="n">5</span><span data-i18n="可引用的卖点">可引用的卖点</span></a></li>
+      <li><a href="#c6"><span class="n">6</span><span data-i18n="注意事项">注意事项</span></a></li>
+    </ol>
+  </div>
+
+  <section class="sec" id="c1">
+    <h2 data-i18n="1 · 一句话开场">1 · 一句话开场</h2>
+    <div class="note" data-i18n="「它是一个把『今晚有没有火烧云』从玄学变成概率和评分的工具 —— 而且免费、不用注册、纯网页。」">「它是一个把『今晚有没有火烧云』从玄学变成概率和评分的工具 —— 而且免费、不用注册、纯网页。」</div>
+    <p class="muted" data-i18n="这句同时覆盖了差异化（量化而非玄学）与易得性（免费 / 无注册 / 纯前端），适合做短视频开头或图文首段。">这句同时覆盖了差异化（量化而非玄学）与易得性（免费 / 无注册 / 纯前端），适合做短视频开头或图文首段。</p>
+  </section>
+
+  <section class="sec" id="c2">
+    <h2 data-i18n="2 · 最值得讲的五个亮点">2 · 最值得讲的五个亮点</h2>
+    <div class="grid2">
+      <div class="lit">
+        <span class="tag" data-i18n="结论卡">结论卡</span>
+        <h3 data-i18n="概率 + 质量评分，衬线大字">概率 + 质量评分，衬线大字</h3>
+        <p data-i18n="结论卡用大号衬线数字呈现概率 % 与质量分，配优 / 良 / 一般 / 差等级与「主要影响因素」分解 —— 截图即干货，观众一眼看懂。">结论卡用大号衬线数字呈现概率 % 与质量分，配优 / 良 / 一般 / 差等级与「主要影响因素」分解 —— 截图即干货，观众一眼看懂。</p>
       </div>
-    </section>
-
-    <section class="block">
-      <h2>3 · 适合的题材</h2>
-      <table class="tbl">
-        <thead><tr><th>题材</th><th>切入点</th></tr></thead>
-        <tbody>
-          <tr><td><b>摄影教程</b></td><td>用 F3 日历选拍摄日、用 F2 对比选机位、用地图定方向。</td></tr>
-          <tr><td><b>天气 / 大气科普</b></td><td>朝霞晚霞大气条件不同、为什么分两个时段、模型分歧代表什么。</td></tr>
-          <tr><td><b>出行 / 生活攻略</b></td><td>「今晚值不值得专门跑出去拍」「未来一周哪天最适合」。</td></tr>
-          <tr><td><b>工具推荐</b></td><td>免费、无注册、纯前端、隐私本地校准、可装成 App（PWA）。</td></tr>
-        </tbody>
-      </table>
-    </section>
-
-    <section class="block">
-      <h2>4 · 演示叙事线（录屏脚本）</h2>
-      <ol class="steps">
-        <li><b>抛出痛点：</b>「每次等晚霞都靠赌，今天教你用数据赌。」</li>
-        <li><b>一次查询：</b>搜城市 → 切晚霞 → 结论卡大数字 + 因素分解。</li>
-        <li><b>放大地图：</b>点「加载周边地图」→ 指红色区域说「去这儿」。</li>
-        <li><b>拉长时间：</b>开 F3 日历 → 「这周三是冠军」。</li>
-        <li><b>横向比较：</b>开 F2 对比 → 「山顶比海边稳」。</li>
-        <li><b>收尾转化：</b>导出分享卡 / 发快照链接 → 「链接放评论区，自己查你那片天」。</li>
-      </ol>
-      <div class="note">移动端演示：窄屏顶部收成一行、提示卡贴底通栏、拖动地图收卡——这些交互本身就很「产品感」，适合慢动作展示。</div>
-    </section>
-
-    <section class="block">
-      <h2>5 · 可放心引用的卖点</h2>
-      <ul>
-        <li><b>免费、无需注册</b>，纯前端直连公开气象接口（Open-Meteo）。</li>
-        <li><b>三模型合成</b>（GFS / ECMWF / 光追，权重 0.30 / 0.34 / 0.36），降低单一来源偏差。</li>
-        <li><b>隐私友好</b>：本地校准数据只存本机、可关闭可清空、不回改模型。</li>
-        <li><b>额度对访客友好</b>：首屏只取单点，地图显式点击才取，缓存命中零请求。</li>
-        <li><b>可装成 App</b>（PWA，可选），离线也能打开。</li>
-      </ul>
-    </section>
-
-    <section class="block">
-      <h2>6 · 注意事项（别踩坑）</h2>
-      <dl class="terms">
-        <div><dt>额度</dt><dd>免费层按访客自己的出口 IP 计（10000 次/天/人）。做演示时自己多刷几次没关系，但别误导观众「无限调用」。</dd></div>
-        <div><dt>地图需部署</dt><dd>双击本地文件打开时地图不显示（占位符形态），这是预期行为；完整地图功能需要带代理的部署。</dd></div>
-        <div><dt>合规底图</dt><dd>中国境内展示用地图需测绘资质，项目用的腾讯地图是合规方案；不要为省事换成境外底图。</dd></div>
-        <div><dt>概率是「霞光」不是「出太阳」</dt><dd>避免观众误解——它预报的是低空霞光出现的可能性与质量，不是晴雨。</dd></tr>
-      </dl>
-    </section>
+      <div class="lit">
+        <span class="tag" data-i18n="地图">地图</span>
+        <h3 data-i18n="周边 500 km 霞光分布">周边 500 km 霞光分布</h3>
+        <p data-i18n="热力图把「去哪个方向拍」画出来。白 → 黄 → 橙 → 红色阶 + 等值线 + 数据范围虚线，演示时直接说「红色那片就是今晚最该去的地方」。">热力图把「去哪个方向拍」画出来。白 → 黄 → 橙 → 红色阶 + 等值线 + 数据范围虚线，演示时直接说「红色那片就是今晚最该去的地方」。</p>
+      </div>
+      <div class="lit">
+        <span class="tag" data-i18n="最佳窗口">最佳窗口</span>
+        <h3 data-i18n="哪天去，日历直接排好">哪天去，日历直接排好</h3>
+        <p data-i18n="未来几天按「哪天值得去」排成日历格并标出前三名。适合做「未来一周什么时候拍照最好」这类选题。">未来几天按「哪天值得去」排成日历格并标出前三名。适合做「未来一周什么时候拍照最好」这类选题。</p>
+      </div>
+      <div class="lit">
+        <span class="tag" data-i18n="多机位对比">多机位对比</span>
+        <h3 data-i18n="今天去哪儿拍">今天去哪儿拍</h3>
+        <p data-i18n="收藏最多 5 个机位，一次取数横向排序。演示「家附近 vs 海边 vs 山顶，今晚哪个出片」最直观。">收藏最多 5 个机位，一次取数横向排序。演示「家附近 vs 海边 vs 山顶，今晚哪个出片」最直观。</p>
+      </div>
+      <div class="lit">
+        <span class="tag" data-i18n="分享">分享</span>
+        <h3 data-i18n="分享卡与快照链接">分享卡与快照链接</h3>
+        <p data-i18n-html="c2.p5">结论卡导出 PNG 直接发群；<code>snap=</code> 链接零请求还原结论，别人点开就是同一张预报。降低观众「我也想试试」的门槛。</p>
+      </div>
+      <div class="lit">
+        <span class="tag" data-i18n="本地校准">本地校准</span>
+        <h3 data-i18n="越用越懂你那片天">越用越懂你那片天</h3>
+        <p data-i18n="事后回填「实际看到了什么」，本机累积出本地校准。强调「纯展示不回改模型、数据不出设备」—— 隐私友好，适合做信任感叙事。">事后回填「实际看到了什么」，本机累积出本地校准。强调「纯展示不回改模型、数据不出设备」—— 隐私友好，适合做信任感叙事。</p>
+      </div>
+    </div>
   </section>
+
+  <section class="sec" id="c3">
+    <h2 data-i18n="3 · 适合的题材">3 · 适合的题材</h2>
+    <table class="tbl">
+      <thead><tr><th data-i18n="题材">题材</th><th data-i18n="切入点">切入点</th></tr></thead>
+      <tbody>
+        <tr><td><b data-i18n="摄影教程">摄影教程</b></td><td data-i18n="用最佳窗口日历选拍摄日、用多机位对比选机位、用地图定方向。">用最佳窗口日历选拍摄日、用多机位对比选机位、用地图定方向。</td></tr>
+        <tr><td><b data-i18n="天气 / 大气科普">天气 / 大气科普</b></td><td data-i18n="朝霞晚霞大气条件不同、为什么分两个时段、模型分歧代表什么。">朝霞晚霞大气条件不同、为什么分两个时段、模型分歧代表什么。</td></tr>
+        <tr><td><b data-i18n="出行 / 生活攻略">出行 / 生活攻略</b></td><td data-i18n="「今晚值不值得专门跑出去拍」「未来一周哪天最适合」。">「今晚值不值得专门跑出去拍」「未来一周哪天最适合」。</td></tr>
+        <tr><td><b data-i18n="工具推荐">工具推荐</b></td><td data-i18n="免费、无注册、纯前端、隐私友好、可装成 App（PWA）。">免费、无注册、纯前端、隐私友好、可装成 App（PWA）。</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="sec" id="c4">
+    <h2 data-i18n="4 · 演示叙事线">4 · 演示叙事线</h2>
+    <ol class="steps">
+      <li><b data-i18n="抛出痛点：">抛出痛点：</b><span data-i18n="「每次等晚霞都靠赌，今天教你用数据赌。」">「每次等晚霞都靠赌，今天教你用数据赌。」</span></li>
+      <li><b data-i18n="一次查询：">一次查询：</b><span data-i18n="搜城市 → 切晚霞 → 结论卡大数字 + 因素分解。">搜城市 → 切晚霞 → 结论卡大数字 + 因素分解。</span></li>
+      <li><b data-i18n="放大地图：">放大地图：</b><span data-i18n="点「刷新地图」→ 指红色区域说「去这儿」。">点「刷新地图」→ 指红色区域说「去这儿」。</span></li>
+      <li><b data-i18n="拉长时间：">拉长时间：</b><span data-i18n="开最佳窗口日历 → 「这周三是冠军」。">开最佳窗口日历 → 「这周三是冠军」。</span></li>
+      <li><b data-i18n="横向比较：">横向比较：</b><span data-i18n="开多机位对比 → 「山顶比海边稳」。">开多机位对比 → 「山顶比海边稳」。</span></li>
+      <li><b data-i18n="收尾转化：">收尾转化：</b><span data-i18n="导出分享卡 / 发快照链接 → 「链接放评论区，自己查你那片天」。">导出分享卡 / 发快照链接 → 「链接放评论区，自己查你那片天」。</span></li>
+    </ol>
+    <div class="note" data-i18n="移动端演示：顶部两行、提示卡贴底通栏、拖动地图收卡 —— 这些交互本身就很「产品感」，适合慢动作展示。">移动端演示：顶部两行、提示卡贴底通栏、拖动地图收卡 —— 这些交互本身就很「产品感」，适合慢动作展示。</div>
+  </section>
+
+  <section class="sec" id="c5">
+    <h2 data-i18n="5 · 可放心引用的卖点">5 · 可放心引用的卖点</h2>
+    <ul>
+      <li data-i18n-html="c5.li1"><b>免费、无需注册</b>，纯前端直连公开气象接口（Open-Meteo）。</li>
+      <li data-i18n-html="c5.li2"><b>三模型合成</b>（GFS / ECMWF / 光追，权重 0.30 / 0.34 / 0.36），降低单一来源偏差。</li>
+      <li data-i18n-html="c5.li3"><b>隐私友好</b>：本地校准只存本机、可关闭可清空、不回改模型。</li>
+      <li data-i18n-html="c5.li4"><b>额度对访客友好</b>：首屏只取单点，地图显式点击才取，缓存命中零请求。</li>
+      <li data-i18n-html="c5.li5"><b>可装成 App</b>（PWA，可选），离线也能打开。</li>
+    </ul>
+  </section>
+
+  <section class="sec" id="c6">
+    <h2 data-i18n="6 · 注意事项（别踩坑）">6 · 注意事项（别踩坑）</h2>
+    <dl class="terms">
+      <div><dt data-i18n="额度">额度</dt>
+        <dd data-i18n="免费层按访客自己的出口 IP 计（10000 次 / 天 / 人）。演示时自己多刷几次没关系，但别让观众以为「无限调用」。">免费层按访客自己的出口 IP 计（10000 次 / 天 / 人）。演示时自己多刷几次没关系，但别让观众以为「无限调用」。</dd></div>
+      <div><dt data-i18n="地图需要部署">地图需要部署</dt>
+        <dd data-i18n="双击本地文件打开时地图不显示（代理是占位符形态），这是预期行为；完整地图功能需要带代理的部署。">双击本地文件打开时地图不显示（代理是占位符形态），这是预期行为；完整地图功能需要带代理的部署。</dd></div>
+      <div><dt data-i18n="合规底图">合规底图</dt>
+        <dd data-i18n="中国境内展示地图需测绘资质，项目用的腾讯地图是合规方案；不要为省事换成境外底图。">中国境内展示地图需测绘资质，项目用的腾讯地图是合规方案；不要为省事换成境外底图。</dd></div>
+      <div><dt data-i18n="概率指的是霞光">概率指的是霞光</dt>
+        <dd data-i18n="避免观众误解 —— 它预报的是低空霞光出现的可能性与质量，不是晴雨。">避免观众误解 —— 它预报的是低空霞光出现的可能性与质量，不是晴雨。</dd></div>
+    </dl>
+  </section>
+
+</section>
 
 </main>
 
 <footer>
-  <div class="footer-inner">
-    <span>霞光预报 · 使用教程（用户 / 开发者 / 创作者 三档）</span>
-    <span>数据源：Open-Meteo · 阿里云 DataV · 腾讯位置服务 ｜ 仅用于学习与个人使用</span>
+  <div class="foot">
+    <span data-i18n="霞光预报 · 使用教程（概览 / 用户 / 开发者 / 创作者）">霞光预报 · 使用教程（概览 / 用户 / 开发者 / 创作者）</span>
+    <span data-i18n="数据源：Open-Meteo · 阿里云 DataV · 腾讯位置服务 ｜ 仅用于学习与个人使用">数据源：Open-Meteo · 阿里云 DataV · 腾讯位置服务 ｜ 仅用于学习与个人使用</span>
   </div>
 </footer>
 
 <script>
-(function(){
-  var btns = Array.prototype.slice.call(document.querySelectorAll('.nav button'));
-  var views = {
-    home: document.getElementById('home'),
-    users: document.getElementById('users'),
-    dev: document.getElementById('dev'),
-    creator: document.getElementById('creator')
-  };
-  function show(name){
-    if(!views[name]) name='home';
-    for(var k in views){ views[k].hidden = (k!==name); }
-    btns.forEach(function(b){
-      var on = b.getAttribute('data-view')===name;
-      b.classList.toggle('is-active', on);
-      if(on){ b.setAttribute('aria-current','page'); } else { b.removeAttribute('aria-current'); }
-    });
-    window.scrollTo({top:0, behavior:'instant' in window ? 'instant' : 'auto'});
+/* 繁體中文词典 · 第一批（公共 / 概览 / 用户版）
+   键＝页面上那份简体原文（或 slug），缺译时自动回落到简体原文。 */
+var ZH_HANT_1 = {
+  "doc.title": "霞光預報 · 使用教學",
+  "doc.desc": "霞光預報（朝霞 / 晚霞火燒雲機率與品質預報）的使用教學：四檔合一 —— 概覽、使用者版、開發者版、創作者版。",
+
+  "返回主页": "返回首頁",
+  "使用教程": "使用教學",
+  "语言": "語言",
+  "主题": "主題",
+  "教程分档": "教學分檔",
+  "概览": "概覽",
+  "用户版": "使用者版",
+  "开发者版": "開發者版",
+  "创作者版": "創作者版",
+
+  "读懂朝霞与晚霞的预报": "讀懂朝霞與晚霞的預報",
+  "ov.lead": "霞光預報是一個<b>單檔案 Web 應用程式</b>：輸入地點與日期，預測朝霞 / 晚霞（火燒雲）出現的機率與觀賞品質，並在周邊 500 km 畫出霞光分布。這份教學分四檔，依身分取用。",
+  "套模型合成": "套模型合成",
+  "周边网格": "周邊網格",
+  "注册 · 纯前端": "註冊 · 純前端",
+  "日落": "日落",
+  "民用暮光": "民用暮光",
+  "航海暮光": "航海暮光",
+  "天文暮光": "天文暮光",
+  "霞光只发生在太阳落到地平线以下几度到十几度之间。朝霞与晚霞的大气条件不同，所以应用分开预报、可分别切换。": "霞光只發生在太陽落到地平線下幾度到十幾度之間。朝霞與晚霞的大氣條件不同，所以應用程式分開預報、可分別切換。",
+
+  "三档教程，各取所需": "三檔教學，各取所需",
+  "给使用者": "給使用者",
+  "怎么查一次预报、怎么看地图与趋势、怎么分享、怎么在手机上用。": "怎麼查一次預報、怎麼看地圖與趨勢、怎麼分享、怎麼在手機上用。",
+  "上手指南": "上手指南",
+  "给贡献者": "給貢獻者",
+  "源码结构、拼装流程、回归套件、三种部署方式与已知边界。": "原始碼結構、拼裝流程、回歸套件、三種部署方式與已知邊界。",
+  "工程说明": "工程說明",
+  "给创作者": "給創作者",
+  "最值得讲的五个亮点、演示叙事线、可放心引用的卖点。": "最值得講的五個亮點、示範敘事線、可放心引用的賣點。",
+  "演示素材": "示範素材",
+
+  "它到底在算什么": "它到底在算什麼",
+  "一句话：把「今晚有没有火烧云」从玄学变成可量化的概率与质量分。": "一句話：把「今晚有沒有火燒雲」從玄學變成可量化的機率與品質分。",
+  "朝霞 / 晚霞": "朝霞 / 晚霞",
+  "日出前与日落后的低空霞光（火烧云）。两者的大气条件不同，所以应用分开预报、可分别切换。": "日出前與日落後的低空霞光（火燒雲）。兩者的大氣條件不同，所以應用程式分開預報、可分別切換。",
+  "概率 %": "機率 %",
+  "出现霞光的可能性，由云量、湿度、能见度等条件推算 —— 不是「会不会出太阳」。": "出現霞光的可能性，由雲量、濕度、能見度等條件推算 —— 不是「會不會出太陽」。",
+  "质量评分": "品質評分",
+  "在「会出现」的前提下，霞光的观赏质量（色彩浓度、覆盖范围），分优 / 良 / 一般 / 差四档。": "在「會出現」的前提下，霞光的觀賞品質（色彩濃度、覆蓋範圍），分優 / 良 / 一般 / 差四檔。",
+  "多模型合成": "多模型合成",
+  "GFS / ECMWF / 光追算法三路各自出分，再按 0.30 / 0.34 / 0.36 的权重合成，降低单一来源偏差。": "GFS / ECMWF / 光追演算法三路各自出分，再依 0.30 / 0.34 / 0.36 的權重合成，降低單一來源偏差。",
+  "弱 / 无霞": "弱 / 無霞",
+  "色阶：白 → 黄 → 橙 → 红": "色階：白 → 黃 → 橙 → 紅",
+  "强霞": "強霞",
+  "地图上那条从白到红的热力色阶，本教程沿用为视觉线索：看到这条带子，就代表「霞光强度」。": "地圖上那條從白到紅的熱力色階，本教學沿用為視覺線索：看到這條帶子，就代表「霞光強度」。",
+
+  "语言与主题": "語言與主題",
+  "右上角两个按钮管整页：左边切语言（简体中文 / 繁體中文 / English），右边切主题（跟随系统 / 浅色 / 深色）。选择会写进主程序同一个偏好键 —— 在这里改成英文，回主页也是英文。": "右上角兩個按鈕管整頁：左邊切語言（简体中文 / 繁體中文 / English），右邊切主題（跟隨系統 / 淺色 / 深色）。選擇會寫進主程式同一個偏好鍵 —— 在這裡改成英文，回首頁也是英文。",
+  "主题不进链接：别人分享给你的地址不该强行改你的界面颜色。": "主題不進連結：別人分享給你的網址不該強行改你的介面顏色。",
+
+  "用户版 · 上手指南": "使用者版 · 上手指南",
+  "从一次查询到一张分享图": "從一次查詢到一張分享圖",
+  "面向摄影爱好者与日常使用者。下面的顺序，基本就是一次完整使用的路径。": "面向攝影愛好者與日常使用者。下面的順序，基本上就是一次完整使用的路徑。",
+  "查一次预报": "查一次預報",
+  "看懂周边地图": "看懂周邊地圖",
+  "趋势与最佳窗口": "趨勢與最佳窗口",
+  "多观测点对比": "多觀測點對比",
+  "分享与导出": "分享與匯出",
+  "偏好设置": "偏好設定",
+  "本地校准": "本地校準",
+  "手机端": "手機端",
+  "常见疑问": "常見疑問",
+
+  "1 · 查一次朝霞 / 晚霞预报": "1 · 查一次朝霞 / 晚霞預報",
+  "选地点。": "選地點。",
+  "在查询区搜索城市名，或允许浏览器定位，或点开预设里的常用地点。地名走白名单，外源地名的异常字符会被安全处理。": "在查詢區搜尋城市名，或允許瀏覽器定位，或點開預設裡的常用地點。地名走白名單，外源地名的異常字元會被安全處理。",
+  "选日期与时段。": "選日期與時段。",
+  "默认今天；时段在「朝霞 / 晚霞」之间切换 —— 两者大气条件不同，分开算。": "預設今天；時段在「朝霞 / 晚霞」之間切換 —— 兩者大氣條件不同，分開算。",
+  "读结论卡。": "讀結論卡。",
+  "核心三格：概率 %、质量评分、等级（优 / 良 / 一般 / 差）。下方「主要影响因素」逐项分解，告诉你这次是云量、湿度还是能见度在拖后腿。": "核心三格：機率 %、品質評分、等級（優 / 良 / 一般 / 差）。下方「主要影響因素」逐項分解，告訴你這次是雲量、濕度還是能見度在拖後腿。",
+  "看多模型。": "看多模型。",
+  "卡内列出 GFS / ECMWF / 光追三路各自的分数与合成结果；模型之间分歧大时，悬停信息里会提示不确定性。": "卡內列出 GFS / ECMWF / 光追三路各自的分數與合成結果；模型之間分歧大時，懸停資訊裡會提示不確定性。",
+  "u1.note": "首屏只取<b>單點</b>結果（約 65 個加權呼叫）。地圖資料必須由你明確點擊才取，所以初次開啟不會悄悄花掉你的額度。",
+
+  "2 · 看懂周边地图": "2 · 看懂周邊地圖",
+  "u2.p": "地圖把查詢點周邊 <b>500 km</b> 的霞光強度畫成熱力圖，是「今天去哪個方向拍」最直觀的答案。",
+  "怎么把它画出来": "怎麼把它畫出來",
+  "u2.how1": "<b>有快取時自動畫。</b>上次看過的城市 + 日期，新開頁會零請求直接畫出來（走快取快路徑，不佔額度）。",
+  "u2.how2": "<b>無快取時點擊載入。</b>點地圖面板裡的「重新整理地圖」才發起請求（約 171 個加權呼叫）—— 它直接影響你自己的每日額度。",
+  "图上是什么": "圖上是什麼",
+  "色面": "色面",
+  "采样点插值出的霞光强度，白 → 黄 → 橙 → 红分档。色阶是固定的 0–100 绝对刻度，所以同一片区域的深浅可以跨日期直接对比。": "取樣點插值出的霞光強度，白 → 黃 → 橙 → 紅分檔。色階是固定的 0–100 絕對刻度，所以同一片區域的深淺可以跨日期直接比較。",
+  "云纹": "雲紋",
+  "采样点上的云量，按四档画成斜纹。晴天不画（否则整张图都是纹路，等于没有信息），有云才显形。": "取樣點上的雲量，依四檔畫成斜紋。晴天不畫（否則整張圖都是紋路，等於沒有資訊），有雲才顯形。",
+  "按云量分四档画斜纹，晴档不画（否则整张图都变闷）。档界同时是图例边界；图例里「晴」是空心描边，代表「这里没有纹路是因为没有云」。": "依雲量分四檔畫斜紋，晴檔不畫（否則整張圖都變悶）。檔界同時是圖例邊界；圖例裡「晴」是空心描邊，代表「這裡沒有紋路是因為沒有雲」。",
+  "等值线": "等值線",
+  "档与档之间一条 1px 线（屏幕空间矢量，放大不变粗），帮你看清梯度往哪边走。": "檔與檔之間一條 1px 線（螢幕空間向量，放大不變粗），幫你看清梯度往哪邊走。",
+  "数据范围虚线": "資料範圍虛線",
+  "采样点凸包外缘的虚线：线内是插值、线外是外推，外推区可信度更低。": "取樣點凸包外緣的虛線：線內是插值、線外是外推，外推區可信度更低。",
+  "经纬网": "經緯網",
+  "1° 网格底衬，可在显示层里关闭。": "1° 網格底襯，可在顯示層裡關閉。",
+  "四个显示层开关": "四個顯示層開關",
+  "数值直标 / 采样点 / 云纹 / 经纬网 —— 按需开关，偏好写进本地存储，重开页恢复。": "數值直標 / 取樣點 / 雲紋 / 經緯網 —— 依需要開關，偏好寫進本機儲存，重開頁恢復。",
+  "交互": "互動",
+  "地图面板里可切时段、日期、模型与着色依据；鼠标悬停或点击出具体数值，外推区会附「离最近采样点多远」的距离口径；右下角可全屏。": "地圖面板裡可切時段、日期、模型與著色依據；滑鼠懸停或點擊出具體數值，外推區會附「離最近取樣點多遠」的距離口徑；右下角可全螢幕。",
+  "u2.warn": "<b>可信範圍別混用兩個量：</b>「在不在取樣區裡」（凸包）和「離最近取樣點多遠」是兩個不同的概念。包內實測最遠 85 km，貼著凸包頂點外側只有 1.4 km 卻已經是外推。",
+
+  "3 · 趋势与最佳窗口": "3 · 趨勢與最佳窗口",
+  "趋势曲线": "趨勢曲線",
+  "未来十天逐日打分，可切换朝霞 / 晚霞。算好的结果会落盘缓存，重开页命中时零请求直接画出。": "未來十天逐日打分，可切換朝霞 / 晚霞。算好的結果會落盤快取，重開頁命中時零請求直接畫出。",
+  "最佳窗口日历": "最佳窗口日曆",
+  "趋势的另一种读法：把未来几天按「哪天值得去」排成日历格（朝 / 晚两个色块 + 质量分），并标出前三名。点格子直接切过去 —— 渲染这张日历零取数，只有点格子（你的显式意图）才走一次单点取数。": "趨勢的另一種讀法：把未來幾天依「哪天值得去」排成日曆格（朝 / 晚兩個色塊 + 品質分），並標出前三名。點格子直接切過去 —— 渲染這張日曆零取數，只有點格子（你的明確意圖）才走一次單點取數。",
+
+  "4 · 多观测点对比": "4 · 多觀測點對比",
+  "回答「今天去哪儿拍」：收藏最多 5 个机位，一次取数横向按质量分排序。": "回答「今天去哪兒拍」：收藏最多 5 個機位，一次取數橫向依品質分排序。",
+  "u4.li1": "取數只能由「對比這些點」按鈕觸發；命中單點快取的點<b>不進請求</b>（先單獨查過的點零成本）。",
+  "默认只比当前时段；界面会写明「本次将消耗约 N 个计费调用」。": "預設只比當前時段；介面會寫明「本次將消耗約 N 個計費呼叫」。",
+  "位置 / 日期 / 时段任一变化，对比结果作废 —— 避免显示上一个地点的数字。": "位置 / 日期 / 時段任一變化，對比結果作廢 —— 避免顯示上一個地點的數字。",
+
+  "5 · 分享与导出": "5 · 分享與匯出",
+  "一键分享卡 PNG": "一鍵分享卡 PNG",
+  "把结论卡导出为图片（纯 canvas 绘制，与页面同一套文案与配色），直接发到聊天工具。分享卡固定浅色底，发到任何环境都稳妥。": "把結論卡匯出為圖片（純 canvas 繪製，與頁面同一套文案與配色），直接發到聊天工具。分享卡固定淺色底，發到任何環境都穩妥。",
+  "结果快照链接": "結果快照連結",
+  "u5.p": "連結帶 <code>snap=</code> 參數，<b>零氣象請求</b>即可還原結論（解碼前限長並逐欄位校驗，惡意載荷只作純文字落地）。語言、時段隨連結走。",
+
+  "6 · 偏好设置": "6 · 偏好設定",
+  "简体中文 / 繁體中文（中国台湾·香港用语）/ English，写进偏好与分享链接。优先级：链接参数 > 偏好 > 浏览器语言 > 简体。": "简体中文 / 繁體中文（中國台灣·香港用語）/ English，寫進偏好與分享連結。優先順序：連結參數 > 偏好 > 瀏覽器語言 > 简体。",
+  "跟随系统 / 浅色 / 深色三态，刷新不闪（引导脚本早于样式执行）。主题不进链接 —— 别人发的链接不该强制你的界面变黑。地图深浅跟随主题，不再有第二个开关。": "跟隨系統 / 淺色 / 深色三態，重新整理不閃（引導腳本早於樣式執行）。主題不進連結 —— 別人發的連結不該強制你的介面變黑。地圖深淺跟隨主題，不再有第二個開關。",
+  "单位与时间制": "單位與時間制",
+  "公制 / 英制、24 时 / 12 时，按习惯切换，写进同一份偏好。": "公制 / 英制、24 時 / 12 時，依習慣切換，寫進同一份偏好。",
+  "显示层与折叠": "顯示層與摺疊",
+  "数值直标 / 采样点 / 云纹 / 经纬网，以及几张技术卡的开合状态，都写进同一个本地键，重开页恢复。": "數值直標 / 取樣點 / 雲紋 / 經緯網，以及幾張技術卡的開合狀態，都寫進同一個本機鍵，重開頁恢復。",
+  "u6.note": "<b>刻意不持久化兩類：</b>位置與日期（由連結承載，避免與分享連結打架）；地圖時段（由單點時段衍生 —— 存了會讓「地圖看晚霞、上方算朝霞」成為常態）。",
+
+  "7 · 本地校准": "7 · 本地校準",
+  "事后回来点一档「实际看到了什么」，本机累积之后，结论卡下方会多出一行本地校准：模型在这一档平均报多少、你标注了几次、实际出现率多少、偏差多少。": "事後回來點一檔「實際看到了什麼」，本機累積之後，結論卡下方會多出一行本地校準：模型在這一檔平均報多少、你標註了幾次、實際出現率多少、偏差多少。",
+  "u7.li1": "<b>只展示、不回改</b>模型機率 / 等級 / 因素表任何一個字。",
+  "u7.li2": "<b>只存本機</b> —— 資料不出裝置、可一鍵關閉、可清空。",
+  "u7.li3": "<b>樣本不夠不給結論</b>：累計 ≥8 次、且當前這一檔 ≥3 次才顯示，之前只顯示進度。",
+  "u7.li4": "<b>關掉 ≠ 刪除</b>：開關只關入口與展示，已存標註不刪；清空是另一個按鈕，且要二次確認。",
+  "「没看到（无法判断）」不计入统计，以免系统性拉低校准。": "「沒看到（無法判斷）」不計入統計，以免系統性拉低校準。",
+
+  "8 · 手机端": "8 · 手機端",
+  "顶部两行：第一行是目录、标题、语言与主题按钮，第二行是当前结果徽标。滚到哪都能开目录。": "頂部兩行：第一行是目錄、標題、語言與主題按鈕，第二行是目前結果徽章。滾到哪都能開目錄。",
+  "地图提示卡改成贴底通栏并自带关闭；可再点一次、点卡片外，或直接拖动地图收起。": "地圖提示卡改成貼底通欄並自帶關閉；可再點一次、點卡片外，或直接拖動地圖收起。",
+  "关闭后不留隐形热区（触摸交还地图）；拖动超过 12px 视为收卡，以下算点击。": "關閉後不留隱形熱區（觸控交還地圖）；拖動超過 12px 視為收卡，以下算點擊。",
+  "页面不能横向拖出空白；地图区单指可拖，手势交给地图 SDK。": "頁面不能橫向拖出空白；地圖區單指可拖，手勢交給地圖 SDK。",
+
+  "9 · 常见疑问": "9 · 常見疑問",
+  "为什么地图有时直接显示、有时要点击？": "為什麼地圖有時直接顯示、有時要點擊？",
+  "有缓存（看过同城市同日期）开页自动画、零额度；无缓存仍需你点「刷新地图」。": "有快取（看過同城市同日期）開頁自動畫、零額度；無快取仍需你點「重新整理地圖」。",
+  "额度怎么算？": "額度怎麼算？",
+  "u9.a2": "免費層依<b>訪客自己的出口 IP</b> 計（10000 次 / 天 / 人）。靜態站不做代轉，站點本身不消耗配額。",
+  "本地双击打开地图不显示？": "本機雙擊開啟地圖不顯示？",
+  "预期行为：地图代理地址在没有部署时是一个占位符，页面会说明原因；单点查询不受影响。要联调完整功能需按开发者版的说明构建一次。": "預期行為：地圖代理位址在沒有部署時是一個佔位符，頁面會說明原因；單點查詢不受影響。要聯調完整功能需依開發者版的說明建置一次。",
+  "地图的深浅和界面主题是一回事吗？": "地圖的深淺和介面主題是一回事嗎？",
+  "现在是一回事：底图深浅跟随界面主题（浅色主题配浅底图，深色配深底图）。原先那个独立的「深色底图」开关已取消 —— 一个页面不该有两套深浅。": "現在是一回事：底圖深淺跟隨介面主題（淺色主題配淺底圖，深色配深底圖）。原先那個獨立的「深色底圖」開關已取消 —— 一個頁面不該有兩套深淺。"
+};
+
+/* 繁體中文词典 · 第二批（开发者版 / 创作者版 / 页脚） */
+var ZH_HANT_2 = {
+  "开发者版 · 工程说明": "開發者版 · 工程說明",
+  "结构、构建与部署": "結構、建置與部署",
+  "d.intro": "產物是 <code>index.html</code> —— 一個自包含 HTML（內嵌全部 JS 與城市 / 高程資料），可直接部署為靜態站點；地圖模組另有一個可選的同源伺服器中轉端點。",
+  "源码结构": "原始碼結構",
+  "构建命令": "建置指令",
+  "部署": "部署",
+  "回归套件": "回歸套件",
+  "已知边界": "已知邊界",
+  "合规": "合規",
+
+  "1 · 源码结构": "1 · 原始碼結構",
+  "d1.p": "單檔產物由腳本拼裝，<b>不要手改產物</b>。教學頁是唯一例外：它是獨立手寫檔案，不進拼裝流程。",
+  "d1.note": "改動任何 <code>_p*.js</code> / <code>tpl/</code> / <code>refs/</code> 之後都必須重跑 <code>assemble.py</code> 與 <code>mkpreview.py</code>。兩個產物都不許手改。",
+
+  "2 · 构建命令": "2 · 建置指令",
+  "d2.p": "不設 <code>TMAP_SERVICE_HOST</code> 時，<code>assemble.py</code> 回落成本機預覽用的佔位符形態，開發行為不變。",
+
+  "3 · 部署": "3 · 部署",
+  "3.1 纯静态（地图不可用）": "3.1 純靜態（地圖不可用）",
+  "d3.p1": "把 <code>index.html</code>（以及可選的 <code>tutorial.html</code>、<code>404.html</code>）丟到任意靜態託管：Cloudflare Pages、GitHub Pages、物件儲存。查詢、趨勢、分享卡全部可用；地圖模組因為沒有騰訊地圖 key 會顯示一段說明。",
+  "d3.note1": "免費層配額依<b>訪客自己的出口 IP</b> 計。靜態站不做任何代轉，站點本身不消耗配額。",
+  "3.2 带地图（Cloudflare Pages + Pages Functions）": "3.2 帶地圖（Cloudflare Pages + Pages Functions）",
+  "d3.p2": "騰訊地圖 JS API 的 key <b>不能明文寫進產物</b>（單檔 HTML 誰都能看到，拿去刷配額）。已實作代理方案：",
+  "去 lbs.qq.com 申请 Web 端（JS API）key，把站点域名加进白名单。": "去 lbs.qq.com 申請 Web 端（JS API）key，把站點網域加進白名單。",
+  "d3.li2": "把本目錄作為 Pages 專案（建置指令留空，產物目錄 <code>/</code>）。<code>functions/_TMapService/[[path]].js</code> 會被自動辨識為 Function。",
+  "d3.li3": "Pages 的 Settings → Environment variables 加 <code>TMAP_KEY = 你的 key</code>。",
+  "d3.li4": "建置時把地圖代理指到同源路徑：<code>TMAP_SERVICE_HOST=https://你的網域/_TMapService python assemble.py</code>。",
+  "代理与前端同源 ⇒ 无 CORS、无混合内容。key 只存在于服务端环境变量，永不进入产物。": "代理與前端同源 ⇒ 無 CORS、無混合內容。key 只存在於伺服器端環境變數，永不進入產物。",
+  "3.3 404 页": "3.3 404 頁",
+  "d3.p4": "純靜態站沒有前端路由，「存取不存在的路徑」由託管平台兜底（Cloudflare Pages / GitHub Pages / Netlify 都取站點根下的 <code>404.html</code> 並以 404 回應）。<code>assemble.py</code> 一併產生，無需 rewrite 設定；頁內位址寫成站點根的絕對形式，由建置期注入 <code>SITE_BASE</code>。",
+  "3.4 可选 PWA": "3.4 可選 PWA",
+  "d3.p5": "<code>PWA=1</code> 會多產 <code>manifest.json</code> / <code>sw.js</code> / 兩枚圖示，可被「加入主畫面」且離線能開啟。三條紀律：① SW <b>絕不快取氣象回應</b>（只認預快取名單）；② 快取名帶產物 sha256 前 12 位，內容一變舊快取作廢；③ 註冊是「增強」—— 失敗或 <code>file://</code> 開啟全部靜默跳過。預設不開，因為它與「單檔產物」的核心約束衝突。",
+  "3.5 本地预览": "3.5 本機預覽",
+  "d3.p6": "<code>_check/preview.html</code> 的地圖 SDK 是樁實作（複刻 Heat 核函式疊加與投影），可離線、可斷言、不消耗額度。回歸套件全部跑這個檔案。",
+
+  "4 · 回归套件": "4 · 回歸套件",
+  "探针": "探針",
+  "覆盖要点": "涵蓋要點",
+  "内联 script 块语法；跨块命名冲突（静默覆盖最难查）": "內嵌 script 區塊語法；跨區塊命名衝突（靜默覆蓋最難查）",
+  "色阶 / 等级纯函数自测；城市表不变量 + 港澳台合规": "色階 / 等級純函式自測；城市表不變量 + 港澳台合規",
+  "局部网格几何 / 缓存闸门 / 首屏地图加载；请求超时 + 429 双分类": "局部網格幾何 / 快取閘門 / 首屏地圖載入；請求逾時 + 429 雙分類",
+  "地图审计（图层、缩放、全屏出口）；手机端适配合成两档视口": "地圖稽核（圖層、縮放、全螢幕出口）；手機端適配合成兩檔視口",
+  "偏好写盘↔读回；默认态 / 天色带 / 顶栏与目录": "偏好寫盤↔讀回；預設態 / 天色帶 / 頂欄與目錄",
+  "无障碍；多语言键覆盖；深色模式（含浅色漏网扫描）": "無障礙；多語言鍵涵蓋；深色模式（含淺色漏網掃描）",
+  "F3 / F2 额度纪律；快照零请求；F4 校准": "F3 / F2 額度紀律；快照零請求；F4 校準",
+  "XSS 防护；404 页；文档↔代码一致性": "XSS 防護；404 頁；文件↔程式碼一致性",
+  "本教程：三语键覆盖、主题三态、窄屏无溢出、四档切换、偏好共享": "本教學：三語鍵涵蓋、主題三態、窄螢幕無溢出、四檔切換、偏好共享",
+  "d4.note": "探針一律跑 <code>_check/preview.html</code>。<b>改了原始碼忘了重新產生 preview，整套斷言測的就是舊程式碼</b> —— 本專案踩過多次的坑。",
+  "d4.p": "不進一鍵序列（會花真實額度或依賴即時介面）：<code>consistency.js</code> / <code>shotdefault.js</code> / <code>tzprobe.js</code> 等。",
+
+  "5 · 已知边界（改动前必读）": "5 · 已知邊界（改動前必讀）",
+  "额度": "額度",
+  "d5.t1": "首屏只取單點（約 65）。地圖必須由使用者明確點擊才取（約 171）。唯一例外是快取命中自動畫（零請求、零額度）—— 由「快取快路徑之後、網路呼叫之前」的一行提前回傳保證。",
+  "色面与范围": "色面與範圍",
+  "色面值域是固定的 0–100 绝对刻度（不做当日拉伸），边缘取采样点凸包并仅向外羽化；凸包之外即外推，用虚线标出。悬停卡另有「离最近采样点多远」的口径 —— 与「在不在采样区」是两个量。": "色面值域是固定的 0–100 絕對刻度（不做當日拉伸），邊緣取取樣點凸包並僅向外羽化；凸包之外即外推，用虛線標出。懸停卡另有「離最近取樣點多遠」的口徑 —— 與「在不在取樣區」是兩個量。",
+  "按云量分四档画斜纹，晴档不画（否则整张图都变闷）。档界同时是图例边界；图例里「晴」是空心描边，代表「这里没有纹路是因为没有云」。": "依雲量分四檔畫斜紋，晴檔不畫（否則整張圖都變悶）。檔界同時是圖例邊界；圖例裡「晴」是空心描邊，代表「這裡沒有紋路是因為沒有雲」。",
+  "模型分歧": "模型分歧",
+  "地图的「模型分歧」只取三套模型的极差；少于两套有值时返回「无数据」而不是 0。": "地圖的「模型分歧」只取三套模型的極差；少於兩套有值時回傳「無資料」而不是 0。",
+  "偏好持久化": "偏好持久化",
+  "所有显示类偏好写进同一个本地键；应用顺序有硬约束 —— 必须在任何控件初值 / 派生状态赋值之前调用。": "所有顯示類偏好寫進同一個本機鍵；套用順序有硬約束 —— 必須在任何控制項初值 / 衍生狀態賦值之前呼叫。",
+  "趋势缓存": "趨勢快取",
+  "算好的 rows 落盘（约 1.9KB / 条，上限 3 条），重开页命中零请求；不存原始响应（约 5MB，会撑爆配额）。权重 / 阈值一改就用版本号兜住。": "算好的 rows 落盤（約 1.9KB / 筆，上限 3 筆），重開頁命中零請求；不存原始回應（約 5MB，會撐爆配額）。權重 / 閾值一改就用版本號兜住。",
+  "深色模式": "深色模式",
+  "d5.t7": "三態；重新整理不閃（引導腳本在 <code>&lt;style&gt;</code> 之前）；<code>color-scheme</code> 跟著切；寫進 DOM 的語意色要重畫。分享卡固定淺色；主題不進連結。",
+  "XSS": "XSS",
+  "d5.t8": "輸出側 <code>esc()</code> + 輸入側 <code>safeLabel()</code>（URL 地名白名單）。新增渲染程式碼必須走這兩個函式；仍未做：CSP 與其餘分批替換。",
+  "F2 / F3 / F4": "F2 / F3 / F4",
+  "F3 日历渲染零取数，点格子才取数；F2 取数只能由按钮触发、命中缓存不进请求、上限 5 点；F4 只展示不回改、样本不够不给结论、关掉≠删除。": "F3 日曆渲染零取數，點格子才取數；F2 取數只能由按鈕觸發、命中快取不進請求、上限 5 點；F4 只展示不回改、樣本不夠不給結論、關掉≠刪除。",
+  "手机端布局": "手機端版面",
+  "d5.t10": "任何橫向捲動容器必須 <code>min-width:0</code>；<code>#map</code> 必須 <code>touch-action:none</code> 且不能設在 <code>.mapwrap</code>；判斷越界用 <code>documentElement.clientWidth</code> 而不是 <code>innerWidth</code>。",
+
+  "6 · 合规": "6 · 合規",
+  "在中国境内展示地图，底图服务需具备测绘资质。腾讯地图是合规的；为省一个 key 换成 OSM 等境外底图，会把合规问题一起换进来，不建议。": "在中國境內展示地圖，底圖服務需具備測繪資質。騰訊地圖是合規的；為省一個 key 換成 OSM 等境外底圖，會把合規問題一起換進來，不建議。",
+  "数据源：气象与空气质量来自 Open-Meteo（免费公开、非商业），省界来自阿里云 DataV，地图来自腾讯位置服务 —— 请遵守各自的服务条款。": "資料來源：氣象與空氣品質來自 Open-Meteo（免費公開、非商業），省界來自阿里雲 DataV，地圖來自騰訊位置服務 —— 請遵守各自的服務條款。",
+
+  "创作者版 · 演示素材": "創作者版 · 示範素材",
+  "怎么把霞光预报讲给人看": "怎麼把霞光預報講給人看",
+  "面向自媒体与内容创作者：最值得讲的亮点、演示叙事线，以及可以放心引用的卖点。": "面向自媒體與內容創作者：最值得講的亮點、示範敘事線，以及可以放心引用的賣點。",
+  "一句话开场": "一句話開場",
+  "五个亮点": "五個亮點",
+  "适合的题材": "適合的題材",
+  "演示叙事线": "示範敘事線",
+  "可引用的卖点": "可引用的賣點",
+  "注意事项": "注意事項",
+
+  "1 · 一句话开场": "1 · 一句話開場",
+  "「它是一个把『今晚有没有火烧云』从玄学变成概率和评分的工具 —— 而且免费、不用注册、纯网页。」": "「它是一個把『今晚有沒有火燒雲』從玄學變成機率和評分的工具 —— 而且免費、不用註冊、純網頁。」",
+  "这句同时覆盖了差异化（量化而非玄学）与易得性（免费 / 无注册 / 纯前端），适合做短视频开头或图文首段。": "這句同時涵蓋了差異化（量化而非玄學）與易得性（免費 / 無註冊 / 純前端），適合做短影音開頭或圖文首段。",
+
+  "2 · 最值得讲的五个亮点": "2 · 最值得講的五個亮點",
+  "结论卡": "結論卡",
+  "概率 + 质量评分，衬线大字": "機率 + 品質評分，襯線大字",
+  "结论卡用大号衬线数字呈现概率 % 与质量分，配优 / 良 / 一般 / 差等级与「主要影响因素」分解 —— 截图即干货，观众一眼看懂。": "結論卡用大號襯線數字呈現機率 % 與品質分，配優 / 良 / 一般 / 差等級與「主要影響因素」分解 —— 截圖即乾貨，觀眾一眼看懂。",
+  "地图": "地圖",
+  "周边 500 km 霞光分布": "周邊 500 km 霞光分布",
+  "热力图把「去哪个方向拍」画出来。白 → 黄 → 橙 → 红色阶 + 等值线 + 数据范围虚线，演示时直接说「红色那片就是今晚最该去的地方」。": "熱力圖把「去哪個方向拍」畫出來。白 → 黃 → 橙 → 紅色階 + 等值線 + 資料範圍虛線，示範時直接說「紅色那片就是今晚最該去的地方」。",
+  "最佳窗口": "最佳窗口",
+  "哪天去，日历直接排好": "哪天去，日曆直接排好",
+  "未来几天按「哪天值得去」排成日历格并标出前三名。适合做「未来一周什么时候拍照最好」这类选题。": "未來幾天依「哪天值得去」排成日曆格並標出前三名。適合做「未來一週什麼時候拍照最好」這類選題。",
+  "多机位对比": "多機位對比",
+  "今天去哪儿拍": "今天去哪兒拍",
+  "收藏最多 5 个机位，一次取数横向排序。演示「家附近 vs 海边 vs 山顶，今晚哪个出片」最直观。": "收藏最多 5 個機位，一次取數橫向排序。示範「家附近 vs 海邊 vs 山頂，今晚哪個出片」最直觀。",
+  "分享": "分享",
+  "分享卡与快照链接": "分享卡與快照連結",
+  "c2.p5": "結論卡匯出 PNG 直接發群；<code>snap=</code> 連結零請求還原結論，別人點開就是同一張預報。降低觀眾「我也想試試」的門檻。",
+  "越用越懂你那片天": "越用越懂你那片天",
+  "事后回填「实际看到了什么」，本机累积出本地校准。强调「纯展示不回改模型、数据不出设备」—— 隐私友好，适合做信任感叙事。": "事後回填「實際看到了什麼」，本機累積出本地校準。強調「純展示不回改模型、資料不出裝置」—— 隱私友善，適合做信任感敘事。",
+
+  "3 · 适合的题材": "3 · 適合的題材",
+  "题材": "題材",
+  "切入点": "切入點",
+  "摄影教程": "攝影教學",
+  "用最佳窗口日历选拍摄日、用多机位对比选机位、用地图定方向。": "用最佳窗口日曆選拍攝日、用多機位對比選機位、用地圖定方向。",
+  "天气 / 大气科普": "天氣 / 大氣科普",
+  "朝霞晚霞大气条件不同、为什么分两个时段、模型分歧代表什么。": "朝霞晚霞大氣條件不同、為什麼分兩個時段、模型分歧代表什麼。",
+  "出行 / 生活攻略": "出行 / 生活攻略",
+  "「今晚值不值得专门跑出去拍」「未来一周哪天最适合」。": "「今晚值不值得專門跑出去拍」「未來一週哪天最適合」。",
+  "工具推荐": "工具推薦",
+  "免费、无注册、纯前端、隐私友好、可装成 App（PWA）。": "免費、無註冊、純前端、隱私友善、可裝成 App（PWA）。",
+
+  "4 · 演示叙事线": "4 · 示範敘事線",
+  "抛出痛点：": "拋出痛點：",
+  "「每次等晚霞都靠赌，今天教你用数据赌。」": "「每次等晚霞都靠賭，今天教你用數據賭。」",
+  "一次查询：": "一次查詢：",
+  "搜城市 → 切晚霞 → 结论卡大数字 + 因素分解。": "搜城市 → 切晚霞 → 結論卡大數字 + 因素分解。",
+  "放大地图：": "放大地圖：",
+  "点「刷新地图」→ 指红色区域说「去这儿」。": "點「重新整理地圖」→ 指紅色區域說「去這兒」。",
+  "拉长时间：": "拉長時間：",
+  "开最佳窗口日历 → 「这周三是冠军」。": "開最佳窗口日曆 → 「這週三是冠軍」。",
+  "横向比较：": "橫向比較：",
+  "开多机位对比 → 「山顶比海边稳」。": "開多機位對比 → 「山頂比海邊穩」。",
+  "收尾转化：": "收尾轉化：",
+  "导出分享卡 / 发快照链接 → 「链接放评论区，自己查你那片天」。": "匯出分享卡 / 發快照連結 → 「連結放留言區，自己查你那片天」。",
+  "移动端演示：顶部两行、提示卡贴底通栏、拖动地图收卡 —— 这些交互本身就很「产品感」，适合慢动作展示。": "行動端示範：頂部兩行、提示卡貼底通欄、拖動地圖收卡 —— 這些互動本身就很「產品感」，適合慢動作展示。",
+
+  "5 · 可放心引用的卖点": "5 · 可放心引用的賣點",
+  "c5.li1": "<b>免費、無需註冊</b>，純前端直連公開氣象介面（Open-Meteo）。",
+  "c5.li2": "<b>三模型合成</b>（GFS / ECMWF / 光追，權重 0.30 / 0.34 / 0.36），降低單一來源偏差。",
+  "c5.li3": "<b>隱私友善</b>：本地校準只存本機、可關閉可清空、不回改模型。",
+  "c5.li4": "<b>額度對訪客友善</b>：首屏只取單點，地圖明確點擊才取，快取命中零請求。",
+  "c5.li5": "<b>可裝成 App</b>（PWA，可選），離線也能開啟。",
+
+  "6 · 注意事项（别踩坑）": "6 · 注意事項（別踩坑）",
+  "免费层按访客自己的出口 IP 计（10000 次 / 天 / 人）。演示时自己多刷几次没关系，但别让观众以为「无限调用」。": "免費層依訪客自己的出口 IP 計（10000 次 / 天 / 人）。示範時自己多刷幾次沒關係，但別讓觀眾以為「無限呼叫」。",
+  "地图需要部署": "地圖需要部署",
+  "双击本地文件打开时地图不显示（代理是占位符形态），这是预期行为；完整地图功能需要带代理的部署。": "雙擊本機檔案開啟時地圖不顯示（代理是佔位符形態），這是預期行為；完整地圖功能需要帶代理的部署。",
+  "合规底图": "合規底圖",
+  "中国境内展示地图需测绘资质，项目用的腾讯地图是合规方案；不要为省事换成境外底图。": "中國境內展示地圖需測繪資質，專案用的騰訊地圖是合規方案；不要為省事換成境外底圖。",
+  "概率指的是霞光": "機率指的是霞光",
+  "避免观众误解 —— 它预报的是低空霞光出现的可能性与质量，不是晴雨。": "避免觀眾誤解 —— 它預報的是低空霞光出現的可能性與品質，不是晴雨。",
+
+  "霞光预报 · 使用教程（概览 / 用户 / 开发者 / 创作者）": "霞光預報 · 使用教學（概覽 / 使用者 / 開發者 / 創作者）",
+  "数据源：Open-Meteo · 阿里云 DataV · 腾讯位置服务 ｜ 仅用于学习与个人使用": "資料來源：Open-Meteo · 阿里雲 DataV · 騰訊位置服務 ｜ 僅用於學習與個人使用"
+};
+
+var ZH_HANT = Object.assign({}, ZH_HANT_1, ZH_HANT_2);
+/* English dictionary · part 1 (shared / overview / users) */
+var EN_1 = {
+  "doc.title": "Sunset Glow Forecast · User guide",
+  "doc.desc": "User guide for Sunset Glow Forecast: glow probability and viewing quality for sunrise and sunset, in four tracks — overview, users, developers and creators.",
+
+  "返回主页": "Back to the app",
+  "使用教程": "User guide",
+  "语言": "Language",
+  "主题": "Theme",
+  "教程分档": "Guide sections",
+  "概览": "Overview",
+  "用户版": "For users",
+  "开发者版": "For developers",
+  "创作者版": "For creators",
+
+  "读懂朝霞与晚霞的预报": "Reading the glow forecast",
+  "ov.lead": "<b>Sunset Glow Forecast</b> is a single-file web app: give it a place and a date and it estimates how likely morning or evening glow (fire clouds) is, and how good it will look, then draws the glow field across a 500 km radius. This guide has four tracks — read the one that fits you.",
+  "套模型合成": "models combined",
+  "周边网格": "radius grid",
+  "注册 · 纯前端": "sign-up · client-side",
+  "日落": "Sunset",
+  "民用暮光": "Civil",
+  "航海暮光": "Nautical",
+  "天文暮光": "Astronomical",
+  "霞光只发生在太阳落到地平线以下几度到十几度之间。朝霞与晚霞的大气条件不同，所以应用分开预报、可分别切换。": "Glow only happens while the sun sits a few degrees below the horizon. Morning and evening glow depend on different atmospheric conditions, so the app forecasts them separately.",
+
+  "三档教程，各取所需": "Three tracks, pick one",
+  "给使用者": "For users",
+  "怎么查一次预报、怎么看地图与趋势、怎么分享、怎么在手机上用。": "How to run a forecast, read the map and trend, share a result, and use it on a phone.",
+  "上手指南": "Getting started",
+  "给贡献者": "For contributors",
+  "源码结构、拼装流程、回归套件、三种部署方式与已知边界。": "Source layout, build pipeline, regression suite, three deployment modes and known limits.",
+  "工程说明": "Engineering notes",
+  "给创作者": "For creators",
+  "最值得讲的五个亮点、演示叙事线、可放心引用的卖点。": "Five highlights worth showing, a demo storyline, and claims you can quote.",
+  "演示素材": "Demo material",
+
+  "它到底在算什么": "What it actually computes",
+  "一句话：把「今晚有没有火烧云」从玄学变成可量化的概率与质量分。": "In one line: it turns “will there be fire clouds tonight” from folklore into a probability and a quality score.",
+  "朝霞 / 晚霞": "Morning / evening glow",
+  "日出前与日落后的低空霞光（火烧云）。两者的大气条件不同，所以应用分开预报、可分别切换。": "The low-altitude glow (fire clouds) before sunrise and after sunset. The two depend on different atmospheric conditions, so they are forecast and toggled separately.",
+  "概率 %": "Probability %",
+  "出现霞光的可能性，由云量、湿度、能见度等条件推算 —— 不是「会不会出太阳」。": "How likely glow is, derived from cloud cover, humidity, visibility and similar inputs — not “will the sun come out”.",
+  "质量评分": "Quality score",
+  "在「会出现」的前提下，霞光的观赏质量（色彩浓度、覆盖范围），分优 / 良 / 一般 / 差四档。": "Assuming glow occurs, how good it looks (colour intensity, coverage), graded excellent / good / fair / poor.",
+  "多模型合成": "Model blend",
+  "GFS / ECMWF / 光追算法三路各自出分，再按 0.30 / 0.34 / 0.36 的权重合成，降低单一来源偏差。": "GFS, ECMWF and the ray-traced model each score independently, then blend at 0.30 / 0.34 / 0.36 to damp any single source's bias.",
+  "弱 / 无霞": "Weak / none",
+  "色阶：白 → 黄 → 橙 → 红": "Scale: white → yellow → orange → red",
+  "强霞": "Strong glow",
+  "地图上那条从白到红的热力色阶，本教程沿用为视觉线索：看到这条带子，就代表「霞光强度」。": "The white-to-red heat scale on the map doubles as this guide's visual cue: when you see that band, it means glow intensity.",
+
+  "语言与主题": "Language and theme",
+  "右上角两个按钮管整页：左边切语言（简体中文 / 繁體中文 / English），右边切主题（跟随系统 / 浅色 / 深色）。选择会写进主程序同一个偏好键 —— 在这里改成英文，回主页也是英文。": "Two buttons in the top right control the whole page: language on the left (简体中文 / 繁體中文 / English), theme on the right (system / light / dark). The choice is written to the same preference key the app uses — switch to English here and the app opens in English.",
+  "主题不进链接：别人分享给你的地址不该强行改你的界面颜色。": "Theme never enters the URL: a link someone sends you should not force your interface dark.",
+
+  "用户版 · 上手指南": "For users · Getting started",
+  "从一次查询到一张分享图": "From one query to one shareable image",
+  "面向摄影爱好者与日常使用者。下面的顺序，基本就是一次完整使用的路径。": "For photographers and everyday users. The order below is roughly one complete session.",
+  "查一次预报": "Run a forecast",
+  "看懂周边地图": "Read the map",
+  "趋势与最佳窗口": "Trend and best windows",
+  "多观测点对比": "Compare spots",
+  "分享与导出": "Share and export",
+  "偏好设置": "Preferences",
+  "本地校准": "Local calibration",
+  "手机端": "On a phone",
+  "常见疑问": "Common questions",
+
+  "1 · 查一次朝霞 / 晚霞预报": "1 · Run a morning or evening forecast",
+  "选地点。": "Pick a place. ",
+  "在查询区搜索城市名，或允许浏览器定位，或点开预设里的常用地点。地名走白名单，外源地名的异常字符会被安全处理。": "Search a city, allow browser location, or open a saved place from the presets. Place names go through a whitelist, and odd characters from external sources are sanitised.",
+  "选日期与时段。": "Pick a date and a period. ",
+  "默认今天；时段在「朝霞 / 晚霞」之间切换 —— 两者大气条件不同，分开算。": "Today by default. Switch between morning and evening — they are computed separately because the atmosphere differs.",
+  "读结论卡。": "Read the verdict card. ",
+  "核心三格：概率 %、质量评分、等级（优 / 良 / 一般 / 差）。下方「主要影响因素」逐项分解，告诉你这次是云量、湿度还是能见度在拖后腿。": "Three numbers: probability %, quality score and grade (excellent / good / fair / poor). Below them the factor breakdown tells you whether cloud, humidity or visibility is holding this one back.",
+  "看多模型。": "Check the individual models. ",
+  "卡内列出 GFS / ECMWF / 光追三路各自的分数与合成结果；模型之间分歧大时，悬停信息里会提示不确定性。": "The card lists GFS, ECMWF and the ray-traced model with their own scores plus the blend; when the models disagree, the hover text flags the uncertainty.",
+  "u1.note": "The first screen only fetches the <b>single point</b> (about 65 weighted calls). Map data is fetched only when you click for it, so opening the app never quietly spends your quota.",
+
+  "2 · 看懂周边地图": "2 · Read the surrounding map",
+  "u2.p": "The map draws glow intensity across the <b>500 km</b> around your point — the most direct answer to “which way should I drive tonight”.",
+  "怎么把它画出来": "How it gets drawn",
+  "u2.how1": "<b>Drawn from cache automatically.</b> A city and date you have viewed before renders with zero requests on the next visit (cache fast path, no quota).",
+  "u2.how2": "<b>Otherwise you click to load.</b> Press “Refresh map” in the map panel to fetch it (about 171 weighted calls) — that spends your daily quota.",
+  "图上是什么": "What is on the map",
+  "色面": "Colour field",
+  "采样点插值出的霞光强度，白 → 黄 → 橙 → 红分档。色阶是固定的 0–100 绝对刻度，所以同一片区域的深浅可以跨日期直接对比。": "Glow intensity interpolated between sample points, in white → yellow → orange → red bands. The scale is a fixed 0–100 absolute range, so shades stay comparable across dates.",
+  "云纹": "Cloud hatching",
+  "采样点上的云量，按四档画成斜纹。晴天不画（否则整张图都是纹路，等于没有信息），有云才显形。": "Cloud cover at the sample points, drawn as hatching in four bands. Clear cells stay blank — hatching everything would carry no information at all. Clouds are what make it appear.",
+  "按云量分四档画斜纹，晴档不画（否则整张图都变闷）。档界同时是图例边界；图例里「晴」是空心描边，代表「这里没有纹路是因为没有云」。": "Cloud cover at the sample points, drawn as hatching in four bands. Clear cells are left blank — hatching everything would only make the map noisy. The band edges are the legend edges; “clear” in the legend is a hollow swatch, meaning “no hatch because no cloud”.",
+  "等值线": "Isolines",
+  "档与档之间一条 1px 线（屏幕空间矢量，放大不变粗），帮你看清梯度往哪边走。": "A 1px line between bands, drawn in screen space so it never thickens when you zoom. It shows which way the gradient runs.",
+  "数据范围虚线": "Data-extent dashes",
+  "采样点凸包外缘的虚线：线内是插值、线外是外推，外推区可信度更低。": "A dashed outline at the hull of the sample points: inside is interpolation, outside is extrapolation, and extrapolation is less trustworthy.",
+  "经纬网": "Graticule",
+  "1° 网格底衬，可在显示层里关闭。": "A 1° grid underlay; it can be switched off in the layer controls.",
+  "四个显示层开关": "Four layer switches",
+  "数值直标 / 采样点 / 云纹 / 经纬网 —— 按需开关，偏好写进本地存储，重开页恢复。": "Number labels, sample points, cloud hatching and graticule — toggle as needed; the choice is stored locally and restored next time.",
+  "交互": "Interaction",
+  "地图面板里可切时段、日期、模型与着色依据；鼠标悬停或点击出具体数值，外推区会附「离最近采样点多远」的距离口径；右下角可全屏。": "The map panel switches period, date, model and colour basis. Hover or tap for exact values; extrapolated areas also report how far the nearest sample point is. The lower-right control goes full screen.",
+  "u2.warn": "<b>Two different distances — don't mix them:</b> “inside the sampled area” (the hull) and “distance to the nearest sample” are separate measures. Inside the hull the farthest sample is 85 km away, while a spot 1.4 km outside a hull vertex is already extrapolation.",
+
+  "3 · 趋势与最佳窗口": "3 · Trend and best windows",
+  "趋势曲线": "Trend curve",
+  "未来十天逐日打分，可切换朝霞 / 晚霞。算好的结果会落盘缓存，重开页命中时零请求直接画出。": "Ten days scored day by day, switchable between morning and evening. Computed rows are cached on disk, so a revisit draws instantly with zero requests.",
+  "最佳窗口日历": "Best-window calendar",
+  "趋势的另一种读法：把未来几天按「哪天值得去」排成日历格（朝 / 晚两个色块 + 质量分），并标出前三名。点格子直接切过去 —— 渲染这张日历零取数，只有点格子（你的显式意图）才走一次单点取数。": "Another way to read the trend: the next few days laid out as calendar cells by “is it worth going” (one cell for morning, one for evening, plus quality), with the top three marked. Clicking a cell jumps to it — rendering the calendar costs nothing; only your click fetches a point.",
+
+  "4 · 多观测点对比": "4 · Compare spots",
+  "回答「今天去哪儿拍」：收藏最多 5 个机位，一次取数横向按质量分排序。": "Answers “where should I shoot today”: save up to 5 spots and rank them by quality in a single fetch.",
+  "u4.li1": "Fetching happens only via the “Compare these spots” button. Spots already in the single-point cache <b>are not requested</b> — checking them one by one first costs nothing extra.",
+  "默认只比当前时段；界面会写明「本次将消耗约 N 个计费调用」。": "Compares the current period only, and the interface states the estimated number of billed calls before you commit.",
+  "位置 / 日期 / 时段任一变化，对比结果作废 —— 避免显示上一个地点的数字。": "Changing place, date or period invalidates the comparison, so you never see numbers from the previous location.",
+
+  "5 · 分享与导出": "5 · Share and export",
+  "一键分享卡 PNG": "One-tap share card",
+  "把结论卡导出为图片（纯 canvas 绘制，与页面同一套文案与配色），直接发到聊天工具。分享卡固定浅色底，发到任何环境都稳妥。": "Exports the verdict card as an image (drawn on canvas with the same copy and colours as the page), ready to drop into a chat. The card always uses a light background so it looks right anywhere.",
+  "结果快照链接": "Result snapshot link",
+  "u5.p": "The link carries a <code>snap=</code> parameter that restores the result with <b>zero weather requests</b> (length-capped and field-validated before decoding; hostile payloads land as plain text). Language and period travel with the link.",
+
+  "6 · 偏好设置": "6 · Preferences",
+  "简体中文 / 繁體中文（中国台湾·香港用语）/ English，写进偏好与分享链接。优先级：链接参数 > 偏好 > 浏览器语言 > 简体。": "简体中文 / 繁體中文 (Taiwan and Hong Kong usage) / English, written to preferences and to share links. Precedence: link parameter > preference > browser language > Simplified Chinese.",
+  "跟随系统 / 浅色 / 深色三态，刷新不闪（引导脚本早于样式执行）。主题不进链接 —— 别人发的链接不该强制你的界面变黑。地图深浅跟随主题，不再有第二个开关。": "System / light / dark, with no flash on reload (the boot script runs before the stylesheet). Theme never enters the link — someone else's link should not force your interface dark. The map follows the theme too; there is no second switch.",
+  "单位与时间制": "Units and clock",
+  "公制 / 英制、24 时 / 12 时，按习惯切换，写进同一份偏好。": "Metric or imperial, 24-hour or 12-hour — stored in the same preference object.",
+  "显示层与折叠": "Layers and folds",
+  "数值直标 / 采样点 / 云纹 / 经纬网，以及几张技术卡的开合状态，都写进同一个本地键，重开页恢复。": "Number labels, sample points, cloud hatching, graticule, plus the open/closed state of a few technical cards — all in one local key, restored on reload.",
+  "u6.note": "<b>Two things are deliberately not persisted:</b> place and date (the link carries them, so they would fight a shared link), and the map period (it derives from the single-point period — storing it would make “map shows evening, forecast above shows morning” the normal state).",
+
+  "7 · 本地校准": "7 · Local calibration",
+  "事后回来点一档「实际看到了什么」，本机累积之后，结论卡下方会多出一行本地校准：模型在这一档平均报多少、你标注了几次、实际出现率多少、偏差多少。": "Come back afterwards and tap what you actually saw. Once enough marks accumulate, a local calibration line appears under the verdict card: what the model averaged in that band, how many times you marked it, the observed hit rate and the bias.",
+  "u7.li1": "<b>Shown, never applied</b> — not a single character of the model's probability, grade or factor table is changed.",
+  "u7.li2": "<b>Stored on this device only</b> — nothing leaves the browser, and it can be switched off or cleared.",
+  "u7.li3": "<b>No conclusion without enough samples</b>: at least 8 marks in total and 3 in the current band; until then you only see progress.",
+  "u7.li4": "<b>Off is not delete</b>: the switch hides the entry point and the display but keeps your marks; clearing is a separate button with a confirmation.",
+  "「没看到（无法判断）」不计入统计，以免系统性拉低校准。": "“Didn't see it (can't judge)” is excluded from the statistics so it cannot systematically drag the calibration down.",
+
+  "8 · 手机端": "8 · On a phone",
+  "顶部两行：第一行是目录、标题、语言与主题按钮，第二行是当前结果徽标。滚到哪都能开目录。": "Two rows on top: navigation, title, language and theme in the first; the current result badge in the second. The contents drawer opens from anywhere.",
+  "地图提示卡改成贴底通栏并自带关闭；可再点一次、点卡片外，或直接拖动地图收起。": "The map tip becomes a full-width bottom sheet with its own close button; tapping again, tapping outside, or dragging the map dismisses it.",
+  "关闭后不留隐形热区（触摸交还地图）；拖动超过 12px 视为收卡，以下算点击。": "No invisible hit area is left behind (touches return to the map); a drag beyond 12px dismisses the card, anything less counts as a tap.",
+  "页面不能横向拖出空白；地图区单指可拖，手势交给地图 SDK。": "The page cannot be dragged sideways into blank space; one finger pans the map, and gestures belong to the map SDK.",
+
+  "9 · 常见疑问": "9 · Common questions",
+  "为什么地图有时直接显示、有时要点击？": "Why does the map sometimes appear on its own and sometimes need a click?",
+  "有缓存（看过同城市同日期）开页自动画、零额度；无缓存仍需你点「刷新地图」。": "With a cache hit (same city and date) it draws on load at zero quota; otherwise you press “Refresh map”.",
+  "额度怎么算？": "How is quota counted?",
+  "u9.a2": "The free tier counts against <b>each visitor's own egress IP</b> (10,000 calls per day per person). A static site proxies nothing, so the site itself spends no quota.",
+  "本地双击打开地图不显示？": "The map is blank when I open the file locally?",
+  "预期行为：地图代理地址在没有部署时是一个占位符，页面会说明原因；单点查询不受影响。要联调完整功能需按开发者版的说明构建一次。": "Expected: without a deployment the map proxy address is a placeholder, and the page says so. Single-point forecasts still work. For the full map, build once as described in the developer track.",
+  "地图的深浅和界面主题是一回事吗？": "Is map darkness the same thing as the interface theme?",
+  "现在是一回事：底图深浅跟随界面主题（浅色主题配浅底图，深色配深底图）。原先那个独立的「深色底图」开关已取消 —— 一个页面不该有两套深浅。": "It is now: the basemap follows the interface theme (light theme, light basemap; dark theme, dark basemap). The separate “dark basemap” switch was removed — one page should not have two notions of dark."
+};
+
+/* English dictionary · part 2 (developers / creators / footer) */
+var EN_2 = {
+  "开发者版 · 工程说明": "For developers · Engineering notes",
+  "结构、构建与部署": "Structure, build and deployment",
+  "d.intro": "The product is <code>index.html</code> — one self-contained HTML file with all JS, city tables and the elevation grid inlined, deployable as a static site. The map module has one optional same-origin relay endpoint.",
+  "源码结构": "Source layout",
+  "构建命令": "Build commands",
+  "部署": "Deployment",
+  "回归套件": "Regression suite",
+  "已知边界": "Known limits",
+  "合规": "Compliance",
+
+  "1 · 源码结构": "1 · Source layout",
+  "d1.p": "The single-file product is assembled by script — <b>do not hand-edit the output</b>. This guide is the one exception: it is a standalone hand-written file and does not go through assembly.",
+  "d1.note": "After changing anything under <code>_p*.js</code>, <code>tpl/</code> or <code>refs/</code>, rerun <code>assemble.py</code> and <code>mkpreview.py</code>. Neither output may be edited by hand.",
+
+  "2 · 构建命令": "2 · Build commands",
+  "d2.p": "Without <code>TMAP_SERVICE_HOST</code>, <code>assemble.py</code> falls back to the local-preview placeholder, so development behaviour is unchanged.",
+
+  "3 · 部署": "3 · Deployment",
+  "3.1 纯静态（地图不可用）": "3.1 Static only (no map)",
+  "d3.p1": "Drop <code>index.html</code> (plus the optional <code>tutorial.html</code> and <code>404.html</code>) on any static host: Cloudflare Pages, GitHub Pages, an object store. Forecasts, trends and share cards all work; the map panel explains that it needs a key.",
+  "d3.note1": "Free-tier quota counts against <b>each visitor's own egress IP</b>. A static site proxies nothing, so hosting it spends no quota.",
+  "3.2 带地图（Cloudflare Pages + Pages Functions）": "3.2 With the map (Cloudflare Pages + Pages Functions)",
+  "d3.p2": "A Tencent Map JS API key <b>must not appear in the product</b> — anyone can read a single-file HTML and burn the quota. The relay is already implemented:",
+  "去 lbs.qq.com 申请 Web 端（JS API）key，把站点域名加进白名单。": "Apply for a Web (JS API) key at lbs.qq.com and whitelist your domain.",
+  "d3.li2": "Point a Pages project at this directory (empty build command, output directory <code>/</code>). <code>functions/_TMapService/[[path]].js</code> is picked up as a Function automatically.",
+  "d3.li3": "Add <code>TMAP_KEY = your key</code> under Settings → Environment variables in Pages.",
+  "d3.li4": "Build with the relay on the same origin: <code>TMAP_SERVICE_HOST=https://your.domain/_TMapService python assemble.py</code>.",
+  "代理与前端同源 ⇒ 无 CORS、无混合内容。key 只存在于服务端环境变量，永不进入产物。": "Relay and front end share an origin, so there is no CORS and no mixed content. The key lives only in a server-side environment variable and never enters the product.",
+  "3.3 404 页": "3.3 The 404 page",
+  "d3.p4": "A purely static site has no front-end router, so unknown paths are handled by the host (Cloudflare Pages, GitHub Pages and Netlify all serve <code>404.html</code> from the site root with a 404 status). <code>assemble.py</code> writes it too — no rewrite rules needed. In-page links are absolute from the site root, injected at build time via <code>SITE_BASE</code>.",
+  "3.4 可选 PWA": "3.4 Optional PWA",
+  "d3.p5": "<code>PWA=1</code> adds <code>manifest.json</code>, <code>sw.js</code> and two icons, so the app can be added to the home screen and opened offline. Three rules: (1) the service worker <b>never caches weather responses</b>, only a precache list; (2) the cache name carries the first 12 hex digits of the product's sha256, so a content change retires the old cache; (3) registration is an enhancement — failures and <code>file://</code> are silently skipped. Off by default because it conflicts with the single-file constraint.",
+  "3.5 本地预览": "3.5 Local preview",
+  "d3.p6": "<code>_check/preview.html</code> uses a stub map SDK (reproducing the Heat kernel accumulation and projection), so it runs offline, is assertable, and spends no quota. The whole regression suite runs against that file.",
+
+  "4 · 回归套件": "4 · Regression suite",
+  "探针": "Probe",
+  "覆盖要点": "What it covers",
+  "内联 script 块语法；跨块命名冲突（静默覆盖最难查）": "Inline script block syntax; cross-block name collisions (silent overrides are the hardest to find)",
+  "色阶 / 等级纯函数自测；城市表不变量 + 港澳台合规": "Colour-scale and grade pure-function self-tests; city-table invariants plus Hong Kong / Macao / Taiwan compliance",
+  "局部网格几何 / 缓存闸门 / 首屏地图加载；请求超时 + 429 双分类": "Local grid geometry, cache gate, first-paint map load; request timeout and the two 429 classes",
+  "地图审计（图层、缩放、全屏出口）；手机端适配合成两档视口": "Map audit (layers, zoom, full-screen exit); mobile fit across two viewports",
+  "偏好写盘↔读回；默认态 / 天色带 / 顶栏与目录": "Preferences round-trip; default state, sky band, top bar and contents drawer",
+  "无障碍；多语言键覆盖；深色模式（含浅色漏网扫描）": "Accessibility; i18n key coverage; dark mode including a light-block sweep",
+  "F3 / F2 额度纪律；快照零请求；F4 校准": "F3 / F2 quota discipline; snapshot zero-request; F4 calibration",
+  "XSS 防护；404 页；文档↔代码一致性": "XSS protection; the 404 page; docs-to-code consistency",
+  "本教程：三语键覆盖、主题三态、窄屏无溢出、四档切换、偏好共享": "This guide: three-language key coverage, three theme states, no narrow-screen overflow, four-track switching, shared preferences",
+  "d4.note": "Probes always run against <code>_check/preview.html</code>. <b>Forgetting to regenerate preview after a source change makes the entire suite test old code</b> — a trap this project has hit more than once.",
+  "d4.p": "Not in the one-shot sequence (they spend real quota or depend on live APIs): <code>consistency.js</code>, <code>shotdefault.js</code>, <code>tzprobe.js</code> and friends.",
+
+  "5 · 已知边界（改动前必读）": "5 · Known limits (read before changing anything)",
+  "额度": "Quota",
+  "d5.t1": "The first screen fetches only the single point (about 65). The map is fetched only on an explicit click (about 171). The sole exception is an automatic draw from cache (zero requests, zero quota) — guaranteed by an early return placed after the cache fast path and before the network call.",
+  "色面与范围": "Colour field and extent",
+  "色面值域是固定的 0–100 绝对刻度（不做当日拉伸），边缘取采样点凸包并仅向外羽化；凸包之外即外推，用虚线标出。悬停卡另有「离最近采样点多远」的口径 —— 与「在不在采样区」是两个量。": "The field uses a fixed 0–100 absolute scale (no per-day stretching). Its edge follows the convex hull of the sample points with outward feathering only; anything outside the hull is extrapolation, marked with dashes. The hover card separately reports distance to the nearest sample — a different measure from “inside the sampled area”.",
+  "按云量分四档画斜纹，晴档不画（否则整张图都变闷）。档界同时是图例边界；图例里「晴」是空心描边，代表「这里没有纹路是因为没有云」。": "Cloud is hatched in four bands, with the clear band left unhatched (hatching everything would only muddy the map). Band edges double as legend edges; the “clear” legend swatch is hollow, meaning “no hatch because no cloud”.",
+  "模型分歧": "Model spread",
+  "地图的「模型分歧」只取三套模型的极差；少于两套有值时返回「无数据」而不是 0。": "Map “model spread” is the range across the three models; with fewer than two values it returns “no data” rather than 0.",
+  "偏好持久化": "Preference persistence",
+  "所有显示类偏好写进同一个本地键；应用顺序有硬约束 —— 必须在任何控件初值 / 派生状态赋值之前调用。": "All display preferences live in one local key, and the ordering is a hard constraint: they must be applied before any control default or derived state is assigned.",
+  "趋势缓存": "Trend cache",
+  "算好的 rows 落盘（约 1.9KB / 条，上限 3 条），重开页命中零请求；不存原始响应（约 5MB，会撑爆配额）。权重 / 阈值一改就用版本号兜住。": "Computed rows are persisted (about 1.9 KB each, at most 3); a cache hit costs zero requests. Raw responses are not stored (about 5 MB would blow the quota). Changing weights or thresholds is covered by a version bump.",
+  "深色模式": "Dark mode",
+  "d5.t7": "Three states; no flash on reload (the boot script runs before <code>&lt;style&gt;</code>); <code>color-scheme</code> follows; semantic colours written into the DOM are repainted. The share card stays light; theme never enters the URL.",
+  "XSS": "XSS",
+  "d5.t8": "Output side <code>esc()</code>, input side <code>safeLabel()</code> (a URL place-name whitelist). New render code must use both; CSP and the remaining batch replacements are still outstanding.",
+  "F2 / F3 / F4": "F2 / F3 / F4",
+  "F3 日历渲染零取数，点格子才取数；F2 取数只能由按钮触发、命中缓存不进请求、上限 5 点；F4 只展示不回改、样本不够不给结论、关掉≠删除。": "F3 renders the calendar with zero fetches; only a cell click fetches. F2 fetches only on a button press, skips cache hits, and caps at 5 spots. F4 shows without applying, gives no verdict below its sample floor, and switching off is not deleting.",
+  "手机端布局": "Mobile layout",
+  "d5.t10": "Every horizontal scroller needs <code>min-width:0</code>; <code>#map</code> needs <code>touch-action:none</code> (never <code>.mapwrap</code>); test overflow against <code>documentElement.clientWidth</code>, not <code>innerWidth</code>.",
+
+  "6 · 合规": "6 · Compliance",
+  "在中国境内展示地图，底图服务需具备测绘资质。腾讯地图是合规的；为省一个 key 换成 OSM 等境外底图，会把合规问题一起换进来，不建议。": "Displaying maps inside mainland China requires a licensed survey provider. Tencent Maps is compliant; swapping in OSM or another overseas basemap to save a key trades one shortcut for a compliance problem, and is not recommended.",
+  "数据源：气象与空气质量来自 Open-Meteo（免费公开、非商业），省界来自阿里云 DataV，地图来自腾讯位置服务 —— 请遵守各自的服务条款。": "Data sources: weather and air quality from Open-Meteo (free, public, non-commercial); province boundaries from Alibaba Cloud DataV; maps from Tencent Location Service. Respect each service's terms.",
+
+  "创作者版 · 演示素材": "For creators · Demo material",
+  "怎么把霞光预报讲给人看": "How to present the glow forecast",
+  "面向自媒体与内容创作者：最值得讲的亮点、演示叙事线，以及可以放心引用的卖点。": "For publishers and content creators: the highlights worth showing, a demo storyline, and claims you can quote safely.",
+  "一句话开场": "One-line opener",
+  "五个亮点": "Five highlights",
+  "适合的题材": "Formats that fit",
+  "演示叙事线": "Demo storyline",
+  "可引用的卖点": "Quotable claims",
+  "注意事项": "Caveats",
+
+  "1 · 一句话开场": "1 · One-line opener",
+  "「它是一个把『今晚有没有火烧云』从玄学变成概率和评分的工具 —— 而且免费、不用注册、纯网页。」": "“A tool that turns ‘will there be fire clouds tonight’ from folklore into a probability and a score — free, no sign-up, and just a web page.”",
+  "这句同时覆盖了差异化（量化而非玄学）与易得性（免费 / 无注册 / 纯前端），适合做短视频开头或图文首段。": "It covers both the difference (quantified, not folklore) and the ease (free, no sign-up, pure front end) — good as a short-video hook or a first paragraph.",
+
+  "2 · 最值得讲的五个亮点": "2 · Five highlights worth showing",
+  "结论卡": "Verdict card",
+  "概率 + 质量评分，衬线大字": "Probability and quality in large serif figures",
+  "结论卡用大号衬线数字呈现概率 % 与质量分，配优 / 良 / 一般 / 差等级与「主要影响因素」分解 —— 截图即干货，观众一眼看懂。": "The card sets probability and quality in large serif figures beside the grade and a factor breakdown — a screenshot alone carries the point.",
+  "地图": "Map",
+  "周边 500 km 霞光分布": "Glow field across 500 km",
+  "热力图把「去哪个方向拍」画出来。白 → 黄 → 橙 → 红色阶 + 等值线 + 数据范围虚线，演示时直接说「红色那片就是今晚最该去的地方」。": "The heat map answers “which direction to shoot”. White → yellow → orange → red bands, isolines and a dashed data extent let you say, on camera, “that red patch is where to go tonight”.",
+  "最佳窗口": "Best window",
+  "哪天去，日历直接排好": "The calendar ranks the days for you",
+  "未来几天按「哪天值得去」排成日历格并标出前三名。适合做「未来一周什么时候拍照最好」这类选题。": "The coming days are laid out as calendar cells ranked by “worth going”, with the top three marked. Fits “when to shoot this week” videos.",
+  "多机位对比": "Spot comparison",
+  "今天去哪儿拍": "Where to shoot today",
+  "收藏最多 5 个机位，一次取数横向排序。演示「家附近 vs 海边 vs 山顶，今晚哪个出片」最直观。": "Save up to 5 spots and rank them in one fetch — the clearest way to show “home vs coast vs summit, which one delivers tonight”.",
+  "分享": "Sharing",
+  "分享卡与快照链接": "Share card and snapshot link",
+  "c2.p5": "Export the verdict card as a PNG for the group chat; a <code>snap=</code> link restores the result with zero requests, so viewers open the same forecast. It lowers the “I want to try that” barrier.",
+  "越用越懂你那片天": "It learns your patch of sky",
+  "事后回填「实际看到了什么」，本机累积出本地校准。强调「纯展示不回改模型、数据不出设备」—— 隐私友好，适合做信任感叙事。": "Mark what you actually saw afterwards and a local calibration builds up on the device. “Shown, never applied; data never leaves the device” is a privacy story that earns trust.",
+
+  "3 · 适合的题材": "3 · Formats that fit",
+  "题材": "Format",
+  "切入点": "Angle",
+  "摄影教程": "Photography tutorial",
+  "用最佳窗口日历选拍摄日、用多机位对比选机位、用地图定方向。": "Use the best-window calendar to pick a day, spot comparison to pick a location, and the map to pick a direction.",
+  "天气 / 大气科普": "Weather and atmosphere explainer",
+  "朝霞晚霞大气条件不同、为什么分两个时段、模型分歧代表什么。": "Why morning and evening differ, why they are two periods, and what model disagreement means.",
+  "出行 / 生活攻略": "Going out / lifestyle",
+  "「今晚值不值得专门跑出去拍」「未来一周哪天最适合」。": "“Is tonight worth the trip”, “which day next week is best”.",
+  "工具推荐": "Tool roundup",
+  "免费、无注册、纯前端、隐私友好、可装成 App（PWA）。": "Free, no sign-up, pure front end, privacy-friendly, installable as an app (PWA).",
+
+  "4 · 演示叙事线": "4 · Demo storyline",
+  "抛出痛点：": "Open with the pain: ",
+  "「每次等晚霞都靠赌，今天教你用数据赌。」": "“Chasing sunsets is a gamble. Today we gamble with data.”",
+  "一次查询：": "One query: ",
+  "搜城市 → 切晚霞 → 结论卡大数字 + 因素分解。": "Search a city → switch to evening → the big numbers and the factor breakdown.",
+  "放大地图：": "Open the map: ",
+  "点「刷新地图」→ 指红色区域说「去这儿」。": "Press “Refresh map” → point at the red patch and say “go here”.",
+  "拉长时间：": "Stretch the timeline: ",
+  "开最佳窗口日历 → 「这周三是冠军」。": "Open the best-window calendar → “Wednesday wins”.",
+  "横向比较：": "Compare sideways: ",
+  "开多机位对比 → 「山顶比海边稳」。": "Open spot comparison → “the summit beats the coast”.",
+  "收尾转化：": "Close with a call to action: ",
+  "导出分享卡 / 发快照链接 → 「链接放评论区，自己查你那片天」。": "Export the share card or post the snapshot link → “link in the comments, check your own sky”.",
+  "移动端演示：顶部两行、提示卡贴底通栏、拖动地图收卡 —— 这些交互本身就很「产品感」，适合慢动作展示。": "On mobile: two-row header, bottom-sheet tip, drag-to-dismiss — these interactions feel like a product on their own, worth a slow-motion shot.",
+
+  "5 · 可放心引用的卖点": "5 · Quotable claims",
+  "c5.li1": "<b>Free, no sign-up</b>, calling public weather APIs directly from the browser (Open-Meteo).",
+  "c5.li2": "<b>Three models blended</b> (GFS / ECMWF / ray-traced, weights 0.30 / 0.34 / 0.36) to damp single-source bias.",
+  "c5.li3": "<b>Privacy-friendly</b>: local calibration stays on the device, can be switched off or cleared, and never rewrites the model.",
+  "c5.li4": "<b>Quota-friendly</b>: the first screen fetches one point, the map needs a click, and a cache hit costs nothing.",
+  "c5.li5": "<b>Installable as an app</b> (optional PWA) and opens offline.",
+
+  "6 · 注意事项（别踩坑）": "6 · Caveats",
+  "免费层按访客自己的出口 IP 计（10000 次 / 天 / 人）。演示时自己多刷几次没关系，但别让观众以为「无限调用」。": "The free tier counts against each visitor's own egress IP (10,000 calls per day per person). Refreshing during a demo is fine, but do not let viewers think calls are unlimited.",
+  "地图需要部署": "The map needs a deployment",
+  "双击本地文件打开时地图不显示（代理是占位符形态），这是预期行为；完整地图功能需要带代理的部署。": "Opening the file locally shows no map (the relay is a placeholder) — that is expected. The full map needs a deployment with the relay.",
+  "合规底图": "Compliant basemap",
+  "中国境内展示地图需测绘资质，项目用的腾讯地图是合规方案；不要为省事换成境外底图。": "Maps shown in mainland China require a licensed survey provider; Tencent Maps is the compliant choice here. Do not swap in an overseas basemap to save effort.",
+  "概率指的是霞光": "The probability is about glow",
+  "避免观众误解 —— 它预报的是低空霞光出现的可能性与质量，不是晴雨。": "Avoid a common misreading: it forecasts low-altitude glow, not sunshine or rain.",
+
+  "霞光预报 · 使用教程（概览 / 用户 / 开发者 / 创作者）": "Sunset Glow Forecast · User guide (overview / users / developers / creators)",
+  "数据源：Open-Meteo · 阿里云 DataV · 腾讯位置服务 ｜ 仅用于学习与个人使用": "Data: Open-Meteo · Alibaba Cloud DataV · Tencent Location Service — for learning and personal use"
+};
+
+var EN = Object.assign({}, EN_1, EN_2);
+/* =========================================================================
+   教程页脚本 · 语言 / 主题 / 四档切换
+   -------------------------------------------------------------------------
+   ① 语言与主题**与主程序共用同一个偏好键** `sunsetbot.pref.v1`：
+      读的时候整份读、写的时候只补 lang / theme 两个字段（其余原样保留）。
+      主程序的 prefWrite 会把白名单外的字段挡掉，这里刻意**不复用那套过滤** ——
+      教程不该顺手删掉别人写进去的东西。
+   ② 文案的多语言用「键 → 译文」两张表（繁 / 英），简体就是 HTML 里写的那份。
+      开机时把每个 [data-i18n*] 节点的**中文原文**存下来，切回中文时原样还原 ——
+      于是不需要第三张简体词典，也就不会出现"词典与页面各写一份、改一处忘一处"。
+   ③ 主题三态（跟随系统 / 浅色 / 深色）与主程序同一套判定：
+      data-theme 只在引导脚本与这里写，CSS 只读令牌。
+   ========================================================================= */
+(function () {
+  "use strict";
+
+  var PREF_KEY = "sunsetbot.pref.v1";
+  var LANGS = [
+    { k: "zh", name: "中文", short: "中", tag: "zh-CN" },
+    { k: "zhHant", name: "繁體", short: "繁", tag: "zh-Hant-TW" },
+    { k: "en", name: "English", short: "EN", tag: "en" }
+  ];
+  var DICT = { zhHant: ZH_HANT, en: EN };
+  var THEMES = ["auto", "light", "dark"];
+  var THEME_ICON = { auto: "◐", light: "☀", dark: "☾" };
+  var THEME_KEY = { auto: "跟随系统", light: "浅色", dark: "深色" };
+  var VIEWS = ["overview", "users", "dev", "creator"];
+  var LANG = "zh";
+
+  function $(s, r) { return (r || document).querySelector(s); }
+  function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
+  function tr(k) {
+    if (LANG === "zh") return k;
+    var d = DICT[LANG];
+    return (d && Object.prototype.hasOwnProperty.call(d, k)) ? d[k] : k;
   }
-  btns.forEach(function(b){
-    b.addEventListener('click', function(){ show(b.getAttribute('data-view')); });
-  });
-  // panel deep-links
-  document.querySelectorAll('[data-jump]').forEach(function(a){
-    a.addEventListener('click', function(e){
-      e.preventDefault();
-      show(a.getAttribute('data-jump'));
+
+  /* ---------- 偏好：整份读、补字段写 ---------- */
+  function prefRaw() {
+    try {
+      var j = JSON.parse(localStorage.getItem(PREF_KEY) || "null");
+      if (!j || typeof j !== "object" || Array.isArray(j)) return {};
+      return j;
+    } catch (e) { return {}; }
+  }
+  function prefPatch(patch) {
+    try {
+      var j = prefRaw();
+      Object.keys(patch).forEach(function (k) { j[k] = patch[k]; });
+      localStorage.setItem(PREF_KEY, JSON.stringify(j));
+    } catch (e) { /* 隐私模式 / 配额不足：本次照常生效，只是不落盘 */ }
+  }
+
+  /* ---------- 主题 ---------- */
+  function systemDark() {
+    return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  }
+  function themePref() {
+    var t = prefRaw().theme;
+    return THEMES.indexOf(t) >= 0 ? t : "auto";
+  }
+  function applyTheme(pref) {
+    var k = THEMES.indexOf(pref) >= 0 ? pref : "auto";
+    var dark = k === "dark" || (k === "auto" && systemDark());
+    var eff = dark ? "dark" : "light";
+    var root = document.documentElement;
+    root.setAttribute("data-theme", eff);
+    root.setAttribute("data-theme-pref", k);
+    root.style.colorScheme = eff;
+    /* 地址栏配色：只放行与当前主题匹配的那条 meta（与主页同一做法） */
+    var want = eff === "dark" ? "#11151c" : "#f6f7f8";
+    $$('meta[name="theme-color"]').forEach(function (m) {
+      m.setAttribute("media", m.getAttribute("content") === want ? "all" : "not all");
     });
-  });
-  // support #users / #dev / #creator direct anchors
-  var h = location.hash.replace('#','');
-  if(views[h]) show(h);
-  window.addEventListener('hashchange', function(){ var x=location.hash.replace('#',''); if(views[x]) show(x); });
+    refreshTopButtons();
+  }
+  function setTheme(pref) {
+    applyTheme(pref);
+    prefPatch({ theme: document.documentElement.getAttribute("data-theme-pref") });
+    refreshThemeSeg();
+  }
+
+  /* ---------- 文案节点 ---------- */
+  var TEXT_NODES = [];   /* {el, key, zh} —— data-i18n / data-i18n-html 都用 innerHTML 还原 */
+  var ATTR_NODES = [];   /* {el, attr, key, zh} —— aria-label / title */
+  function collect() {
+    $$("[data-i18n]").forEach(function (el) {
+      TEXT_NODES.push({ el: el, key: el.getAttribute("data-i18n"), zh: el.innerHTML });
+    });
+    $$("[data-i18n-html]").forEach(function (el) {
+      TEXT_NODES.push({ el: el, key: el.getAttribute("data-i18n-html"), zh: el.innerHTML });
+    });
+    $$("[data-i18n-aria]").forEach(function (el) {
+      ATTR_NODES.push({ el: el, attr: "aria-label", key: el.getAttribute("data-i18n-aria"),
+        zh: el.getAttribute("aria-label") || "" });
+    });
+    $$("[data-i18n-title]").forEach(function (el) {
+      ATTR_NODES.push({ el: el, attr: "title", key: el.getAttribute("data-i18n-title"),
+        zh: el.getAttribute("title") || "" });
+    });
+  }
+  function applyLang() {
+    /* 简体就是 HTML 里写的那份：直接还原开机时存下的原文。
+       不能写成 tr(key) || zh —— tr() 在 LANG==="zh" 时返回 **键本身**，
+       于是带 slug 的节点会把 "ov.lead" 这种键当成文案印到页面上。 */
+    function pick(n) {
+      if (LANG === "zh") return n.zh;
+      var d = DICT[LANG];
+      var v = d && Object.prototype.hasOwnProperty.call(d, n.key) ? d[n.key] : null;
+      return (v == null || v === "") ? n.zh : v;
+    }
+    TEXT_NODES.forEach(function (n) { n.el.innerHTML = pick(n); });
+    ATTR_NODES.forEach(function (n) { n.el.setAttribute(n.attr, pick(n)); });
+    var meta = LANGS.filter(function (l) { return l.k === LANG; })[0] || LANGS[0];
+    document.documentElement.setAttribute("lang", meta.tag);
+    document.title = LANG === "zh" ? "霞光预报 · 使用教程" : (DICT[LANG]["doc.title"] || document.title);
+    var d = $('meta[name="description"]');
+    if (d && LANG !== "zh" && DICT[LANG]["doc.desc"]) d.setAttribute("content", DICT[LANG]["doc.desc"]);
+    refreshTopButtons();
+    refreshLangSeg();
+    refreshThemeSeg();
+  }
+  function setLang(k, write) {
+    if (!DICT[k] && k !== "zh") return;
+    LANG = k;
+    applyLang();
+    if (write) prefPatch({ lang: k });
+    /* 语言是"链接里的内容"：切完把地址栏一起改掉，复制出去就是对方能看懂的版本 */
+    try {
+      var u = new URL(location.href);
+      if (k === "zh") u.searchParams.delete("lang"); else u.searchParams.set("lang", k);
+      history.replaceState(null, "", u.pathname + u.search + u.hash);
+    } catch (e) { /* file:// 下 URL 可能不可用，忽略 */ }
+  }
+  function detectLang() {
+    var q = null;
+    try { q = new URLSearchParams(location.search).get("lang"); } catch (e) { }
+    if (q === "zh" || (q && DICT[q])) return q;
+    var p = prefRaw().lang;
+    if (p === "zh" || (p && DICT[p])) return p;
+    var nav = (navigator.language || "zh").toLowerCase();
+    if (nav.indexOf("zh") === 0) return /hant|tw|hk|mo/.test(nav) ? "zhHant" : "zh";
+    return "en";
+  }
+
+  /* ---------- 顶栏两个按钮 + 下拉 ---------- */
+  function refreshTopButtons() {
+    var lb = $("#langBtn");
+    if (lb) {
+      var cur = LANGS.filter(function (l) { return l.k === LANG; })[0] || LANGS[0];
+      lb.textContent = cur.short;
+    }
+    var tb = $("#themeBtn");
+    if (tb) {
+      var ico = tb.querySelector(".ico");
+      var ch = THEME_ICON[themePref()] || "◐";
+      if (ico) ico.textContent = ch; else tb.textContent = ch;
+    }
+  }
+  function segHTML(items) {
+    return items.map(function (it) {
+      return '<button type="button" data-k="' + it.k + '" aria-pressed="' + (it.on ? "true" : "false")
+        + '" class="' + (it.on ? "on" : "") + '">' + it.label
+        + '<span class="tick" aria-hidden="true">✓</span></button>';
+    }).join("");
+  }
+  function refreshLangSeg() {
+    var seg = $("#langSeg");
+    if (!seg) return;
+    seg.innerHTML = segHTML(LANGS.map(function (l) {
+      return { k: l.k, label: l.name, on: l.k === LANG };
+    }));
+  }
+  function refreshThemeSeg() {
+    var seg = $("#themeSeg");
+    if (!seg) return;
+    var cur = themePref();
+    seg.innerHTML = segHTML(THEMES.map(function (k) {
+      return { k: k, label: tr(THEME_KEY[k]), on: k === cur };
+    }));
+  }
+  var openMenu = null;
+  function menuOf(k) { return k === "lang" ? $("#langMenu") : $("#themeMenu"); }
+  function btnOf(k) { return k === "lang" ? $("#langBtn") : $("#themeBtn"); }
+  function closeMenu() {
+    ["lang", "theme"].forEach(function (k) {
+      var m = menuOf(k), b = btnOf(k);
+      if (m) m.hidden = true;
+      if (b) b.setAttribute("aria-expanded", "false");
+    });
+    openMenu = null;
+  }
+  function showMenu(k) {
+    var b = btnOf(k), m = menuOf(k);
+    if (!b || !m) return;
+    var was = openMenu;
+    closeMenu();
+    if (was === k) return;                 /* 同一个钮再点一次＝收起 */
+    m.hidden = false;
+    var r = b.getBoundingClientRect();
+    var mw = m.offsetWidth, mh = m.offsetHeight;
+    var left = Math.min(r.right - mw, document.documentElement.clientWidth - mw - 10);
+    left = Math.max(10, left);
+    var top = r.bottom + 6;
+    if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 6);
+    m.style.left = Math.round(left) + "px";
+    m.style.top = Math.round(top) + "px";
+    b.setAttribute("aria-expanded", "true");
+    openMenu = k;
+  }
+
+  /* ---------- 四档切换 ---------- */
+  function showView(name, scroll) {
+    if (VIEWS.indexOf(name) < 0) name = "overview";
+    VIEWS.forEach(function (v) {
+      var el = document.getElementById(v);
+      if (el) el.hidden = (v !== name);
+    });
+    $$(".tab").forEach(function (b) {
+      var on = b.getAttribute("data-view") === name;
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    if (scroll) window.scrollTo({ top: 0, behavior: "auto" });
+  }
+  function jumpTop() { setTimeout(function () { window.scrollTo(0, 0); }, 0); }
+  function route() {
+    var h = (location.hash || "").replace("#", "");
+    if (!h) { showView("overview", false); return; }
+    /* 档位 hash 与元素 id 同名，浏览器自己会先滚到那个元素 ——
+       于是"切档回到顶部"必须抢在它之后执行。用 setTimeout(0) 而不是直接在
+       这里滚：导航引发的 fragment 滚动晚于本次路由调用（踩过：打开 #users
+       时标题被吸顶条压住）。 */
+    if (VIEWS.indexOf(h) >= 0) { showView(h, false); jumpTop(); return; }
+    var el = document.getElementById(h);
+    if (!el) return;
+    var v = el.closest ? el.closest(".view") : null;
+    if (v && v.hidden) {
+      showView(v.id, false);
+      /* 目标原先藏在别的档里：先显形，再滚过去（scroll-margin-top 已让开吸顶条） */
+      if (el.scrollIntoView) el.scrollIntoView({ block: "start" });
+    }
+  }
+
+  /* ---------- 吸顶条高度：把顶栏实测高度写给 --toph ----------
+     写死像素会在标题换行、系统字号放大时错位；实测一次 + resize 重测最稳。 */
+  function syncTopHeight() {
+    var t = $(".top");
+    if (!t) return;
+    var h = Math.round(t.getBoundingClientRect().height);
+    if (h > 0) document.documentElement.style.setProperty("--toph", h + "px");
+  }
+
+  /* ---------- 启动 ---------- */
+  function boot() {
+    collect();
+    LANG = detectLang();
+    applyTheme(themePref());
+    applyLang();
+    syncTopHeight();
+    route();
+
+    $("#langBtn").addEventListener("click", function (e) { e.stopPropagation(); showMenu("lang"); });
+    $("#themeBtn").addEventListener("click", function (e) { e.stopPropagation(); showMenu("theme"); });
+    $("#langSeg").addEventListener("click", function (e) {
+      var b = e.target.closest("button[data-k]");
+      if (!b) return;
+      setLang(b.getAttribute("data-k"), true);
+      closeMenu();
+    });
+    $("#themeSeg").addEventListener("click", function (e) {
+      var b = e.target.closest("button[data-k]");
+      if (!b) return;
+      setTheme(b.getAttribute("data-k"));
+      closeMenu();
+    });
+    $$(".tab").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var v = b.getAttribute("data-view");
+        if ((location.hash || "").replace("#", "") === v) showView(v, true);
+        else location.hash = v;
+      });
+    });
+    document.addEventListener("click", function (e) {
+      if (!openMenu) return;
+      if (e.target.closest(".topmenu") || e.target.closest("#langBtn") || e.target.closest("#themeBtn")) return;
+      closeMenu();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeMenu();
+    });
+    window.addEventListener("hashchange", route);
+    window.addEventListener("resize", syncTopHeight);
+    if (window.matchMedia) {
+      var mq = window.matchMedia("(prefers-color-scheme: dark)");
+      var on = function () { if (themePref() === "auto") applyTheme("auto"); };
+      if (mq.addEventListener) mq.addEventListener("change", on);
+      else if (mq.addListener) mq.addListener(on);
+    }
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
 })();
+
 </script>
 </body>
 </html>

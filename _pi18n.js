@@ -30,8 +30,7 @@ let LANG = "zh";
    台湾中央气象署作「氣膠」、香港天文台作「氣溶膠」，取后者以便两地都认。 */
 const I18N_ZH_HANT = {
   /* 顶栏 */
-  "霞光预报 · 朝霞 / 晚霞 概率与观赏质量": "霞光預報 · 朝霞 / 晚霞 機率與觀賞品質",
-  "多模型融合（GFS · ECMWF-IFS · 光追算法）+ 火烧云三角几何模型 + 大气消光光谱计算": "多模型融合（GFS · ECMWF-IFS · 光追演算法）+ 火燒雲三角幾何模型 + 大氣消光光譜計算",
+  "霞光预报": "霞光預報",
   "等待计算": "等待計算",
   "获取失败": "取得失敗",
   "正在获取数据…": "正在取得資料…",
@@ -68,6 +67,9 @@ const I18N_ZH_HANT = {
   "淡蓝": "淡藍",
   "现在": "現在",
   "目录": "目錄",
+  /* 教程入口（2026-10-19）：顶栏图标 + 抽屉「指南」组各一条，两处共用同两个键 */
+  "使用教程": "使用教學",
+  "指南": "指南",
 
   "主结果": "主結果",
   "未来趋势": "未來趨勢",
@@ -375,7 +377,6 @@ const I18N_ZH_HANT = {
   "（{v}）": "（{v}）",
   "，ΔI {v}": "，ΔI {v}",
   "光追 ": "光追 ",
-  "霞光预报": "霞光預報",
   "（首屏只取了单点结果，这部分等你要看时再取）。": "（首屏只取了單點結果，這部分等你要看時再取）。",
   "（当前地点没有生成网格点）": "（目前地點沒有產生網格點）",
   "概率低（&lt;45%）": "機率低（&lt;45%）",
@@ -587,8 +588,7 @@ const I18N_ZH_HANT = {
 /* ---- English ---- */
 const I18N_EN = {
   /* 顶栏 */
-  "霞光预报 · 朝霞 / 晚霞 概率与观赏质量": "Glowcast · Dawn & dusk glow probability and viewing quality",
-  "多模型融合（GFS · ECMWF-IFS · 光追算法）+ 火烧云三角几何模型 + 大气消光光谱计算": "GFS · ECMWF-IFS · ray-tracing blend + the \"fire-cloud\" triangle geometry model + atmospheric extinction spectra",
+  "霞光预报": "Sunset Glow Forecast",
   "等待计算": "Waiting",
   "获取失败": "Failed",
   "正在获取数据…": "Fetching data…",
@@ -625,6 +625,9 @@ const I18N_EN = {
   "淡蓝": "Pale blue",
   "现在": "Now",
   "目录": "Contents",
+  /* 教程入口（2026-10-19）：顶栏图标 + 抽屉「指南」组各一条，两处共用同两个键 */
+  "使用教程": "User guide",
+  "指南": "Guide",
 
   "主结果": "Main results",
   "未来趋势": "Outlook",
@@ -932,7 +935,6 @@ const I18N_EN = {
   "（{v}）": " ({v})",
   "，ΔI {v}": ", ΔI {v}",
   "光追 ": "ray ",
-  "霞光预报": "Glowcast",
   "（首屏只取了单点结果，这部分等你要看时再取）。": " (the first load only fetches the single-point result; this part is fetched on demand).",
   "（当前地点没有生成网格点）": " (no grid points for this location)",
   "概率低（&lt;45%）": "Low (&lt;45%)",
