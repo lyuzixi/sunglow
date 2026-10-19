@@ -290,7 +290,9 @@ const AUDIT = `(function(){
     "窄屏无横向溢出（参照 documentElement.clientWidth）": M.sw <= M.vw + 1,
     "窄屏两个按钮竖排通栏（等宽且不越界）": M.sameWidth && M.homeUsable &&
       M.backUsable && M.homeBox.right <= M.vw + 1,
-    "窄屏顶部条仍是单行": M.topH !== null && M.topH <= 48,
+    /* 顶部条单行：34px 语言按钮 + 上下 8px = 50px（2026-10-19 语言入口进顶栏后的
+       设计值，与主页 pwaprobe 的 52 同一条线）。换行会直接翻到 90px 左右。 */
+    "窄屏顶部条仍是单行": M.topH !== null && M.topH <= 52,
     "窄屏 404 卡片在首屏内": M.nfTop !== null && M.nfTop < M.vh,
     "窄屏仍零外部请求": mExt === 0,
   });

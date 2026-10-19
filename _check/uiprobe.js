@@ -225,6 +225,15 @@ let reqN = 0;            // 请求计数（只数 open-meteo）
       presets: g('presets'), locHint: g('locHint'),
       unit: g('unitSeg'), clock: g('clockSeg'),
       autoMap: g('autoMap'), lang: g('langSeg'), theme: g('themeSeg'),
+      /* 2026-10-19：语言/主题搬到顶栏（按钮 + 下拉菜单），面板里不再有第二份 */
+      topLang: !!document.querySelector('.top #langBtn'),
+      topTheme: !!document.querySelector('.top #themeBtn'),
+      menuLang: !!document.querySelector('#langMenu #langSeg'),
+      menuTheme: !!document.querySelector('#themeMenu #themeSeg'),
+      menuHidden: (!document.getElementById('langMenu') || document.getElementById('langMenu').hidden)
+        && (!document.getElementById('themeMenu') || document.getElementById('themeMenu').hidden),
+      langTxt: (document.getElementById('langBtn') || {}).textContent || '',
+      themeIco: ((document.getElementById('themeBtn') || {}).textContent || '').trim(),
       moreHidden: !!qm && qm.hidden,
       ariaExp: document.getElementById('qMoreBtn').getAttribute('aria-expanded'),
       /* 分组只换位置：控件 id 一个没动，外加一行条的三个新锚点 */
@@ -588,25 +597,36 @@ let reqN = 0;            // 请求计数（只数 open-meteo）
   console.log("  折叠白名单：" + JSON.stringify(E.foldKeys));
 
   /* ---------- F. 目录菜单（grill 定稿） ----------
-     守四件事：8 项分两组且跳转目标真实存在 / 入口开关与 Esc 同步 aria-expanded /
-     点折叠卡项＝展开＋写偏好 / 快照模式三个入口全隐。
-     注意本段会改 State.folds 与滚动位置 —— 所以放在所有"默认态"测量之后。 */
+     守五件事：跳转目标真实存在且**集合与预期一致** / 分组数 / 入口开关与 Esc 同步
+     aria-expanded / 点折叠卡项＝展开＋写偏好 / 快照模式两个入口全隐。
+     注意本段会改 State.folds 与滚动位置 —— 所以放在所有"默认态"测量之后。
+
+     **2026-10-19 教训**：这里原来写的是 `T.n === 8 && T.groups === 2`（按总数断死）。
+     加了一个「指南 · 使用教程」真链接之后，两个数同时变 9 和 3 —— 判据红得毫无信息量，
+     而且 `getElementById(null)` 还会把"链接没有 data-goto"误报成"目标缺失"。
+     改成按**身份**断：goto 的集合逐项对齐，非 goto 的条目必须是那条真链接。 */
+  const TOC_GOTO = ["cardHero", "cardModels", "cardFac", "cardTrend",
+    "cardSpots", "cardMap", "cardRay", "cardNotes"];
   const T = await ev(`(function(){
     var panel = document.getElementById('tocPanel');
     var items = panel ? Array.prototype.slice.call(panel.querySelectorAll('.toc-i')) : [];
     var groups = panel ? panel.querySelectorAll('.toc-g').length : 0;
-    var missing = items.map(function(b){ return b.getAttribute('data-goto'); })
-      .filter(function(id){ return !document.getElementById(id); });
+    var gotos = items.map(function(b){ return b.getAttribute('data-goto'); }).filter(Boolean);
+    var missing = gotos.filter(function(id){ return !document.getElementById(id); });
+    /* 没有 data-goto 的条目：只能是"指向别的页面"的真链接 */
+    var noGoto = items.filter(function(b){ return !b.getAttribute('data-goto'); })
+      .map(function(b){ return b.tagName + ':' + (b.getAttribute('href') || ''); });
     return {
       isNav: !!panel && panel.tagName === 'NAV',
-      n: items.length, groups: groups, missing: missing,
+      n: items.length, groups: groups, gotos: gotos, missing: missing, noGoto: noGoto,
       hidden: panel ? panel.hidden : null,
       expanded: document.getElementById('tocBtn').getAttribute('aria-expanded'),
       rayText: (items.filter(function(b){ return b.getAttribute('data-goto') === 'cardRay'; })[0] || {}).textContent || ''
     };
   })()`);
   console.log("\n=== F. 目录菜单 ===");
-  console.log("  nav=" + T.isNav + " · 项 " + T.n + " 条 / 组 " + T.groups
+  console.log("  nav=" + T.isNav + " · 项 " + T.n + " 条（goto " + T.gotos.length
+    + " + 链接 " + T.noGoto.length + "）/ 组 " + T.groups
     + " · 目标缺失 " + JSON.stringify(T.missing) + " · 初始 hidden=" + T.hidden);
   console.log("  折叠卡项文案：" + JSON.stringify(T.rayText.trim()));
 
@@ -639,15 +659,17 @@ let reqN = 0;            // 请求计数（只数 open-meteo）
     + " · 卡片仍 folded=" + T2.foldedClass + " · 偏好写盘=" + T2.prefRay
     + " · 面板已关=" + T2.panelHidden);
 
-  /* 快照模式：三个入口（顶栏按钮 / 面板 / 浮钮）都隐藏 */
+  /* 快照模式：界面入口（顶栏汉堡 / 目录面板 / 语言 / 主题）都隐藏
+     —— 分享页只读结果，不留开关（2026-10-19 起语言/主题也进顶栏）。 */
   const T3 = await ev(`(function(){
     document.body.classList.add('snapmode');
     var q = function(id){ var e = document.getElementById(id); return e ? getComputedStyle(e).display : null; };
-    var out = { btn: q('tocBtn'), panel: q('tocPanel'), fab: q('tocFab') };
+    var out = { btn: q('tocBtn'), panel: q('tocPanel'), lang: q('langBtn'), theme: q('themeBtn') };
     document.body.classList.remove('snapmode');
     return out;
   })()`);
-  console.log("  快照模式 display：顶栏钮=" + T3.btn + " 面板=" + T3.panel + " 浮钮=" + T3.fab);
+  console.log("  快照模式 display：顶栏汉堡=" + T3.btn + " 面板=" + T3.panel
+    + " 语言=" + T3.lang + " 主题=" + T3.theme);
 
   /* ---------- 查询区「更多选项」开合（视觉方案二 P0） ---------- */
   const Q1 = await ev(`(function(){
@@ -734,11 +756,15 @@ let reqN = 0;            // 请求计数（只数 open-meteo）
     "一行条四件套齐全（地点/日期/时段/开始预报 + 更多选项按钮都在 #qBar 上）":
       A.bar.q === true && A.bar.date === true && A.bar.period === true
       && A.bar.go === true && A.bar.more === true,
-    "面板控件归位（定位/今天/预设/提示 → 查什么；单位/时间制 → 显示；自动刷新/语言/主题 → 界面）":
+    "面板控件归位（定位/今天/预设/提示 → 查什么；单位/时间制 → 显示；自动刷新 → 界面）":
       A.geo === "查什么" && A.now === "查什么" && A.presets === "查什么"
       && A.locHint === "查什么"
       && A.unit === "显示" && A.clock === "显示"
-      && A.autoMap === "界面" && A.lang === "界面" && A.theme === "界面",
+      && A.autoMap === "界面" && A.lang === null && A.theme === null,
+    "语言/主题在顶栏：两个按钮显示当前值，菜单里各有一组三选且默认收起":
+      A.topLang === true && A.topTheme === true
+      && A.menuLang === true && A.menuTheme === true && A.menuHidden === true
+      && /^(中|繁|EN)$/.test(A.langTxt.trim()) && /^[☀☾◐]$/.test(A.themeIco),
     "更多选项默认收起（hidden + aria-expanded=false）":
       A.moreHidden === true && A.ariaExp === "false",
     "两级卡片：只有结论与地图是「有面」的面板，其余分区透明无阴影":
@@ -825,15 +851,18 @@ let reqN = 0;            // 请求计数（只数 open-meteo）
     "趋势表包在默认收起的 details 里，F3 日历在外（主视图）":
       trendOK === true && E.has === true && E.open === false && E.rows >= 2
       && E.calOutside === true && E.calTiles >= 2,
-    "目录：8 项分两组、每项跳转目标真实存在、是 nav 地标":
-      T.isNav === true && T.n === 8 && T.groups === 2 && T.missing.length === 0,
+    "目录：8 条跳转的集合与预期一一对应、目标全部真实存在、是 nav 地标":
+      T.isNav === true && T.groups === 3 && T.missing.length === 0 &&
+      T.gotos.length === TOC_GOTO.length && T.gotos.every((g, i) => g === TOC_GOTO[i]),
+    "目录：指南组是「使用教程」真链接（不是 data-goto 按钮）":
+      T.noGoto.length === 1 && T.noGoto[0] === "A:tutorial.html",
     "目录：点开与 Esc 关闭时 aria-expanded 同步、面板真的开合":
       T1.open1 === true && T1.exp1 === "true" && T1.closedAfterEsc === true && T1.exp2 === "false",
     "目录：点折叠卡项 ⇒ 展开并写偏好（与手动点展开同效）":
       T2.before === false && T2.after === true && T2.foldedClass === false
       && T2.prefRay === true && T2.panelHidden === true,
-    "目录：快照模式下三个入口全部隐藏":
-      T3.btn === "none" && T3.panel === "none" && T3.fab === "none",
+    "目录与界面开关：快照模式下全部隐藏（汉堡/面板/语言/主题）":
+      T3.btn === "none" && T3.panel === "none" && T3.lang === "none" && T3.theme === "none",
     "折叠白名单正是决策定的五个键":
       E.foldKeys.join(",") === "rayFold,notesFold,heroFold,trendFold,legendFold",
     "本轮运行无静默降级": errs.length === 0

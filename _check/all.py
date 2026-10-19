@@ -84,6 +84,9 @@ SUITE = [
     ("pwaprobe",      "pwaprobe.js",     "F1 离线 / PWA（单文件约束仍成立 + 离线真能打开 + 不缓存气象）",
      {"PY": sys.executable}),
     ("404probe",     "404probe.js",     "404 页（深路径渲染/桌面+窄屏/两个出口）"),
+    # 教程页是**独立手写文件**，不进 assemble.py 的构建链 —— index.html 那一整套
+    # 探针一条都盖不到它。这五项单列：三语覆盖 / 主题三态 / 四档切换 / 与主页互通 / 窄屏。
+    ("tutorialprobe", "tutorialprobe.js", "使用教程页（三语覆盖/主题三态/四档/与主页互通/窄屏）"),
     ("docfacts",     "docfacts.py",     "文档↔代码一致性（行数/字节/常量/探针条数）"),
 ]
 

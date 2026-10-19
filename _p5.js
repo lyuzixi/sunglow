@@ -218,13 +218,14 @@ function foldToggle(key) {
 /* 切语言时刷新折叠按钮文案（aria-expanded 不受影响）。由 _p6.js 的 relang 调用。 */
 function refreshFoldBtns() { applyFolds(); }
 /* =========================================================================
-   目录菜单（grill 定稿）
+   目录抽屉（grill 定稿 2026-10-19）
    -------------------------------------------------------------------------
-   入口：桌面＝顶栏"目录"按钮（顶栏贴顶，滚到哪都能开）；手机＝滚过首屏后浮出的圆钮。
-   面板：桌面＝按钮下方浮层（**无遮罩**，页面仍可滚，高亮随滚动走）；
-         手机＝底部 sheet（带遮罩，开之前先收掉地图提示卡 —— 两者共用底部）。
+   入口：汉堡按钮驻顶栏最左，**双端统一**（手机顶栏已改吸顶，滚到哪都能开）。
+   面板：贴顶栏下缘的左侧抽屉（左贴边、近满高），内容区盖遮罩；
+         top 由 JS 在打开那一刻按顶栏实际底缘取值。开之前先收掉地图提示卡
+         （手机两者共用底部区域）。
    跳转：默认收起的卡被点中时**展开并写偏好**（一次点击是明确意图，与手动点
-         "展开"完全同效）；跳转靠 scroll-margin-top 让过 64px 粘顶栏。
+         "展开"完全同效）；跳转靠 scroll-margin-top 让过吸顶栏。
    快照模式：整块带 data-snaphide，由 body.snapmode 统一隐藏（列出来也全是空洞）。
    可访问性：nav 地标、当前项 aria-current、Esc 关闭并还焦点、动效可降级。
    ========================================================================= */
@@ -254,22 +255,16 @@ function openToc() {
   if (!p || tocOpen) return;
   tocOpen = true;
   if (tocIsMobile() && typeof hideMapTip === "function") hideMapTip();
+  /* 抽屉与遮罩的顶缘 = 顶栏实际底缘（顶栏双端吸顶，此刻必在视口顶）。
+     打开那一刻取值，不写死常量 —— 顶栏高度再调也不用同步这里。 */
+  const t = document.querySelector(".top");
+  const topEdge = t ? Math.max(0, t.getBoundingClientRect().bottom) : 0;
+  p.style.top = topEdge + "px";
   p.hidden = false;
-  if (tocIsMobile()) {
-    const v = $("#tocVeil"); if (v) v.hidden = false;
-  } else {
-    /* 桌面：贴在入口按钮下方；下方放不下就夹回视口内 */
-    const btn = $("#tocBtn");
-    const b = (btn && btn.offsetParent) ? btn.getBoundingClientRect() : null;
-    const r = p.getBoundingClientRect();
-    let left = b ? b.left : 16;
-    left = Math.max(12, Math.min(left, window.innerWidth - r.width - 12));
-    let top = b ? b.bottom + 8 : 72;
-    if (top + r.height > window.innerHeight - 12) top = Math.max(12, window.innerHeight - r.height - 12);
-    p.style.left = left + "px";
-    p.style.top = top + "px";
-  }
-  ["tocBtn", "tocFab"].forEach(id => { const el = $("#" + id); if (el) el.setAttribute("aria-expanded", "true"); });
+  const v = $("#tocVeil");
+  if (v) { v.style.top = topEdge + "px"; v.hidden = false; }
+  const btn = $("#tocBtn");
+  if (btn) btn.setAttribute("aria-expanded", "true");
   tocSyncActive();
   /* 焦点给第一项：键盘用户打开即可操作（:focus-visible 只给键盘画圈） */
   const first = p.querySelector(".toc-i");
@@ -280,12 +275,12 @@ function closeToc() {
   if (!tocOpen) return;
   tocOpen = false;
   const p = $("#tocPanel"), v = $("#tocVeil");
-  if (p) { p.hidden = true; p.style.left = ""; p.style.top = ""; }
-  if (v) v.hidden = true;
-  ["tocBtn", "tocFab"].forEach(id => { const el = $("#" + id); if (el) el.setAttribute("aria-expanded", "false"); });
+  if (p) { p.hidden = true; p.style.top = ""; }
+  if (v) { v.hidden = true; v.style.top = ""; }
+  const btn = $("#tocBtn");
+  if (btn) btn.setAttribute("aria-expanded", "false");
   document.querySelectorAll("#tocPanel .toc-i").forEach(b => b.setAttribute("aria-current", "false"));
-  const back = tocIsMobile() ? $("#tocFab") : $("#tocBtn");
-  if (back && back.offsetParent) back.focus({ preventScroll: true });
+  if (btn && btn.offsetParent) btn.focus({ preventScroll: true });
 }
 
 function tocGoto(id) {
@@ -303,10 +298,11 @@ function tocGoto(id) {
 }
 
 function initToc() {
-  const btn = $("#tocBtn"), fab = $("#tocFab"), panel = $("#tocPanel"), veil = $("#tocVeil");
+  const btn = $("#tocBtn"), panel = $("#tocPanel"), veil = $("#tocVeil");
   if (!panel) return;
   if (btn) btn.addEventListener("click", () => (tocOpen ? closeToc() : openToc()));
-  if (fab) fab.addEventListener("click", () => (tocOpen ? closeToc() : openToc()));
+  /* 点遮罩关（遮罩从顶栏底缘起铺，盖住面板外的一切内容区；顶栏露出，
+     再点汉堡由上面的开关回调收起） */
   if (veil) veil.addEventListener("click", closeToc);
   panel.addEventListener("click", e => {
     const b = e.target.closest(".toc-i");
@@ -315,25 +311,17 @@ function initToc() {
   document.addEventListener("keydown", e => {
     if (tocOpen && e.key === "Escape") { e.preventDefault(); closeToc(); }
   });
-  /* 桌面点外部关闭（手机由遮罩负责）。入口按钮的点击冒泡到这里时已经开过了，
-     必须把入口也排除，否则会立刻又关掉。 */
-  document.addEventListener("click", e => {
-    if (!tocOpen || tocIsMobile()) return;
-    if (e.target.closest("#tocPanel") || e.target.closest("#tocBtn")) return;
-    closeToc();
-  });
-  /* 浮钮显隐 + 高亮跟随：rAF 合并，滚动时不连发 */
+  /* 高亮跟随滚动：rAF 合并，滚动时不连发（浮钮已删，这里只剩高亮一件事） */
   const onScroll = () => {
     if (tocRaf) return;
     tocRaf = requestAnimationFrame(() => {
       tocRaf = 0;
-      if (fab) fab.classList.toggle("on", tocIsMobile() && (window.scrollY || 0) > 380);
       if (tocOpen) tocSyncActive();
     });
   };
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", () => {
-    if (tocOpen) closeToc();          /* 视口变了：定位/形态都可能失效，直接收起 */
+    if (tocOpen) closeToc();          /* 视口变了：顶栏底缘/形态都可能失效，直接收起 */
     onScroll();
   });
   onScroll();
@@ -639,6 +627,103 @@ function refreshThemeSeg() {
   seg.innerHTML = THEMES.map(k =>
     `<button type="button" data-theme-k="${k}" aria-pressed="${k === cur}">${i18n(k === "auto" ? "跟随系统" : k === "light" ? "浅色" : "深色")}</button>`).join("");
   setSegActive("#themeSeg", seg.querySelector('button[data-theme-k="' + cur + '"]'));
+  refreshTopButtons();
+}
+
+/* ---------- 顶栏语言 / 主题（2026-10-19 grill 定稿） ----------
+   两个按钮**显示当前值**（中 / 繁 / EN、☀ / ☾ / ◐），点开是三项竖排小卡片。
+   菜单里的 #langSeg / #themeSeg 仍是 role=group + 一组 button + aria-pressed ——
+   单选组的语义、探针口径、"恒有且只有一个当前值"的纪律全部沿用，只是位置变了。
+   菜单 DOM 挂在 body 级：顶栏的 backdrop-filter 会成为 fixed 后代的包含块，
+   放进去就会相对 65px 的顶栏定位（坐标全错），所以定位在这里算。 */
+const LANG_SHORT = { zh: "中", zhHant: "繁", en: "EN" };
+const THEME_ICON = { auto: "◐", light: "☀", dark: "☾" };
+let topMenu = null;                  /* "lang" | "theme" | null */
+
+function refreshTopButtons() {
+  const lb = $("#langBtn");
+  if (lb) lb.textContent = LANG_SHORT[LANG] || LANG;
+  const tb = $("#themeBtn");
+  if (tb) {
+    const ico = tb.querySelector(".ico");
+    const ch = THEME_ICON[themePref()] || "◐";
+    if (ico) ico.textContent = ch;
+    else tb.textContent = ch;
+  }
+}
+function refreshLangSeg() {
+  const seg = $("#langSeg");
+  if (!seg) return;
+  seg.innerHTML = LANGS.map(l =>
+    `<button type="button" data-lang="${l.k}" aria-pressed="${l.k === LANG}">${l.name}</button>`).join("");
+  setSegActive("#langSeg", seg.querySelector('button[data-lang="' + LANG + '"]'));
+  refreshTopButtons();
+}
+function topMenuEl(k) { return k === "lang" ? $("#langMenu") : $("#themeMenu"); }
+function topBtnEl(k) { return k === "lang" ? $("#langBtn") : $("#themeBtn"); }
+function openTopMenu(k) {
+  const b = topBtnEl(k), m = topMenuEl(k);
+  if (!b || !m) return;
+  const was = topMenu;
+  closeTopMenu(true);
+  if (was === k) return;                 /* 同一个钮再点一次＝收起 */
+  if (typeof tocOpen !== "undefined" && tocOpen && typeof closeToc === "function") closeToc();
+  topMenu = k;
+  m.hidden = false;
+  b.setAttribute("aria-expanded", "true");
+  /* 右对齐按钮（菜单贴右上，不会在窄屏被推出右缘）；下方放不下就翻到按钮上方 */
+  const r = b.getBoundingClientRect();
+  const mw = m.offsetWidth, mh = m.offsetHeight;
+  const left = Math.max(8, Math.min(r.right - mw, window.innerWidth - mw - 8));
+  let top = r.bottom + 8;
+  if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 8);
+  m.style.left = left + "px";
+  m.style.top = top + "px";
+  const first = m.querySelector("button");
+  if (first) first.focus({ preventScroll: true });
+}
+function closeTopMenu(keepFocus) {
+  if (!topMenu) return;
+  const k = topMenu;
+  topMenu = null;
+  const m = topMenuEl(k), b = topBtnEl(k);
+  if (m) { m.hidden = true; m.style.left = ""; m.style.top = ""; }
+  if (b) b.setAttribute("aria-expanded", "false");
+  if (!keepFocus && b && b.offsetParent) b.focus({ preventScroll: true });
+}
+function initTopMenus() {
+  [["lang", "#langBtn"], ["theme", "#themeBtn"]].forEach(pair => {
+    const b = $(pair[1]);
+    /* stopPropagation：document 上那个"点外面就关"的监听不能把这次点击当成外面 */
+    if (b) b.addEventListener("click", e => { e.stopPropagation(); openTopMenu(pair[0]); });
+  });
+  const lm = $("#langMenu"), tm = $("#themeMenu");
+  if (lm) lm.addEventListener("click", e => {
+    const b = e.target.closest("button[data-lang]");
+    if (!b) return;
+    setLang(b.getAttribute("data-lang"));
+    prefWrite({ lang: LANG });
+    syncUrl();
+    closeTopMenu();
+  });
+  if (tm) tm.addEventListener("click", e => {
+    const b = e.target.closest("button[data-theme-k]");
+    if (!b) return;
+    setTheme(b.getAttribute("data-theme-k"));
+    closeTopMenu();
+  });
+  document.addEventListener("click", e => {
+    if (!topMenu) return;
+    if (e.target.closest("#langMenu") || e.target.closest("#themeMenu")
+      || e.target.closest("#langBtn") || e.target.closest("#themeBtn")) return;
+    closeTopMenu();
+  });
+  document.addEventListener("keydown", e => {
+    if (topMenu && e.key === "Escape") { e.preventDefault(); closeTopMenu(); }
+  });
+  /* fixed 定位依赖按钮位置：视口一变就失效，直接收起（滚动同理，别让菜单漂在半空） */
+  window.addEventListener("resize", () => closeTopMenu(true));
+  window.addEventListener("scroll", () => closeTopMenu(true), { passive: true });
 }
 
 /* ---------- 初始化界面 ---------- */
@@ -818,30 +903,13 @@ function initUI() {
   if (spAdd) spAdd.addEventListener("click", spotAdd);
   if (spGo) spGo.addEventListener("click", () => { State.spotRows = null; loadSpots(); });
 
+  /* 语言 / 主题：顶栏两个按钮 + 下拉小卡片（2026-10-19 grill 定稿）。
+     文案与选中态由 refreshLangSeg / refreshThemeSeg 生成（relang 里也会重跑，
+     保证任何路径改语言——URL 参数、外部调用——按钮都跟着变），
+     开合、落盘与"点外面/Esc 关闭"统一在 initTopMenus。 */
   refreshThemeSeg();
-  if ($("#themeSeg")) {
-    $$("#themeSeg button").forEach(b => b.addEventListener("click", () => {
-      setSegActive("#themeSeg", b);
-      setTheme(b.getAttribute("data-theme-k"));
-    }));
-  }
-
-  /* 语言切换：按钮由 LANGS 生成（模板里不写死，加一种语言不必改 HTML）。
-     与其它分段控件同款 —— setSegActive 负责视觉态与 aria-pressed 同步。
-     切换后三件事：setLang 重渲全部动态区（relang）、落盘、把语言写进地址栏
-     （分享链接带走语言；URL 参数在 detectLang 里是最高优先级）。 */
-  const lseg = $("#langSeg");
-  if (lseg) {
-    lseg.innerHTML = LANGS.map(l =>
-      `<button type="button" data-lang="${l.k}" aria-pressed="${l.k === LANG}">${l.name}</button>`).join("");
-    setSegActive("#langSeg", lseg.querySelector('button[data-lang="' + LANG + '"]'));
-    $$("#langSeg button").forEach(b => b.addEventListener("click", () => {
-      setSegActive("#langSeg", b);
-      setLang(b.getAttribute("data-lang"));
-      prefWrite({ lang: LANG });
-      syncUrl();
-    }));
-  }
+  refreshLangSeg();
+  initTopMenus();
 
   /* 图层开关（F6 第二编码 / C1 / S1）：纯重绘或只切叠加层显隐，都不取数。
      六个开关一律"先应用、再落盘" —— 落盘失败（隐私模式）不影响本次生效。 */

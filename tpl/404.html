@@ -124,10 +124,8 @@
   /* 霞光位置的一团柔光（视觉方案二 P1）：只属于天色带的第二层大气 ——
      位置由 JS 按霞光窗口中心写入 --skyglow-x，颜色固定不随数据变。 */
   --skyglow:rgba(255,166,87,.30);
-  /* 目录菜单/浮层用的三档阴影与遮罩（浅色）：放进令牌是 darkprobe 的「令牌外硬编码色 ≤45」守着的——弹层阴影在深色下要用另一组值 */
+  /* 目录抽屉/浮层用的阴影与遮罩（浅色）：放进令牌是 darkprobe 的「令牌外硬编码色 ≤45」守着的——弹层阴影在深色下要用另一组值 */
   --sh-pop:0 18px 44px -18px rgba(16,24,40,.22);
-  --sh-fab:0 10px 24px -10px rgba(16,24,40,.22);
-  --sh-up:0 -16px 40px -16px rgba(16,24,40,.24);
   --veil:rgba(12,18,28,.28);
   /* 四级等级色（.g-优/良/一般/差 与 pill）：**必须成套**，
      深色下不能只换底色 —— 文字色 #178a52 之类在深底上对比度只有 2.6，读不出来 */
@@ -174,8 +172,6 @@ html[data-theme="dark"]{
   --skyglow:rgba(255,150,70,.34);
   /* 弹层阴影/遮罩（深色）：黑底上要更深、更实，否则浮层与卡片分不开 */
   --sh-pop:0 18px 44px rgba(0,0,0,.6);
-  --sh-fab:0 10px 24px rgba(0,0,0,.55);
-  --sh-up:0 -16px 40px rgba(0,0,0,.62);
   --veil:rgba(0,0,0,.55);
   --g1bg:#122a20; --g1tx:#5fce97; --g1bd:#1f4735;
   --g2bg:#1c2a17; --g2tx:#9ac765; --g2bd:#2f4526;
@@ -211,13 +207,34 @@ a{color:var(--blue)}
 .logo::after{content:"";position:absolute;left:3px;right:3px;bottom:5px;height:1px;
   background:var(--tx3);opacity:.55}
 .top h1{font-size:16px;line-height:1.3;letter-spacing:.2px}
-.top .sub{font-size:11.5px;color:var(--tx3);margin-top:1px;letter-spacing:.1px}
 /* 标题列必须 min-width:0（与主页同一条纪律）：h1 是 nowrap，其 min-content 等于
    整行标题宽，缺它标题列不许收缩，会把 badge 顶出容器右缘 → 页面 scrollWidth 变大。 */
 .top-tx{min-width:0}
 .top .spacer{flex:1 1 auto}
 .badge{font-size:11px;padding:3px 9px;border-radius:7px;background:var(--card);color:var(--tx2);
   border:1px solid var(--line);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+/* ---------- 顶栏语言（2026-10-19：与主页同款，从正文搬到导航栏） ----------
+   主页那份是"按钮 + 下拉卡片"；这页只有语言一项，所以只搬语言。
+   菜单挂在 .top 外面：顶栏有 backdrop-filter，会成为 fixed 后代的包含块。 */
+.topbtn{flex:0 0 auto;height:38px;min-width:38px;padding:0 9px;border:1px solid var(--line);
+  border-radius:10px;background:var(--card);color:var(--tx2);font:inherit;font-size:13px;
+  line-height:1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.topbtn:hover{background:var(--hover)}
+.topbtn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.topbtn[aria-expanded="true"]{background:var(--accbg);color:var(--acc2)}
+.topmenu{position:fixed;z-index:121;background:var(--card);border:1px solid var(--line);
+  border-radius:11px;box-shadow:var(--sh-pop);padding:6px;min-width:150px}
+.topmenu .cap{font-size:11px;color:var(--tx3);letter-spacing:.4px;padding:4px 10px 6px}
+.menulist{display:block}
+.menulist button{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;
+  background:transparent;color:var(--tx);font:inherit;font-size:13.5px;padding:8px 10px;
+  border-radius:8px;cursor:pointer}
+.menulist button:hover{background:var(--hover)}
+.menulist button:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+.menulist button[aria-pressed="true"]{background:var(--accbg);color:var(--acc2);font-weight:600}
+.menulist button::after{content:"";margin-left:auto;font-size:12px;color:var(--acc2)}
+.menulist button[aria-pressed="true"]::after{content:"✓"}
 
 /* ---------- 通用卡片（同主页 .card） ---------- */
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:22px}
@@ -254,18 +271,15 @@ a{color:var(--blue)}
 /* 作者样式里的 display 会盖掉 [hidden] 的 UA display:none，必须自己钉死。 */
 [hidden]{display:none!important}
 .nf-foot{margin:16px 0 0}
-/* 语言切换：与主页同款分段控件（这里自带最小实现，不共用主页的 CSS 类） */
-.nf-lang{display:flex;gap:4px;justify-content:center;margin-top:18px;background:transparent;
-  border:0;padding:0;border-radius:0;width:max-content;margin-left:auto;margin-right:auto}
-.nf-lang button{border:0;background:transparent;padding:6px 11px;border-radius:7px;font-size:13px;
-  color:var(--tx2);cursor:pointer;font-family:inherit}
-.nf-lang button.on{background:var(--solid);color:var(--solidtx);box-shadow:none}
-.nf-lang button:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+/* 手机端：语言按钮与主页同档（34px），菜单项放大到手指可点 */
+@media (max-width:760px){
+  .top .topbtn{height:34px;min-width:34px;padding:0 7px;font-size:12px;border-radius:9px}
+  .menulist button{padding:10px 12px;font-size:14px}
+}
 
 /* ---------- 手机端（断点与主页同为 760px，三处之一） ----------
-   顶部条的压法与主页**完全一致**（sub 隐藏 / h1 14px / badge 同行 /
-   logo 26 / sticky 改 static），理由见主页那段注释：压薄后的 sticky 条
-   会半透明浮在内容上、把下面那行截断。 */
+   顶部条的压法与主页**同一纪律**（h1 14px / badge 同行 / logo 20）；
+   本页没有目录抽屉，顶栏保持 static（无可常驻入口，不必吸顶占一行）。 */
 @media (max-width:760px){
   .top{position:static}
   .top-in{padding:8px 11px;gap:8px;flex-wrap:nowrap}
@@ -273,7 +287,6 @@ a{color:var(--blue)}
   .logo::before{left:2px;right:2px;bottom:5px;height:5px}
   .logo::after{left:2px;right:2px;bottom:4px}
   .top h1{font-size:14px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .top .sub{display:none}
   .top .spacer{flex:1 1 0;min-width:0}
   .badge{flex:0 0 auto;font-size:11px;padding:3px 8px}
   .nf{margin-top:20px;padding:20px 16px 18px}
@@ -297,12 +310,21 @@ a{color:var(--blue)}
   <div class="top-in">
     <div class="logo" aria-hidden="true"></div>
     <div class="top-tx">
-      <h1 data-i18n="霞光预报 · 朝霞 / 晚霞 概率与观赏质量">霞光预报 · 朝霞 / 晚霞 概率与观赏质量</h1>
-      <div class="sub">多模型融合（GFS · ECMWF-IFS · 光追算法）+ 火烧云三角几何模型 + 大气消光光谱计算</div>
+      <h1 data-i18n="霞光预报">霞光预报</h1>
     </div>
     <div class="spacer"></div>
+    <!-- 语言入口（2026-10-19：与主页同款，从正文搬进导航栏，靠右成组、徽标左侧） -->
+    <button type="button" class="topbtn" id="langBtn" aria-haspopup="true"
+      aria-expanded="false" aria-controls="langMenu" aria-label="语言" data-i18n-aria="语言">中</button>
     <div class="badge" data-i18n="404 · 页面不存在">404 · 页面不存在</div>
   </div>
+</div>
+
+<!-- 语言菜单（body 级：顶栏的 backdrop-filter 会成为 fixed 后代的包含块）。
+     原正文里的 #langSeg 原样搬进来，role=group + aria-pressed 的语义不变。 -->
+<div class="topmenu" id="langMenu" hidden>
+  <div class="cap" data-i18n="语言">语言</div>
+  <div class="menulist" id="langSeg" role="group" aria-label="语言" data-i18n-aria="语言"></div>
 </div>
 
 <main class="wrap">
@@ -322,11 +344,7 @@ a{color:var(--blue)}
 
     <p class="hint nf-foot" data-i18n="回首页后可以重新选地点与日期，查询朝霞 / 晚霞的出现概率与观赏质量。">回首页后可以重新选地点与日期，查询朝霞 / 晚霞的出现概率与观赏质量。</p>
 
-    <!-- 语言切换：这页是**独立产物**（构建期生成、可能在任何路径下返回），
-         所以它自带一份**最小词典**，不依赖主页的 _pi18n.js。
-         HTML 里的原文一律是简体中文 ⇒ 没有 JS 时页面照常可读（这一点对 404 页尤其重要：
-         它会被爬虫、被禁了 JS 的浏览器、被各种奇怪客户端打开）。 -->
-    <div class="unitseg nf-lang" id="langSeg" role="group" aria-label="语言" data-i18n-aria="语言"></div>
+    <!-- 语言切换已搬到顶栏（2026-10-19）：入口唯一，正文不再保留第二处。 -->
   </div>
 </main>
 
@@ -359,10 +377,11 @@ a{color:var(--blue)}
 
   /* ---- 最小词典（只有本页用到的 9 条 + 语言名） ---- */
   var LANGS = [["zh", "中文"], ["zhHant", "繁體"], ["en", "English"]];
+  var SHORT = { zh: "中", zhHant: "繁", en: "EN" };
   var DICT = {
     en: {
-      "页面不存在 · 霞光预报": "Page not found · Glowcast",
-      "霞光预报 · 朝霞 / 晚霞 概率与观赏质量": "Glowcast · Dawn & dusk glow probability and viewing quality",
+      "页面不存在 · 霞光预报": "Page not found · Sunset Glow Forecast",
+      "霞光预报": "Sunset Glow Forecast",
       "404 · 页面不存在": "404 · Page not found",
       "找不到这个页面": "This page does not exist",
       "这个地址没有对应的页面 —— 可能是链接过期、地址输错，或者页面已经挪走了。":
@@ -376,7 +395,7 @@ a{color:var(--blue)}
     },
     zhHant: {
       "页面不存在 · 霞光预报": "頁面不存在 · 霞光預報",
-      "霞光预报 · 朝霞 / 晚霞 概率与观赏质量": "霞光預報 · 朝霞 / 晚霞 機率與觀賞品質",
+      "霞光预报": "霞光預報",
       "404 · 页面不存在": "404 · 頁面不存在",
       "找不到这个页面": "找不到這個頁面",
       "这个地址没有对应的页面 —— 可能是链接过期、地址输错，或者页面已经挪走了。":
@@ -409,6 +428,9 @@ a{color:var(--blue)}
       bs[m].className = on ? "on" : "";
       bs[m].setAttribute("aria-pressed", on ? "true" : "false");
     }
+    /* 顶栏按钮显示当前语言短名（中 / 繁 / EN） */
+    var lb = document.getElementById("langBtn");
+    if (lb) lb.textContent = SHORT[lang] || lang;
     document.documentElement.lang = lang === "zhHant" ? "zh-Hant-TW" : (lang === "en" ? "en" : "zh-CN");
   }
   function pick() {
@@ -420,18 +442,59 @@ a{color:var(--blue)}
     if (/^en/.test(raw)) return "en";
     return "zh";
   }
+  /* 语言入口在顶栏：按钮开关下拉，选完即关；点外面 / Esc / 视口变化都收起。
+     分段控件的 role=group + aria-pressed 语义与主页一致（单选组恒有一个当前值）。 */
   var seg = document.getElementById("langSeg");
+  var menu = document.getElementById("langMenu");
+  var lbtn = document.getElementById("langBtn");
+  function closeMenu(back) {
+    if (!menu || menu.hidden) return;
+    menu.hidden = true;
+    menu.style.left = "";
+    menu.style.top = "";
+    if (lbtn) lbtn.setAttribute("aria-expanded", "false");
+    if (back && lbtn) lbtn.focus({ preventScroll: true });
+  }
+  function openMenu() {
+    if (!menu || !lbtn) return;
+    menu.hidden = false;
+    lbtn.setAttribute("aria-expanded", "true");
+    var r = lbtn.getBoundingClientRect();
+    var mw = menu.offsetWidth, mh = menu.offsetHeight;
+    var left = Math.max(8, Math.min(r.right - mw, window.innerWidth - mw - 8));
+    var top = r.bottom + 8;
+    if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 8);
+    menu.style.left = left + "px";
+    menu.style.top = top + "px";
+    var first = menu.querySelector("button");
+    if (first) first.focus({ preventScroll: true });
+  }
   if (seg) {
     seg.innerHTML = LANGS.map(function (l) {
-      return '<button type="button" data-lang="' + l[0] + '">' + l[1] + "</button>";
+      return '<button type="button" data-lang="' + l[0] + '" aria-pressed="false">' + l[1] + "</button>";
     }).join("");
     seg.addEventListener("click", function (ev) {
       var b = ev.target.closest ? ev.target.closest("button[data-lang]") : null;
       if (!b) return;
       lang = b.getAttribute("data-lang");
       paint();
+      closeMenu(true);
     });
   }
+  if (lbtn) lbtn.addEventListener("click", function (ev) {
+    ev.stopPropagation();
+    if (menu && menu.hidden) openMenu(); else closeMenu(true);
+  });
+  document.addEventListener("click", function (ev) {
+    if (!menu || menu.hidden || !ev.target.closest) return;
+    if (ev.target.closest("#langMenu") || ev.target.closest("#langBtn")) return;
+    closeMenu(false);
+  });
+  document.addEventListener("keydown", function (ev) {
+    if (menu && !menu.hidden && ev.key === "Escape") { ev.preventDefault(); closeMenu(true); }
+  });
+  window.addEventListener("resize", function () { closeMenu(false); });
+  window.addEventListener("scroll", function () { closeMenu(false); }, { passive: true });
   lang = pick();
   paint();
 })();

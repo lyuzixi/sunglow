@@ -30,9 +30,19 @@ const DIR_PLAIN = path.join(ROOT, "_scratch", "pwa-plain");
 const DIR_SUB = path.join(ROOT, "_scratch", "pwa-sub");
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-/* ---------- 构建三套产物 ---------- */
+/* ---------- 构建三套产物 ----------
+ * **环境里的构建开关必须清掉**（2026-10-19 踩过）：`SITE_BASE=sunglow python _check/all.py`
+ * 是部署约定（docfacts 比对的正是那样构建出来的字节数），于是探针也继承了这个变量 ——
+ * `build({PWA:"1"}, DIR_PWA)` 名义上构建"站点根 /"的那套，实际被构建成了子路径版。
+ * C 组用 `/` 起服务，页面却去注册 `/sunglow/sw.js` ⇒ 注册 404 ⇒
+ * "SW 没装上 / 离线打不开"五条一起红，而错误信息指向的方向完全不对。
+ * 现在显式清掉 PWA / SITE_BASE / OUT_DIR，逐次按调用方意图设置。 */
 function build(env, dir) {
-  const e = Object.assign({}, process.env, env, { OUT_DIR: dir });
+  const base = Object.assign({}, process.env);
+  delete base.SITE_BASE;
+  delete base.PWA;
+  delete base.OUT_DIR;
+  const e = Object.assign(base, { SITE_BASE: "/" }, env, { OUT_DIR: dir });
   const r = spawnSync(PY, ["assemble.py"], { cwd: ROOT, env: e, encoding: "utf8" });
   if (r.status !== 0) {
     console.log("BUILD FAIL %s\n%s\n%s", dir, r.stdout || "", r.stderr || "");
@@ -224,7 +234,9 @@ class CDP {
   await sleep(3000);
   const heroOff = await q("(document.querySelector('#hero')||{}).textContent || ''");
 
-  /* ⑥ 窄屏：离线提示条不能把顶栏挤成两行（约束 44） */
+  /* ⑥ 窄屏：离线提示条不能把顶栏挤成两行（约束 44）。
+     上限 52：2026-10-19 grill 定稿顶栏加高后手机档设计值 50px
+     （汉堡 34 + 上下 8px padding），360 下限探针的 8% 线是 51.2 —— 同一条线。 */
   await cdp.send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
   await sleep(500);
   const topH = await q("Math.round((document.querySelector('.top-in')||{getBoundingClientRect:()=>({height:0})}).getBoundingClientRect().height)");
@@ -263,7 +275,7 @@ class CDP {
       meteoSeen >= 1 && cachedMeteo === 0,
     "C 缓存里只有同源的预缓存名单（无越界条目）":
       cacheUrls.length > 0 && cacheUrls.every(u => u.indexOf("http://127.0.0.1:" + PORT) === 0),
-    "C 窄屏 390 下有离线条时顶栏仍是单行、页面不横向溢出": topH > 0 && topH <= 48 && swNarrow === true,
+    "C 窄屏 390 下有离线条时顶栏不摊成三行、页面不横向溢出（两行设计值约 70，上限 78）": topH > 0 && topH <= 78 && swNarrow === true,
     "C 恢复网络后离线提示条消失": barAfter === true
   };
 

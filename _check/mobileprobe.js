@@ -253,7 +253,18 @@ function gen(v, la, lo, hh, isAQ, dof) {
          折行会把 h1 的行盒撑高、进而把整块 .top 撑高；而截断则等于丢了字。 */
       h1Lines: h1 ? Math.round(h1.height / parseFloat(getComputedStyle(tin.querySelector('h1')).lineHeight)) : 0,
       h1Clipped: h1 ? (tin.querySelector('h1').scrollWidth > tin.querySelector('h1').clientWidth + 1) : false,
-      badgeText: (document.querySelector('#topBadge').textContent || '').trim()
+      badgeText: (document.querySelector('#topBadge').textContent || '').trim(),
+      /* 2026-10-19：窄屏徽标让位给语言/主题按钮（两个按钮必须可见且不越界） */
+      badgeShown: (function(){
+        var e = document.querySelector('#topBadge');
+        return !!e && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().width > 0;
+      })(),
+      topBtns: ['langBtn', 'themeBtn'].every(function(id){
+        var e = document.getElementById(id);
+        if (!e) return false;
+        var r = e.getBoundingClientRect();
+        return r.width > 0 && r.height > 0 && r.right <= document.documentElement.clientWidth + 1;
+      })
     };
   })()`);
   console.log("\n=== A. 顶部区（真机问题 ①）===");
@@ -533,33 +544,37 @@ function gen(v, la, lo, hh, isAQ, dof) {
   F.over.forEach(o => console.log("    " + (o.inScroller ? "[滚动容器内] " : "[直接越界]   ")
     + o.el + " " + o.left + ".." + o.right));
 
-  /* ---------- G. 目录：浮钮与底部 sheet ----------
-     手机端入口是"滚过首屏才浮出"的圆钮（顶栏在手机上是 static）。守三件事：
-     浮出后不越界 / 点开后是贴底的 sheet（宽满、底对齐视口）且遮罩在场 / 点遮罩能关。
-     注意 fаːb 的显隐由 rAF 节流的 scroll 回调控制 —— 必须先 scrollTo、等两帧再读。 */
+  /* ---------- G. 目录：吸顶顶栏汉堡与左侧抽屉（grill 定稿 2026-10-19） ----------
+     双端统一后，手机端入口就是吸顶顶栏里的汉堡。守三件事：
+     滚到页中汉堡仍可见（顶栏 sticky 真的生效）/ 点开是贴顶栏下缘、左贴边的抽屉
+     且遮罩从顶栏下缘起铺 / 点遮罩能关。
+     旧"浮钮滚过首屏出现 / 贴底满宽 sheet"判据随浮钮删除而退役。
+     注意面板/遮罩的 top 由 JS 在打开那一刻按顶栏底缘取值 —— 先滚再开才验得出对齐。 */
   await ev(`(function(){ window.scrollTo(0, 900); return new Promise(function(res){
     requestAnimationFrame(function(){ requestAnimationFrame(function(){ res(1); }); });
   }); })()`, true);
-  /* ① 只看浮钮位置（面板未开） */
+  /* ① 滚到 900px 后：顶栏贴视口顶（sticky），汉堡在顶栏内可见 */
   const G0 = await ev(`(function(){
-    var fab = document.getElementById('tocFab');
-    var r = fab.getBoundingClientRect();
-    var vw = document.documentElement.clientWidth, vh = window.innerHeight;
-    return { vis: getComputedStyle(fab).display !== 'none',
-             inView: r.left >= 0 && r.right <= vw + 0.5 && r.top >= 0 && r.bottom <= vh + 0.5 };
+    var top = document.querySelector('.top').getBoundingClientRect();
+    var btn = document.getElementById('tocBtn');
+    var r = btn.getBoundingClientRect();
+    return { sticky: Math.abs(top.top) < 1.5,
+             btnVis: !btn.hidden && r.width > 0 && r.height > 0
+               && r.top >= top.top - 1 && r.bottom <= top.bottom + 1
+               && r.left >= top.left - 1 && r.right <= top.right + 1 };
   })()`);
-  /* ② 打开 sheet，**等入场动画走完**（220ms）再量 —— 第一版就是量在动画中途、
-     读到 +14px 的位移，把"贴底"判成 false */
-  await ev(`document.getElementById('tocFab').click()`);
+  /* ② 点汉堡开抽屉，**等入场动画走完**（200ms）再量 */
+  await ev(`document.getElementById('tocBtn').click()`);
   await sleep(400);
   const G1 = await ev(`(function(){
     var panel = document.getElementById('tocPanel'), veil = document.getElementById('tocVeil');
-    var pr = panel.getBoundingClientRect();
+    var pr = panel.getBoundingClientRect(), vr = veil.getBoundingClientRect();
+    var tb = document.querySelector('.top').getBoundingClientRect().bottom;
     var vw = document.documentElement.clientWidth, vh = window.innerHeight;
-    return { sheet: !panel.hidden && Math.abs(pr.bottom - vh) < 2
-               && pr.left <= 1 && pr.width >= vw - 2,
-             veilOn: !veil.hidden, w: Math.round(pr.width), h: Math.round(pr.height),
-             vw: vw, vh: vh };
+    return { drawer: !panel.hidden && pr.left <= 1 && Math.abs(pr.top - tb) < 2
+               && pr.bottom >= vh - 2 && pr.width >= Math.min(280, vw * 0.5),
+             veilOn: !veil.hidden && Math.abs(vr.top - tb) < 2,
+             w: Math.round(pr.width), h: Math.round(pr.height), vw: vw, vh: vh };
   })()`);
   /* ③ 点遮罩关闭 */
   const G2 = await ev(`(function(){
@@ -569,12 +584,12 @@ function gen(v, la, lo, hh, isAQ, dof) {
     window.scrollTo(0, 0);
     return { closed: closed };
   })()`);
-  const G = { vis: G0.vis, inView: G0.inView, sheet: G1.sheet, veilOn: G1.veilOn,
+  const G = { sticky: G0.sticky, btnVis: G0.btnVis, drawer: G1.drawer, veilOn: G1.veilOn,
               closed: G2.closed, w: G1.w, h: G1.h, vw: G1.vw, vh: G1.vh };
-  console.log("\n=== G. 目录浮钮与底部 sheet ===");
-  console.log("  滚 900px 后浮钮可见=" + G.vis + " · 不越界=" + G.inView
-    + " · sheet " + G.w + "×" + G.h + "（视口 " + G.vw + "×" + G.vh + "）贴底=" + G.sheet
-    + " · 遮罩=" + G.veilOn + " · 点遮罩关闭=" + G.closed);
+  console.log("\n=== G. 目录：吸顶顶栏汉堡与左侧抽屉 ===");
+  console.log("  滚 900px 后顶栏吸顶=" + G.sticky + " · 汉堡在顶栏内可见=" + G.btnVis);
+  console.log("  抽屉 " + G.w + "×" + G.h + "（视口 " + G.vw + "×" + G.vh + "）贴顶栏下缘左贴边=" + G.drawer
+    + " · 遮罩从顶栏下缘起=" + G.veilOn + " · 点遮罩关闭=" + G.closed);
 
   /* ---------- H. S6 手机地图可视面积 ----------
      四件事：地图加高（420→460）、摘要两套长度（.d-wide/.d-narrow）、
@@ -643,16 +658,20 @@ function gen(v, la, lo, hh, isAQ, dof) {
   /* ---------- 汇总断言 ---------- */
   const T = { wrapW: B.wrapW, wrapH: B.wrapH };
   const o = {
-    "顶部区不超过视口的 8%": A.pctView <= 8,
+    /* 2026-10-19 用户改主意：徽标不让位，窄屏顶栏改两行（第一行四件，第二行徽标），
+       高度从 50px 涨到约 70px —— 8% 红线随之放宽到 12%（360×640 实测 11%）。 */
+    "顶部区不超过视口的 12%（两行设计值约 70px）": A.pctView <= 12,
     "没有元素越出可视区（参照=clientWidth 防自指；badge 越界曾是横拖空白根因）": A.over.length === 0,
-    "目录浮钮：滚过首屏才出现、四个边都不越界":
-      G.vis === true && G.inView === true,
-    "目录：手机上点开是贴底满宽的 sheet，遮罩在场且点遮罩能关":
-      G.sheet === true && G.veilOn === true && G.closed === true,
-    "顶部区只占一行（不再摊开）": A.rows === 1,
+    "目录：手机端顶栏吸顶且汉堡在顶栏内可见（入口进导航栏，grill 定稿）":
+      G.sticky === true && G.btnVis === true,
+    "目录：点开是贴顶栏下缘、左贴边的抽屉，遮罩从顶栏下缘起铺":
+      G.drawer === true && G.veilOn === true,
+    "目录：点遮罩能关": G.closed === true,
+    "顶部区恰两行（第一行四件、第二行徽标独占）": A.rows === 2,
     "标题单行（nowrap+ellipsis 兜底；截断可接受，折行会撑高顶部）": A.h1Lines === 1,
     "窄屏隐藏技术栈副标题": A.subShown === false,
-    "地名/日期/时段与标题同行（不被挤到单独一行）": A.badgeSameRow === true,
+    "窄屏徽标完整保留（独占第二行），语言/主题按钮可见且不越界":
+      A.badgeShown === true && A.topBtns === true,
     "提示卡走贴底通栏（dock）": B.p1.dock === true,
     "提示卡四边都不被容器裁切": [B.p1, B.p2, B.p3].every(t => t.clipL === 0 && t.clipR === 0 && t.clipT === 0 && t.clipB === 0),
     "卡片自身可交互（能滚、能点）": B.tipPE === "auto",

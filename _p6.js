@@ -4026,6 +4026,9 @@ function relang() {
   applyI18nDom(document);
   /* 主题分段控件的按钮文案是翻译过的，切语言要重建（含 aria-pressed 同步） */
   if (typeof refreshThemeSeg === "function") refreshThemeSeg();
+  /* 顶栏语言菜单：选中态与按钮短名（中/繁/EN）也要跟上——任何路径改语言
+     （URL 参数、外部调用 setLang）都必须落到按钮上 */
+  if (typeof refreshLangSeg === "function") refreshLangSeg();
   try {
     if (typeof refreshDateSelect === "function") refreshDateSelect();
     if (typeof refreshTrendLabels === "function") refreshTrendLabels();
