@@ -2728,10 +2728,14 @@ function drawDataEdge(ctx, rect, f) {
    为什么用 CSS 展开式而不是浏览器 Fullscreen API：
      ① headless 探针里 Fullscreen API 基本不可用，CSS 模式能被端到端断言；
      ② iOS Safari 至今不给 <div> 开放 requestFullscreen，CSS 模式没这个分歧。
-   退出四条路（第三轮反馈补了第 3 条）：① 再点标题栏按钮（桌面）；② Esc（桌面）；
-   ③ 全屏层内右上角「✕ 退出全屏」胶囊（.fsExit，住在 .mapwrap 内部所以全屏时
-   仍在最上层 —— 手机没有键盘，这是它唯一的可见出口）；④ 桌面浏览器全屏后
-   固定层下被盖住的 #mapFs 仍可 Tab 聚焦后回车触发（兜底，非主路径）。
+   退出三条路（第三轮反馈补了第 3 条，2026-10-19 第五轮反馈补了第 4 条）：
+   ① Esc（桌面）；
+   ② 全屏层内左上角「✕ 退出全屏」胶囊（.fsExit，住在 .mapwrap 内部所以全屏时
+      仍在最上层 —— 手机没有键盘，这是它唯一的可见出口）；
+   ③ 桌面浏览器全屏后固定层下被盖住的 #mapFs 仍可 Tab 聚焦后回车触发（兜底，非主路径）；
+   ④ **卡片层级抬升**（#cardMap.fsmap，2026-10-19）：.mapwrap.fs 的 z=2100 会被
+      sticky 的 #cardMap 关在层叠上下文里、整卡排在 .top(60) 之下，顶栏会盖住胶囊
+     截走点击 —— 全屏期间把卡片自身抬到 2200，桌面才与手机同一种退出交互。
    尺寸变化不新造逻辑：initMap 里那个 ResizeObserver 会调 map.resize() +
    scheduleFit()，这里只负责类名、文案与按键的挂摘。
    ========================================================================= */
@@ -2754,6 +2758,17 @@ function setMapFs(on) {
   const wrap = document.querySelector(".mapwrap");
   if (!wrap) return;
   wrap.classList.toggle("fs", !!on);
+  /* S5b · 桌面端全屏压过顶栏（2026-10-19 第五轮反馈："电脑的地图全屏后也无法退出"）：
+     .mapwrap.fs 的 z=2100 看似高于 .top 的 60，但地图卡 #cardMap 是 position:sticky，
+     sticky **必然**自建层叠上下文 —— 2100 被关在卡内，整张卡只以 z-auto 参与页面层序，
+     反而排在 .top(60) 之下：全屏后顶栏压在地图上部 67px，左上角那颗退出胶囊既看不见
+     也点不着（点击落在 .top 上）。手机端 .top 是 static、z-index 不生效，所以手机上
+     一直是好的 —— 这就是"只有电脑退不出去"的原因，也是探针用 el.click() 合成点击
+     一直没抓到它的原因。
+     修法：全屏期间把卡片自身抬到 2200（见 template 的 #cardMap.fsmap），让它连同
+     卡内的地图层一起盖过顶栏，桌面与手机同一种退出交互。退出即摘。 */
+  const card = wrap.closest("#cardMap");
+  if (card) card.classList.toggle("fsmap", !!on);
   refreshFsBtn();
   /* Esc 只在进入全屏时挂、退出时摘 —— 常驻 keydown 会在用户按 Esc 时
      无意中劫持页面其它行为（比如输入框里取消编辑）。 */

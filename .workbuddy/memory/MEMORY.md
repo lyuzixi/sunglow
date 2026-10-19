@@ -7,6 +7,7 @@
 - 修改后固定执行：`SITE_BASE=sunglow python assemble.py`（确认输出字节数；**必须带 SITE_BASE**，部署约定是 GH Pages 项目页 `/sunglow/`，裸跑会按 `/` 构建并让 404probe 的首页链接断言假失败）→ `python mkpreview.py` → `python _check/all.py`。同一时间只跑一个 `all.py`。
 - `all.py` 是唯一总判据；单项脚本可能只在 stdout 报失败却 exit 0。改探针后先跑 `all.py`，再跑 `docfacts`。
 - 4 个内联脚本块必须按内容定位业务块（如 `function jget`），不能按序号；数 FAIL 时同时检查退出码。
+- **整批回退（git checkout/reset）后必须补跑 `mkpreview.py`**：`_check/preview.html` 不进 git，`git checkout` 够不到它，回滚后它仍是旧构建 → 旧版探针审新版页面，uiprobe 会 FATAL「null.hidden」（找已删的 DOM），docfacts 连带报事实取不到 + STALE。正确顺序：回退 → `assemble.py`（确认字节与 git 一致）→ `mkpreview.py` → `all.py`。
 
 ## 地图核心约束
 - 局部网格：中心半径 500 km、间距 120 km、固定 57 点；采样点上限 32,767。`mapPts()` 以 `MapMod.gridC` 为中心。
@@ -20,7 +21,8 @@
 - 色面值域是**固定 0–100 绝对刻度**：当日值域拉伸机制（`scaleRange`/`scaleT`/`mapRangeOf`）已删，`cv = clamp(dimOf(pts[i],dim,mk),0,100)` 恒等——图上颜色可跨日对比。`HEAT_RAMP（`_p4.js` 唯一定义）= **白→黄→橙→红旧尺** 8 锚点（#ffffff→#d51313；2026-10-18 一天三换后用户最终拍板回归旧尺，天色尺/暖沙尺均弃）。低端贴白（对比度 1.05）与深色底低端相近是**已知记账代价**（B1 范围虚线兜底，用户知悉）。harness 色阶断言=git 原块（通道单调/色相 60°→0°/白端最亮），别拿换肤期的对比度断言审它。换肤要重写断言而非改期望值。
 
 ## 渲染与交互
-- 图层顺序：底图压暗(0)→色面(1)→**云纹(2)**→等值线/经纬网/范围线(3)→可信度纱(4)→方位环(5)→直标(6)→图钉(7)→遮罩(8)→提示卡(20)；全屏 `.mapwrap.fs` z=2100（高于 top 60 / tip.dock 2000）。退出按钮 `.fsExit`（z=30）**必须住在 .mapwrap 内部**——标题栏 #mapFs 全屏时被盖住，手机没键盘，层内按钮是唯一可见出口；mapaudit L 段判它全屏中真实可见（display/面积/视口内）且点击可退出。**#map 必须 position:relative;z-index:0 自建层叠上下文**——否则 SDK 内部高 z-index 控件（罗盘/缩放）外逃盖按钮、透明手势层截点击（浅色模式独有，深色 filter 自带上下文）；mapaudit L 段守 computed z-index==="0"。按钮驻左上（SDK 控件驻右上）。新增层同步 template 注释表、z-index、深色 filter 名单。**色面双降走 CSS 层透明度 `.rlayer{opacity:.75}`**，不写进画布 alpha——保 alpha 峰值 207，否则 mapaudit/zoomprobe 的「≥200 不透明区」像素断言基线失效。
+- 图层顺序：底图压暗(0)→色面(1)→**云纹(2)**→等值线/经纬网/范围线(3)→可信度纱(4)→方位环(5)→直标(6)→图钉(7)→遮罩(8)→提示卡(20)；全屏 `.mapwrap.fs` z=2100（高于 top 60 / tip.dock 2000）。退出按钮 `.fsExit`（z=30）**必须住在 .mapwrap 内部**——标题栏 #mapFs 全屏时被盖住，手机没键盘，层内按钮是唯一可见出口；mapaudit L 段判它全屏中真实可见（display/面积/视口内 + **elementFromPoint 命中胶囊本身**）且点击可退出。**#map 必须 position:relative;z-index:0 自建层叠上下文**——否则 SDK 内部高 z-index 控件（罗盘/缩放）外逃盖按钮、透明手势层截点击（浅色模式独有，深色 filter 自带上下文）；mapaudit L 段守 computed z-index==="0"。按钮驻左上（SDK 控件驻右上）。新增层同步 template 注释表、z-index、深色 filter 名单。**色面双降走 CSS 层透明度 `.rlayer{opacity:.75}`**，不写进画布 alpha——保 alpha 峰值 207，否则 mapaudit/zoomprobe 的「≥200 不透明区」像素断言基线失效。
+- **全屏期间 `#cardMap.fsmap{z-index:2200}` 把卡片层级抬到顶栏之上（2026-10-19 第五轮反馈，sticky 层叠陷阱）**：`.mapwrap.fs` 的 2100 会被 sticky 的 `#cardMap` 关进层叠上下文、整卡以 z-auto 排在 `.top(60)` 之下——顶栏 67px 压住左上胶囊，点击落在 `.top` 上什么都不会发生（**手机端 `.top` 是 static、z-index 不生效，所以只有电脑复现**）。类名由 `setMapFs` 挂摘（全项目唯一切 `.fs` 的入口），退出即复原。探针判据：`#cardMap` computed z-index 全屏中=2200、退出后=auto。**教训：el.click() 合成点击绕过命中测试，按钮被盖住照样绿——"可点"必须用 elementFromPoint / CDP 真实点击验**。真 SDK 复现脚本在 `_scratch/fsrepro*.js`（map.qq.com 可达，瓦片鉴权失败不影响控件 DOM）。
 - 色面边界取采样点凸包并仅向外羽化；掩膜与排行榜共用 `mapVisibleAt()` 口径。等值线是独立屏幕空间矢量层，插值基于连续值场；经纬网投影只依赖 `projectToContainer`。羽化边缘带有机噪声（`EDGE_NOISE_KM=26`，格哈希确定性，**按羽化进度缩放 ⇒ 包内/包界恒 0**，三对齐数学上不破；mapaudit 假绿防线查外带掐格）。
 - **经纬网两层画法（2026-10-18）**：3px 近白光晕（55%）+ 1px 深灰芯线（62%），`line.h` 区分，整像素中心对齐——单层 34% 线实测反差仅 17/255（形同不存在）。判据是像素级反差 ≥28 + 芯线/光晕成对；**数 `<line>` 元素永远绿，反差不会撒谎**。
 - **云纹四档分档（2026-10-18 二次反馈，替代同日早的"过半边线"）**：`TX_BAND_HI=25`/`TX_BAND_A=[0,0.13,0.22,0.35]`/`txBandOf()`；晴档不画（免全图变闷），档界即边界；图例 `#lgTx` 四色块行（晴=空心描边）。判据是**逐格公式比对**（期望 round(TX_BAND_A[档]×aF)，容差 ±2）+ bandSeen ≥2 档生效——占比型断言（"非晴档 ≤70%"）无设计依据必挂。档名走 TX_BAND_NAMES 动态取词，i18nprobe DYNAMIC_KEYS 已登记。
