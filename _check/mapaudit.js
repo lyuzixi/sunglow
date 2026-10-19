@@ -1086,7 +1086,12 @@ function gen(v, la, lo, hh, isAQ, dof) {
       btn: (btn.textContent || '').trim(), aria: btn.getAttribute('aria-pressed'),
       /* 第三轮反馈：层内退出按钮。判"真的可见"而不是只判 display ——
          数 <button> 元素永远绿，可见性会撒谎。要求：非 none、有面积、
-         完整落在视口内（fixed 全屏下它不该被裁掉或跑出屏）。 */
+         完整落在视口内（fixed 全屏下它不该被裁掉或跑出屏）。
+         2026-10-19 第五轮反馈再加一层：**真实命中测试**。桌面端 .top(60) 曾
+         整片盖住这颗 z=30 的胶囊（#cardMap 是 sticky、自建层叠上下文，把
+         .mapwrap.fs 的 2100 关在卡内、整卡排在 .top 之下）—— rect 在视口内、
+         display 正常，可 elementFromPoint 命中的是 .top，点击什么都不会发生。
+         el.click() 合成点击同样测不出（它绕过命中测试）。elementFromPoint 不撒谎。 */
       fseVis: (function(){
         var b = document.getElementById('fsExit');
         if (!b) return 'missing';
@@ -1095,6 +1100,15 @@ function gen(v, la, lo, hh, isAQ, dof) {
         if (r.left < 0 || r.top < 0 || r.right > window.innerWidth + 1 || r.bottom > window.innerHeight + 1) return 'clipped';
         return 'visible';
       })(),
+      fseHit: (function(){
+        var b = document.getElementById('fsExit');
+        if (!b) return 'missing';
+        var r = b.getBoundingClientRect();
+        var el = document.elementFromPoint(Math.round(r.left + r.width / 2), Math.round(r.top + r.height / 2));
+        if (!el) return '(none)';
+        return (el === b || b.contains(el)) ? 'pill'
+          : (el.id ? '#' + el.id : el.tagName.toLowerCase());
+      })(),
       fseTxt: ((document.getElementById('fsExit') || {}).textContent || '').trim(),
       /* #map 必须自建层叠上下文（computed z-index 为 "0"）：没有它，SDK 内部
          控件的高 z-index 会逃出 #map 把 fsExit 盖住、还截走点击 —— 浅色模式
@@ -1102,6 +1116,13 @@ function gen(v, la, lo, hh, isAQ, dof) {
       mapZ: (function(){
         var m = document.getElementById('map');
         return m ? getComputedStyle(m).zIndex : 'missing';
+      })(),
+      /* 2026-10-19：地图卡在全屏期间的自身层级。#cardMap 是 sticky（自建层叠
+         上下文），不抬层级的话 .mapwrap.fs 的 2100 被关在卡内、整卡排在
+         .top(60) 之下 —— 顶栏盖住退出胶囊截走点击，正是桌面端"退不出去"的根因。 */
+      cardZ: (function(){
+        var c = document.getElementById('cardMap');
+        return c ? getComputedStyle(c).zIndex : 'missing';
       })() };
     /* Esc 退出（走 setMapFs 挂的那个 keydown） */
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
@@ -1146,13 +1167,25 @@ function gen(v, la, lo, hh, isAQ, dof) {
     if (L2 && L2.fs && L2.n > 0 && L2.worst < 2 && Math.abs(L2.mapH - L2.ch) < 2) break;
   }
   /* 退出走**层内退出按钮**（第三轮反馈的新出口），顺手验证它真的能退出并摘句柄。
+     2026-10-19 第五轮反馈起改成**两步都要真**：
+     ① 命中判据在上面（fseHit 必须是 'pill'）—— 按钮被 .top 或 SDK 内部层盖住时，
+        el.click() 照样能退，只有 elementFromPoint 会红；
+     ② 这里再走 **CDP 真实点击**（Input.dispatchMouseEvent，经过浏览器真实命中
+        测试派发），把"浏览器真的把这个点派发给按钮"也一并验掉。
      复原现场（后面的实拍与断言都按非全屏量）。 */
-  await ev(`(function(){ var b = document.getElementById('fsExit');
-    if (!b) return 0; b.click(); return 1; })()`);
+  const fsePt = await ev(`(function(){ var b=document.getElementById('fsExit'); if(!b) return null;
+    var r=b.getBoundingClientRect();
+    return { x: Math.round(r.left + r.width/2), y: Math.round(r.top + r.height/2) }; })()`);
+  if (fsePt) {
+    await cdp.send("Input.dispatchMouseEvent", { type: "mousePressed", x: fsePt.x, y: fsePt.y, button: "left", clickCount: 1 });
+    await cdp.send("Input.dispatchMouseEvent", { type: "mouseReleased", x: fsePt.x, y: fsePt.y, button: "left", clickCount: 1 });
+  }
   await sleep(300);
   const L3 = await ev(`(function(){
     var w = document.querySelector('.mapwrap');
-    return { fs: w.classList.contains('fs'), keyGone: MapMod.fsKey === null };
+    var c = document.getElementById('cardMap');
+    return { fs: w.classList.contains('fs'), keyGone: MapMod.fsKey === null,
+             afterCardZ: c ? getComputedStyle(c).zIndex : 'missing' };
   })()`);
   console.log("\n=== L. S5 全屏看地图 ===");
   console.log("  进入前：fs=" + L.before.fs + " · position=" + L.before.pos + " · #map 高 " + L.before.mapH
@@ -1162,8 +1195,10 @@ function gen(v, la, lo, hh, isAQ, dof) {
   console.log("  Esc 退出：fs=" + L.afterEsc.fs + " · position=" + L.afterEsc.pos
     + " · 按钮「" + L.afterEsc.btn + "」aria=" + L.afterEsc.aria + " · keydown 句柄已摘=" + L.afterEsc.keyGone);
   console.log("  层内退出按钮：全屏中 " + L.entered.fseVis + "（文案「" + L.entered.fseTxt + "」）"
-    + " · #map z-index=" + L.entered.mapZ
-    + " · 点击退出 fs=" + L3.fs + " · keydown 句柄已摘=" + L3.keyGone);
+    + " · 命中测试=" + L.entered.fseHit + " · #map z-index=" + L.entered.mapZ
+    + " · #cardMap z-index=" + L.entered.cardZ);
+  console.log("  真实点击退出 fs=" + L3.fs + " · keydown 句柄已摘=" + L3.keyGone
+    + " · 退出后 #cardMap z-index=" + L3.afterCardZ);
   console.log("  全屏中色面画布与当前投影合一：画布 " + L2.n + " 张（隐藏 " + (L2 ? L2.hidden : "?")
     + " 张）· 最大偏差 " + (L2 ? L2.worst.toFixed(2) : "?")
     + " px · #map 高 " + (L2 ? L2.mapH : "?") + "＝视口 " + (L2 ? L2.ch : "?"));
@@ -1324,9 +1359,18 @@ function gen(v, la, lo, hh, isAQ, dof) {
     "全屏：Esc 能退出，按钮文案/aria 复位且 keydown 句柄已摘":
       L.afterEsc.fs === false && L.afterEsc.btn === "全屏" && L.afterEsc.aria === "false"
       && L.afterEsc.keyGone === true,
-    "全屏：层内「✕ 退出全屏」按钮全屏中真的可见、点击可退出且句柄摘除（手机唯一出口）":
+    "全屏：层内「✕ 退出全屏」按钮全屏中真的可见、CDP 真实点击可退出且句柄摘除（手机唯一出口）":
       L.entered.fseVis === "visible" && L.entered.fseTxt.indexOf("退出全屏") >= 0
       && L3.fs === false && L3.keyGone === true,
+    /* 2026-10-19 第五轮反馈（"电脑的地图全屏后也无法退出"）：上面那条用合成点击
+       一直是绿的，真实世界里桌面端这颗胶囊被 .top(60) 整片盖住 —— #cardMap 是
+       sticky、自建层叠上下文，.mapwrap.fs 的 2100 被关在卡内、整卡反而排在顶栏
+       之下，点击落在 .top 上什么都不会发生。修法 #cardMap.fsmap（setMapFs 挂摘）。
+       判据必须是 elementFromPoint：rect/display 会演戏，命中测试不会。 */
+    "全屏：退出胶囊在真实命中测试的最上层（elementFromPoint 命中胶囊本身，不被顶栏/SDK 层截走）":
+      L.entered.fseHit === "pill",
+    "全屏：全屏期间地图卡层级抬到顶栏之上（#cardMap.fsmap，sticky 层叠陷阱的修法）":
+      L.entered.cardZ === "2200" && L3.afterCardZ === "auto",
     "全屏：#map 自建层叠上下文（computed z-index=0，钳住 SDK 内部控件不外逃盖按钮/截点击）":
       L.entered.mapZ === "0",
     "全屏中色面画布与当前投影合一（refit 在尺寸变化后真的跑了）":

@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>霞光预报 · 使用教程</title>
+<meta name="description" content="霞光预报（朝霞 / 晚霞火烧云概率与质量预报）的使用教程：用户上手指南、开发者工程说明、创作者演示素材，三档合一。">
+<style>
+  :root{
+    --ink:#0B1020; --ink-2:#141B2E; --ink-3:#1E2840;
+    --line:rgba(180,200,255,.12); --line-2:rgba(180,200,255,.20);
+    --text:#E8ECF5; --muted:#9AA7C2; --faint:#6B7894;
+    --glow-1:#FFB36B; --glow-2:#FF7A59; --glow-3:#FFD9A0;
+    --cool:#7FA8D9; --ok:#7FD6A0;
+    --font-display:'Georgia','Songti SC','Noto Serif SC','Source Han Serif SC',serif;
+    --font-body:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif;
+    --font-mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --maxw:1080px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--ink);
+    color:var(--text);
+    font-family:var(--font-body);
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+    font-size:16px;
+  }
+  a{color:var(--glow-1);text-decoration:none}
+  a:hover{text-decoration:underline}
+  ::selection{background:rgba(255,122,89,.30)}
+  :focus-visible{outline:2px solid var(--glow-1);outline-offset:2px;border-radius:2px}
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    position:sticky;top:0;z-index:50;
+    background:rgba(11,16,32,.82);
+    backdrop-filter:saturate(160%) blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .topbar-inner{
+    max-width:var(--maxw);margin:0 auto;padding:14px 22px;
+    display:flex;align-items:center;gap:20px;flex-wrap:wrap;
+  }
+  .brand{display:flex;align-items:center;gap:11px;font-family:var(--font-display);font-size:19px;letter-spacing:.3px;color:var(--text)}
+  .brand .dot{width:13px;height:13px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,var(--glow-3),var(--glow-2) 70%,#b8432e);
+    box-shadow:0 0 14px rgba(255,122,89,.55)}
+  .nav{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+  .nav button{
+    font-family:var(--font-body);font-size:14.5px;color:var(--muted);
+    background:transparent;border:0;padding:8px 13px;border-radius:7px;cursor:pointer;
+    transition:color .15s,background .15s;
+  }
+  .nav button:hover{color:var(--text);background:var(--ink-2)}
+  .nav button.is-active{color:var(--ink);background:linear-gradient(180deg,var(--glow-3),var(--glow-1));font-weight:600}
+  .nav button:focus-visible{outline-offset:3px}
+
+  /* ---------- layout ---------- */
+  main{max-width:var(--maxw);margin:0 auto;padding:0 22px 90px}
+  .view{display:block}
+  .view[hidden]{display:none}
+  section.block{padding:46px 0;border-bottom:1px solid var(--line)}
+  section.block:last-of-type{border-bottom:0}
+  h1,h2,h3{font-family:var(--font-display);font-weight:600;line-height:1.25;color:var(--text)}
+  h1{font-size:clamp(34px,6vw,56px);margin:0 0 .25em;letter-spacing:.4px}
+  h2{font-size:clamp(25px,3.4vw,33px);margin:0 0 .5em}
+  h3{font-size:20px;margin:1.6em 0 .5em;color:var(--glow-3)}
+  p{margin:.55em 0;color:var(--text)}
+  .lead{font-size:18.5px;color:var(--muted);max-width:62ch}
+  .muted{color:var(--muted)}
+  .eyebrow{font-family:var(--font-mono);font-size:12.5px;letter-spacing:1.5px;color:var(--cool);text-transform:none;margin:0 0 10px}
+
+  /* ---------- hero ---------- */
+  .hero{position:relative;padding:72px 0 64px;overflow:hidden}
+  .hero .glowband{
+    position:absolute;left:-10%;right:-10%;bottom:8%;height:300px;z-index:0;
+    background:linear-gradient(90deg,
+      rgba(127,168,217,0) 0%,
+      rgba(255,211,160,.10) 30%,
+      rgba(255,179,107,.55) 52%,
+      rgba(255,122,89,.65) 68%,
+      rgba(184,67,46,.30) 86%,
+      rgba(127,168,217,0) 100%);
+    filter:blur(26px);
+    transform:translateX(-8%) scaleX(1.05);opacity:0;
+    animation:glowsweep 1.5s cubic-bezier(.2,.7,.2,1) .15s forwards;
+  }
+  @keyframes glowsweep{from{opacity:0;transform:translateX(-22%) scaleX(1.12)}to{opacity:1;transform:translateX(-8%) scaleX(1.05)}}
+  .hero-inner{position:relative;z-index:1;max-width:760px}
+  .hero h1 .accent{color:var(--glow-1)}
+  .hero .lead{margin-top:18px}
+  .hero .meta{margin-top:26px;display:flex;gap:26px;flex-wrap:wrap;font-family:var(--font-mono);font-size:13px;color:var(--muted)}
+  .hero .meta b{display:block;font-family:var(--font-display);font-size:27px;color:var(--text);font-weight:600}
+
+  /* ---------- entry panels (home) ---------- */
+  .panels{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:14px}
+  .panel{
+    border:1px solid var(--line);border-radius:12px;background:var(--ink-2);
+    padding:22px 20px 20px;display:flex;flex-direction:column;gap:10px;
+    transition:border-color .18s,transform .18s;
+  }
+  .panel:hover{border-color:var(--line-2);transform:translateY(-3px)}
+  .panel .k{font-family:var(--font-mono);font-size:12px;color:var(--cool);letter-spacing:1px}
+  .panel h3{margin:.1em 0 .2em;font-size:21px;color:var(--text)}
+  .panel p{font-size:14.5px;color:var(--muted);margin:0}
+  .panel .go{margin-top:auto;font-size:14px;color:var(--glow-1);font-weight:600}
+  .panel .go::after{content:" ›"}
+
+  /* ---------- generic components ---------- */
+  .ribbon{height:12px;border-radius:6px;margin:8px 0 4px;
+    background:linear-gradient(90deg,#ffffff,#ffe27a,#ffb24d,#ff7a59,#d51313);
+    border:1px solid var(--line)}
+  .ribbon-legend{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:11.5px;color:var(--faint);margin-bottom:18px}
+
+  ol.steps{counter-reset:s;list-style:none;padding:0;margin:14px 0}
+  ol.steps>li{position:relative;padding:0 0 18px 46px;margin:0}
+  ol.steps>li::before{
+    counter-increment:s;content:counter(s);
+    position:absolute;left:0;top:1px;width:30px;height:30px;border-radius:50%;
+    display:grid;place-items:center;font-family:var(--font-display);font-size:15px;font-weight:600;
+    color:var(--ink);background:linear-gradient(180deg,var(--glow-3),var(--glow-1));
+  }
+  ol.steps>li b{color:var(--text)}
+
+  dl.terms{margin:14px 0;display:grid;grid-template-columns:200px 1fr;gap:0}
+  dl.terms>div{border-top:1px solid var(--line);padding:14px 0;display:contents}
+  dl.terms dt{padding:14px 0;color:var(--glow-3);font-weight:600;font-family:var(--font-display);font-size:16px}
+  dl.terms dd{margin:0;padding:14px 0;color:var(--muted)}
+  dl.terms dd b{color:var(--text)}
+
+  .codeblock{background:var(--ink-3);border:1px solid var(--line);border-radius:10px;padding:16px 18px;overflow:auto;margin:14px 0}
+  .codeblock pre{margin:0;font-family:var(--font-mono);font-size:13.5px;line-height:1.65;color:var(--text);white-space:pre}
+  .codeblock .c{color:var(--faint)}
+  .codeblock .v{color:var(--glow-3)}
+
+  .note{border-left:3px solid var(--cool);background:rgba(127,168,217,.07);padding:13px 16px;border-radius:0 8px 8px 0;margin:16px 0;color:var(--muted);font-size:14.5px}
+  .note.warn{border-left-color:var(--glow-2);background:rgba(255,122,89,.08)}
+  .note b{color:var(--text)}
+
+  table.tbl{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+  table.tbl th,table.tbl td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.tbl th{color:var(--glow-3);font-family:var(--font-display);font-weight:600;font-size:14px}
+  table.tbl td{color:var(--muted)}
+  table.tbl td b{color:var(--text)}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .card-line{border-top:1px solid var(--line);padding:18px 0}
+  .card-line h3{margin-top:0}
+  .tag{display:inline-block;font-family:var(--font-mono);font-size:11.5px;color:var(--cool);border:1px solid var(--line);border-radius:20px;padding:2px 10px;margin:0 6px 6px 0}
+
+  footer{border-top:1px solid var(--line);margin-top:40px}
+  .footer-inner{max-width:var(--maxw);margin:0 auto;padding:28px 22px 50px;color:var(--faint);font-size:13px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+  .footer-inner a{color:var(--muted)}
+
+  @media (max-width:760px){
+    .panels{grid-template-columns:1fr}
+    .grid2{grid-template-columns:1fr}
+    dl.terms{grid-template-columns:1fr}
+    dl.terms>div{display:block;border-top:1px solid var(--line)}
+    dl.terms dt{padding-bottom:2px}
+    dl.terms dd{padding-top:2px}
+    .topbar-inner{padding:12px 16px;gap:12px}
+    main{padding:0 16px 70px}
+    .nav button{padding:7px 10px;font-size:13.5px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .hero .glowband{animation:none;opacity:1}
+    *{transition:none!important}
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand"><span class="dot"></span>霞光预报 · 教程</div>
+    <nav class="nav" aria-label="教程版本切换">
+      <button data-view="home" class="is-active" aria-current="page">首页</button>
+      <button data-view="users">用户版</button>
+      <button data-view="dev">开发者版</button>
+      <button data-view="creator">创作者版</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ HOME ============ -->
+  <section id="home" class="view">
+    <div class="hero">
+      <div class="glowband" aria-hidden="true"></div>
+      <div class="hero-inner">
+        <p class="eyebrow">TWILIGHT CONSOLE · 使用教程</p>
+        <h1>读懂<span class="accent">朝霞</span>与<span class="accent">晚霞</span>的预报</h1>
+        <p class="lead">霞光预报是一个单文件 Web 应用：输入地点与日期，预测朝霞 / 晚霞（火烧云）出现的概率与观赏质量，并能在周边 500 km 画出霞光分布热力图。这份教程分三档——按需取用。</p>
+        <div class="meta">
+          <div><b>3</b>套模型合成</div>
+          <div><b>500 km</b>周边网格</div>
+          <div><b>0</b>注册 · 纯前端</div>
+        </div>
+      </div>
+    </div>
+
+    <section class="block">
+      <p class="eyebrow">选你的入口</p>
+      <h2>三档教程，各取所需</h2>
+      <div class="panels">
+        <a class="panel" href="#users" data-jump="users">
+          <span class="k">FOR USERS</span>
+          <h3>用户版</h3>
+          <p>摄影爱好者与日常使用者：怎么查一次预报、怎么看地图与趋势、怎么分享与在手机上使用。</p>
+          <span class="go">上手指南</span>
+        </a>
+        <a class="panel" href="#dev" data-jump="dev">
+          <span class="k">FOR DEVELOPERS</span>
+          <h3>开发者版</h3>
+          <p>贡献者与部署者：源码结构、拼装流程、回归套件、静态 / 带地图 / PWA 部署与已知边界。</p>
+          <span class="go">工程说明</span>
+        </a>
+        <a class="panel" href="#creator" data-jump="creator">
+          <span class="k">FOR CREATORS</span>
+          <h3>创作者版</h3>
+          <p>自媒体与内容创作者：最值得拍的亮点功能、演示叙事线、可引用的卖点与注意事项。</p>
+          <span class="go">演示素材</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2>它到底在算什么</h2>
+      <p class="lead">一句话：把「今晚有没有火烧云」从玄学变成可量化的概率与质量分。</p>
+      <dl class="terms">
+        <div><dt>朝霞 / 晚霞</dt><dd>日出前与日落后的低空霞光（火烧云）。两者的大气条件不同，所以应用分开预报、可分别切换。</dd></div>
+        <div><dt>概率 %</dt><dd>出现霞光的可能性，由天气条件（云量、湿度、能见度等）推算，不是「会不会出太阳」。</dd></div>
+        <div><dt>质量评分</dt><dd>在「会出现」的前提下，霞光的<b>观赏质量</b>（色彩浓度、覆盖范围），分 优 / 良 / 一般 / 差 四档。</dd></div>
+        <div><dt>多模型合成</dt><dd>GFS / ECMWF / 光追算法三路各自出分，再按 <b>0.30 / 0.34 / 0.36</b> 的权重合成，降低单一来源偏差。</dd></div>
+      </dl>
+      <div class="ribbon" aria-hidden="true"></div>
+      <div class="ribbon-legend"><span>弱 / 无霞</span><span>色阶：白 → 黄 → 橙 → 红</span><span>强霞</span></div>
+      <p class="muted">地图上那条从白到红的热力色阶，本教程也沿用为视觉线索——看到这条带子，就代表「霞光强度」。</p>
+    </section>
+  </section>
+
+  <!-- ============ USERS ============ -->
+  <section id="users" class="view" hidden>
+    <section class="block" style="border-top:0;padding-top:30px">
+      <p class="eyebrow">FOR USERS · 上手指南</p>
+      <h1>用户版：从一次查询到一张分享图</h1>
+      <p class="lead">面向摄影爱好者与日常使用者。下面的顺序，基本就是一次完整使用的路径。</p>
+    </section>
+
+    <section class="block">
+      <h2>1 · 查一次朝霞 / 晚霞预报</h2>
+      <ol class="steps">
+        <li><b>选地点。</b>在查询区搜索城市名，或允许浏览器定位，或点开「收藏机位」直接选常用点。地名走白名单，外源地名的异常字符会被安全处理。</li>
+        <li><b>选日期与时段。</b>默认今天；时段在「朝霞 / 晚霞」之间切换（两者大气条件不同，分开算）。</li>
+        <li><b>读结论卡。</b>核心三格：<b>概率 %</b>、<b>质量评分</b>、<b>等级</b>（优 / 良 / 一般 / 差）。下方还有「主要影响因素」逐项分解，告诉你这次是云量、湿度还是能见度在拖后腿。</li>
+        <li><b>看多模型。</b>卡内列出 GFS / ECMWF / 光追三路各自的分数与合成结果；模型间分歧大时会在悬停信息里提示不确定性。</li>
+      </ol>
+      <div class="note">首屏只取<b>单点</b>结果（约 65 个加权调用）。地图数据必须由你显式点击才取，所以初次打开不会悄悄花掉你的额度。</div>
+    </section>
+
+    <section class="block">
+      <h2>2 · 看懂周边地图</h2>
+      <p>地图把查询点周边 <b>500 km</b> 的霞光强度画成热力图，是「今天去哪个方向拍」最直观的答案。</p>
+      <div class="ribbon" aria-hidden="true"></div>
+      <div class="ribbon-legend"><span>白</span><span>黄</span><span>橙</span><span>红 = 强霞</span></div>
+      <h3>怎么把它画出来</h3>
+      <ul>
+        <li><b>有缓存时自动画。</b>上次看过的城市 + 日期，新开页会<b>零请求</b>直接画出来（走缓存快路径，不占额度）。</li>
+        <li><b>没缓存时点击加载。</b>点「加载周边地图」才会发起请求（约 171 个加权调用）。勾选框默认不勾选，因为它会直接影响你自己的日额度。</li>
+      </ul>
+      <h3>图上的几层信息</h3>
+      <dl class="terms">
+        <div><dt>色面</dt><dd>采样点插值出的霞光强度，白→黄→橙→红分档。</dd></div>
+        <div><dt>等值线</dt><dd>档与档之间一条 1px 线（屏幕空间矢量，放大不变粗），帮你看清梯度。</dd></div>
+        <div><dt>数据范围虚线</dt><dd>采样点凸包外缘的虚线：<b>线内是插值、线外是外推</b>，外推区可信度更低。</dd></div>
+        <div><dt>经纬网</dt><dd>1° 网格底衬，可在图层开关里关闭。</dd></div>
+      </dl>
+      <h3>五个图层开关</h3>
+      <p class="muted">数值直标 / 采样点 / 可信度 / 经纬网 / 深色底图——按需开关，偏好会写进本地存储、重开页恢复。</p>
+      <h3>交互</h3>
+      <p class="muted">支持日期、时段、模型切换；鼠标悬停或点击地图出具体数值；外推区会附「离最近采样点多远」的距离口径。</p>
+      <div class="note warn"><b>可信范围别混用两个量：</b>「在不在采样区里」（凸包）和「离最近采样点多远」是两个不同的概念。包内实测最远 85 km，贴着凸包顶点外侧只有 1.4 km 却已是外推。</div>
+    </section>
+
+    <section class="block">
+      <h2>3 · 趋势与最佳窗口</h2>
+      <h3>趋势曲线</h3>
+      <p>未来若干天逐日打分曲线，可切换朝霞 / 晚霞。算好的结果会<b>落盘缓存</b>，重开页命中时零请求直接画出。</p>
+      <h3>F3 · 最佳窗口日历</h3>
+      <p>趋势的另一种读法：把未来 N 天按「哪天值得去」排成日历格（朝 / 晚两个色块 + 质量分），标出最值得去的前三名。点格子直接切过去——<b>渲染这张日历零取数</b>，只有点格子（你的显式意图）才走一次单点取数。</p>
+    </section>
+
+    <section class="block">
+      <h2>4 · 多观测点对比（F2）</h2>
+      <p>回答「今天去哪儿拍」：收藏最多 <b>5 个机位</b>，一次取数横向按质量分排序。</p>
+      <ul>
+        <li>取数只能由「对比这些点」按钮触发；命中单点缓存的点<b>不进请求</b>（先单独查过的点零成本）。</li>
+        <li>默认只比当前时段；界面会写明「本次将消耗约 N 个计费调用」。</li>
+        <li>位置 / 日期 / 时段任一变化，对比结果作废（避免显示上一个地点的数字）。</li>
+      </ul>
+    </section>
+
+    <section class="block">
+      <h2>5 · 分享与导出</h2>
+      <h3>一键分享卡 PNG</h3>
+      <p>把结论卡导出为图片（纯 canvas 绘制，与页面同一套文案与配色），直接发到聊天工具。分享卡固定浅色底，发到任何环境都稳妥。</p>
+      <h3>结果快照链接</h3>
+      <p>链接带 <code>snap=</code> 参数，<b>零气象请求</b>即可还原结论（解码前限长并逐字段校验，恶意载荷只作纯文本落地）。语言、时段等随界面走。</p>
+    </section>
+
+    <section class="block">
+      <h2>6 · 偏好设置</h2>
+      <dl class="terms">
+        <div><dt>单位制 / 12 小时制</dt><dd>温度单位、时间显示方式，按习惯切换。</dd></div>
+        <div><dt>语言</dt><dd>简体中文 / 繁體中文（中国台湾·香港用语）/ English，写进偏好与分享链接。优先级：URL &gt; 偏好 &gt; 浏览器语言 &gt; 简体。</dd></div>
+        <div><dt>主题</dt><dd>浅色 / 深色 / 跟随系统三态。<b>刷新不闪</b>（引导脚本早于样式执行）。主题不进 URL——别人发的链接不该强制你的界面变黑。</dd></div>
+        <div><dt>9 个显示状态</dt><dd>数值直标 / 采样点 / 可信度 / 经纬网 / 深色底图 / 12 小时制 / 单位制 / 地图着色依据 / 算法模型，写进同一个本地键，重开页恢复。</dd></div>
+      </dl>
+      <div class="note"><b>刻意不持久化两类：</b>位置与日期（由 URL 承载，避免与分享链接打架）；地图时段（由单点时段派生，存了会让「地图看晚霞、上方算朝霞」成为常态）。</div>
+    </section>
+
+    <section class="block">
+      <h2>7 · 本地校准（F4）</h2>
+      <p>事后回来点一档「实际看到了什么」（6 档），本机累积后在结论卡下方多出一行<b>本地校准</b>：模型在这一档平均报多少、你标注了几次、实际出现率多少、偏差多少。</p>
+      <ul>
+        <li><b>只展示、不回改</b>模型概率 / 等级 / 因素表任何一个字。</li>
+        <li><b>只存本机</b>——数据不出设备、可一键关闭、可清空。</li>
+        <li><b>样本不够不给结论</b>：累计 ≥8 次、且当前这一档 ≥3 次才显示，之前只显示进度。</li>
+        <li><b>关掉 ≠ 删除</b>：开关只关入口与展示，已存标注不删；清空是另一个按钮，且要二次确认。</li>
+        <li>「没看到（无法判断）」不计入统计，以免系统性拉低校准。</li>
+      </ul>
+    </section>
+
+    <section class="block">
+      <h2>8 · 移动端</h2>
+      <ul>
+        <li>窄屏顶部信息条收成一行（不换行摊开），不挤占地图。</li>
+        <li>地图提示卡改成<b>贴底通栏</b>并自带 × 关闭；可再点一次、点卡片外、或直接拖动地图收起。</li>
+        <li>关闭后不留隐形热区（触摸交还地图）；拖动超过 12px 视为收卡、以下是点击。</li>
+        <li>页面不可横向拖出空白；地图区单指可拖（手势交给地图 SDK）。</li>
+      </ul>
+    </section>
+
+    <section class="block">
+      <h2>9 · 常见疑问</h2>
+      <dl class="terms">
+        <div><dt>为什么地图有时直接显示、有时要点击？</dt><dd>有缓存（看过同城市同日期）开页自动画、零额度；无缓存仍需你点「加载周边地图」。</dd></div>
+        <div><dt>额度怎么算？</dt><dd>免费层按<b>访客自己的出口 IP</b>计（10000 次/天/人）。静态站不做代转，站点本身不消耗配额。</dd></div>
+        <div><dt>本地双击打开地图不显示？</dt><dd>预期行为：地图代理地址默认是占位符，双击打开时不起来，页面会说明原因；单点查询不受影响。要联调完整功能需本地预览构建。</dd></div>
+        <div><dt>深色的「深色底图」和主题切换是一回事吗？</dt><dd>不是。底图深色是地图数据图层开关；界面浅/深是主题。两者各管各的。</dd></div>
+      </dl>
+    </section>
+  </section>
+
+  <!-- ============ DEV ============ -->
+  <section id="dev" class="view" hidden>
+    <section class="block" style="border-top:0;padding-top:30px">
+      <p class="eyebrow">FOR DEVELOPERS · 工程说明</p>
+      <h1>开发者版：结构、构建与部署</h1>
+      <p class="lead">霞光预报的产物是 <code>index.html</code>——一个自包含 HTML（内联全部 JS 与城市/高程数据），可直接部署为静态站点；地图模块另有一个可选的同源服务端中转端点。</p>
+    </section>
+
+    <section class="block">
+      <h2>1 · 源码结构</h2>
+      <p>单文件产物由脚本拼装，<b>不要手改产物</b>。</p>
+      <div class="codeblock"><pre><span class="c"># 源（改这些）</span>
+tpl/template.html     版式来源（HTML + CSS + 3 个内联 &lt;script&gt; 占位块）
+tpl/404.html          404 页模板（第二个产物，共用设计令牌）
+_p2.js … _p6.js       业务代码片段
+_pi18n.js             多语言词典（简/繁/英）
+refs/*.txt            内联数据（城市表 / 地名别名 / 0.5° 高程网格 b64）
+
+<span class="c"># 构建与产物</span>
+functions/            Cloudflare Pages Functions（地图代理，可选）
+assemble.py           拼装 → index.html 与 404.html
+mkpreview.py          拼装 → _check/preview.html（用 SDK 桩替换腾讯地图脚本）
+_check/               回归套件</pre></div>
+      <div class="note warn">改动任何 <code>_p*.js</code> / <code>tpl/</code> / <code>refs/</code> 之后都必须重跑 <code>assemble.py</code> 与 <code>mkpreview.py</code>。两个产物都不许手改。</div>
+    </section>
+
+    <section class="block">
+      <h2>2 · 构建命令</h2>
+      <div class="codeblock"><pre><span class="c"># 默认构建（站点在域名根 /）</span>
+python assemble.py
+
+<span class="c"># GitHub Pages 项目页（子路径 /sunglow/）</span>
+<span class="v">SITE_BASE</span>=sunglow python assemble.py
+
+<span class="c"># 带地图代理（同源路径，key 走环境变量，不进产物）</span>
+<span class="v">TMAP_SERVICE_HOST</span>=https://你的域名/_TMapService python assemble.py
+
+<span class="c"># 可选 PWA（多产 manifest/sw/图标，单文件约束默认仍成立）</span>
+<span class="v">PWA</span>=1 <span class="v">SITE_BASE</span>=sunglow python assemble.py
+
+<span class="c"># 生成带 SDK 桩的预览文件（回归套件跑这个）</span>
+python mkpreview.py</pre></div>
+      <p class="muted">不设 <code>TMAP_SERVICE_HOST</code> 时，<code>assemble.py</code> 回落到本地预览用的占位符形态，开发行为不变。</p>
+    </section>
+
+    <section class="block">
+      <h2>3 · 部署</h2>
+      <h3>3.1 纯静态（地图不可用）</h3>
+      <p>把 <code>index.html</code> 丢到任意静态托管（Cloudflare Pages、GitHub Pages、对象存储）。查询、趋势、分享卡全部可用；地图模块因为没有腾讯地图 key 会显示一段说明。</p>
+      <div class="note">免费层配额按<b>访客自己的出口 IP</b>计。静态站不做任何代转，站点本身不消耗配额。</div>
+
+      <h3>3.2 带地图（Cloudflare Pages + Pages Functions）</h3>
+      <p>腾讯地图 JS API 的 key <b>不能明文写进产物</b>（单文件 HTML 谁都能看到 key 并刷配额）。已实现代理方案：</p>
+      <ol class="steps">
+        <li>去 <a href="https://lbs.qq.com" target="_blank" rel="noopener">lbs.qq.com</a> 申请 Web 端 (JS API) key，把站点域名加进白名单。</li>
+        <li>把本目录作为 Pages 项目（构建命令留空，产物目录 <code>/</code>）。<code>functions/_TMapService/[[path]].js</code> 会被自动识别为 Function。</li>
+        <li>Pages 的 Settings → Environment variables 加 <code>TMAP_KEY = 你的 key</code>。</li>
+        <li>构建时把地图代理指到同源路径：<code>TMAP_SERVICE_HOST=https://你的域名/_TMapService python assemble.py</code>。</li>
+      </ol>
+      <p class="muted">代理与前端同源 ⇒ 无 CORS、无混合内容。key 只存在于服务端环境变量，永不进入产物。</p>
+
+      <h3>3.3 404 页</h3>
+      <p>纯静态站没有前端路由，「访问不存在的路径」由托管平台兜底（Cloudflare Pages / GitHub Pages / Netlify 都取站点根下的 <code>404.html</code> 并以 404 返回）。<code>assemble.py</code> 一并生成，无需 rewrite 配置。页内地址写成站点根的绝对形式，由构建期注入 <code>SITE_BASE</code>。</p>
+
+      <h3>3.4 可选 PWA</h3>
+      <p><code>PWA=1</code> 会多产 <code>manifest.json</code> / <code>sw.js</code> / <code>icon-192.png</code> / <code>icon-512.png</code>，可被「添加到主屏幕」且离线能打开。三条纪律：① SW <b>绝不缓存气象响应</b>（只认预缓存名单）；② 缓存名带产物 sha256 前 12 位，内容一变旧缓存作废；③ 注册是「增强」——失败 / <code>file://</code> 打开全部静默跳过。默认不开，因为它与「单文件产物」核心约束冲突。</p>
+
+      <h3>3.5 本地预览</h3>
+      <div class="codeblock"><pre>python assemble.py          <span class="c"># 生成 index.html</span>
+python mkpreview.py         <span class="c"># 生成 _check/preview.html（SDK 桩）</span></pre></div>
+      <p class="muted"><code>_check/preview.html</code> 的地图 SDK 是桩实现（复刻 Heat 核函数叠加与投影），可离线、可断言、不消耗额度。回归套件全部跑这个文件。</p>
+    </section>
+
+    <section class="block">
+      <h2>4 · 回归套件</h2>
+      <div class="codeblock"><pre>python _check/all.py            <span class="c"># 总表（25 项）</span>
+python _check/all.py -v         <span class="c"># 附完整输出</span>
+python _check/all.py --fast     <span class="c"># cdp 只跑快段（跳过两段最慢）</span>
+python _check/all.py -k cdp     <span class="c"># 只跑名字含 cdp 的</span></pre></div>
+      <table class="tbl">
+        <thead><tr><th>探针</th><th>覆盖要点</th></tr></thead>
+        <tbody>
+          <tr><td>syntax / globals</td><td>4 个内联 script 块语法；跨块命名冲突（静默覆盖最难查）</td></tr>
+          <tr><td>run_self / datacheck</td><td>色阶 / 等级纯函数自测；城市表不变量 + 港澳台合规</td></tr>
+          <tr><td>localgrid / timeoutprobe</td><td>局部网格几何 / 缓存闸门 / 首屏地图加载；请求超时 + 429 双分类</td></tr>
+          <tr><td>mapaudit / mobileprobe</td><td>地图审计（48 断言）；手机端适配（两档视口 35+35 断言）</td></tr>
+          <tr><td>persist / uiprobe</td><td>偏好写盘↔读回；第五轮 UI 默认态 / 天色带 / 液态玻璃</td></tr>
+          <tr><td>a11y / i18n / dark</td><td>无障碍 16；多语言 23；深色模式 19（含浅色漏网扫描）</td></tr>
+          <tr><td>spot / snap / calib</td><td>F3/F2 额度纪律 21；快照零请求 24；F4 校准 25</td></tr>
+          <tr><td>xss / 404 / docfacts</td><td>XSS 防护 18；404 页 21；文档↔代码一致性</td></tr>
+        </tbody>
+      </table>
+      <div class="note warn">探针一律跑 <code>_check/preview.html</code>。<b>改了源码忘了重新生成 preview，会让整套断言测的是旧代码</b>——本项目踩过多次的坑。</div>
+      <p class="muted">不进一键序列（会花真实额度或依赖实时接口）：<code>consistency.js</code> / <code>shotdefault.js</code> / <code>tzprobe.js</code> 等。</p>
+    </section>
+
+    <section class="block">
+      <h2>5 · 已知边界（改动前必读）</h2>
+      <dl class="terms">
+        <div><dt>额度</dt><dd>首屏只取单点（≈65）。地图必须由用户显式点击才取（≈171）。唯一例外是缓存命中自动画（零请求、零额度）。这条由 <code>loadMapData</code> 里「缓存快路径之后、网络调用之前」的一行 <code>return false</code> 保证。</dd></div>
+        <div><dt>可信范围</dt><dd>色面边界＝采样点凸包 + 70km 羽化；凸包之外即外推，叠可信度纱（覆盖已上色面积约 21.6%）。悬停卡另有「离最近采样点多远」的 90km 口径——与「在不在采样区」是两个量。</dd></div>
+        <div><dt>模型分歧</dt><dd>地图「模型分歧」只取三套模型极差；少于两套有值时返回「无数据」而非 0。</dd></div>
+        <div><dt>偏好持久化</dt><dd>9 个显示状态写进同一键（实测 112 字节）；应用顺序硬约束：必须在任何控件初值 / 派生状态赋值前调用。</dd></div>
+        <div><dt>趋势缓存</dt><dd>算好的 rows 落盘（≈1.9KB/条，上限 3 条），重开页命中零请求；不存原始响应（≈5MB 会撑爆配额）。权重/阈值一改用版本号兜住。</dd></div>
+        <div><dt>深色模式</dt><dd>三态；刷新不闪（引导脚本在 &lt;style&gt; 前）；<code>color-scheme</code> 跟着切；写进 DOM 的语义色要重画。分享卡固定浅色；主题不进 URL。</dd></div>
+        <div><dt>XSS</dt><dd>输出侧 <code>esc()</code> + 输入侧 <code>safeLabel()</code>（URL 地名白名单）。新增 render 代码必须走这两个函数。仍未做：CSP 与其余 44 处分批替换。</dd></div>
+        <div><dt>F2 / F3 / F4</dt><dd>F3 日历渲染零取数，点格子才取数；F2 取数只能由按钮触发、命中缓存不进请求、上限 5 点；F4 只展示不回改、样本不够不给结论、关掉≠删除。</dd></div>
+        <div><dt>手机端布局</dt><dd>任何横向滚动容器必须 <code>min-width:0</code>；<code>#map</code> 必须 <code>touch-action:none</code> 且不能设在 <code>.mapwrap</code>；判越界用 <code>documentElement.clientWidth</code> 而非 <code>innerWidth</code>。</dd></tr>
+      </dl>
+    </section>
+
+    <section class="block">
+      <h2>6 · 合规</h2>
+      <p>在中国境内展示地图，底图服务需具备测绘资质。腾讯地图是合规的；为省一个 key 换成 OSM 等境外底图会把合规问题一起换进来，不建议。数据源：气象 / 空气质量来自 Open-Meteo（免费公开、非商业），省界来自阿里云 DataV，地图来自腾讯位置服务——请遵守各自服务条款。</p>
+    </section>
+  </section>
+
+  <!-- ============ CREATOR ============ -->
+  <section id="creator" class="view" hidden>
+    <section class="block" style="border-top:0;padding-top:30px">
+      <p class="eyebrow">FOR CREATORS · 演示素材</p>
+      <h1>创作者版：怎么把霞光预报讲给人看</h1>
+      <p class="lead">面向自媒体与内容创作者。下面是最适合拿出来说的亮点、演示叙事线，以及可以放心引用的卖点。</p>
+    </section>
+
+    <section class="block">
+      <h2>1 · 一句话开场</h2>
+      <div class="note"><b>「它是一个把『今晚有没有火烧云』从玄学变成概率和评分的工具——而且免费、不用注册、纯网页。」</b></div>
+      <p class="muted">这句同时覆盖了差异化（量化而非玄学）、易得性（免费/无注册/纯前端），适合做短视频开头或图文首段。</p>
+    </section>
+
+    <section class="block">
+      <h2>2 · 最值得拍的 5 个亮点</h2>
+      <div class="grid2">
+        <div class="card-line">
+          <span class="tag">结论卡</span>
+          <h3>概率 + 质量评分，数字衬线大字</h3>
+          <p class="muted">结论卡用大号衬线数字呈现概率 % 与质量分，配优/良/一般/差等级与「主要影响因素」分解——截图即干货，观众一眼看懂。</p>
+        </div>
+        <div class="card-line">
+          <span class="tag">地图</span>
+          <h3>周边 500 km 霞光分布</h3>
+          <p class="muted">热力图把「去哪个方向拍」画出来。白→黄→橙→红色阶 + 等值线 + 数据范围虚线，演示时直接说「红色那片就是今晚最该去的地方」。</p>
+          <div class="ribbon" aria-hidden="true"></div>
+        </div>
+        <div class="card-line">
+          <span class="tag">F3 日历</span>
+          <h3>最佳窗口：哪天去直接排好</h3>
+          <p class="muted">未来 N 天按「哪天值得去」排成日历格，标出前三名。适合做「未来一周什么时候拍照最好」这类选题。</p>
+        </div>
+        <div class="card-line">
+          <span class="tag">F2 对比</span>
+          <h3>多机位对比：今天去哪儿拍</h3>
+          <p class="muted">收藏最多 5 个机位一次取数横向排序。演示「家附近 vs 海边 vs 山顶，今晚哪个出片」最直观。</p>
+        </div>
+        <div class="card-line">
+          <span class="tag">分享</span>
+          <h3>一键分享卡 / 快照链接</h3>
+          <p class="muted">结论卡导出 PNG 直接发群；<code>snap=</code> 链接零请求还原结论，别人点开就是同一张预报。降低观众「我也想试试」的门槛。</p>
+        </div>
+        <div class="card-line">
+          <span class="tag">本地校准</span>
+          <h3>越用越懂你那片天</h3>
+          <p class="muted">事后回填「实际看到了什么」，本机累积出本地校准。强调「纯展示不回改模型、数据不出设备」——隐私友好，适合做信任感叙事。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2>3 · 适合的题材</h2>
+      <table class="tbl">
+        <thead><tr><th>题材</th><th>切入点</th></tr></thead>
+        <tbody>
+          <tr><td><b>摄影教程</b></td><td>用 F3 日历选拍摄日、用 F2 对比选机位、用地图定方向。</td></tr>
+          <tr><td><b>天气 / 大气科普</b></td><td>朝霞晚霞大气条件不同、为什么分两个时段、模型分歧代表什么。</td></tr>
+          <tr><td><b>出行 / 生活攻略</b></td><td>「今晚值不值得专门跑出去拍」「未来一周哪天最适合」。</td></tr>
+          <tr><td><b>工具推荐</b></td><td>免费、无注册、纯前端、隐私本地校准、可装成 App（PWA）。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="block">
+      <h2>4 · 演示叙事线（录屏脚本）</h2>
+      <ol class="steps">
+        <li><b>抛出痛点：</b>「每次等晚霞都靠赌，今天教你用数据赌。」</li>
+        <li><b>一次查询：</b>搜城市 → 切晚霞 → 结论卡大数字 + 因素分解。</li>
+        <li><b>放大地图：</b>点「加载周边地图」→ 指红色区域说「去这儿」。</li>
+        <li><b>拉长时间：</b>开 F3 日历 → 「这周三是冠军」。</li>
+        <li><b>横向比较：</b>开 F2 对比 → 「山顶比海边稳」。</li>
+        <li><b>收尾转化：</b>导出分享卡 / 发快照链接 → 「链接放评论区，自己查你那片天」。</li>
+      </ol>
+      <div class="note">移动端演示：窄屏顶部收成一行、提示卡贴底通栏、拖动地图收卡——这些交互本身就很「产品感」，适合慢动作展示。</div>
+    </section>
+
+    <section class="block">
+      <h2>5 · 可放心引用的卖点</h2>
+      <ul>
+        <li><b>免费、无需注册</b>，纯前端直连公开气象接口（Open-Meteo）。</li>
+        <li><b>三模型合成</b>（GFS / ECMWF / 光追，权重 0.30 / 0.34 / 0.36），降低单一来源偏差。</li>
+        <li><b>隐私友好</b>：本地校准数据只存本机、可关闭可清空、不回改模型。</li>
+        <li><b>额度对访客友好</b>：首屏只取单点，地图显式点击才取，缓存命中零请求。</li>
+        <li><b>可装成 App</b>（PWA，可选），离线也能打开。</li>
+      </ul>
+    </section>
+
+    <section class="block">
+      <h2>6 · 注意事项（别踩坑）</h2>
+      <dl class="terms">
+        <div><dt>额度</dt><dd>免费层按访客自己的出口 IP 计（10000 次/天/人）。做演示时自己多刷几次没关系，但别误导观众「无限调用」。</dd></div>
+        <div><dt>地图需部署</dt><dd>双击本地文件打开时地图不显示（占位符形态），这是预期行为；完整地图功能需要带代理的部署。</dd></div>
+        <div><dt>合规底图</dt><dd>中国境内展示用地图需测绘资质，项目用的腾讯地图是合规方案；不要为省事换成境外底图。</dd></div>
+        <div><dt>概率是「霞光」不是「出太阳」</dt><dd>避免观众误解——它预报的是低空霞光出现的可能性与质量，不是晴雨。</dd></tr>
+      </dl>
+    </section>
+  </section>
+
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <span>霞光预报 · 使用教程（用户 / 开发者 / 创作者 三档）</span>
+    <span>数据源：Open-Meteo · 阿里云 DataV · 腾讯位置服务 ｜ 仅用于学习与个人使用</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var btns = Array.prototype.slice.call(document.querySelectorAll('.nav button'));
+  var views = {
+    home: document.getElementById('home'),
+    users: document.getElementById('users'),
+    dev: document.getElementById('dev'),
+    creator: document.getElementById('creator')
+  };
+  function show(name){
+    if(!views[name]) name='home';
+    for(var k in views){ views[k].hidden = (k!==name); }
+    btns.forEach(function(b){
+      var on = b.getAttribute('data-view')===name;
+      b.classList.toggle('is-active', on);
+      if(on){ b.setAttribute('aria-current','page'); } else { b.removeAttribute('aria-current'); }
+    });
+    window.scrollTo({top:0, behavior:'instant' in window ? 'instant' : 'auto'});
+  }
+  btns.forEach(function(b){
+    b.addEventListener('click', function(){ show(b.getAttribute('data-view')); });
+  });
+  // panel deep-links
+  document.querySelectorAll('[data-jump]').forEach(function(a){
+    a.addEventListener('click', function(e){
+      e.preventDefault();
+      show(a.getAttribute('data-jump'));
+    });
+  });
+  // support #users / #dev / #creator direct anchors
+  var h = location.hash.replace('#','');
+  if(views[h]) show(h);
+  window.addEventListener('hashchange', function(){ var x=location.hash.replace('#',''); if(views[x]) show(x); });
+})();
+</script>
+</body>
+</html>

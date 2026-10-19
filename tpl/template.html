@@ -702,6 +702,18 @@ button.sm{padding:5px 10px;font-size:12px;font-weight:600;border-radius:7px}
   color:#fff;font-size:12.5px;cursor:pointer}
 .fsExit:active{background:rgba(24,28,36,.92)}
 .mapwrap.fs .fsExit{display:inline-flex}
+/* S5b · 桌面端全屏必须压过顶栏（2026-10-19 第五轮反馈："电脑的地图全屏后也无法退出"）：
+   只给 .mapwrap.fs 一个 z=2100 是**不够的** —— 地图卡 #cardMap 自己是 position:sticky，
+   而 sticky **必然**自建层叠上下文，于是 2100 被关在卡片内部，整张卡只以 z-auto 的
+   身份参与页面层序，反而排在 .top(60) **下面**。后果：全屏后 67px 高的顶栏压在地图
+   顶部，左上角那颗退出胶囊正被它盖住 —— rect 明明在视口内、display 也正常，点击却
+   落在 .top 上什么都不会发生（el.click() 合成点击更测不出来，所以探针一直是绿的）。
+   手机端 .top 是 static、z-index 不生效，所以手机上从未复现 —— 这正是"只有电脑
+   退不出去"的原因。
+   修法：全屏期间把卡片自身抬到 2200（.mapwrap.fs 同族、仍低于抽屉类浮层），
+   让它连同卡内的地图层一起盖过顶栏 —— 桌面就此与手机同一种退出交互。
+   类名由 setMapFs 挂摘（_p6.js），退出即复原，不影响平时的粘滞层序。 */
+#cardMap.fsmap{z-index:2200}
 /* position:relative + z-index:0：给 #map 建**层叠上下文**（见上面 .fsExit 注释）。
    没有它，SDK 内部控件（罗盘 / 缩放，z-index 很高）会逃出 #map 参与外层层叠，
    把 z=30 的全屏退出按钮盖住、还截走它的点击。深色模式因 filter 已有上下文
