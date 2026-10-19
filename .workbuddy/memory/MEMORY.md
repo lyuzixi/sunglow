@@ -48,6 +48,8 @@
 - 地图数据规模：单点约 65、地图约 171、趋势约 129、全量约 236 加权调用；首屏只花单点约 65。
 - 中国区域底图不要擅自改成 Leaflet/MapLibre 等未经合规验证的方案；底图选型须优先考虑测绘资质、审图号、密钥域名白名单和数据出境边界。
 - GitHub 网络受限时可走 Contents API；远端一致性按 Git blob SHA-1 校验，避免 `core.autocrlf` 干扰。
+- **同步一律走 `~/sunglow-sync.py`**（Git Data API：blob→tree(base_tree)→commit→移 ref，只产生一个提交）。本机 git 到 github.com 永久 502（只放行 api.github.com）。令牌在 `~/.workbuddy/mcp.json`（classic `ghp_…`，40 字符），经 `GITHUB_TOKEN` 环境变量传入，**绝不进 argv/remote URL**。提交消息用 `SYNC_MSG_FILE`/`SYNC_MSG`（脚本已不再写死某一轮内容）。推前必须先本地 commit —— 脚本推的是 `git ls-tree -r HEAD`，未提交的工作区它看不见。**验完只比 tree SHA：远端 commit tree == `git rev-parse HEAD^{tree}` 即逐字节一致。**
+- **Pages 是 branch 源（main / root），部署走 Actions 的 `pages build and deployment`**。`pages/builds` 里的 `errored / Page build failed.` **可能只是排队超时伪装**——先查 `/actions/runs` 的 `status`：`queued` 且 `run_started_at` 一直不推进 = 共享 runner 拥堵，别去改 Jekyll 配置（乱加 `.nojekyll` 只会掩盖）。排队期间线上仍是旧版，属正常滞后。
 
 ## 回归方法
 语义变更不能拿旧实现直接当新基准：先用结构独立的第三方参考实现证明旧语义一致，再以新语义做双重差分。探针避免固定 sleep、硬编码城市坐标、模板串中的未转义正则与反引号；所有判据必须自检，防静默假绿。
