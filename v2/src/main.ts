@@ -19,3 +19,10 @@ if (typeof matchMedia !== "undefined") {
 }
 
 createApp(App).use(router).mount("#app");
+
+/* PWA：只在 http(s) 下注册 —— file:// 双击打开时没有 SW，也不该在控制台报错 */
+if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => { /* 不支持就算了，不影响主流程 */ });
+  });
+}
