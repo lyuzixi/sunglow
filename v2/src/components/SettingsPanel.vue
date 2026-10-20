@@ -17,7 +17,7 @@ function doClear(kind: "point" | "map" | "trend" | "all") {
 vueMounted(refreshCache);
 
 /* 地图显示开关（云纹/经纬网/直标/采样点）已移到观测场面板，不再进全局设置 */
-const BOOL_SHOWN = ["hour12", "calibOff"] as const;
+const BOOL_SHOWN = ["calibOff"] as const;
 
 const BOOL_LABEL: Record<string, string> = {
   numLabels: "数值直标",
@@ -45,6 +45,10 @@ function toggleFold(k: string) {
   state.folds[k] = !state.folds[k];
   savePrefs();
 }
+function setHour12(on: boolean) {
+  state.hour12 = on;
+  savePrefs();
+}
 function setUnits(u: "metric" | "imperial") {
   state.units = u;
   savePrefs();
@@ -59,12 +63,22 @@ function setUnits(u: "metric" | "imperial") {
     <div v-if="open" class="panel glass">
       <div class="grp">
         <div class="grp-h">{{ t("单位") }}</div>
-        <div class="seg" role="group" aria-label="单位">
+        <div class="seg" role="group" :aria-label="t('单位')">
           <button :class="{ on: state.units === 'metric' }" @click="setUnits('metric')">
             {{ t("公制 (km / m / ℃)") }}
           </button>
           <button :class="{ on: state.units === 'imperial' }" @click="setUnits('imperial')">
             {{ t("英制 (mi / ft / ℉)") }}
+          </button>
+        </div>
+
+        <div class="sub-h">{{ t("时间格式") }}</div>
+        <div class="seg" role="group" :aria-label="t('时间格式')">
+          <button :class="{ on: !state.hour12 }" @click="setHour12(false)">
+            {{ t("24 小时制") }}
+          </button>
+          <button :class="{ on: state.hour12 }" @click="setHour12(true)">
+            {{ t("12 小时制") }}
           </button>
         </div>
       </div>
@@ -117,6 +131,22 @@ function setUnits(u: "metric" | "imperial") {
 </template>
 
 <style scoped>
+/* 设置面板：液态玻璃（与移动端目录同一配方：高光渐变 + 磨砂提饱和 + 内侧 1px 高光） */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .panel {
+    background: linear-gradient(180deg, var(--glass-sheen), transparent 46%) var(--glass);
+    backdrop-filter: saturate(1.55) blur(18px);
+    -webkit-backdrop-filter: saturate(1.55) blur(18px);
+    border: 1px solid var(--stroke-2);
+    box-shadow: 0 24px 60px -26px rgba(8, 14, 26, 0.5), inset 0 1px 0 var(--glass-hi);
+  }
+}
+.sub-h {
+  margin: 12px 0 6px;
+  font-size: 11.5px;
+  color: var(--tx-3);
+  letter-spacing: 0.02em;
+}
 .ico { padding: 6px 10px; line-height: 1; }
 .settings {
   position: relative;

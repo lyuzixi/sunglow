@@ -172,7 +172,9 @@ export const HANT_EXTRA: Record<string, string> = {
   "缓存按「日期+时段+坐标」分键，单点 3 小时、地图/趋势 3 小时有效；清除后下次计算会重新取数。": "快取按「日期+時段+座標」分鍵，3 小時內有效；清除後下次計算會重新取數。",
   "主结果": "主結果",
   "技术细节": "技術細節",
-  "指南": "指南"
+  "指南": "指南",
+  "时间格式": "時間格式",
+  "24 小时制": "24 小時制"
 };
 
 export const EN_EXTRA: Record<string, string> = {
@@ -343,5 +345,7 @@ export const EN_EXTRA: Record<string, string> = {
   "缓存按「日期+时段+坐标」分键，单点 3 小时、地图/趋势 3 小时有效；清除后下次计算会重新取数。": "Cache is keyed by date + period + coordinates and valid for 3 hours; after clearing, the next calculation refetches.",
   "主结果": "Main results",
   "技术细节": "Technical detail",
-  "指南": "Guide"
+  "指南": "Guide",
+  "时间格式": "Time format",
+  "24 小时制": "24-hour"
 };
