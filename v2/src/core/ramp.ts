@@ -58,3 +58,49 @@ export const SPECTRUM_MAIN = ["#ff4d82", "#ff9c3f", "#2ed5e8"] as const;
 export function spectrumCss(angle = 90): string {
   return `linear-gradient(${angle}deg, ${SPECTRUM_MAIN.join(", ")})`;
 }
+
+/* =========================================================================
+   HEAT_RAMP（原版 _p4.js 逐字移植）—— 地图色面专用
+   用户反馈「热力图显示很大问题，改成原版那样」：色面改回原版白→黄→橙→红，
+   7 档量化（N_BANDS=7，取档中点色），固定 0–100 绝对刻度。
+   UI 强调色仍用光谱渐变（SPECTRUM_MAIN），两者互不混用。
+   ========================================================================= */
+export const HEAT_RAMP = [
+  "#ffffff",  // 0%   白
+  "#fff7b0",  // 14%  极浅黄
+  "#ffe44d",  // 29%  黄
+  "#ffc220",  // 43%  琥珀
+  "#ff9520",  // 57%  橙
+  "#fa6a16",  // 71%  深橙
+  "#ee3c15",  // 86%  橙红
+  "#d51313"   // 100% 红
+];
+
+export const N_BANDS = 7;
+export function bandOf(v: number): number {
+  return clamp(Math.floor((clamp(v, 0, 100) / 100) * N_BANDS), 0, N_BANDS - 1);
+}
+
+/** 与 rampColor(v) 同构，但走 HEAT_RAMP */
+export function heatColor(v: number): string {
+  const c = HEAT_RAMP;
+  const x = (clamp(v, 0, 100) / 100) * (c.length - 1);
+  const i = clamp(Math.floor(x), 0, c.length - 2);
+  const f = x - i;
+  const a = hexToRgb(c[i]), b = hexToRgb(c[i + 1]);
+  const to2 = (n: number) => Math.round(n).toString(16).padStart(2, "0");
+  return "#" + to2(lerp(a[0], b[0], f)) + to2(lerp(a[1], b[1], f)) + to2(lerp(a[2], b[2], f));
+}
+
+/** 档中点色（色面栅格 LUT 用，与原版 buildField 一致） */
+export function heatBandColor(band: number): [number, number, number] {
+  return hexToRgb(heatColor(((band + 0.5) / N_BANDS) * 100));
+}
+
+export function heatGradientCss(angle = 90): string {
+  return (
+    "linear-gradient(" + angle + "deg," +
+    HEAT_RAMP.map((c, i) => `${c} ${((i / (HEAT_RAMP.length - 1)) * 100).toFixed(2)}%`).join(",") +
+    ")"
+  );
+}
