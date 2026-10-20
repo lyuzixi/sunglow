@@ -1,262 +1,438 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>404 页面不存在 · 霞光预报 GLOWCAST</title>
-<meta name="description" content="你访问的地址没有对应的页面。返回霞光预报 GLOWCAST 首页，查询朝霞与晚霞的出现概率与观赏质量。">
-<!-- 404 页必须 noindex：托管平台会拿本页去应答任意未知路径（含爬虫摸来的各种错址），
-     进索引等于给站点造一批空壳收录。 -->
+<title>页面不存在 · 霞光预报 GLOWCAST</title>
 <meta name="robots" content="noindex">
-<meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#070b14">
-<!-- 图标内联 data: URI，零外部请求。 -->
-<link rel="icon" type="image/png" href="data:image/png;base64,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">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff4d82'/%3E%3Cstop offset='.5' stop-color='%23ff9c3f'/%3E%3Cstop offset='1' stop-color='%232ed5e8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='url(%23g)' stroke-width='3'/%3E%3Ccircle cx='16' cy='16' r='5' fill='url(%23g)'/%3E%3C/svg%3E">
+<script>
+/* 首帧前定主题与语言：从主页同一个偏好键读，避免刷新闪白/闪中文 */
+(function () {
+  var pref = {};
+  try { pref = JSON.parse(localStorage.getItem("glowcast.v2.pref") || "{}") || {}; } catch (e) { pref = {}; }
+  var theme = pref.theme === "dark" || pref.theme === "light" ? pref.theme : "auto";
+  var dark = theme === "dark" || (theme === "auto" && !(window.matchMedia && matchMedia("(prefers-color-scheme: light)").matches));
+  document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  document.documentElement.style.colorScheme = dark ? "dark" : "light";
+  var lang = pref.lang === "hant" || pref.lang === "en" ? pref.lang : "zh";
+  document.documentElement.setAttribute("lang", lang === "zh" ? "zh-CN" : lang === "hant" ? "zh-Hant" : "en");
+  window.__gcPref = { lang: lang, theme: theme };
+})();
+</script>
 <style>
-/* ---- 令牌取自 v2 src/styles/tokens.css 深色态（自包含，抄值不引文件） ---- */
 :root{
-  --bg:#070b14;
-  --card:rgba(15,23,42,.62);
-  --glass:rgba(130,160,220,.06);
-  --glass-2:rgba(130,160,220,.10);
-  --stroke:rgba(148,178,232,.14);
-  --stroke-2:rgba(148,178,232,.26);
-  --tx-1:#e9eefb;
-  --tx-2:#a0b1cd;
-  --tx-3:#5c6c8c;
-  --s1:#ff4d82; --s2:#ff9c3f; --s3:#2ed5e8;
-  --spectrum:linear-gradient(100deg, var(--s1) 0%, var(--s2) 48%, var(--s3) 100%);
-  --font-display:"Space Grotesk","PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif;
-  --font-body:"Inter","PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+  --spectrum-1:#ff4d82; --spectrum-2:#ff9c3f; --spectrum-3:#2ed5e8;
+  --spectrum:linear-gradient(90deg,var(--spectrum-1),var(--spectrum-2),var(--spectrum-3));
+  --r-sm:10px; --r-md:16px; --r-full:999px;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+html[data-theme="dark"]{
+  --bg-base:#070b14; --bg-card:rgba(15,23,42,.62); --bg-glass:rgba(130,160,220,.06);
+  --bg-glass-2:rgba(130,160,220,.10); --stroke:rgba(148,178,232,.14); --stroke-2:rgba(148,178,232,.26);
+  --tx-1:#e9eefb; --tx-2:#a0b1cd; --tx-3:#5c6c8c; --tx-inv:#06101c;
+  --card-sh:0 18px 48px rgba(2,6,16,.55);
+  --glow:radial-gradient(60% 50% at 50% 0%, rgba(255,156,63,.16), transparent 70%);
+}
+html[data-theme="light"]{
+  --bg-base:#f2f5fb; --bg-card:rgba(255,255,255,.72); --bg-glass:rgba(255,255,255,.55);
+  --bg-glass-2:rgba(255,255,255,.78); --stroke:rgba(40,60,100,.10); --stroke-2:rgba(40,60,100,.20);
+  --tx-1:#111a2c; --tx-2:#46556f; --tx-3:#8693ab; --tx-inv:#ffffff;
+  --card-sh:0 12px 32px rgba(20,40,80,.10);
+  --glow:radial-gradient(60% 50% at 50% 0%, rgba(255,156,63,.20), transparent 70%);
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
-html{-webkit-text-size-adjust:100%}
 body{
-  min-height:100vh;
-  display:flex; align-items:center; justify-content:center;
-  padding:36px 18px;
-  background:
-    radial-gradient(1100px 520px at 50% -12%, rgba(255,77,130,.13), transparent 62%),
-    radial-gradient(900px 460px at 88% 110%, rgba(46,213,232,.10), transparent 60%),
-    radial-gradient(760px 420px at 4% 98%, rgba(255,156,63,.08), transparent 62%),
-    var(--bg);
-  color:var(--tx-1);
-  font-family:var(--font-body);
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
+  min-height:100vh; background:var(--bg-base); color:var(--tx-1);
+  font-family:var(--font); -webkit-font-smoothing:antialiased;
+  background-image:var(--glow); background-repeat:no-repeat; background-size:100% 60vh;
 }
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
-/* ---- 星尘：纯 CSS 点层，无脚本无请求 ---- */
-.stars{
-  position:fixed; inset:0; z-index:0; pointer-events:none;
-  background-image:
-    radial-gradient(1.4px 1.4px at 6% 12%, rgba(233,238,251,.55), transparent 70%),
-    radial-gradient(1px 1px at 14% 34%, rgba(233,238,251,.38), transparent 70%),
-    radial-gradient(1.8px 1.8px at 22% 8%, rgba(255,220,235,.50), transparent 70%),
-    radial-gradient(1px 1px at 28% 56%, rgba(233,238,251,.30), transparent 70%),
-    radial-gradient(1.2px 1.2px at 33% 22%, rgba(233,238,251,.45), transparent 70%),
-    radial-gradient(1.6px 1.6px at 41% 78%, rgba(200,235,245,.42), transparent 70%),
-    radial-gradient(1px 1px at 47% 15%, rgba(233,238,251,.32), transparent 70%),
-    radial-gradient(1.3px 1.3px at 54% 42%, rgba(233,238,251,.50), transparent 70%),
-    radial-gradient(1px 1px at 61% 6%, rgba(255,210,225,.40), transparent 70%),
-    radial-gradient(1.7px 1.7px at 66% 68%, rgba(233,238,251,.45), transparent 70%),
-    radial-gradient(1px 1px at 72% 30%, rgba(233,238,251,.30), transparent 70%),
-    radial-gradient(1.2px 1.2px at 78% 88%, rgba(190,230,245,.40), transparent 70%),
-    radial-gradient(1px 1px at 83% 18%, rgba(233,238,251,.35), transparent 70%),
-    radial-gradient(1.5px 1.5px at 88% 52%, rgba(255,215,230,.42), transparent 70%),
-    radial-gradient(1px 1px at 93% 74%, rgba(233,238,251,.30), transparent 70%),
-    radial-gradient(1.2px 1.2px at 9% 66%, rgba(233,238,251,.36), transparent 70%),
-    radial-gradient(1px 1px at 18% 88%, rgba(233,238,251,.28), transparent 70%),
-    radial-gradient(1.4px 1.4px at 38% 44%, rgba(233,238,251,.22), transparent 70%),
-    radial-gradient(1px 1px at 58% 92%, rgba(233,238,251,.30), transparent 70%),
-    radial-gradient(1.3px 1.3px at 96% 36%, rgba(233,238,251,.38), transparent 70%);
+/* ---------- 头栏（与主页 TopBar 同构） ---------- */
+.topbar{
+  position:sticky; top:0; z-index:50;
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  background:var(--bg-card);
+  border-bottom:1px solid var(--stroke);
 }
-
-/* ---- 玻璃面板 ---- */
-.panel{
-  position:relative; z-index:1;
-  width:100%; max-width:620px;
-  padding:44px 40px 34px;
-  text-align:center;
-  border-radius:22px;
-  background:var(--card);
-  border:1px solid var(--stroke);
-  backdrop-filter:blur(18px) saturate(1.25);
-  -webkit-backdrop-filter:blur(18px) saturate(1.25);
-  box-shadow:0 18px 48px rgba(2,6,16,.55);
+.topbar-in{
+  max-width:1120px; margin:0 auto; padding:10px 20px;
+  display:flex; align-items:center; gap:18px;
 }
-/* 顶部一道高光发丝线 */
-.panel::before{
-  content:""; position:absolute; top:0; left:12%; right:12%; height:1px;
-  background:linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
-}
-
-/* ---- 巨型 404：光谱渐变裁字 + 双层辉光 ---- */
-.code{
-  font-family:var(--font-display);
-  font-size:clamp(5.2rem, 20vw, 10.5rem);
-  font-weight:700;
-  line-height:.95;
-  letter-spacing:.02em;
+.brand{display:flex; align-items:center; gap:10px; min-width:0}
+.brand-dot{
+  width:26px; height:26px; border-radius:50%; flex:0 0 auto;
   background:var(--spectrum);
-  -webkit-background-clip:text;
-  background-clip:text;
-  color:transparent;
-  -webkit-text-fill-color:transparent;
-  filter:drop-shadow(0 0 34px rgba(255,77,130,.32)) drop-shadow(0 0 70px rgba(46,213,232,.22));
 }
-h1{
-  margin:18px 0 0;
-  font-family:var(--font-display);
-  font-size:clamp(1.45rem, 3.2vw, 1.9rem);
-  font-weight:600;
-  letter-spacing:.04em;
+.brand-tx{display:flex; align-items:baseline; gap:6px; white-space:nowrap; overflow:hidden}
+.brand-tx b{font-size:15px; letter-spacing:-.01em}
+.brand-tx em{font-style:normal; font-size:10.5px; letter-spacing:.16em; color:var(--tx-3)}
+.nav{display:flex; align-items:center; gap:2px; margin-left:6px; flex:1 1 auto; min-width:0}
+.nav a{
+  padding:7px 11px; border-radius:var(--r-full); font-size:13px; color:var(--tx-2);
+  white-space:nowrap;
 }
-.en{
-  margin:10px 0 0;
-  font-size:.72rem;
-  font-weight:500;
-  letter-spacing:.22em;
-  text-transform:uppercase;
-  color:var(--tx-3);
+.nav a:hover{background:var(--bg-glass-2); color:var(--tx-1)}
+.actions{display:flex; align-items:center; gap:8px; margin-left:auto}
+.icon-btn{
+  width:34px; height:34px; border-radius:50%; display:grid; place-items:center;
+  border:1px solid var(--stroke); background:var(--bg-glass); color:var(--tx-2);
+  font-size:13px; line-height:1;
 }
-.desc{
-  margin:18px auto 0;
-  max-width:34em;
-  font-size:.95rem;
-  line-height:1.8;
-  color:var(--tx-2);
-  text-wrap:pretty;
+.icon-btn:hover{border-color:var(--stroke-2); color:var(--tx-1)}
+.pop-holder{position:relative}
+.menu{
+  position:absolute; right:0; top:calc(100% + 8px); min-width:132px; padding:6px;
+  border-radius:var(--r-md); border:1px solid var(--stroke-2);
+  background:var(--bg-card); box-shadow:var(--card-sh); z-index:60;
 }
-.path{
-  margin:16px 0 0;
-  font-size:.78rem;
-  line-height:1.6;
-  color:var(--tx-3);
-  word-break:break-all;
-  overflow-wrap:anywhere;
+.menu[hidden]{display:none}
+.menu button{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  width:100%; padding:8px 10px; border-radius:var(--r-sm); font-size:13px; color:var(--tx-2);
+  text-align:left;
 }
-.path code{
-  font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-  background:var(--glass-2);
-  border:1px solid var(--stroke);
-  border-radius:8px;
-  padding:2px 8px;
-}
+.menu button:hover{background:var(--bg-glass-2); color:var(--tx-1)}
+.menu button[aria-pressed="true"]{color:var(--tx-1); font-weight:600}
+.menu .tick{font-size:11px; color:var(--spectrum-2); visibility:hidden}
+.menu button[aria-pressed="true"] .tick{visibility:visible}
 
-/* ---- 按钮 ---- */
-.acts{
-  display:flex; flex-wrap:wrap; gap:12px;
-  justify-content:center;
-  margin:26px 0 18px;
+/* ---------- 主体 ---------- */
+main{
+  max-width:720px; margin:0 auto; padding:clamp(28px,7vh,72px) 20px 64px;
 }
+.card{
+  position:relative; overflow:hidden;
+  border-radius:var(--r-md); border:1px solid var(--stroke);
+  background:var(--bg-card); box-shadow:var(--card-sh);
+  padding:clamp(24px,4vw,40px);
+}
+.card::before{
+  content:""; position:absolute; inset:0 0 auto 0; height:2px; background:var(--spectrum); opacity:.85;
+}
+.code{
+  font-size:clamp(64px,14vw,116px); line-height:.92; font-weight:700; letter-spacing:-.05em;
+  background:var(--spectrum); -webkit-background-clip:text; background-clip:text; color:transparent;
+  margin:0 0 6px;
+}
+h1{font-size:clamp(19px,2.6vw,24px); margin:0 0 10px; letter-spacing:-.01em}
+.lead{color:var(--tx-2); line-height:1.8; margin:0 0 18px; font-size:15px}
+.miss{
+  display:flex; gap:10px; align-items:baseline; flex-wrap:wrap;
+  padding:10px 12px; border-radius:var(--r-sm);
+  background:var(--bg-glass); border:1px solid var(--stroke);
+  font-size:12.5px; color:var(--tx-3); margin-bottom:22px;
+}
+.miss code{color:var(--tx-2); word-break:break-all; font-size:12.5px}
+.miss[hidden]{display:none}
+.btn-row{display:flex; gap:10px; flex-wrap:wrap}
 .btn{
-  display:inline-flex; align-items:center; justify-content:center;
-  min-height:44px; padding:11px 26px;
-  border-radius:999px;
-  font-family:inherit; font-size:.95rem; font-weight:600;
-  text-decoration:none; cursor:pointer;
-  transition:transform var(--t, 160ms) cubic-bezier(.16,1,.3,1), filter 160ms, background-color 160ms;
+  padding:10px 18px; border-radius:var(--r-full); font-size:14px;
+  border:1px solid var(--stroke-2); color:var(--tx-1); background:var(--bg-glass);
+  transition:transform .12s ease, border-color .12s ease;
 }
 .btn:hover{transform:translateY(-1px)}
-.btn:active{transform:translateY(0)}
-.btn:focus-visible{outline:2px solid var(--s3); outline-offset:3px}
-.btn.primary{
-  border:0;
-  background:var(--spectrum);
-  color:#070b14;
+.btn.primary{border:0; background:var(--spectrum); color:var(--tx-inv); font-weight:600}
+.btn[hidden]{display:none}
+.foot{
+  margin:26px 0 0; font-size:12.5px; color:var(--tx-3); line-height:1.9;
 }
-.btn.primary:hover{filter:brightness(1.06)}
-.btn.ghost{
-  background:var(--glass);
-  border:1px solid var(--stroke-2);
-  color:var(--tx-1);
-}
-.btn.ghost:hover{background:var(--glass-2)}
-[hidden]{display:none!important}
-
-.hint{
-  margin:0;
-  font-size:.78rem;
-  line-height:1.7;
-  color:var(--tx-3);
-}
-
-/* ---- 移动端 ---- */
-@media (max-width:560px){
-  body{padding:22px 14px}
-  .panel{padding:32px 22px 26px; border-radius:18px}
-  .acts{flex-direction:column; align-items:stretch}
-  .btn{width:100%}
+.foot a{color:var(--tx-2); border-bottom:1px dotted var(--stroke-2)}
+@media (max-width:760px){
+  .nav{display:none}
+  .brand-tx em{display:none}
+  .topbar-in{padding:8px 14px; gap:12px}
 }
 </style>
 </head>
 <body>
-<div class="stars" aria-hidden="true"></div>
-<main class="panel">
-  <div class="code" aria-hidden="true">404</div>
-  <h1>页面不存在</h1>
-  <p class="en">Signal lost · page not found</p>
-  <p class="desc">这个地址没有对应的观测记录 —— 可能是链接过期、地址输错，或者页面已经挪走了。</p>
-  <p class="path" id="miss" hidden>请求的地址 <code id="missTx"></code></p>
-  <div class="acts">
-    <a class="btn primary" id="btnHome" href="./index.html">返回首页</a>
-    <button class="btn ghost" id="btnBack" type="button" hidden>返回上一页</button>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" id="brand" href="./index.html">
+      <span class="brand-dot"></span>
+      <span class="brand-tx"><b data-i18n="霞光预报">霞光预报</b><em>GLOWCAST</em></span>
+    </a>
+
+    <nav class="nav" id="nav">
+      <a href="./index.html" data-i18n="结论">结论</a>
+      <a href="./index.html#trend" data-i18n="十日趋势">十日趋势</a>
+      <a href="./index.html#field" data-i18n="观测场">观测场</a>
+      <a href="./tutorial.html" data-i18n="使用教程">使用教程</a>
+    </nav>
+
+    <div class="actions">
+      <div class="pop-holder">
+        <button class="icon-btn" id="langBtn" aria-haspopup="true" aria-expanded="false" aria-label="语言">简</button>
+        <div class="menu" id="langMenu" hidden role="menu">
+          <button role="menuitemradio" data-lang="zh"><span>简体中文</span><span class="tick">✓</span></button>
+          <button role="menuitemradio" data-lang="hant"><span>繁體中文</span><span class="tick">✓</span></button>
+          <button role="menuitemradio" data-lang="en"><span>English</span><span class="tick">✓</span></button>
+        </div>
+      </div>
+      <div class="pop-holder">
+        <button class="icon-btn" id="themeBtn" aria-haspopup="true" aria-expanded="false" aria-label="主题">◐</button>
+        <div class="menu" id="themeMenu" hidden role="menu">
+          <button role="menuitemradio" data-theme-mode="dark"><span data-i18n="深色">深色</span><span class="tick">✓</span></button>
+          <button role="menuitemradio" data-theme-mode="light"><span data-i18n="浅色">浅色</span><span class="tick">✓</span></button>
+          <button role="menuitemradio" data-theme-mode="auto"><span data-i18n="跟随系统">跟随系统</span><span class="tick">✓</span></button>
+        </div>
+      </div>
+    </div>
   </div>
-  <p class="hint">回首页可继续查询朝霞与晚霞的出现概率与观赏质量。</p>
+</header>
+
+<main>
+  <div class="card">
+    <p class="code">404</p>
+    <h1 data-i18n="页面不存在">页面不存在</h1>
+    <p class="lead" data-i18n="这条地址没有对应的页面——链接可能已经更新，或者路径里有拼写错误。">这条地址没有对应的页面——链接可能已经更新，或者路径里有拼写错误。</p>
+
+    <div class="miss" id="miss" hidden>
+      <span data-i18n="请求地址">请求地址</span>
+      <code id="missTx"></code>
+    </div>
+
+    <div class="btn-row">
+      <a class="btn primary" id="btnHome" href="./index.html" data-i18n="返回首页">返回首页</a>
+      <button class="btn" id="btnBack" hidden data-i18n="返回上一页">返回上一页</button>
+    </div>
+
+    <p class="foot">
+      <span data-i18n="霞光预报 v2 是单文件应用：整个程序就是一个 index.html，双击即可离线使用。">霞光预报 v2 是单文件应用：整个程序就是一个 index.html，双击即可离线使用。</span>
+      <a href="./index.html" data-i18n="打开应用">打开应用</a>
+    </p>
+  </div>
 </main>
+
 <script>
 (function () {
-  /* 任意深度路径兜底：本页会被托管平台应答到任意错误路径（如 /sunglow/v2/dist/foo/bar），
-     相对地址会随错误路径越解析越偏（越深错得越离谱），所以从 location.pathname
-     截出站点入口，再拼绝对的 index.html —— 与原版 404.html 的 data-home 同一思路，
-     只是把「构建期注入」换成「运行期推导」，让本页保持零构建、单文件、任意子路径可用。 */
-  function deriveEntry() {
-    /* 双击打开（file 协议）：入口就是同目录 */
-    if (location.protocol === "file:") return "./";
-    var p = location.pathname;
-    /* 部署根：单文件版就在 v2/ 目录；旧版曾是 v2/dist，两个都认，旧书签也能回首页 */
-    var bases = ["/sunglow/v2/dist", "/sunglow/v2"];
-    for (var bi = 0; bi < bases.length; bi++) {
-      var b0 = bases[bi];
-      var i0 = p.indexOf(b0);
-      if (i0 >= 0) {
-        var after0 = p.slice(i0 + b0.length);
-        if (after0 === "" || after0.charAt(0) === "/") return p.slice(0, i0 + b0.length) + "/";
+  "use strict";
+
+  /* ---------------- 三语词条（与主页同一套措辞） ---------------- */
+  var DICT = {
+    hant: {
+      "霞光预报": "霞光預報",
+      "结论": "結論",
+      "十日趋势": "十日趨勢",
+      "观测场": "觀測場",
+      "使用教程": "使用教學",
+      "页面不存在": "頁面不存在",
+      "这条地址没有对应的页面——链接可能已经更新，或者路径里有拼写错误。":
+        "這條位址沒有對應的頁面——連結可能已經更新，或者路徑裡有拼寫錯誤。",
+      "请求地址": "請求位址",
+      "返回首页": "返回首頁",
+      "返回上一页": "返回上一頁",
+      "深色": "深色",
+      "浅色": "淺色",
+      "跟随系统": "跟隨系統",
+      "霞光预报 v2 是单文件应用：整个程序就是一个 index.html，双击即可离线使用。":
+        "霞光預報 v2 是單檔應用：整個程式就是一個 index.html，雙擊即可離線使用。",
+      "打开应用": "開啟應用",
+      "页面不存在 · 霞光预报 GLOWCAST": "頁面不存在 · 霞光預報 GLOWCAST",
+      "语言": "語言",
+      "主题": "主題"
+    },
+    en: {
+      "霞光预报": "GLOWCAST",
+      "结论": "Verdict",
+      "十日趋势": "10-Day Trend",
+      "观测场": "Observation Field",
+      "使用教程": "Guide",
+      "页面不存在": "Page not found",
+      "这条地址没有对应的页面——链接可能已经更新，或者路径里有拼写错误。":
+        "This address has no matching page — the link may have changed, or the path has a typo.",
+      "请求地址": "Requested URL",
+      "返回首页": "Back to home",
+      "返回上一页": "Go back",
+      "深色": "Dark",
+      "浅色": "Light",
+      "跟随系统": "System",
+      "霞光预报 v2 是单文件应用：整个程序就是一个 index.html，双击即可离线使用。":
+        "GLOWCAST v2 ships as a single file: the whole app is one index.html you can open offline.",
+      "打开应用": "Open the app",
+      "页面不存在 · 霞光预报 GLOWCAST": "Page not found · GLOWCAST",
+      "语言": "Language",
+      "主题": "Theme"
+    }
+  };
+
+  var pref = window.__gcPref || { lang: "zh", theme: "auto" };
+  var lang = pref.lang;
+  var themeMode = pref.theme;         /* dark | light | auto */
+  var LANG_SHORT = { zh: "简", hant: "繁", en: "EN" };
+
+  /* ---------------- 偏好读写：只改 lang/theme，其它字段原样保留 ---------------- */
+  function readPref() {
+    try { return JSON.parse(localStorage.getItem("glowcast.v2.pref") || "{}") || {}; } catch (e) { return {}; }
+  }
+  function writePref(patch) {
+    var p = readPref();
+    for (var k in patch) if (Object.prototype.hasOwnProperty.call(patch, k)) p[k] = patch[k];
+    try { localStorage.setItem("glowcast.v2.pref", JSON.stringify(p)); } catch (e) { /* 隐私模式 */ }
+  }
+
+  /* ---------------- 语言 ---------------- */
+  function t(key) {
+    if (lang === "zh") return key;
+    var d = DICT[lang];
+    return (d && d[key]) || key;
+  }
+  function applyLang() {
+    document.documentElement.setAttribute("lang",
+      lang === "zh" ? "zh-CN" : lang === "hant" ? "zh-Hant" : "en");
+    var nodes = document.querySelectorAll("[data-i18n]");
+    for (var i = 0; i < nodes.length; i++) {
+      nodes[i].textContent = t(nodes[i].getAttribute("data-i18n"));
+    }
+    document.title = t("页面不存在 · 霞光预报 GLOWCAST");
+    var lb = document.getElementById("langBtn");
+    if (lb) { lb.textContent = LANG_SHORT[lang]; lb.setAttribute("aria-label", t("语言")); }
+    var tb = document.getElementById("themeBtn");
+    if (tb) tb.setAttribute("aria-label", t("主题"));
+    syncMenus();
+  }
+
+  /* ---------------- 主题 ---------------- */
+  function systemDark() {
+    return !(window.matchMedia && matchMedia("(prefers-color-scheme: light)").matches);
+  }
+  function applyTheme() {
+    var dark = themeMode === "dark" || (themeMode === "auto" && systemDark());
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+    document.documentElement.style.colorScheme = dark ? "dark" : "light";
+    var tb = document.getElementById("themeBtn");
+    if (tb) tb.textContent = themeMode === "dark" ? "☾" : themeMode === "light" ? "☀" : "◐";
+    syncMenus();
+  }
+  if (window.matchMedia) {
+    try {
+      matchMedia("(prefers-color-scheme: light)").addEventListener("change", function () {
+        if (themeMode === "auto") applyTheme();
+      });
+    } catch (e) { /* 老浏览器 */ }
+  }
+
+  /* ---------------- 菜单 ---------------- */
+  function syncMenus() {
+    var lm = document.getElementById("langMenu");
+    var tm = document.getElementById("themeMenu");
+    if (lm) {
+      var ls = lm.querySelectorAll("[data-lang]");
+      for (var i = 0; i < ls.length; i++) {
+        ls[i].setAttribute("aria-pressed", ls[i].getAttribute("data-lang") === lang ? "true" : "false");
       }
     }
-    var base = "/sunglow/v2";
-    var i = p.indexOf(base);
-    if (i >= 0) {
-      var after = p.slice(i + base.length);
-      if (after === "" || after.charAt(0) === "/") return p.slice(0, i + base.length) + "/";
+    if (tm) {
+      var ts = tm.querySelectorAll("[data-theme-mode]");
+      for (var j = 0; j < ts.length; j++) {
+        ts[j].setAttribute("aria-pressed", ts[j].getAttribute("data-theme-mode") === themeMode ? "true" : "false");
+      }
     }
-    return "/";                          /* 根路径部署（本地 preview 等）兜底 */
   }
-  var entry = deriveEntry();
-  /* 首页跳推导出的 index.html，保留 hash（hash 里是 SPA 路由，丢了就回不到原视图） */
-  var home = entry + "index.html" + (location.hash || "");
+  function closeMenus() {
+    ["langMenu", "themeMenu"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.hidden = true;
+    });
+    ["langBtn", "themeBtn"].forEach(function (id) {
+      var b = document.getElementById(id);
+      if (b) b.setAttribute("aria-expanded", "false");
+    });
+  }
+  function toggleMenu(btnId, menuId) {
+    var btn = document.getElementById(btnId), menu = document.getElementById(menuId);
+    if (!btn || !menu) return;
+    var willOpen = menu.hidden;
+    closeMenus();
+    if (willOpen) {
+      menu.hidden = false;
+      btn.setAttribute("aria-expanded", "true");
+    }
+  }
 
+  /* ---------------- 站点入口推导（任意深度兜底） ---------------- */
+  function deriveEntry() {
+    if (location.protocol === "file:") return "./";
+    var p = location.pathname;
+    var bases = ["/sunglow/v2/dist", "/sunglow/v2"];
+    for (var i = 0; i < bases.length; i++) {
+      var b = bases[i], k = p.indexOf(b);
+      if (k >= 0) {
+        var after = p.slice(k + b.length);
+        if (after === "" || after.charAt(0) === "/") return p.slice(0, k + b.length) + "/";
+      }
+    }
+    return "/";
+  }
+
+  /* ---------------- 绑定 ---------------- */
+  var entry = deriveEntry();
+  var home = entry + "index.html" + (location.hash || "");
   var btnHome = document.getElementById("btnHome");
   if (btnHome) btnHome.setAttribute("href", home);
+  var brand = document.getElementById("brand");
+  if (brand) brand.setAttribute("href", home);
 
-  /* 显示请求地址：只能走 textContent，路径是用户可控输入，拼 innerHTML 就是反射型 XSS */
-  var p = location.pathname + (location.search || "");
+  /* 导航里的相对地址统一按部署根重算（深层路径也不会跑偏） */
+  var navLinks = document.querySelectorAll("#nav a, .foot a");
+  for (var n = 0; n < navLinks.length; n++) {
+    var raw = navLinks[n].getAttribute("href");
+    if (!raw) continue;
+    navLinks[n].setAttribute("href", entry + raw.replace(/^\.\//, ""));
+  }
+
+  /* 请求地址只走 textContent（路径是用户可控输入） */
+  var path = location.pathname + (location.search || "");
   var miss = document.getElementById("miss");
   var missTx = document.getElementById("missTx");
-  if (miss && missTx && p) { missTx.textContent = p; miss.hidden = false; }
+  if (miss && missTx && path) { missTx.textContent = path; miss.hidden = false; }
 
-  /* 「返回上一页」只在真有上一页时显形：history.length 是唯一能拿到的信号，
-     新标签页直接进 404 时是 1，点回去只会落到空白页，不如不给。 */
+  /* 返回上一页：history.length 是唯一可靠信号 */
   var back = document.getElementById("btnBack");
   if (back && history.length > 1) {
     back.hidden = false;
-    back.addEventListener("click", function () {
-      if (history.length > 1) history.back();
-      else location.href = home;
-    });
+    back.addEventListener("click", function () { history.back(); });
   }
+
+  document.getElementById("langBtn").addEventListener("click", function (e) {
+    e.stopPropagation(); toggleMenu("langBtn", "langMenu");
+  });
+  document.getElementById("themeBtn").addEventListener("click", function (e) {
+    e.stopPropagation(); toggleMenu("themeBtn", "themeMenu");
+  });
+
+  var lm = document.getElementById("langMenu");
+  lm.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-lang]");
+    if (!b) return;
+    lang = b.getAttribute("data-lang");
+    writePref({ lang: lang });
+    applyLang(); closeMenus();
+  });
+
+  var tm = document.getElementById("themeMenu");
+  tm.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-theme-mode]");
+    if (!b) return;
+    themeMode = b.getAttribute("data-theme-mode");
+    writePref({ theme: themeMode });
+    applyTheme(); closeMenus();
+  });
+
+  document.addEventListener("click", function (e) {
+    if (!e.target.closest(".pop-holder")) closeMenus();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeMenus();
+  });
+
+  applyLang();
+  applyTheme();
 })();
 </script>
 </body>
