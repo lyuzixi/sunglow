@@ -160,7 +160,16 @@ export const HANT_EXTRA: Record<string, string> = {
   "天亮": "天亮",
   "日落": "日落",
   "五段曙暮光：白昼余晖 / 民用 / 航海 / 天文 / 夜间": "五段曙暮光：白晝餘暉 / 民用 / 航海 / 天文 / 夜間",
-  "底部橙条＝霞光窗口": "底部橙條＝霞光視窗"
+  "底部橙条＝霞光窗口": "底部橙條＝霞光視窗",
+  "取数缓存": "取數快取",
+  "单点预报": "單點預報",
+  "趋势": "趨勢",
+  "清除全部缓存": "清除全部快取",
+  "刷新统计": "重新整理統計",
+  "已清除": "已清除",
+  "条": "條",
+  "来自本地缓存，3 小时内有效": "來自本機快取，3 小時內有效",
+  "缓存按「日期+时段+坐标」分键，单点 3 小时、地图/趋势 3 小时有效；清除后下次计算会重新取数。": "快取按「日期+時段+座標」分鍵，3 小時內有效；清除後下次計算會重新取數。"
 };
 
 export const EN_EXTRA: Record<string, string> = {
@@ -319,5 +328,14 @@ export const EN_EXTRA: Record<string, string> = {
   "天亮": "Daylight",
   "日落": "Sunset",
   "五段曙暮光：白昼余晖 / 民用 / 航海 / 天文 / 夜间": "Five twilight stages: afterglow / civil / nautical / astronomical / night",
-  "底部橙条＝霞光窗口": "Orange bar = glow window"
+  "底部橙条＝霞光窗口": "Orange bar = glow window",
+  "取数缓存": "Data cache",
+  "单点预报": "Forecast",
+  "趋势": "Trend",
+  "清除全部缓存": "Clear all cache",
+  "刷新统计": "Refresh stats",
+  "已清除": "Cleared",
+  "条": "items",
+  "来自本地缓存，3 小时内有效": "Served from local cache (valid 3 h)",
+  "缓存按「日期+时段+坐标」分键，单点 3 小时、地图/趋势 3 小时有效；清除后下次计算会重新取数。": "Cache is keyed by date + period + coordinates and valid for 3 hours; after clearing, the next calculation refetches."
 };

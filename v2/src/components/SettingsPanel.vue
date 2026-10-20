@@ -2,8 +2,19 @@
 import { ref } from "vue";
 import { state, savePrefs, FOLD_KEYS } from "../state";
 import { t } from "../core/i18n";
+import { cacheReport, clearCache, fmtBytes } from "../core/cache";
+import { ref as vueRef, onMounted as vueMounted } from "vue";
 
 const open = ref(false);
+const cache = vueRef(cacheReport());
+const cleared = vueRef("");
+function refreshCache() { cache.value = cacheReport(); }
+function doClear(kind: "point" | "map" | "trend" | "all") {
+  const n = clearCache(kind);
+  cleared.value = t("已清除") + " " + n + " " + t("条");
+  refreshCache();
+}
+vueMounted(refreshCache);
 
 /* 地图显示开关（云纹/经纬网/直标/采样点）已移到观测场面板，不再进全局设置 */
 const BOOL_SHOWN = ["hour12", "calibOff"] as const;
@@ -82,6 +93,22 @@ function setUnits(u: "metric" | "imperial") {
         </label>
       </div>
 
+      <div class="grp">
+        <div class="grp-h">{{ t("取数缓存") }}</div>
+        <div class="cstat">
+          <span>{{ t("单点预报") }} {{ cache.point.n }}</span>
+          <span>{{ t("观测场") }} {{ cache.map.n }}</span>
+          <span>{{ t("趋势") }} {{ cache.trend.n }}</span>
+          <span>{{ fmtBytes(cache.totalBytes) }}</span>
+        </div>
+        <div class="crow">
+          <button class="btn btn-ghost sm" @click="doClear('all')">{{ t("清除全部缓存") }}</button>
+          <button class="btn btn-ghost sm" @click="refreshCache()">{{ t("刷新统计") }}</button>
+        </div>
+        <p v-if="cleared" class="ok">{{ cleared }}</p>
+        <p class="note">{{ t("缓存按「日期+时段+坐标」分键，单点 3 小时、地图/趋势 3 小时有效；清除后下次计算会重新取数。") }}</p>
+      </div>
+
       <p class="note">
         {{ t("偏好存 glowcast.v2.pref，与原版 sunsetbot.pref.v1 相互独立。位置、日期与地图时段不持久化。") }}
       </p>
@@ -139,6 +166,16 @@ function setUnits(u: "metric" | "imperial") {
   background: var(--spectrum);
   color: var(--tx-inv);
 }
+.cstat {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: var(--fs-tiny);
+  color: var(--tx-2);
+  margin-bottom: 8px;
+}
+.crow { display: flex; gap: 8px; margin-bottom: 6px; }
+.ok { margin: 0 0 8px; font-size: var(--fs-tiny); color: var(--q-good); }
 .note {
   margin: 0;
   font-size: var(--fs-tiny);
