@@ -113,6 +113,20 @@
     <code>v2/</code> 与 <code>v3/</code> 按约定不在本次范围内（两个目录合计 138 MB，其中绝大部分是 <code>node_modules</code>）。
   </p>
   <div class="badge">扫描时间 2026-10-20 20:15 · 判据来源：<b>assemble.py / all.py / docfacts.py / mkpreview.py 源码 + git ls-files</b></div>
+
+  <div class="card" style="margin-top:22px;border-color:#cfe6da;background:#fbfefc">
+    <h3 style="margin:0 0 8px;color:#1f6b4a">执行状态 · 2026-10-20 20:27 已按本方案执行完毕（commit f819c46）</h3>
+    <ul class="tight" style="margin-bottom:0">
+      <li><b>验证结果：</b>一键回归 <b>26 项 26 PASS · 0 FAIL</b>；docfacts 0 不一致 0 STALE；<code>SITE_BASE=sunglow</code> 重建后 <code>index.html</code>/<code>404.html</code> 与上一提交<b>字节完全一致</b>（<code>git diff</code> 无输出，804,380 / 33,321 字节未变）。</li>
+      <li><b>偏差一（更保守）：</b>§4.1 的 114 个探针输出<b>改为搬运而非删除</b>。原因：97 张图里约 20 张是「改造前」快照（<code>audit-map-before</code> / <code>style-before</code> / <code>zoom-修复前-*</code> 等），源码已改数轮，重跑生成不出来 —— 它们是证据，不是产物。</li>
+      <li><b>偏差二（保留）：</b><code>_check/preview.html</code> 留在原地。它是 <b>14 个探针的运行时前置</b>（探针起本地服务读它），删了必须先跑 <code>mkpreview.py</code> 才能开跑。</li>
+      <li><b>跑批会重新生成东西：</b>26 项跑完，<code>_check/</code> 多出 16 张截图（6.6 MB，已移入 <code>rerun-20261020/</code>），
+        <code>_scratch/</code> 又长出 <code>chk*.js</code> / <code>pwa*/</code> / <code>snap/</code> 共 24 个文件（3.7 MB，已移入
+        <code>_regenerated-after-verify/</code>）。<b>这是正常现象</b> —— 陷阱 4 说过它们会被重建；每次跑完 <code>all.py</code> 都会再长出来，想保持干净就再移一次。</li>
+      <li><b>实测收口：</b>88 个文件 / <b>4.06 MB</b>（原 773 / 110.1 MB）。比预估的 86 / 3.4 MB 多一点点，差额是
+        <code>_check/preview.html</code> + <code>.facts.json</code> + <code>.perf.json</code> 三个运行态，以及 <code>.workbuddy/skills</code> 下比预估多出的 2 个技能文件。</li>
+    </ul>
+  </div>
 </header>
 
 <div class="kpis">
