@@ -3,7 +3,7 @@ import { ref, reactive, computed, onMounted, onUnmounted, watch, nextTick } from
 import { state, savePrefs } from "../state";
 import { t } from "../core/i18n";
 import { clamp, isNum, haversineKm } from "../core/math";
-import { rampColor, rampGradientCss, SPECTRUM_RAMP } from "../core/ramp";
+import { heatColor, heatGradientCss, HEAT_RAMP } from "../core/ramp";
 import { nearestCity, CITIES } from "../core/city";
 import {
   buildLocalGrid, dimOf, divergeOf, currentModel,
@@ -11,8 +11,7 @@ import {
 } from "../core/mapdata";
 import { loadMapData, MODEL_NAME, type LoadMapResult } from "../core/mapload";
 import {
-  buildScreenGrid, setRenderGrid, drawField, drawCloudTexture,
-  drawContours, drawGraticule, drawRangeDashed, txBandOf, TX_BAND_NAMES
+  paintField, drawGraticule, drawRangeDashed, txBandOf, TX_BAND_NAMES
 } from "../core/maprender";
 
 /* ---------------- 地图实例 / 投影 ---------------- */
@@ -272,24 +271,12 @@ function paint() {
   if (state.showGrid) drawGraticule(ctx, proj, center, w, h, dark);
 
   if (pts.length) {
-    const spts = pts.map((p) => ({
-      lat: p.lat, lon: p.lon,
-      v: valOf(p),
-      cld: p.cld
-    }));
-    const g = buildScreenGrid(spts, proj);
-    /* 估算采样间距像素 */
-    const p0 = proj(pts[0].lat, pts[0].lon);
-    const p1 = proj(pts[Math.min(1, pts.length - 1)].lat, pts[Math.min(1, pts.length - 1)].lon);
-    const stepPx = clamp(Math.hypot(p1.x - p0.x, p1.y - p0.y), 24, 160);
-    setRenderGrid(g, stepPx);
-    drawField(ctx, {
-      proj, valAt: () => null,
-      hull: pts.map((p) => ({ lat: p.lat, lon: p.lon })),
-      center, w, h, step: 9, dark
+    paintField(ctx, {
+      pts: pts.map((p) => ({ lat: p.lat, lon: p.lon, v: valOf(p), cld: p.cld })),
+      proj, w, h, dark,
+      showCloud: !!state.showTx,
+      showContours: true
     });
-    if (state.showTx) drawCloudTexture(ctx, w, h, 11);
-    drawContours(ctx, w, h);
   }
 
   /* 范围虚线 */
@@ -522,7 +509,7 @@ function fmtV(v: number | null): string {
             </div>
             <div v-if="ranked.length" class="rank-list">
               <div v-for="(r, i) in ranked" :key="r.p.name + i" class="rank-row" @click="pin = r.p">
-                <i :style="{ background: rampColor(r.v as number) }" />
+                <i :style="{ background: heatColor(r.v as number) }" />
                 <span class="nm">{{ r.p.name }}</span>
                 <b>{{ fmtV(r.v) }}</b>
               </div>
@@ -530,7 +517,7 @@ function fmtV(v: number | null): string {
             <div v-else class="rank-empty">{{ t("待取数") }}</div>
             <!-- 图例 -->
             <div class="legend">
-              <div class="grad" :style="{ background: rampGradientCss() }" />
+              <div class="grad" :style="{ background: heatGradientCss() }" />
               <div class="ticks"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
               <div class="tx-key">
                 <span v-for="(n, i) in TX_BAND_NAMES" :key="n">
@@ -552,7 +539,7 @@ function fmtV(v: number | null): string {
           </template>
           <template v-else-if="curPts.length">
             {{ curPts.length }} {{ t("个网格点") }} · {{ t("缓存") }} {{ t(MODEL_LABEL2[curModel]) }} ·
-            {{ t("色阶") }} SPECTRUM_RAMP（{{ SPECTRUM_RAMP.length }} {{ t("锚点") }}）·
+            {{ t("色阶") }} HEAT（{{ HEAT_RAMP.length }} {{ t("锚点") }}）·
             {{ t("SDK 已就绪") }} / {{ t("SDK 未就绪（矢量层可用）") }} ·
             {{ t("代理") }} {{ TMAP_HOST || "__TMAP_SERVICE_HOST__" }}
           </template>
