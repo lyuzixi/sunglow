@@ -1,0 +1,27 @@
+{
+  "name": "glowcast-v3",
+  "private": true,
+  "version": "3.0.0",
+  "type": "module",
+  "description": "霞光预报 GLOWCAST · v3「追光航志」",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:standalone": "vite build --mode standalone && node -e \"const fs=require('fs');fs.renameSync('dist-standalone/index.html','standalone.html');fs.rmSync('dist-standalone',{recursive:true,force:true})\"",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "probe": "node --experimental-strip-types --import ./probes/register.mjs probes/probe.mjs"
+  },
+  "dependencies": {
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/ibm-plex-serif": "^5.3.0",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.11",
+    "vite-plugin-singlefile": "^2.3.4"
+  }
+}
