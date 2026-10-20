@@ -43,6 +43,7 @@ export interface PaintOpts {
   w: number;
   h: number;
   dark: boolean;
+  dpr: number;
   showCloud: boolean;
   showContours: boolean;
 }
@@ -249,7 +250,10 @@ export function paintField(ctx: CanvasRenderingContext2D, o: PaintOpts): void {
   const C = o.proj(latTop - step * 1.5, lonLeft + step / 2);
   const a = B.x - A.x, cB = B.y - A.y;
   const b = C.x - A.x, d = C.y - A.y;
-  const e = A.x - a * 0.5, f = A.y - cB * 0.5;
+  /* 像素 (0,0) 的**中心**落在 A 上：要同时减去两个方向的半个像素，
+     且整套矩阵必须乘 dpr —— ctx 的画布是设备像素，proj 给的是 CSS 像素。 */
+  const e = A.x - (a + b) * 0.5, f = A.y - (cB + d) * 0.5;
+  void o.dpr;
 
   const off = document.createElement("canvas");
   off.width = cols;
@@ -259,7 +263,7 @@ export function paintField(ctx: CanvasRenderingContext2D, o: PaintOpts): void {
   octx.putImageData(img, 0, 0);
 
   ctx.save();
-  ctx.setTransform(a, b, cB, d, e, f);
+  ctx.transform(a, b, cB, d, e, f);
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(off, 0, 0);
@@ -312,7 +316,7 @@ export function paintField(ctx: CanvasRenderingContext2D, o: PaintOpts): void {
     if (cctx) {
       cctx.putImageData(cimg, 0, 0);
       ctx.save();
-      ctx.setTransform(a, b, cB, d, e, f);
+      ctx.transform(a, b, cB, d, e, f);
       ctx.imageSmoothingEnabled = true;
       ctx.drawImage(coff, 0, 0);
       ctx.restore();

@@ -273,7 +273,7 @@ function paint() {
   if (pts.length) {
     paintField(ctx, {
       pts: pts.map((p) => ({ lat: p.lat, lon: p.lon, v: valOf(p), cld: p.cld })),
-      proj, w, h, dark,
+      proj, w, h, dark, dpr,
       showCloud: !!state.showTx,
       showContours: true
     });
@@ -409,6 +409,13 @@ onMounted(async () => {
     }
   }
   initProjection();
+  /* 调试钩子：投影真值核验（容器中心应投影到容器中心） */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).__gcProj = (la: number, lo: number) => (projFn ? projFn(la, lo) : null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).__gcMap = () => map;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).__gcBox = () => (box.value ? { w: box.value.clientWidth, h: box.value.clientHeight } : null);
   await autoFromCache();
   schedulePaint();
 });
