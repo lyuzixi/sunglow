@@ -24,6 +24,14 @@ function toggleDrawer() {
 function closeDrawer() {
   drawerOpen.value = false;
 }
+
+/* 站内跳转：**不能**用原生 href="#id" —— 本项目是 hash 路由（createWebHashHistory），
+   #verdict 会被当成路由 /verdict，落到 404。改成滚动定位。 */
+function jumpTo(id: string, close = false) {
+  if (close) closeDrawer();
+  const el = document.querySelector(id);
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 function onKeydown(e: KeyboardEvent) {
   if (e.key === "Escape" && drawerOpen.value) closeDrawer();
 }
@@ -97,9 +105,9 @@ const themeLabel = () =>
       </router-link>
 
       <nav class="nav-tabs">
-        <a href="#verdict">{{ t("结论") }}</a>
-        <a href="#trend">{{ t("十日趋势") }}</a>
-        <a href="#field">{{ t("观测场") }}</a>
+        <a href="#verdict" @click.prevent="jumpTo('#verdict')">{{ t("结论") }}</a>
+        <a href="#trend" @click.prevent="jumpTo('#trend')">{{ t("十日趋势") }}</a>
+        <a href="#field" @click.prevent="jumpTo('#field')">{{ t("观测场") }}</a>
       </nav>
 
       <div class="top-actions">
@@ -188,15 +196,15 @@ const themeLabel = () =>
 
     <div class="md-group">
       <h4>{{ t("主结果") }}</h4>
-      <a href="#verdict" @click="closeDrawer"><span>{{ t("结论") }}</span></a>
-      <a href="#trend" @click="closeDrawer"><span>{{ t("十日趋势") }}</span></a>
-      <a href="#field" @click="closeDrawer"><span>{{ t("观测场") }}</span></a>
-      <a href="#factors" @click="closeDrawer"><span>{{ t("影响因素") }}</span></a>
+      <a href="#verdict" @click.prevent="jumpTo('#verdict', true)"><span>{{ t("结论") }}</span></a>
+      <a href="#trend" @click.prevent="jumpTo('#trend', true)"><span>{{ t("十日趋势") }}</span></a>
+      <a href="#field" @click.prevent="jumpTo('#field', true)"><span>{{ t("观测场") }}</span></a>
+      <a href="#factors" @click.prevent="jumpTo('#factors', true)"><span>{{ t("影响因素") }}</span></a>
     </div>
 
     <div class="md-group">
       <h4>{{ t("技术细节") }}</h4>
-      <a href="#calib" @click="closeDrawer"><span>{{ t("实况校准") }}</span></a>
+      <a href="#calib" @click.prevent="jumpTo('#calib', true)"><span>{{ t("实况校准") }}</span></a>
     </div>
 
     <div class="md-group">
