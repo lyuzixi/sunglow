@@ -105,11 +105,11 @@
 <div class="wrap">
 
 <header class="hd">
-  <div class="eyebrow">Repository Cleanup · Read-Only Audit</div>
+  <div class="eyebrow">Repository Cleanup · Audit → Execute</div>
   <h1>霞光预报 · 原版项目清理方案</h1>
   <p class="sub">
     对 <code>D:\wbfile\sunglow</code> 做了全量扫描：逐文件比对构建链、验证链与部署链的引用关系，
-    把「原版活文件 / 可再生成产物 / 历史归档」三类分开。本轮<b>只读</b>，未移动或删除任何文件。
+    把「原版活文件 / 可再生成产物 / 历史归档」三类分开。<b>审计阶段只读</b>；方案确认后已按 §6 分三批执行，结果见下方执行状态。
     <code>v2/</code> 与 <code>v3/</code> 按约定不在本次范围内（两个目录合计 138 MB，其中绝大部分是 <code>node_modules</code>）。
   </p>
   <div class="badge">扫描时间 2026-10-20 20:15 · 判据来源：<b>assemble.py / all.py / docfacts.py / mkpreview.py 源码 + git ls-files</b></div>
@@ -130,10 +130,10 @@
 </header>
 
 <div class="kpis">
-  <div class="kpi"><div class="n">772</div><div class="l">原版范围文件总数<br>（不含 .git / v2 / v3）</div></div>
-  <div class="kpi"><div class="n">110.1<small>MB</small></div><div class="l">原版范围总体积</div></div>
-  <div class="kpi"><div class="n">86</div><div class="l">清理后文件数 · 约 3.4 MB<br>（63 核心 + 20 工作区 + 3 证据）</div></div>
-  <div class="kpi"><div class="n">≈106<small>MB</small></div><div class="l">建议移出仓库<br>（其中 105 MB 本就在 git 之外）</div></div>
+  <div class="kpi"><div class="n">773</div><div class="l">清理前文件数<br>（不含 .git / v2 / v3）</div></div>
+  <div class="kpi"><div class="n">110.1<small>MB</small></div><div class="l">清理前总体积</div></div>
+  <div class="kpi"><div class="n" style="color:#1f6b4a">88</div><div class="l">清理后文件数 · <b>4.06 MB</b><br>已实测（方案预估 86 / 3.4 MB）</div></div>
+  <div class="kpi"><div class="n">≈106<small>MB</small></div><div class="l">移出仓库（已执行）<br>归档 116 MB 含还原说明</div></div>
 </div>
 
 <div class="note ok">
