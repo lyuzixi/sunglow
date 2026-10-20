@@ -44,44 +44,43 @@ function setUnits(u: "metric" | "imperial") {
     </button>
     <div v-if="open" class="panel glass">
       <div class="grp">
-        <div class="grp-h">单位</div>
+        <div class="grp-h">{{ t("单位") }}</div>
         <div class="seg" role="group" aria-label="单位">
           <button :class="{ on: state.units === 'metric' }" @click="setUnits('metric')">
-            公制 (km / m / ℃)
+            {{ t("公制 (km / m / ℃)") }}
           </button>
           <button :class="{ on: state.units === 'imperial' }" @click="setUnits('imperial')">
-            英制 (mi / ft / ℉)
+            {{ t("英制 (mi / ft / ℉)") }}
           </button>
         </div>
       </div>
 
       <div class="grp">
-        <div class="grp-h">显示</div>
+        <div class="grp-h">{{ t("显示") }}</div>
         <label v-for="k in PREF_BOOL" :key="k" class="row">
           <input
             type="checkbox"
             :checked="(state as any)[k]"
             @change="toggle(k)"
           />
-          <span>{{ BOOL_LABEL[k] || k }}</span>
+          <span>{{ t(BOOL_LABEL[k] || k) }}</span>
         </label>
       </div>
 
       <div class="grp">
-        <div class="grp-h">折叠默认</div>
+        <div class="grp-h">{{ t("折叠默认") }}</div>
         <label v-for="k in FOLD_KEYS" :key="k" class="row">
           <input
             type="checkbox"
             :checked="!!state.folds[k]"
             @change="toggleFold(k)"
           />
-          <span>{{ FOLD_LABEL[k] || k }}</span>
+          <span>{{ t(FOLD_LABEL[k] || k) }}</span>
         </label>
       </div>
 
       <p class="note">
-        偏好存 <code>glowcast.v2.pref</code>，与原版 <code>sunsetbot.pref.v1</code> 相互独立。
-        位置、日期与地图时段不持久化。
+        {{ t("偏好存 glowcast.v2.pref，与原版 sunsetbot.pref.v1 相互独立。位置、日期与地图时段不持久化。") }}
       </p>
     </div>
   </div>

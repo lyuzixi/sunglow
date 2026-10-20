@@ -135,33 +135,33 @@ onMounted(() => {
   <section v-if="snapView" class="section" style="padding-top: 8px">
     <div class="wrap">
       <div class="glass snap-card">
-        <div class="pill">快照模式 · SNAP_VER=1 互通</div>
+        <div class="pill">{{ t("快照模式") }} · SNAP_VER=1</div>
         <h2 style="margin: 12px 0 6px">
           {{ snapView.name }} {{ snapView.date }}
-          {{ snapView.period === "am" ? "朝霞" : "晚霞" }}
+          {{ snapView.period === "am" ? t("朝霞") : t("晚霞") }}
         </h2>
         <p class="snap-sub">
-          生成于 {{ new Date(snapView.gen).toLocaleString() }} ·
-          打开快照链接不会重新取数，因此不消耗接口额度。
+          {{ t("生成于") }} {{ new Date(snapView.gen).toLocaleString() }} ·
+          {{ t("打开快照链接不会重新取数，因此不消耗接口额度。") }}
         </p>
         <div class="snap-grid">
           <div class="metric">
             <span class="num" style="color: var(--acc-1)">{{ Math.round(snapView.P) }}%</span>
-            <span class="lab">出现概率</span>
+            <span class="lab">{{ t("出现概率") }}</span>
           </div>
           <div class="metric">
             <span class="num" style="color: var(--acc-2)">{{ Math.round(snapView.Q) }}</span>
-            <span class="lab">观赏质量</span>
+            <span class="lab">{{ t("观赏质量") }}</span>
           </div>
           <div class="metric">
             <span class="num" style="color: var(--acc-3)">{{ snapView.consist }}</span>
-            <span class="lab">一致性</span>
+            <span class="lab">{{ t("一致性") }}</span>
           </div>
           <div class="metric">
             <span class="num" style="color: var(--tx-2)">
               {{ snapView.dvI != null ? snapView.dvI.toFixed(1) : "—" }}
             </span>
-            <span class="lab">分歧 ΔI</span>
+            <span class="lab">{{ t("分歧 ΔI") }}</span>
           </div>
         </div>
         <div v-if="snapView.factors.length" class="snap-fac">
@@ -172,7 +172,7 @@ onMounted(() => {
           </div>
         </div>
         <button class="btn btn-primary" style="margin-top: 16px" @click="snapView = null; run()">
-          按当前条件重新计算
+          {{ t("按当前条件重新计算") }}
         </button>
       </div>
     </div>
@@ -194,7 +194,7 @@ onMounted(() => {
         <div>
           <h3 style="margin: 0 0 6px">{{ t("分享快照") }}</h3>
           <p style="margin: 0; color: var(--tx-2); font-size: var(--fs-small)">
-            生成的链接与原版互通（SNAP_VER=1），对方无需重新取数即可查看。
+            {{ t("生成的链接与原版互通（SNAP_VER=1），对方无需重新取数即可查看。") }}
           </p>
         </div>
         <button class="btn btn-primary" :disabled="!snapUrl" @click="copySnap">
