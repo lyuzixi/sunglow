@@ -28,7 +28,7 @@ const res = computed(() => state.result);
           <tbody>
             <tr v-for="m in res.models" :key="m.id">
               <td>
-                <b>{{ m.label }}</b>
+                <b>{{ t(m.label) }}</b>
               </td>
               <td>
                 <span :style="{ color: rampColor(m.P), fontWeight: 600 }">

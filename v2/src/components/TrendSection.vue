@@ -50,9 +50,9 @@ const byDay = computed(() => {
       <div class="section-head">
         <h2>{{ t("七日趋势") }}</h2>
         <div class="sub">
-          {{ rows.length ? rows.length + " 条实算结果" : t("暂无数据") }}
+          {{ rows.length ? rows.length + " " + t("条实算结果") : t("暂无数据") }}
           <button class="btn btn-ghost sm" style="margin-left: 10px" :disabled="loading" @click="go(true)">
-            {{ loading ? "取数中…" : rows.length ? "重新加载趋势" : "加载趋势" }}
+            {{ loading ? t("取数中…") : rows.length ? t("重新加载趋势") : t("加载趋势") }}
           </button>
         </div>
       </div>
@@ -67,7 +67,7 @@ const byDay = computed(() => {
             </div>
             <div class="t-pair">
               <div class="t-row">
-                <span class="per">朝</span>
+                <span class="per">{{ t("朝") }}</span>
                 <div class="bar"><i :style="{ width: (d.am?.P ?? 0) + '%' }" /></div>
                 <b class="pv" :style="{ color: rampColor(d.am?.P ?? 0) }">
                   {{ d.am ? Math.round(d.am.P) + "%" : "—" }}
@@ -76,7 +76,7 @@ const byDay = computed(() => {
                 <span class="gr">{{ d.am?.grade ?? "" }}</span>
               </div>
               <div class="t-row">
-                <span class="per">晚</span>
+                <span class="per">{{ t("晚") }}</span>
                 <div class="bar"><i :style="{ width: (d.pm?.P ?? 0) + '%' }" /></div>
                 <b class="pv" :style="{ color: rampColor(d.pm?.P ?? 0) }">
                   {{ d.pm ? Math.round(d.pm.P) + "%" : "—" }}
@@ -88,11 +88,11 @@ const byDay = computed(() => {
           </div>
         </div>
         <div v-else-if="!loading && !error" class="hint">
-          趋势需要一次性取 34 个坐标 × 多日数据（额度较重），点击「加载趋势」显式触发。
+          {{ t("趋势需要一次性取 34 个坐标 × 多日数据（额度较重），点击「加载趋势」显式触发。") }}
         </div>
         <div class="trend-key">
-          <span><i class="k1" />出现概率</span>
-          <span><i class="k2" />观赏质量分（右列）</span>
+          <span><i class="k1" />{{ t("出现概率") }}</span>
+          <span><i class="k2" />{{ t("观赏质量分（右列）") }}</span>
         </div>
       </div>
     </div>

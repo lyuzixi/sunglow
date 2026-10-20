@@ -248,6 +248,12 @@ const EN: Dict = {
   "打开菜单": "Open menu"
 };
 
+import { HANT_EXTRA, EN_EXTRA } from "./i18n-extra";
+
+/* 词典增量合入（地图/设置/趋势/因素等新组件词条） */
+Object.assign(HANT, HANT_EXTRA);
+Object.assign(EN, EN_EXTRA);
+
 const DICTS: Record<Exclude<Lang, "zh">, Dict> = { hant: HANT, en: EN };
 
 let curLang: Lang = "zh";

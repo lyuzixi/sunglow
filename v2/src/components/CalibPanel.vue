@@ -90,29 +90,28 @@ function clearAll() {
         <div v-if="stats" class="stats">
           <div class="metric">
             <span class="num" style="font-size: 1.35rem">{{ stats.nAll }}</span>
-            <span class="lab">总样本</span>
+            <span class="lab">{{ t("总样本") }}</span>
           </div>
           <div class="metric">
             <span class="num" style="font-size: 1.35rem">{{ stats.nBucket }}</span>
-            <span class="lab">本档样本</span>
+            <span class="lab">{{ t("本档样本") }}</span>
           </div>
           <div class="metric">
             <span class="num" style="font-size: 1.35rem">
               {{ stats.enough && stats.delta != null ? (stats.delta > 0 ? "+" : "") + stats.delta.toFixed(1) : "—" }}
             </span>
-            <span class="lab">偏差</span>
+            <span class="lab">{{ t("偏差") }}</span>
           </div>
           <div class="metric">
             <span class="num" style="font-size: 1.35rem">
               {{ stats.enough ? "✓" : "…" }}
             </span>
-            <span class="lab">{{ stats.enough ? "可校准" : t("样本不足") }}</span>
+            <span class="lab">{{ stats.enough ? t("可校准") : t("样本不足") }}</span>
           </div>
         </div>
 
         <p class="note">
-          校准仅在本机展示（glowcast.v2.calib），不会回改预报模型。
-          事件结束 1 小时后才可标注；同一地点同一时段只保留一条记录。
+          {{ t("校准仅在本机展示（glowcast.v2.calib），不会回改预报模型。事件结束 1 小时后才可标注；同一地点同一时段只保留一条记录。") }}
         </p>
       </div>
     </div>

@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { state } from "../state";
 import { t } from "../core/i18n";
+import { uAlt, uDist, uClock } from "../core/units";
 
 const res = computed(() => state.result);
 
@@ -11,11 +12,7 @@ function conclWord(p: number): string {
   if (p >= 25) return "可以一试";
   return "希望不大";
 }
-function fmtClock(ms: number | null): string {
-  if (!ms) return "—";
-  const d = new Date(ms);
-  return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
-}
+function fmtClock(ms: number | null): string { return ms ? uClock(ms) : "—"; }
 </script>
 
 <template>
@@ -39,18 +36,18 @@ function fmtClock(ms: number | null): string {
       <div v-else class="glass verdict-card anim-rise">
         <div class="v-left">
           <div class="pill" :style="{ color: res.conf.dark.color, borderColor: res.conf.dark.bd, background: res.conf.dark.bg }">
-            {{ t("可信度") }} {{ res.conf.lv }} · {{ res.conf.txt }}
+            {{ t("可信度") }} {{ t(res.conf.lv) }} · {{ t(res.conf.txt) }}
           </div>
           <h3 class="v-title glow">
             {{ res.city.name }} {{ res.dateStr }}
             {{ res.period === "am" ? t("朝霞") : t("晚霞") }}
-            <span class="spectrum-text">{{ conclWord(res.P) }}</span>
+            <span class="spectrum-text">{{ t(conclWord(res.P)) }}</span>
           </h3>
           <p class="v-desc">
             {{ t("概率") }} <b>{{ Math.round(res.P) }}%</b>，
             {{ t("观赏质量") }} <b>{{ Math.round(res.Q) }}</b> 分 ·
-            {{ t("等级") }} <b>{{ res.grade }}</b>。
-            {{ res.conf.hint }}
+            {{ t("等级") }} <b>{{ t(res.grade) }}</b>。
+            {{ t(res.conf.hint) }}
           </p>
 
           <div class="v-grid">
@@ -63,7 +60,7 @@ function fmtClock(ms: number | null): string {
               <span class="lab">{{ t("观赏质量") }}</span>
             </div>
             <div class="metric">
-              <span class="num" :style="{ color: 'var(--acc-3)' }">{{ res.grade }}</span>
+              <span class="num" :style="{ color: 'var(--acc-3)' }">{{ t(res.grade) }}</span>
               <span class="lab">{{ t("等级") }}</span>
             </div>
             <div class="metric">
@@ -78,7 +75,7 @@ function fmtClock(ms: number | null): string {
         <div class="v-right">
           <div class="sun-rows">
             <div class="sun-row">
-              <span class="k">{{ res.evName }}</span>
+              <span class="k">{{ t(res.evName) }}</span>
               <b>{{ fmtClock(res.evMs) }}</b>
             </div>
             <div class="sun-row">
@@ -87,11 +84,11 @@ function fmtClock(ms: number | null): string {
             </div>
             <div class="sun-row">
               <span class="k">{{ t("云型") }}</span>
-              <b>{{ res.sRT.primary.type }} · {{ res.sRT.primary.name }}</b>
+              <b>{{ t(res.sRT.primary.type) }} · {{ t(res.sRT.primary.name) }}</b>
             </div>
             <div class="sun-row">
               <span class="k">{{ t("云底高度") }}</span>
-              <b>{{ res.sRT.primary.base.toFixed(2) }} km</b>
+              <b>{{ uAlt(res.sRT.primary.base * 1000) }}</b>
             </div>
             <div class="sun-row">
               <span class="k">{{ t("持续时间") }}</span>
@@ -99,7 +96,7 @@ function fmtClock(ms: number | null): string {
             </div>
             <div class="sun-row">
               <span class="k">{{ t("能见度") }}</span>
-              <b>{{ res.envM.vis ? (res.envM.vis / 1000).toFixed(1) : "—" }} km</b>
+              <b>{{ uDist(res.envM.vis ? res.envM.vis / 1000 : null, 1) }}</b>
             </div>
           </div>
           <div class="color-strip" aria-hidden="true">

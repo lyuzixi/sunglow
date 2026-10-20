@@ -116,7 +116,7 @@ const dateOptions = computed(() => {
       d.getFullYear() +
       "-" + String(d.getMonth() + 1).padStart(2, "0") +
       "-" + String(d.getDate()).padStart(2, "0");
-    out.push({ v, label: k === 0 ? "今天 " + v.slice(5) : k === 1 ? "明天 " + v.slice(5) : v.slice(5) });
+    out.push({ v, label: k === 0 ? t("今天") + " " + v.slice(5) : k === 1 ? t("明天") + " " + v.slice(5) : v.slice(5) });
   }
   return out;
 });
@@ -425,7 +425,7 @@ function fmtV(v: number | null): string {
       <div class="section-head">
         <h2>{{ t("观测场") }}</h2>
         <div class="sub">
-          {{ DIM_LABEL[state.mapDim] }} · {{ MODEL_LABEL2[curModel] }}
+          {{ t(DIM_LABEL[state.mapDim]) }} · {{ t(MODEL_LABEL2[curModel]) }}
           <span v-if="curBox?.note" class="note-dot" :title="curBox.note">●</span>
         </div>
       </div>
@@ -434,7 +434,7 @@ function fmtV(v: number | null): string {
         <!-- 控制条 -->
         <div class="ctl">
           <select v-model="state.mapDateS" class="sel" aria-label="日期">
-            <option v-for="d in dateOptions" :key="d.v" :value="d.v">{{ d.label }}</option>
+            <option v-for="d in dateOptions" :key="d.v" :value="d.v">{{ t(d.label) }}</option>
           </select>
           <div class="seg" role="group" aria-label="时段">
             <button :class="{ on: state.mapPeriod === 'am' }" @click="state.mapPeriod = 'am'">朝霞</button>
@@ -447,18 +447,18 @@ function fmtV(v: number | null): string {
               :class="{ on: state.mapDim === d }"
               @click="state.mapDim = d"
             >
-              {{ DIM_LABEL[d] }}
+              {{ t(DIM_LABEL[d]) }}
             </button>
           </div>
           <select v-model="state.mapModel" class="sel" aria-label="模型">
             <option v-for="m in (['ens', 'gfs', 'ec', 'rt'] as const)" :key="m" :value="m">
-              {{ MODEL_LABEL2[m] }}
+              {{ t(MODEL_LABEL2[m]) }}
             </option>
           </select>
           <button class="btn btn-primary" :disabled="loading" @click="load(true)">
-            {{ loading ? "取数中…" : "加载地图" }}
+            {{ loading ? t("取数中…") : t("加载地图") }}
           </button>
-          <button class="btn btn-ghost" @click="toggleFs">{{ fs ? "退出全屏" : "全屏" }}</button>
+          <button class="btn btn-ghost" @click="toggleFs">{{ fs ? t("退出全屏") : t("全屏") }}</button>
         </div>
 
         <!-- 图面 -->
@@ -476,13 +476,13 @@ function fmtV(v: number | null): string {
             >
               <b>{{ tip.p.name }}</b>
               <div class="tip-rows">
-                <span>{{ DIM_LABEL[state.mapDim] }}</span>
+                <span>{{ t(DIM_LABEL[state.mapDim]) }}</span>
                 <b>{{ fmtV(valOf(tip.p)) }}</b>
-                <span>概率</span><b>{{ fmtV(tip.p.p[curModel] ?? tip.p.P) }}</b>
-                <span>质量</span><b>{{ fmtV(tip.p.q[curModel] ?? tip.p.Q) }}</b>
-                <span>云型</span><b>{{ tip.p.type }}</b>
-                <span>云纹</span><b>{{ TX_BAND_NAMES[txBandOf(tip.p.cld)] }}</b>
-                <span>分歧</span><b>{{ divergeOf(tip.p) != null ? divergeOf(tip.p)!.toFixed(1) : "—" }}</b>
+                <span>{{ t("概率") }}</span><b>{{ fmtV(tip.p.p[curModel] ?? tip.p.P) }}</b>
+                <span>{{ t("质量") }}</span><b>{{ fmtV(tip.p.q[curModel] ?? tip.p.Q) }}</b>
+                <span>{{ t("云型") }}</span><b>{{ tip.p.type }}</b>
+                <span>{{ t("云纹") }}</span><b>{{ t(TX_BAND_NAMES[txBandOf(tip.p.cld)]) }}</b>
+                <span>{{ t("分歧") }}</span><b>{{ divergeOf(tip.p) != null ? divergeOf(tip.p)!.toFixed(1) : "—" }}</b>
               </div>
             </div>
           </div>
@@ -490,9 +490,9 @@ function fmtV(v: number | null): string {
           <!-- 排行榜 -->
           <div class="rank glass-soft">
             <div class="rank-h">
-              <span>▲ {{ DIM_LABEL[state.mapDim] }} TOP</span>
+              <span>▲ {{ t(DIM_LABEL[state.mapDim]) }} TOP</span>
               <button class="btn btn-ghost sm" @click="rankAll = !rankAll">
-                {{ rankAll ? "收起" : "查看全部" }}
+                {{ rankAll ? t("收起") : t("查看全部") }}
               </button>
             </div>
             <div v-if="ranked.length" class="rank-list">
@@ -502,14 +502,14 @@ function fmtV(v: number | null): string {
                 <b>{{ fmtV(r.v) }}</b>
               </div>
             </div>
-            <div v-else class="rank-empty">待取数</div>
+            <div v-else class="rank-empty">{{ t("待取数") }}</div>
             <!-- 图例 -->
             <div class="legend">
               <div class="grad" :style="{ background: rampGradientCss() }" />
               <div class="ticks"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
               <div class="tx-key">
                 <span v-for="(n, i) in TX_BAND_NAMES" :key="n">
-                  <i :style="{ opacity: [0.06, 0.35, 0.62, 0.95][i] }" />{{ n }}
+                  <i :style="{ opacity: [0.06, 0.35, 0.62, 0.95][i] }" />{{ t(n) }}
                 </span>
               </div>
             </div>
@@ -519,20 +519,20 @@ function fmtV(v: number | null): string {
         <!-- 状态条 -->
         <div class="status">
           <template v-if="loading">
-            <span class="dot-live" />{{ progress || "取数中…" }}
+            <span class="dot-live" />{{ progress || t("取数中…") }}
           </template>
           <template v-else-if="error">
             <span class="err">{{ error }}</span>
-            <button v-if="retryable" class="btn btn-ghost sm" @click="load(true)">重试</button>
+            <button v-if="retryable" class="btn btn-ghost sm" @click="load(true)">{{ t("重试") }}</button>
           </template>
           <template v-else-if="curPts.length">
-            {{ curPts.length }} 个网格点 · 缓存 {{ MODEL_LABEL2[curModel] }} ·
-            色阶 SPECTRUM_RAMP（{{ SPECTRUM_RAMP.length }} 锚点）·
-            SDK {{ sdkReady ? "已就绪" : "未就绪（矢量层可用）" }} ·
-            代理 {{ TMAP_HOST || "__TMAP_SERVICE_HOST__" }}
+            {{ curPts.length }} {{ t("个网格点") }} · {{ t("缓存") }} {{ t(MODEL_LABEL2[curModel]) }} ·
+            {{ t("色阶") }} SPECTRUM_RAMP（{{ SPECTRUM_RAMP.length }} {{ t("锚点") }}）·
+            {{ t("SDK 已就绪") }} / {{ t("SDK 未就绪（矢量层可用）") }} ·
+            {{ t("代理") }} {{ TMAP_HOST || "__TMAP_SERVICE_HOST__" }}
           </template>
           <template v-else>
-            <span class="hint">点击「加载地图」取周边网格点数据（显式触发，不自动烧额度）</span>
+            <span class="hint">{{ t("点击「加载地图」取周边网格点数据（显式触发，不自动烧额度）") }}</span>
           </template>
         </div>
       </div>

@@ -66,8 +66,7 @@ onMounted(() => {
           <span class="spectrum-text glow">GLOWCAST</span>
         </h1>
         <p class="hero-sub">
-          {{ t("沉浸式预报体验") }} —— GFS / ECMWF / 光追物理三套算法，
-          把今晚的天空写成一份可以出发的理由。
+          {{ t("沉浸式预报体验 —— GFS / ECMWF / 光追物理三套算法，把今晚的天空写成一份可以出发的理由。") }}
         </p>
 
         <div class="hero-controls">
@@ -157,7 +156,7 @@ onMounted(() => {
           <div class="hairline" style="margin: 12px 0" />
           <div class="metric">
             <span class="num" style="font-size: 1.15rem; color: var(--tx-2)">
-              {{ res ? res.grade : "—" }}
+              {{ res ? t(res.grade) : "—" }}
             </span>
             <span class="lab">{{ t("等级") }}</span>
           </div>

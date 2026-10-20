@@ -3,6 +3,7 @@ import { computed, ref, onMounted, onUnmounted } from "vue";
 import { state } from "../state";
 import { t } from "../core/i18n";
 import { solarPosition } from "../core/astro";
+import { uClock } from "../core/units";
 
 const res = computed(() => state.result);
 const nowMs = ref(Date.now());
@@ -41,11 +42,11 @@ const eventMarks = computed<Mark[]>(() => {
   if (!res.value) return [];
   const { evMs, period, evName } = res.value;
   const defs = [
-    { off: -55, label: "天文" + (period === "am" ? "晨光始" : "昏影终"), alt: -18 },
-    { off: -30, label: "航海" + (period === "am" ? "晨光始" : "昏影终"), alt: -12 },
-    { off: -12, label: "民用" + (period === "am" ? "晨光始" : "昏影终"), alt: -6 },
-    { off: 0, label: evName, alt: -0.833, big: true },
-    { off: 18, label: period === "am" ? "日出后" : "日落后", alt: -2 }
+    { off: -55, label: t("天文" + (period === "am" ? "晨光始" : "昏影终")), alt: -18 },
+    { off: -30, label: t("航海" + (period === "am" ? "晨光始" : "昏影终")), alt: -12 },
+    { off: -12, label: t("民用" + (period === "am" ? "晨光始" : "昏影终")), alt: -6 },
+    { off: 0, label: t(evName), alt: -0.833, big: true },
+    { off: 18, label: t(period === "am" ? "日出后" : "日落后"), alt: -2 }
   ];
   return defs.map((d) => ({
     p: (evMs + d.off * 60000 - winStart.value) / (winEnd.value - winStart.value),
@@ -84,10 +85,7 @@ const hourTicks = computed(() => {
 /* fitAxis：窄屏降级（幂等）——每隔一个隐藏小标 */
 const showEvery = computed(() => (hostW.value < 560 ? 2 : 1));
 
-function fmt(ms: number): string {
-  const d = new Date(ms);
-  return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
-}
+function fmt(ms: number): string { return uClock(ms); }
 </script>
 
 <template>
@@ -149,8 +147,8 @@ function fmt(ms: number): string {
         </div>
 
         <div class="band-legend">
-          <span><i class="d" />太阳高度角 0° / −6° / −12° / −18°（事件行）</span>
-          <span v-if="res">{{ res.evName }} {{ fmt(res.evMs) }}</span>
+          <span><i class="d" />{{ t("太阳高度角 0° / −6° / −12° / −18°（事件行）") }}</span>
+          <span v-if="res">{{ t(res.evName) }} {{ uClock(res.evMs) }}</span>
         </div>
       </div>
     </div>

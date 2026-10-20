@@ -11,6 +11,7 @@ import {
   type GridPt, type MapDateBox, type MapPeriodBox, type MapPoint, type PointMeta
 } from "./mapdata";
 import { API_AQ } from "./scoring";
+import { t } from "./i18n";
 
 export const MODEL_NAME = { gfs: "gfs_seamless", ec: "ecmwf_ifs025" };
 export const F_MAP_VARS = [
@@ -156,20 +157,20 @@ export async function loadMapData(
   /* cacheOnly：只查缓存，绝不取数（快路径之后、网络之前 —— 硬保证） */
   if (cacheOnly) return { ok: false, reason: "cache-only" };
 
-  load(`正在取模式数据（周边 ${pts.length} 个网格点，朝/晚霞共用）…`);
+  load(t("正在取模式数据（周边 {n} 个网格点，朝/晚霞共用）…", { n: pts.length }));
   try {
     const [Y, M, D] = dateS.split("-").map(Number);
     const dayMs = Date.UTC(Y, M - 1, D);
     const meta: PointMeta[] = buildPointMeta(dayMs, pts);
     const cityPts = pts.map((c) => ({ lat: c.lat, lon: c.lon }));
 
-    load("正在取 GFS 模式数据…");
+    load(t("正在取 GFS 模式数据…"));
     const sG = await apiForecastBatched(MODEL_NAME.gfs, cityPts, dateS, dateS, MAP_TZ, F_MAP_VARS);
     if (!stillCurrent()) return { ok: false, reason: "stale" };
     await sleep(300);
     if (!stillCurrent()) return { ok: false, reason: "stale" };
 
-    load("正在取 ECMWF 模式数据…");
+    load(t("正在取 ECMWF 模式数据…"));
     const eD2 = await apiForecastBatched(
       MODEL_NAME.ec, cityPts, dateS, dateS, MAP_TZ, F_MAP_VARS
     ).catch(() => null);
@@ -177,11 +178,11 @@ export async function loadMapData(
     await sleep(300);
     if (!stillCurrent()) return { ok: false, reason: "stale" };
 
-    load("正在取气溶胶数据…");
+    load(t("正在取气溶胶数据…"));
     const sA = await apiAQBatched(cityPts, dateS, dateS, MAP_TZ).catch(() => null);
     if (!stillCurrent()) return { ok: false, reason: "stale" };
 
-    load(`正在计算 ${pts.length} 个网格点…`);
+    load(t("正在计算 {n} 个网格点…", { n: pts.length }));
     const sE = eD2 as (Series[] | null);
     const sM: (Series | null)[] = sG.map((g, i) => mergeSeries(g, sE ? sE[i] : null));
 
