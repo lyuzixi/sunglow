@@ -2,10 +2,8 @@
 import { onMounted, ref, watch } from "vue";
 import HeroSection from "../components/HeroSection.vue";
 import ConclusionCard from "../components/ConclusionCard.vue";
-import SkyBand from "../components/SkyBand.vue";
 import TrendSection from "../components/TrendSection.vue";
 import MapView from "../components/MapView.vue";
-import ModelsPanel from "../components/ModelsPanel.vue";
 import FactorsPanel from "../components/FactorsPanel.vue";
 import CalibPanel from "../components/CalibPanel.vue";
 import { state } from "../state";
@@ -180,10 +178,8 @@ onMounted(() => {
 
   <template v-else>
     <ConclusionCard class="reveal" />
-    <SkyBand class="reveal" />
     <TrendSection class="reveal" />
     <MapView class="reveal" />
-    <ModelsPanel class="reveal" />
     <FactorsPanel class="reveal" />
     <CalibPanel class="reveal" />
   </template>

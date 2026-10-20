@@ -21,7 +21,7 @@ void _se;
 
 export const TREND_CACHE_PREFIX = "glowcast.v2.trend.";
 export const TREND_CACHE_TTL = 3 * 3600000;
-export const TREND_N = 7;
+export const TREND_N = 10;
 
 export interface TrendRow {
   date: string;
