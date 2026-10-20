@@ -53,7 +53,7 @@ export interface ForecastResult {
   spreadQ: number | null;
   conf: EnsBand;
   factorRows: Array<[string, number, number]>;
-  src: "live" | "mock";
+  src: "live" | "mock" | "cache";
 }
 export interface ForecastFail { ok: false; error: string }
 
@@ -127,13 +127,89 @@ function mockTransect(
   return out;
 }
 
+/* =========================================================================
+   单点取数缓存（B1 口径）：日期 + 时段 + 坐标（0.1°，约 11 km）
+   —— 页面每次打开都会跑一次单点预报，没有这层缓存就等于每次开页都重取
+   17 个样带点 × 3 路（≈50+ 加权调用）。TTL 3 小时，LRU 上限 12 条。
+   ========================================================================= */
+const POINT_CACHE_PREFIX = "glowcast.v2.point.v1.";
+const POINT_CACHE_TTL = 3 * 3600000;
+const POINT_CACHE_MAX = 12;
+
+function pointKeyOf(lat: number, lon: number, dateStr: string, period: string): string {
+  return POINT_CACHE_PREFIX + dateStr + "|" + period + "@" + lat.toFixed(1) + "," + lon.toFixed(1);
+}
+
+export function pointCacheGet(
+  lat: number, lon: number, dateStr: string, period: "am" | "pm"
+): ForecastResult | null {
+  try {
+    const s2 = localStorage.getItem(pointKeyOf(lat, lon, dateStr, period));
+    if (!s2) return null;
+    const j = JSON.parse(s2);
+    if (!j || !j.obj || Date.now() - j.ts > POINT_CACHE_TTL) return null;
+    const o = j.obj as ForecastResult;
+    /* 结构校验：P/Q 必须是数、models 非空、日期时段对得上 —— 缺一项就当没缓存 */
+    if (typeof o.P !== "number" || typeof o.Q !== "number") return null;
+    if (!Array.isArray(o.models) || !o.models.length) return null;
+    if (o.dateStr !== dateStr || o.period !== period) return null;
+    return o;
+  } catch {
+    return null;
+  }
+}
+
+export function pointCachePut(
+  lat: number, lon: number, dateStr: string, period: "am" | "pm", obj: ForecastResult
+): void {
+  try {
+    localStorage.setItem(pointKeyOf(lat, lon, dateStr, period), JSON.stringify({ ts: Date.now(), obj }));
+    pointCacheSweep();
+  } catch { /* 配额不足 / 隐私模式 */ }
+}
+
+/** LRU：同族键超过 POINT_CACHE_MAX 就淘汰最旧的 */
+export function pointCacheSweep(): void {
+  try {
+    const keys: Array<{ k: string; ts: number }> = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || !k.startsWith(POINT_CACHE_PREFIX)) continue;
+      let ts = 0;
+      try { ts = (JSON.parse(localStorage.getItem(k) || "null") || {}).ts || 0; } catch { /* ignore */ }
+      keys.push({ k, ts });
+    }
+    keys.sort((a, b) => b.ts - a.ts);
+    for (let i = POINT_CACHE_MAX; i < keys.length; i++) localStorage.removeItem(keys[i].k);
+  } catch { /* ignore */ }
+}
+
+export function pointCacheClear(): number {
+  let n = 0;
+  try {
+    const del: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(POINT_CACHE_PREFIX)) del.push(k);
+    }
+    del.forEach((k) => { localStorage.removeItem(k); n++; });
+  } catch { /* ignore */ }
+  return n;
+}
+
 export async function runForecast(opts: {
   city: City;
   dateStr: string;
   period: "am" | "pm";
   useMock?: boolean;
+  force?: boolean;
 }): Promise<ForecastResult | ForecastFail> {
   const { city, dateStr, period } = opts;
+  /* 命中缓存直接返回，一个请求都不发（显式重算传 force） */
+  if (!opts.force && !opts.useMock) {
+    const hit = pointCacheGet(city.lat, city.lon, dateStr, period);
+    if (hit) return { ...hit, src: "cache" };
+  }
   const [Y, M, D] = dateStr.split("-").map(Number);
   const dayMs = Date.UTC(Y, M - 1, D);
   let src: "live" | "mock" = "live";
@@ -264,7 +340,7 @@ export async function runForecast(opts: {
     ["cape", nz(envM.cape, 0), 0.5]
   ];
 
-  return {
+  const out: ForecastResult = {
     ok: true,
     dateStr, period, city,
     evName, evMs, evAz, events,
@@ -280,6 +356,9 @@ export async function runForecast(opts: {
     factorRows,
     src
   };
+  /* 只有真实取数的结果才落缓存（mock 不写，避免"假数据被当成真预报"） */
+  if (src === "live") pointCachePut(city.lat, city.lon, dateStr, period, out);
+  return out;
 }
 
 export function gradeWord(g: string): string {

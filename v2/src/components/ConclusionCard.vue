@@ -85,6 +85,7 @@ const modelRows = computed(() => {
             <div class="pill" :style="{ color: res.conf.dark.color, borderColor: res.conf.dark.bd, background: res.conf.dark.bg }">
               {{ t("可信度") }} {{ t(res.conf.lv) }} · {{ t(res.conf.txt) }}
               <em v-if="view?.single" class="mk-tag">{{ view.label }}</em>
+              <em v-if="res.src === 'cache'" class="mk-tag" :title="t('来自本地缓存，3 小时内有效')">{{ t("缓存") }}</em>
             </div>
             <h3 class="v-title glow">
               {{ res.city.name }} {{ res.dateStr }}
