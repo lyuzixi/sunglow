@@ -321,7 +321,8 @@ export async function runForecast(opts: {
   const dvFinal = validN >= 2 ? dvI : null;
   const conf = ensConfOf(dvFinal);
 
-  const consist = clamp(100 - (dvFinal ?? 20), 0, 100);
+  /* 一致性＝100 − ΔI×1.9（原版同式）：斜率 1.9 是口径的一部分，缺了会把分歧大幅低估 */
+  const consist = clamp(100 - (dvFinal ?? 0) * 1.9, 0, 100);
 
   /* 因素行（键, 原始值, 得分）—— 供快照与因素面板 */
   const primary = sRT.primary;
