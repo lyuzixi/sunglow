@@ -6,12 +6,13 @@ import TrendSection from "../components/TrendSection.vue";
 import MapView from "../components/MapView.vue";
 import FactorsPanel from "../components/FactorsPanel.vue";
 import CalibPanel from "../components/CalibPanel.vue";
-import { state } from "../state";
+import { state, hasSavedCity } from "../state";
+import { nearestCity, cityByName, CITIES } from "../core/city";
 import { runForecast } from "../core/forecast";
 import { snapEncode, snapDecode, type SnapInput, type SnapData } from "../core/snap";
 import { t } from "../core/i18n";
 import { armReveal } from "../composables/useReveal";
-import { applyUrlState, syncUrl, baseQuery } from "../core/urlstate";
+import { applyUrlState, syncUrl, baseQuery, readUrl } from "../core/urlstate";
 
 const snapUrl = ref("");
 const snapMsg = ref("");
@@ -111,7 +112,47 @@ watch(
   }
 );
 
-onMounted(() => {
+/* ---------- 默认城市：用户当前定位；不可用则广州市 ---------- */
+function geoOnce(timeout = 3500): Promise<{ lat: number; lon: number } | null> {
+  return new Promise((resolve) => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) return resolve(null);
+    const timer = setTimeout(() => resolve(null), timeout);
+    navigator.geolocation.getCurrentPosition(
+      (p) => {
+        clearTimeout(timer);
+        resolve({ lat: p.coords.latitude, lon: p.coords.longitude });
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(null);
+      },
+      { timeout, maximumAge: 600000, enableHighAccuracy: false }
+    );
+  });
+}
+
+/** URL 指定坐标 > 已保存城市 > 定位（就近城市，200km 外记“我的位置”）> 广州市 */
+async function resolveCity(): Promise<void> {
+  const u = readUrl();
+  if (u.lat != null && u.lon != null) {
+    state.city = {
+      name: u.name || "我的位置", lat: u.lat, lon: u.lon, region: ""
+    };
+    return;
+  }
+  if (hasSavedCity()) return;
+  const pos = await geoOnce();
+  if (pos) {
+    const near = nearestCity(pos.lat, pos.lon, CITIES);
+    if (near && near.distKm <= 200) state.city = near.city;
+    else state.city = { name: "我的位置", lat: pos.lat, lon: pos.lon, region: "" };
+  } else {
+    state.city = cityByName("广州市") || CITIES[0];
+  }
+}
+
+onMounted(async () => {
+  await resolveCity();
   if (!tryLoadSnap()) run();
   armReveal();
 });
