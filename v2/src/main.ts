@@ -19,5 +19,3 @@ if (typeof matchMedia !== "undefined") {
 }
 
 createApp(App).use(router).mount("#app");
-import { registerSW } from "./register-sw";
-registerSW();

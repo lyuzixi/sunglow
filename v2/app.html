@@ -5,11 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="description" content="霞光预报 GLOWCAST · 大气光谱观测站 —— 多模式晚霞/朝霞概率与观赏质量预报" />
   <meta name="theme-color" content="#070b14" />
-  <link rel="manifest" href="./manifest.webmanifest" />
   <title>霞光预报 GLOWCAST · 大气光谱观测站</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff4d82'/%3E%3Cstop offset='.5' stop-color='%23ff9c3f'/%3E%3Cstop offset='1' stop-color='%232ed5e8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='url(%23g)' stroke-width='3'/%3E%3Ccircle cx='16' cy='16' r='5' fill='url(%23g)'/%3E%3C/svg%3E" />
-  <script type="module" crossorigin src="./assets/index-shFFUWyr.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-CShNs1oB.css">
 </head>
 <body>
   <div id="app">
@@ -17,19 +14,12 @@
          时模块脚本被浏览器拦截、Vue 没跑起来，你仍然能看到下面的指引。 -->
     <div style="font-family: system-ui, sans-serif; max-width: 560px; margin: 12vh auto; padding: 0 24px; line-height: 1.8; color: #46556f;">
       <div style="width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(90deg,#ff4d82,#ff9c3f,#2ed5e8); margin-bottom: 20px;"></div>
-      <h1 style="font-size: 22px; color: #111a2c; margin: 0 0 12px;">这里是源码入口，不是交付产物</h1>
-      <p>直接双击 <code>v2/index.html</code> 什么都看不到 —— 浏览器不允许从本地文件加载 ES 模块/TypeScript。</p>
-      <p><b>想立刻看效果（双击即开）：</b><br/>
-        打开 <code>v2/standalone.html</code>（单文件版，断网可用）。</p>
-      <p><b>标准多文件产物：</b><br/>
-        <code>v2/dist/index.html</code>，需要静态服务：<br/>
-        <code>cd v2 &amp;&amp; npm run preview</code>（或部署后访问 <code>.../v2/dist/</code>）。</p>
-      <p><b>其它入口：</b>
-        <a href="./dist/index.html">应用（dist）</a> ·
-        <a href="./standalone.html">单文件版</a> ·
-        <a href="./tutorial.html">使用教程</a></p>
-      <p><b>开发：</b><code>cd v2 &amp;&amp; npm run dev</code></p>
+      <h1 style="font-size: 22px; color: #111a2c; margin: 0 0 12px;">这是源码入口（开发用）</h1>
+      <p>交付产物只有一个文件：<code>v2/index.html</code> —— 构建后即生成，JS/CSS/字体全部内联，双击（file://）即可离线使用。</p>
+      <p><b>构建：</b><code>cd v2 &amp;&amp; npm run build</code></p>
+      <p><b>开发：</b><code>cd v2 &amp;&amp; npm run dev</code>，浏览器打开 <code>/app.html</code></p>
     </div>
   </div>
+  <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
