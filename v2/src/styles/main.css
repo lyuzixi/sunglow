@@ -393,6 +393,57 @@ input, select {
   border-color: var(--stroke-2);
   background: var(--bg-glass);
 }
+/* ---------- 移动端目录抽屉（≤720px；汉堡是唯一入口） ---------- */
+.hamburger {
+  display: none;
+  width: 34px; height: 34px; flex: 0 0 auto;
+  align-items: center; justify-content: center;
+  border-radius: 10px; border: 1px solid var(--stroke);
+  background: var(--bg-glass); color: var(--tx-2);
+}
+.hamburger:hover { border-color: var(--stroke-2); color: var(--tx-1); }
+
+.mdrawer-mask {
+  position: fixed; inset: 0; z-index: 117;
+  background: rgba(8, 12, 20, 0.46);
+}
+.mdrawer {
+  position: fixed; left: 0; right: 0; z-index: 118;
+  display: none;
+  background: var(--bg-card-solid);
+  border-bottom: 1px solid var(--stroke);
+  border-radius: 0 0 16px 16px;
+  box-shadow: 0 18px 44px -18px rgba(8, 14, 26, 0.45);
+  transform: translateY(-8px); opacity: 0;
+  /* 关闭态必须不吃点击：面板是 fixed 且始终 display:block，
+     只靠 opacity:0 会变成一块"看不见的挡板"盖住首屏 */
+  pointer-events: none;
+  visibility: hidden;
+  transition: transform 0.18s ease, opacity 0.18s ease, visibility 0s linear 0.18s;
+  overflow: hidden;
+}
+.mdrawer.on {
+  transform: none; opacity: 1;
+  pointer-events: auto; visibility: visible;
+  transition: transform 0.18s ease, opacity 0.18s ease, visibility 0s;
+}
+.mdrawer-nav { display: grid; padding: 6px 8px 10px; }
+.mdrawer-nav a {
+  display: flex; align-items: center;
+  min-height: 46px; padding: 0 14px;
+  border-radius: 10px;
+  font-size: 15px; color: var(--tx-1); text-decoration: none;
+}
+.mdrawer-nav a:active { background: var(--bg-glass-2); }
+.mdrawer-nav a + a { border-top: 1px solid var(--stroke); }
+
+@media (max-width: 720px) {
+  .hamburger { display: inline-flex; }
+  .mdrawer { display: block; }
+}
+@media (min-width: 721px) {
+  .mdrawer, .mdrawer-mask { display: none !important; }
+}
 @media (max-width: 720px) {
   .nav-tabs { display: none; }
   .topbar-in { height: 56px; }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from "vue";
+import { ref, watch, onMounted, onBeforeUnmount } from "vue";
 import SettingsPanel from "./SettingsPanel.vue";
 import { state, setLangAndSave, setThemeAndSave, type ThemeMode } from "../state";
 import { t, LANGS, LANG_SHORT, LANG_NAMES, type Lang } from "../core/i18n";
@@ -7,6 +7,33 @@ import { t, LANGS, LANG_SHORT, LANG_NAMES, type Lang } from "../core/i18n";
 const langOpen = ref(false);
 const themeOpen = ref(false);
 const rootEl = ref<HTMLElement | null>(null);
+
+/* ---- 移动端目录抽屉（≤760px 替代导航） ---- */
+const drawerOpen = ref(false);
+const drawerTop = ref(88);
+const headerEl = ref<HTMLElement | null>(null);
+
+function syncDrawerTop() {
+  const h = headerEl.value?.getBoundingClientRect().height;
+  if (h) drawerTop.value = Math.round(h);
+}
+function toggleDrawer() {
+  drawerOpen.value = !drawerOpen.value;
+  if (drawerOpen.value) syncDrawerTop();
+}
+function closeDrawer() {
+  drawerOpen.value = false;
+}
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === "Escape" && drawerOpen.value) closeDrawer();
+}
+/* 抽屉打开时锁住背景滚动：面板本身不加滚动容器，避免和 body 抢滚动 */
+let prevOverflow = "";
+function lockScroll(on: boolean) {
+  if (on) { prevOverflow = document.body.style.overflow; document.body.style.overflow = "hidden"; }
+  else { document.body.style.overflow = prevOverflow || ""; }
+}
+watch(drawerOpen, (v) => lockScroll(v));
 
 function pickLang(l: Lang) {
   setLangAndSave(l);
@@ -22,8 +49,18 @@ function onDoc(e: MouseEvent) {
     themeOpen.value = false;
   }
 }
-onMounted(() => document.addEventListener("click", onDoc));
-onBeforeUnmount(() => document.removeEventListener("click", onDoc));
+onMounted(() => {
+  document.addEventListener("click", onDoc);
+  document.addEventListener("keydown", onKeydown);
+  window.addEventListener("resize", syncDrawerTop);
+  syncDrawerTop();
+});
+onBeforeUnmount(() => {
+  document.removeEventListener("click", onDoc);
+  document.removeEventListener("keydown", onKeydown);
+  window.removeEventListener("resize", syncDrawerTop);
+  lockScroll(false);
+});
 
 const themeIcon = () =>
   state.theme === "dark" ? "☾" : state.theme === "light" ? "☀" : "◐";
@@ -36,8 +73,22 @@ const themeLabel = () =>
 </script>
 
 <template>
-  <header class="topbar">
+  <header class="topbar" ref="headerEl">
     <div class="wrap topbar-in" ref="rootEl">
+      <button
+        class="hamburger"
+        :aria-expanded="drawerOpen"
+        aria-controls="mnav"
+        :aria-label="t('目录')"
+        :title="t('目录')"
+        @click.stop="toggleDrawer"
+      >
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round">
+          <path d="M4 7h16M4 12h16M4 17h16" />
+        </svg>
+      </button>
+
       <router-link class="brand" to="/">
         <span class="logo" aria-hidden="true" />
         <span class="name">
@@ -122,4 +173,22 @@ const themeLabel = () =>
       <span>{{ t(state.period === "am" ? "朝霞" : "晚霞") }}</span>
     </div>
   </header>
+
+  <!-- 移动端目录：遮罩 + 贴顶栏下缘的面板（原版同款交互） -->
+  <div v-if="drawerOpen" class="mdrawer-mask" @click="closeDrawer" />
+  <div
+    id="mnav"
+    class="mdrawer"
+    :class="{ on: drawerOpen }"
+    :style="{ top: drawerTop + 'px' }"
+    role="dialog"
+    :aria-label="t('目录')"
+  >
+    <nav class="mdrawer-nav">
+      <a href="#verdict" @click="closeDrawer">{{ t("结论") }}</a>
+      <a href="#trend" @click="closeDrawer">{{ t("十日趋势") }}</a>
+      <a href="#field" @click="closeDrawer">{{ t("观测场") }}</a>
+      <a href="./tutorial.html">{{ t("使用教程") }}</a>
+    </nav>
+  </div>
 </template>
