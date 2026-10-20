@@ -53,8 +53,8 @@ function setUnits(u: "metric" | "imperial") {
 
 <template>
   <div class="settings">
-    <button class="btn btn-ghost" @click="open = !open" :aria-expanded="open">
-      ⚙ {{ t("设置") }}
+    <button class="btn btn-ghost ico" @click="open = !open" :aria-expanded="open" :aria-label="t('设置')" :title="t('设置')">
+      ⚙
     </button>
     <div v-if="open" class="panel glass">
       <div class="grp">
@@ -117,6 +117,7 @@ function setUnits(u: "metric" | "imperial") {
 </template>
 
 <style scoped>
+.ico { padding: 6px 10px; line-height: 1; }
 .settings {
   position: relative;
 }

@@ -49,7 +49,6 @@ const themeLabel = () =>
         <a href="#verdict">{{ t("结论") }}</a>
         <a href="#trend">{{ t("十日趋势") }}</a>
         <a href="#field">{{ t("观测场") }}</a>
-        <a href="./tutorial.html">{{ t("使用教程") }}</a>
       </nav>
 
       <div class="top-actions">
@@ -97,7 +96,30 @@ const themeLabel = () =>
             </button>
           </div>
         </div>
+
+        <a
+          class="icon-btn"
+          href="./tutorial.html"
+          :aria-label="t('使用教程')"
+          :title="t('使用教程')"
+        >
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15.5H6.5A2.5 2.5 0 0 0 4 21z" />
+            <path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H19" />
+            <path d="M8 7.5h7" />
+          </svg>
+        </a>
       </div>
+    </div>
+
+    <!-- 徽标：当前地点 · 日期 · 朝/晚霞（原版同款：纯文字、右对齐、独占一行） -->
+    <div class="wrap topbar-meta">
+      <span>{{ state.city.name }}</span>
+      <i>·</i>
+      <span>{{ state.dateStr }}</span>
+      <i>·</i>
+      <span>{{ t(state.period === "am" ? "朝霞" : "晚霞") }}</span>
     </div>
   </header>
 </template>
