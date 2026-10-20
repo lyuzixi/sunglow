@@ -1,0 +1,25 @@
+{
+  "name": "glowcast-v2",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "description": "霞光预报 GLOWCAST · 大气光谱观测站版",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node scripts/gen-sw.mjs",
+    "build:standalone": "vite build --mode standalone && node -e \"const fs=require('fs');fs.renameSync('dist-standalone/index.html','standalone.html');fs.rmSync('dist-standalone',{recursive:true,force:true})\" && node scripts/gen-sw.mjs",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/space-grotesk": "^5.3.0",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.11",
+    "vite-plugin-singlefile": "^2.3.4"
+  }
+}
