@@ -174,9 +174,9 @@ const themeLabel = () =>
     </div>
   </header>
 
-  <!-- 移动端目录：遮罩 + 贴顶栏下缘的面板（原版同款交互） -->
+  <!-- 移动端目录：左侧抽屉（分组 + 细线分隔，参考原版） -->
   <div v-if="drawerOpen" class="mdrawer-mask" @click="closeDrawer" />
-  <div
+  <aside
     id="mnav"
     class="mdrawer"
     :class="{ on: drawerOpen }"
@@ -184,11 +184,24 @@ const themeLabel = () =>
     role="dialog"
     :aria-label="t('目录')"
   >
-    <nav class="mdrawer-nav">
-      <a href="#verdict" @click="closeDrawer">{{ t("结论") }}</a>
-      <a href="#trend" @click="closeDrawer">{{ t("十日趋势") }}</a>
-      <a href="#field" @click="closeDrawer">{{ t("观测场") }}</a>
-      <a href="./tutorial.html">{{ t("使用教程") }}</a>
-    </nav>
-  </div>
+    <div class="md-label">{{ t("目录") }}</div>
+
+    <div class="md-group">
+      <h4>{{ t("主结果") }}</h4>
+      <a href="#verdict" @click="closeDrawer"><span>{{ t("结论") }}</span></a>
+      <a href="#trend" @click="closeDrawer"><span>{{ t("十日趋势") }}</span></a>
+      <a href="#field" @click="closeDrawer"><span>{{ t("观测场") }}</span></a>
+      <a href="#factors" @click="closeDrawer"><span>{{ t("影响因素") }}</span></a>
+    </div>
+
+    <div class="md-group">
+      <h4>{{ t("技术细节") }}</h4>
+      <a href="#calib" @click="closeDrawer"><span>{{ t("实况校准") }}</span></a>
+    </div>
+
+    <div class="md-group">
+      <h4>{{ t("指南") }}</h4>
+      <a class="ext" href="./tutorial.html"><span>{{ t("使用教程") }}</span><i class="arw">↗</i></a>
+    </div>
+  </aside>
 </template>
