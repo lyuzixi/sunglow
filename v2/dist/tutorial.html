@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>使用教程 · 霞光预报 GLOWCAST</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff4d82'/%3E%3Cstop offset='.5' stop-color='%23ff9c3f'/%3E%3Cstop offset='1' stop-color='%232ed5e8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='url(%23g)' stroke-width='3' stroke-dasharray='52 18'/%3E%3C/svg%3E">
+<script>
+/* 首帧前定主题，避免闪白 */
+(function () {
+  try {
+    var t = "auto";
+    var raw = localStorage.getItem("glowcast.v2.pref");
+    if (raw) {
+      var j = JSON.parse(raw);
+      if (j && (j.theme === "auto" || j.theme === "light" || j.theme === "dark")) t = j.theme;
+    }
+    var d = t === "auto"
+      ? (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+      : t;
+    document.documentElement.setAttribute("data-theme", d);
+    document.documentElement.setAttribute("data-theme-mode", t);
+  } catch (e) {
+    document.documentElement.setAttribute("data-theme", "dark");
+    document.documentElement.setAttribute("data-theme-mode", "auto");
+  }
+})();
+</script>
+<style>
+/* ============================================================
+   GLOWCAST v2 · 教程页 · 大气光谱观测站 / 晨光实验室
+   自包含单文件：CSS / JS 全部内联，零外部请求
+   ============================================================ */
+
+:root {
+  /* 光谱（主题无关） */
+  --spectrum-1: #ff4d82;
+  --spectrum-2: #ff9c3f;
+  --spectrum-3: #2ed5e8;
+  --spectrum: linear-gradient(90deg, var(--spectrum-1), var(--spectrum-2), var(--spectrum-3));
+  --spectrum-soft: linear-gradient(90deg, rgba(255, 77, 130, .14), rgba(255, 156, 63, .14), rgba(46, 213, 232, .14));
+
+  --font: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 72px;
+  --r-sm: 8px; --r-md: 14px; --r-lg: 22px; --r-full: 999px;
+
+  --maxw: 880px;
+}
+
+/* ---------- 深色 · 光谱观测站 ---------- */
+[data-theme="dark"] {
+  --bg-base: #070b14;
+  --bg-deep: #04070e;
+  --bg-elev: #0b1220;
+  --bg-card: rgba(15, 23, 42, 0.62);
+  --bg-glass: rgba(130, 160, 220, 0.06);
+  --bg-glass-2: rgba(130, 160, 220, 0.10);
+  --stroke: rgba(148, 178, 232, 0.14);
+  --stroke-2: rgba(148, 178, 232, 0.26);
+  --tx-1: #e9eefb;
+  --tx-2: #a0b1cd;
+  --tx-3: #5c6c8c;
+  --acc-1: var(--spectrum-1);
+  --acc-2: var(--spectrum-2);
+  --acc-3: var(--spectrum-3);
+  --glow-text: 0 0 24px rgba(255, 120, 160, 0.45), 0 0 64px rgba(46, 213, 232, 0.22);
+  --card-sh: 0 18px 48px rgba(2, 6, 16, 0.55);
+  --q-good: #5fce97;
+  --q-mid: #e2b45e;
+  --q-bad: #f2796a;
+  --q-info: #7ab8ff;
+  --code-bg: rgba(130, 160, 220, 0.08);
+  --thead-bg: rgba(130, 160, 220, 0.07);
+  --zebra: rgba(130, 160, 220, 0.045);
+  --brand-glass: rgba(7, 11, 20, 0.72);
+}
+
+/* ---------- 浅色 · 晨光实验室 ---------- */
+[data-theme="light"] {
+  --bg-base: #f2f5fb;
+  --bg-deep: #e8edf7;
+  --bg-elev: #ffffff;
+  --bg-card: rgba(255, 255, 255, 0.72);
+  --bg-glass: rgba(255, 255, 255, 0.55);
+  --bg-glass-2: rgba(255, 255, 255, 0.78);
+  --stroke: rgba(40, 60, 100, 0.10);
+  --stroke-2: rgba(40, 60, 100, 0.20);
+  --tx-1: #111a2c;
+  --tx-2: #46556f;
+  --tx-3: #8693ab;
+  --acc-1: #e02d62;
+  --acc-2: #e07a1c;
+  --acc-3: #0f9fbf;
+  --glow-text: none;
+  --card-sh: 0 12px 32px rgba(20, 40, 80, 0.10);
+  --q-good: #1c8a55;
+  --q-mid: #c07a10;
+  --q-bad: #c0392b;
+  --q-info: #2266bb;
+  --code-bg: rgba(40, 60, 100, 0.06);
+  --thead-bg: rgba(40, 60, 100, 0.05);
+  --zebra: rgba(40, 60, 100, 0.028);
+  --brand-glass: rgba(242, 245, 251, 0.78);
+}
+
+/* ---------- 基础 ---------- */
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.85;
+  color: var(--tx-2);
+  background: var(--bg-base);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+[data-theme="dark"] body {
+  background-image:
+    radial-gradient(1100px 520px at 82% -8%, rgba(46, 213, 232, 0.075), transparent 62%),
+    radial-gradient(900px 480px at 8% -6%, rgba(255, 77, 130, 0.06), transparent 60%);
+  background-attachment: fixed;
+}
+[data-theme="light"] body {
+  background-image:
+    radial-gradient(1000px 480px at 84% -10%, rgba(46, 213, 232, 0.10), transparent 62%),
+    radial-gradient(860px 430px at 6% -8%, rgba(255, 77, 130, 0.075), transparent 60%);
+  background-attachment: fixed;
+}
+h1, h2, h3, h4 {
+  color: var(--tx-1);
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+  margin: 0 0 var(--sp-3);
+  font-weight: 700;
+}
+p { margin: 0 0 var(--sp-4); }
+a { color: var(--acc-3); text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 3px; }
+strong { color: var(--tx-1); font-weight: 650; }
+code {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.86em;
+  background: var(--code-bg);
+  border: 1px solid var(--stroke);
+  border-radius: 6px;
+  padding: 0.08em 0.42em;
+  color: var(--tx-1);
+}
+hr {
+  border: 0;
+  border-top: 1px solid var(--stroke);
+  margin: var(--sp-6) 0;
+}
+
+/* ---------- 品牌条 ---------- */
+.brand {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 12px clamp(16px, 4vw, 36px);
+  background: var(--brand-glass);
+  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  backdrop-filter: blur(18px) saturate(1.3);
+  border-bottom: 1px solid var(--stroke);
+}
+.brand-logo {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  filter: drop-shadow(0 0 12px rgba(255, 120, 160, 0.35));
+}
+.brand-text { display: flex; flex-direction: column; min-width: 0; }
+.brand-name {
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--tx-1);
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.brand-sub {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  color: var(--tx-3);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.brand-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--stroke-2);
+  background: var(--bg-glass);
+  color: var(--tx-2);
+  font-size: 0.82rem;
+  font-family: inherit;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: border-color .18s ease, color .18s ease, background .18s ease;
+  white-space: nowrap;
+}
+.btn-ghost:hover {
+  color: var(--tx-1);
+  border-color: var(--acc-3);
+  background: var(--bg-glass-2);
+  text-decoration: none;
+}
+.btn-ghost svg { width: 15px; height: 15px; flex: 0 0 auto; }
+.theme-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--spectrum);
+  box-shadow: 0 0 8px rgba(46, 213, 232, 0.6);
+}
+
+/* ---------- 粘性目录 ---------- */
+.toc {
+  position: sticky;
+  top: 63px;
+  z-index: 40;
+  background: var(--brand-glass);
+  -webkit-backdrop-filter: blur(18px) saturate(1.25);
+  backdrop-filter: blur(18px) saturate(1.25);
+  border-bottom: 1px solid var(--stroke);
+}
+.toc-inner {
+  max-width: calc(var(--maxw) + 120px);
+  margin: 0 auto;
+  padding: 0 clamp(16px, 4vw, 36px);
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.toc-inner::-webkit-scrollbar { display: none; }
+.toc a {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 11px 12px 10px;
+  font-size: 0.82rem;
+  color: var(--tx-3);
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: color .18s ease, border-color .18s ease;
+}
+.toc a:hover { color: var(--tx-1); text-decoration: none; }
+.toc a.active {
+  color: var(--tx-1);
+  border-bottom-color: var(--acc-2);
+}
+.toc-idx {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: var(--tx-3);
+}
+.toc a.active .toc-idx { color: var(--acc-2); }
+
+/* ---------- 主容器 ---------- */
+.wrap {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 clamp(16px, 4vw, 28px) var(--sp-8);
+}
+
+/* ---------- Hero ---------- */
+.hero {
+  padding: clamp(40px, 8vw, 84px) 0 clamp(28px, 5vw, 48px);
+  border-bottom: 1px solid var(--stroke);
+}
+.hero-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  color: var(--tx-3);
+  text-transform: uppercase;
+  margin-bottom: var(--sp-4);
+}
+.hero-kicker::before {
+  content: "";
+  width: 26px; height: 2px;
+  border-radius: 2px;
+  background: var(--spectrum);
+}
+.hero h1 {
+  font-size: clamp(1.9rem, 5.4vw, 3.15rem);
+  margin-bottom: var(--sp-4);
+}
+.hero h1 .grad {
+  background: var(--spectrum);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: none;
+}
+[data-theme="dark"] .hero h1 .grad { filter: drop-shadow(0 0 22px rgba(255, 110, 150, 0.28)); }
+.hero-lead {
+  font-size: clamp(1rem, 2.1vw, 1.13rem);
+  color: var(--tx-2);
+  max-width: 46em;
+  margin-bottom: var(--sp-5);
+}
+.hero-chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 13px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--stroke);
+  background: var(--bg-glass);
+  font-size: 0.79rem;
+  color: var(--tx-2);
+}
+.chip .k {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+}
+
+/* ---------- 章节 ---------- */
+.chapter {
+  padding: clamp(34px, 5.5vw, 56px) 0 0;
+  scroll-margin-top: 118px;
+}
+.ch-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-4);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--stroke-2);
+  margin-bottom: var(--sp-5);
+}
+.ch-num {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: clamp(1.35rem, 3vw, 1.72rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: var(--spectrum);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  flex: 0 0 auto;
+}
+.ch-head h2 {
+  font-size: clamp(1.28rem, 2.8vw, 1.62rem);
+  margin: 0;
+}
+.ch-head .ch-en {
+  margin-left: auto;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tx-3);
+  white-space: nowrap;
+}
+.chapter h3 {
+  font-size: 1.04rem;
+  margin: var(--sp-6) 0 var(--sp-3);
+}
+.chapter h3:first-of-type { margin-top: 0; }
+
+/* ---------- 列表 / 卡片 ---------- */
+.plain-list { margin: 0 0 var(--sp-4); padding-left: 1.25em; }
+.plain-list li { margin-bottom: 7px; }
+.plain-list li::marker { color: var(--acc-2); }
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(228px, 1fr));
+  gap: var(--sp-3);
+  margin: var(--sp-4) 0 var(--sp-5);
+}
+.card {
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-md);
+  background: var(--bg-card);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  padding: var(--sp-4) var(--sp-4) 13px;
+  box-shadow: var(--card-sh);
+}
+.card h4 {
+  font-size: 0.94rem;
+  margin: 0 0 6px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.card .tag {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: var(--acc-3);
+  border: 1px solid var(--stroke-2);
+  border-radius: var(--r-full);
+  padding: 1px 8px;
+  text-transform: uppercase;
+}
+.card p {
+  font-size: 0.865rem;
+  line-height: 1.75;
+  margin: 0;
+  color: var(--tx-2);
+}
+
+/* 术语卡 */
+.term-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--sp-3);
+  margin: var(--sp-4) 0 var(--sp-5);
+}
+.term {
+  border: 1px solid var(--stroke);
+  border-left: 2px solid var(--acc-2);
+  border-radius: var(--r-md);
+  background: var(--bg-card);
+  padding: var(--sp-4);
+}
+.term .t-zh { font-size: 0.98rem; font-weight: 700; color: var(--tx-1); letter-spacing: -0.02em; }
+.term .t-en {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: var(--tx-3);
+  margin: 2px 0 8px;
+}
+.term p { font-size: 0.855rem; line-height: 1.75; margin: 0; }
+
+/* ---------- 表格 ---------- */
+.tbl-wrap {
+  overflow-x: auto;
+  margin: var(--sp-4) 0 var(--sp-5);
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-md);
+  background: var(--bg-card);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.87rem;
+  min-width: 520px;
+}
+caption {
+  caption-side: top;
+  text-align: left;
+  padding: 12px 16px 4px;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx-3);
+}
+th, td {
+  padding: 10px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--stroke);
+  vertical-align: top;
+}
+thead th {
+  background: var(--thead-bg);
+  color: var(--tx-3);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr:nth-child(even) td { background: var(--zebra); }
+td.num, th.num {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.84rem;
+  color: var(--tx-1);
+  white-space: nowrap;
+}
+.pill {
+  display: inline-block;
+  padding: 1px 9px;
+  border-radius: var(--r-full);
+  font-size: 0.76rem;
+  line-height: 1.7;
+  border: 1px solid var(--stroke-2);
+  background: var(--bg-glass);
+  white-space: nowrap;
+}
+.pill-good { color: var(--q-good); border-color: var(--q-good); }
+.pill-mid  { color: var(--q-mid);  border-color: var(--q-mid); }
+.pill-bad  { color: var(--q-bad);  border-color: var(--q-bad); }
+.pill-info { color: var(--q-info); border-color: var(--q-info); }
+
+/* ---------- 公式 / 提示 ---------- */
+.formula {
+  margin: var(--sp-4) 0 var(--sp-5);
+  padding: var(--sp-4) var(--sp-5);
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-md);
+  background: var(--bg-glass);
+  position: relative;
+  overflow: hidden;
+}
+.formula::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--spectrum);
+}
+.formula .f-line {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.95rem;
+  color: var(--tx-1);
+  letter-spacing: 0.01em;
+}
+.formula .f-note {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  color: var(--tx-3);
+}
+.callout {
+  margin: var(--sp-4) 0 var(--sp-5);
+  padding: var(--sp-4) var(--sp-5);
+  border-radius: var(--r-md);
+  border: 1px solid var(--stroke-2);
+  background: var(--bg-glass-2);
+  font-size: 0.885rem;
+}
+.callout .c-title {
+  display: block;
+  font-size: 0.76rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--acc-2);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.callout p:last-child { margin-bottom: 0; }
+
+/* 模块读法列表 */
+.read-list { counter-reset: rd; margin: var(--sp-4) 0 var(--sp-5); padding: 0; list-style: none; }
+.read-list > li {
+  counter-increment: rd;
+  position: relative;
+  padding: 13px 0 13px 46px;
+  border-bottom: 1px solid var(--stroke);
+}
+.read-list > li:last-child { border-bottom: 0; }
+.read-list > li::before {
+  content: counter(rd, decimal-leading-zero);
+  position: absolute;
+  left: 0; top: 15px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.76rem;
+  letter-spacing: 0.05em;
+  color: var(--acc-2);
+  border: 1px solid var(--stroke-2);
+  border-radius: var(--r-sm);
+  padding: 1px 7px;
+}
+.read-list .r-name {
+  color: var(--tx-1);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  margin-right: 8px;
+}
+.read-list p { margin: 4px 0 0; font-size: 0.885rem; }
+
+/* 问答 */
+.qa {
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-md);
+  background: var(--bg-card);
+  padding: var(--sp-4) var(--sp-5);
+  margin-bottom: var(--sp-3);
+}
+.qa .q {
+  display: flex;
+  gap: 10px;
+  color: var(--tx-1);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+.qa .q .qm {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  color: var(--acc-1);
+  flex: 0 0 auto;
+  padding-top: 3px;
+}
+.qa .a { margin: 0; font-size: 0.895rem; }
+.qa .a + .a { margin-top: 8px; }
+
+/* ---------- 页脚 ---------- */
+.foot {
+  border-top: 1px solid var(--stroke-2);
+  background: var(--bg-deep);
+  padding: clamp(28px, 5vw, 44px) clamp(16px, 4vw, 36px);
+}
+.foot-inner {
+  max-width: calc(var(--maxw) + 120px);
+  margin: 0 auto;
+}
+.foot-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: var(--sp-3);
+}
+.foot-brand .brand-logo { width: 26px; height: 26px; filter: none; }
+.foot-brand .n { font-size: 0.92rem; font-weight: 700; color: var(--tx-1); letter-spacing: -0.02em; }
+.foot p {
+  font-size: 0.815rem;
+  color: var(--tx-3);
+  max-width: 62em;
+  margin-bottom: 10px;
+}
+.foot .fine {
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--stroke);
+  font-size: 0.76rem;
+  color: var(--tx-3);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+}
+.foot a { color: var(--tx-2); }
+
+/* ---------- 移动端 ---------- */
+@media (max-width: 640px) {
+  body { font-size: 14.5px; }
+  .brand { padding: 10px 14px; top: 0; }
+  .brand-sub { display: none; }
+  .brand-logo { width: 32px; height: 32px; }
+  .brand-name { font-size: 0.95rem; }
+  .btn-ghost .btn-label { display: none; }
+  .btn-ghost { padding: 8px 10px; }
+  .toc { top: 55px; }
+  .toc-inner { padding: 0 14px; }
+  .toc a { padding: 10px 10px 9px; font-size: 0.79rem; }
+  .wrap { padding: 0 16px var(--sp-7); }
+  .ch-head { gap: var(--sp-3); }
+  .ch-head .ch-en { display: none; }
+  .tbl-wrap { margin-left: -4px; margin-right: -4px; border-radius: var(--r-sm); }
+  .read-list > li { padding-left: 40px; }
+  .foot { padding: 26px 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- ================= 品牌条 ================= -->
+<header class="brand">
+  <svg class="brand-logo" viewBox="0 0 48 48" aria-hidden="true">
+    <defs>
+      <linearGradient id="specRing" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#ff4d82"/>
+        <stop offset="0.5" stop-color="#ff9c3f"/>
+        <stop offset="1" stop-color="#2ed5e8"/>
+      </linearGradient>
+    </defs>
+    <circle cx="24" cy="24" r="18" fill="none" stroke="url(#specRing)" stroke-width="3.2" stroke-linecap="round" stroke-dasharray="84 29"/>
+    <circle cx="24" cy="24" r="9.5" fill="none" stroke="url(#specRing)" stroke-width="1.6" opacity="0.72" stroke-dasharray="42 18"/>
+    <circle cx="24" cy="24" r="3.2" fill="url(#specRing)"/>
+  </svg>
+  <div class="brand-text">
+    <div class="brand-name">霞光预报 GLOWCAST</div>
+    <div class="brand-sub">Atmospheric Spectrum Observatory · v2</div>
+  </div>
+  <div class="brand-actions">
+    <button class="btn-ghost" id="themeBtn" type="button" aria-label="切换主题">
+      <span class="theme-dot" aria-hidden="true"></span>
+      <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="4.2"/>
+        <path d="M12 2.8v2.2M12 19v2.2M2.8 12h2.2M19 12h2.2M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6"/>
+      </svg>
+      <span class="btn-label" id="themeLabel">跟随系统</span>
+    </button>
+    <a class="btn-ghost" href="../index.html#/">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/>
+      </svg>
+      <span class="btn-label">返回 GLOWCAST</span>
+    </a>
+  </div>
+</header>
+
+<!-- ================= 粘性目录 ================= -->
+<nav class="toc" aria-label="章节目录">
+  <div class="toc-inner" id="tocInner">
+    <a href="#ch1"><span class="toc-idx">01</span>一分钟看懂</a>
+    <a href="#ch2"><span class="toc-idx">02</span>霞光物理</a>
+    <a href="#ch3"><span class="toc-idx">03</span>三套算法</a>
+    <a href="#ch4"><span class="toc-idx">04</span>界面读法</a>
+    <a href="#ch5"><span class="toc-idx">05</span>观测场地图</a>
+    <a href="#ch6"><span class="toc-idx">06</span>参数阈值</a>
+    <a href="#ch7"><span class="toc-idx">07</span>术语速查</a>
+    <a href="#ch8"><span class="toc-idx">08</span>部署说明</a>
+    <a href="#ch9"><span class="toc-idx">09</span>常见问题</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <!-- ================= Hero ================= -->
+  <section class="hero">
+    <div class="hero-kicker">使用教程</div>
+    <h1>把天空的<span class="grad">光谱</span>，读成一次值得的等待</h1>
+    <p class="hero-lead">
+      GLOWCAST 把大气光学与数值模式翻译成两件事：<strong>会不会有霞</strong>与<strong>好不好看</strong>。
+      本页是完整使用教程——从霞光的物理成因，到三套算法如何合成结论，再到界面每个模块怎么读、地图怎么看、阈值是多少、如何自行部署。
+      单文件离线可读，深浅双主题。
+    </p>
+    <div class="hero-chips">
+      <span class="chip"><span class="k">9</span> 章节</span>
+      <span class="chip"><span class="k">I = 0.55P + 0.45Q</span> 综合指数</span>
+      <span class="chip"><span class="k">W_ENS</span> gfs .30 / ec .34 / rt .36</span>
+      <span class="chip"><span class="k">500 km</span> 观测场半径</span>
+    </div>
+  </section>
+
+  <!-- ================= 01 ================= -->
+  <section class="chapter" id="ch1">
+    <div class="ch-head">
+      <span class="ch-num">01</span>
+      <h2>一分钟看懂 GLOWCAST</h2>
+      <span class="ch-en">Overview</span>
+    </div>
+    <p>
+      查一次预报，系统会返回三个核心数字：出现概率 <strong>P</strong>（0–100，这次霞光事件会不会发生）、
+      观赏质量 <strong>Q</strong>（0–100，发生了的话有多好看）、以及综合指数 <strong>I</strong>（0–100，两者加权）。
+      此外还有<strong>可信度</strong>（三套算法彼此差多少）与<strong>质量等级</strong>（优 / 良 / 一般 / 差）两个派生标签。
+    </p>
+    <div class="formula">
+      <div class="f-line">I = 0.55 × P + 0.45 × Q</div>
+      <p class="f-note">混合指数：出现概率权重略高——先谈「有没有」，再谈「美不美」。I 与 P、Q 均为 0–100。</p>
+    </div>
+    <div class="card-grid">
+      <div class="card">
+        <h4>结论卡 <span class="tag">P · Q · I</span></h4>
+        <p>首屏最醒目的三个数字与一句话结论，回答「今晚值不值得出门」。</p>
+      </div>
+      <div class="card">
+        <h4>天色带 <span class="tag">Sky Band</span></h4>
+        <p>沿时间轴铺开的天空色彩序列，一眼看出最佳窗口落在哪几分钟。</p>
+      </div>
+      <div class="card">
+        <h4>七日趋势 <span class="tag">Trend</span></h4>
+        <p>未来七天 I 的走势与峰值日，用来挑日子、安排出行。</p>
+      </div>
+      <div class="card">
+        <h4>观测场 <span class="tag">Field</span></h4>
+        <p>周边 500 km 的霞光分布色面，回答「今天去哪儿拍」。</p>
+      </div>
+    </div>
+    <div class="callout">
+      <span class="c-title">怎么用这份教程</span>
+      <p>
+        只想知道「看不看得到」：读第 01、04、09 章即可。
+        想理解数字怎么来的：补第 02、03、06 章。
+        要做二次开发或自部署：直接看第 05、08 章。
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= 02 ================= -->
+  <section class="chapter" id="ch2">
+    <div class="ch-head">
+      <span class="ch-num">02</span>
+      <h2>霞光物理原理</h2>
+      <span class="ch-en">Physics</span>
+    </div>
+    <p>
+      霞不是「太阳染红了天」，而是一条光学链条的末端产物：阳光穿过多厚的大气、以什么角度进来、
+      最后被什么东西接住。链条上任何一环出问题，霞都会变淡、变脏，或者干脆消失。
+    </p>
+
+    <h3>02.1 瑞利散射</h3>
+    <p>
+      大气分子对光的散射强度与波长的四次方成反比（σ ∝ λ⁻⁴）。蓝紫光被散射得远比红橙光剧烈，
+      所以正午的天是蓝的——那是被散射到你眼睛里的短波光。
+      当阳光斜射、光程拉长时，蓝绿光在途中被反复散射掉队，剩下以红橙为主的长波光穿透过来，
+      这就是日出日落天边发红的底层原因。550 nm 整层瑞利光学厚度约 <code>0.0975</code>，标高约 <code>8 km</code>。
+    </p>
+
+    <h3>02.2 光程</h3>
+    <p>
+      光程指阳光从大气顶到达观察者所经过的路径长度。太阳越高，光程越短，色彩越接近白色；
+      太阳贴近地平线甚至落到地平线以下时，光程是天顶方向的数十倍，消光累积到只剩深红与暗橙。
+      系统沿光路做消光积分（瑞利 + 气溶胶），得到到达本地的光谱，再换算为色度——
+      这是「天色带」逐时刻颜色的物理来源。
+    </p>
+
+    <h3>02.3 掠地光</h3>
+    <p>
+      日落后那几分钟，直射阳光已经打不到地面，但仍能以极低的角度掠过地表与云底边界，
+      从侧下方擦着地平线射向高空。这段掠地路径穿过整层大气与近地层气溶胶，光谱被滤得最红，
+      往往是一场晚霞最浓烈的时刻。判断「掠地光还能不能打到这层云」正是光追模型的核心计算之一。
+    </p>
+
+    <h3>02.4 云底承接</h3>
+    <p>
+      红光需要一面「幕布」才能被看见，这面幕布就是云。理想的霞：
+      西边（或东边）有中高云的云底、本地上空通透、云底高度恰在掠地光可达的高度带内。
+      云太低会被地影吞掉、太高够不着红光、本地云太厚则直接遮死。
+      系统会沿剖面分析云层分布（<code>analyseTransect</code>），估计上游云边界距离与主云盘层，
+      用来判断「光打不打得上、打上哪一层」。
+    </p>
+
+    <h3>02.5 污烧</h3>
+    <p>
+      气溶胶很少时，瑞利散射占主导，阳光颜色纯净饱和，是「水晶天」；气溶胶大量存在时属「污烧」——
+      散射让天空背景整体变亮变白，低角度霞光的层次与细节被灰霾吞掉，画面发灰发脏。
+      系统把漫射光的等效光程比例设为 <code>0.30</code>（远小于直射光，故漫射光谱更「白」），
+      并以最大冲淡系数 <code>0.62</code> 描述污烧对色彩饱和度的削减。
+      换句话说：<strong>不是气溶胶越多霞越红</strong>，中间存在一个最佳区间。
+    </p>
+
+    <div class="callout">
+      <span class="c-title">一条链条</span>
+      <p>
+        瑞利散射定「红从哪来」 → 光程定「红到多红」 → 掠地光定「红从哪个角度来」
+        → 云底承接定「红映在哪块幕布上」 → 污烧定「红被冲淡多少」。算法部分就是把这条链定量化的。
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= 03 ================= -->
+  <section class="chapter" id="ch3">
+    <div class="ch-head">
+      <span class="ch-num">03</span>
+      <h2>三套算法与综合指数</h2>
+      <span class="ch-en">Algorithms</span>
+    </div>
+    <p>
+      结论不是单一模型给出的，而是三套算法各算各的，再按权重合成。这样做有两个好处：
+      统计模型在模式气候态上稳健，物理模型在极端个例上更有解释力；
+      三者之间的分歧本身就是可信度信号。
+    </p>
+
+    <div class="card-grid">
+      <div class="card">
+        <h4>GFS 统计判据 <span class="tag">scoreStat</span></h4>
+        <p>
+          基于 GFS 模式输出的环境场（云量分层、能见度、湿度、气溶胶、冻结层 / 边界层高度、
+          风场与气压变化等）计算多因子评分，权重见 W_STAT：云量 0.20、云型 0.16、云底 0.12、
+          几何 0.16、气溶胶 0.12、能见度 0.08、湿度 0.05、稳定度 0.06、遮挡 0.05。
+        </p>
+      </div>
+      <div class="card">
+        <h4>ECMWF 统计判据 <span class="tag">scoreStat</span></h4>
+        <p>
+          与 GFS 同一套判据、换用 ECMWF 模式场输入，并对参数做微扰以制造分歧，
+          模拟集合预报里「同一套公式在不同模式气候下的离散」，用来看结论对模式选择有多敏感。
+        </p>
+      </div>
+      <div class="card">
+        <h4>光追物理 <span class="tag">scoreRay</span></h4>
+        <p>
+          纯物理路径：对太阳高度角与方位做几何推演，沿光路积分瑞利与气溶胶消光，
+          计算云底 / 地表被照亮的光谱与色度，输出「如果霞出现，它长什么样」的概率与质量。
+          物理路径对掠地光、污烧的刻画最直接。
+        </p>
+      </div>
+    </div>
+
+    <h3>03.1 权重与合成</h3>
+    <div class="tbl-wrap">
+      <table>
+        <caption>W_ENS · 集成权重</caption>
+        <thead>
+          <tr><th>成员</th><th>类型</th><th class="num">权重</th><th>说明</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>gfs</code></td><td>统计判据</td><td class="num">0.30</td>
+            <td>GFS 环境场，稳健、覆盖面广</td>
+          </tr>
+          <tr>
+            <td><code>ec</code></td><td>统计判据</td><td class="num">0.34</td>
+            <td>ECMWF 环境场，中纬度技巧略优</td>
+          </tr>
+          <tr>
+            <td><code>rt</code></td><td>光追物理</td><td class="num">0.36</td>
+            <td>路径追踪，个例解释力最强</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="formula">
+      <div class="f-line">P = wgeo(P_gfs, P_ec, P_rt)　　Q = wgeo(Q_gfs, Q_ec, Q_rt)　　I = 0.55P + 0.45Q</div>
+      <p class="f-note">
+        综合 P / Q 取各非空成员的<strong>加权几何平均</strong>（wgeo），而非算术平均——
+        几何平均对「某个成员给出极低值」更敏感，任一成员强烈看衰都会把综合值拉下来，
+        符合霞光预报「一票否决」的物理直觉。成员缺失时按剩余成员重新归一权重。
+      </p>
+    </div>
+
+    <h3>03.2 可信度从哪来</h3>
+    <p>
+      可信度不来自任何单一模型的自信程度，而来自<strong>三套算法综合指数的相互差异</strong>。
+      三者结论接近 → 高可信；三者各说各话 → 低可信。差异度以 ΔI 度量，分档阈值见第 06 章。
+      这意味着可信度低的时候，<strong>不一定是「不会有霞」</strong>，而是「现在的数据撑不起一个确定结论」，
+      建议临近时刻再看实况。
+    </p>
+  </section>
+
+  <!-- ================= 04 ================= -->
+  <section class="chapter" id="ch4">
+    <div class="ch-head">
+      <span class="ch-num">04</span>
+      <h2>界面读法</h2>
+      <span class="ch-en">Interface</span>
+    </div>
+    <p>主界面由七个模块组成，自上而下即为推荐的阅读顺序。</p>
+    <ol class="read-list">
+      <li>
+        <span class="r-name">结论卡</span>
+        <p>
+          并排展示 P / Q / I 三个大数字与一句话结论，附质量等级徽标（优 / 良 / 一般 / 差）。
+          概率数字与结论标题带光谱辉光，是整页唯一的高亮处——辉光纪律：辉光只给概率数字与结论标题。
+        </p>
+      </li>
+      <li>
+        <span class="r-name">天色带</span>
+        <p>
+          沿日出 / 日落前后的时间轴铺开的天空色彩序列。色带的每一段都来自光追模型在该时刻的光谱换算，
+          段间过渡即为「窗口」：哪几分钟最红、哪几分钟开始衰减，扫一眼就有结论。
+        </p>
+      </li>
+      <li>
+        <span class="r-name">七日趋势</span>
+        <p>
+          未来七天 I 的走势曲线与峰值标记，用于挑日子。点击某一天即切换当日全量结果，
+          与主视图共用同一套计算口径。
+        </p>
+      </li>
+      <li>
+        <span class="r-name">观测场</span>
+        <p>
+          周边霞光分布地图，回答「今天去哪儿拍」。图层、维度、缓存等细节见第 05 章。
+        </p>
+      </li>
+      <li>
+        <span class="r-name">模式对比</span>
+        <p>
+          并列展示 GFS / ECMWF / 光追三套结论的 P、Q、I，以及与综合值的偏离。
+          分歧大的因子在这里会「跳出来」，是判断可信度最直观的依据。
+        </p>
+      </li>
+      <li>
+        <span class="r-name">影响因素</span>
+        <p>
+          各因子条形分解（云量、云型、云底、几何、气溶胶、能见度、湿度、稳定度、遮挡），
+          标出当前是哪一项在拉高或压低结论。看到「气溶胶」霸榜，多半就是污烧。
+        </p>
+      </li>
+      <li>
+        <span class="r-name">实况校准</span>
+        <p>
+          用你的真实观测反馈修正本地偏差。只展示、不回改模型；样本不足不给结论。
+          门槛见第 06 章（CALIB_MIN_N / CALIB_MIN_BUCKET）。
+        </p>
+      </li>
+    </ol>
+    <div class="callout">
+      <span class="c-title">辉光纪律</span>
+      <p>
+        深色主题下你会注意到：只有概率数字与结论标题在发光，其余部分靠玻璃拟态面板与发丝线分层。
+        这是刻意的视觉约束——辉光指向「你真正要读的那个数」。
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= 05 ================= -->
+  <section class="chapter" id="ch5">
+    <div class="ch-head">
+      <span class="ch-num">05</span>
+      <h2>观测场地图</h2>
+      <span class="ch-en">Observation Field</span>
+    </div>
+    <p>
+      观测场以当前地点为中心做局部网格采样，逐点评分后插值成色面，叠上云量淡纹。
+      它不是卫星云图，而是<strong>评分结果的地理分布</strong>——色面颜色直接对应 I 值。
+    </p>
+
+    <h3>05.1 网格与取值</h3>
+    <div class="tbl-wrap">
+      <table>
+        <caption>观测场参数</caption>
+        <thead>
+          <tr><th>参数</th><th class="num">取值</th><th>说明</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>半径 <code>MAP_RADIUS_KM</code></td><td class="num">500 km</td><td>以查询点为中心的可视范围</td></tr>
+          <tr><td>格距 <code>MAP_GRID_KM</code></td><td class="num">120 km</td><td>采样步长，成品为 57 点局部网格</td></tr>
+          <tr><td>可信距离 <code>FIELD_REACH_KM</code></td><td class="num">120 km</td><td>IDW 插值的最远可信距离，超出即衰减</td></tr>
+          <tr><td>维度 <code>mix / p / q / dv</code></td><td class="num">4 种</td><td>综合指数 / 概率 / 质量 / 分歧度（可信度反向）</td></tr>
+          <tr><td>模型 <code>ens / gfs / ec / rt</code></td><td class="num">4 种</td><td>综合集成 / GFS / ECMWF / 光追，可切换单看某一成员</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      四个维度可分别着色：<code>mix</code> 是默认综合视图；<code>p</code> 只看「有没有」；
+      <code>q</code> 只看「美不美」；<code>dv</code> 看三套算法的分歧——分歧高的区域说明当地结论不稳。
+      模型开关则允许沿 <code>ens → gfs → ec → rt</code> 逐一切换，快速定位是哪个成员在拖后腿。
+    </p>
+
+    <h3>05.2 图层与云纹</h3>
+    <p>
+      图层序固定为：经纬网 → 色面 → 云纹 → 等值线。其中<strong>云纹</strong>表示云量遮挡：
+      由低云量与中云量 ×0.85 合成（0–100），按四档绘制：
+      <code>txBandOf(v) = min(3, floor(v / 25))</code>，即 0–24 / 25–49 / 50–74 / 75–100 四档，
+      alpha 平涂，档界即边界；晴档（0 档）不画任何纹理，保持色面干净。
+    </p>
+
+    <h3>05.3 缓存与触发</h3>
+    <ul class="plain-list">
+      <li><strong>缓存</strong>：结果写入 <code>localStorage</code>，键前缀 <code>glowcast.v2.map.v6.</code>，TTL 3 小时，LRU 保留最近 6 条（当前地点豁免淘汰）。</li>
+      <li><strong>键族清理</strong>：升版本时自动清掉旧版本残留键，避免串版本污染。</li>
+      <li><strong>显式触发</strong>：地图不自动取数，只在用户切换维度 / 模型 / 地点等操作时显式触发；
+        命中缓存走快路径；<code>cacheOnly</code> 模式下绝不发网络请求（离线可用）。</li>
+      <li><strong>取数</strong>：多点批量采样走单请求多坐标（Open-Meteo 逗号多点），超过 30 点分批，批间留白，避免触发限流。</li>
+    </ul>
+  </section>
+
+  <!-- ================= 06 ================= -->
+  <section class="chapter" id="ch6">
+    <div class="ch-head">
+      <span class="ch-num">06</span>
+      <h2>参数阈值表</h2>
+      <span class="ch-en">Thresholds</span>
+    </div>
+    <p>以下阈值与评分模型内部实现逐点对齐，可直接作为口径引用。</p>
+
+    <h3>06.1 质量等级 QUALITY_BANDS</h3>
+    <div class="tbl-wrap">
+      <table>
+        <caption>质量等级分档（作用于 Q 与 I）</caption>
+        <thead>
+          <tr><th>等级</th><th class="num">阈值</th><th class="num">区间</th><th>读法</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="pill pill-good">优</span></td><td class="num">≥ 80</td><td class="num">80–100</td><td>值得专程出门，天空条件齐备</td></tr>
+          <tr><td><span class="pill pill-good">良</span></td><td class="num">≥ 65</td><td class="num">65–79</td><td>值得顺路一看，多数要素在线</td></tr>
+          <tr><td><span class="pill pill-mid">一般</span></td><td class="num">≥ 45</td><td class="num">45–64</td><td>有看点但不惊艳，降低预期</td></tr>
+          <tr><td><span class="pill pill-bad">差</span></td><td class="num">&lt; 45</td><td class="num">0–44</td><td>大概率平淡，不必强求</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>06.2 可信度分档</h3>
+    <div class="tbl-wrap">
+      <table>
+        <caption>可信度（由三套算法的 ΔI 分歧度判定）</caption>
+        <thead>
+          <tr><th>档位</th><th class="num">ΔI</th><th>提示语</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="pill pill-good">高</span></td><td class="num">&lt; 18</td>
+            <td>三套算法结论接近，可信度较高，可直接据此安排</td>
+          </tr>
+          <tr>
+            <td><span class="pill pill-mid">中</span></td><td class="num">&lt; 35</td>
+            <td>存在一定分歧，在可接受范围内，建议结合临近云图复核</td>
+          </tr>
+          <tr>
+            <td><span class="pill pill-bad">低</span></td><td class="num">≥ 35</td>
+            <td>分歧显著，结论仅供参与，以实况为准</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>06.3 校准门槛</h3>
+    <div class="tbl-wrap">
+      <table>
+        <caption>实况校准 · 样本门槛</caption>
+        <thead>
+          <tr><th>常量</th><th class="num">取值</th><th>含义</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>CALIB_MIN_N</code></td><td class="num">8</td><td>该组至少 8 条实况样本，才给出校准结论</td></tr>
+          <tr><td><code>CALIB_MIN_BUCKET</code></td><td class="num">3</td><td>每个分桶至少 3 条样本，桶内统计才有效</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <span class="c-title">校准的两条纪律</span>
+      <p>
+        ① 只展示、不回改模型——校准结果是给人看的偏差提示，不反向修改评分算法；
+        ② 样本不够不给结论——宁可空白，也不用三条数据编一个趋势。
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= 07 ================= -->
+  <section class="chapter" id="ch7">
+    <div class="ch-head">
+      <span class="ch-num">07</span>
+      <h2>术语速查表</h2>
+      <span class="ch-en">Glossary</span>
+    </div>
+    <div class="term-grid">
+      <div class="term">
+        <div class="t-zh">AOD</div>
+        <div class="t-en">Aerosol Optical Depth</div>
+        <p>气溶胶光学厚度，衡量整层大气中气溶胶对光的消光程度。值低则瑞利散射主导、颜色纯净；值高则进入「污烧」区间，霞光细节被灰霾冲淡。</p>
+      </div>
+      <div class="term">
+        <div class="t-zh">云底高度</div>
+        <div class="t-en">Cloud Base Height</div>
+        <p>主云层底部的高度。它决定这层云能否接住掠地红光：太低进地影，太高够不着，只有落在高度带内的云底才是理想的承接面。</p>
+      </div>
+      <div class="term">
+        <div class="t-zh">光学等效地表高度</div>
+        <div class="t-en">Optical Equivalent Ground Height</div>
+        <p>把近地层气溶胶的消光折算成一个等效抬升面：光像从这个高度「射出」一样。用于修正掠地光程计算，是污烧建模的关键中间量。</p>
+      </div>
+      <div class="term">
+        <div class="t-zh">光追</div>
+        <div class="t-en">Ray Tracing</div>
+        <p>沿阳光实际路径逐段积分散射与消光，还原到达云底 / 地表的光谱与色度。GLOWCAST 中的第三套算法（rt）即基于此，权重 0.36。</p>
+      </div>
+      <div class="term">
+        <div class="t-zh">可信度</div>
+        <div class="t-en">Confidence</div>
+        <p>三套算法综合指数的相互差异（ΔI）的分档：小于 18 为高，小于 35 为中，其余为低。反映「结论有多稳」，而不是「霞有多好」。</p>
+      </div>
+      <div class="term">
+        <div class="t-zh">混合指数 I</div>
+        <div class="t-en">Mixed Index</div>
+        <p>综合指数，I = 0.55P + 0.45Q，取值 0–100。P 是出现概率、Q 是观赏质量；I 是界面主结论与七日趋势共用的排序依据。</p>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <caption>常见缩写对照</caption>
+        <thead>
+          <tr><th>写法</th><th>全称</th><th>出现在</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>P</code></td><td>Probability · 出现概率</td><td>结论卡 / 模式对比 / 维度 p</td></tr>
+          <tr><td><code>Q</code></td><td>Quality · 观赏质量</td><td>结论卡 / 模式对比 / 维度 q</td></tr>
+          <tr><td><code>I</code></td><td>Mixed Index · 混合指数</td><td>结论卡 / 七日趋势 / 维度 mix</td></tr>
+          <tr><td><code>dv</code></td><td>Divergence · 分歧度</td><td>观测场维度切换</td></tr>
+          <tr><td><code>ens</code></td><td>Ensemble · 集成</td><td>观测场模型切换</td></tr>
+          <tr><td><code>wgeo</code></td><td>Weighted Geometric Mean</td><td>P / Q 的综合方式</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= 08 ================= -->
+  <section class="chapter" id="ch8">
+    <div class="ch-head">
+      <span class="ch-num">08</span>
+      <h2>部署说明</h2>
+      <span class="ch-en">Deployment</span>
+    </div>
+
+    <h3>08.1 GH Pages 子路径</h3>
+    <p>
+      构建配置使用相对 base（<code>base: "./"</code>），产物可直接部署到 GitHub Pages 的<strong>子路径</strong>
+      （例如 <code>https://用户名.github.io/仓库名/</code>）而无需改代码。
+      资源引用全部走相对路径，仓库改名、迁移到自定义域名都不影响加载。
+      404 兜底页按 GH Pages 惯例提供（SPA 刷新深链时回退到入口）。
+    </p>
+
+    <h3>08.2 TMAP_SERVICE_HOST 注入</h3>
+    <p>
+      地图服务地址不在代码中写死，而是以占位符形式保留，部署时由构建流程注入
+      <code>TMAP_SERVICE_HOST</code>（把占位符替换为你的服务域名）。
+      这样做的目的：源码可以公开，代理地址与额度可以私有。
+      未注入时地图功能降级为不可用，其余模块（结论卡、趋势、模式对比等）不受影响。
+    </p>
+
+    <h3>08.3 PWA</h3>
+    <p>
+      可选启用 PWA：清单文件描述应用名、主题色与图标，Service Worker 缓存壳资源与最近结果，
+      支持「添加到主屏幕」与断网回看。观测场地图本身已有 <code>localStorage</code> 缓存 +
+      <code>cacheOnly</code> 离线路径，断网时仍可读上次结果。
+    </p>
+
+    <h3>08.4 数据源与合规</h3>
+    <div class="tbl-wrap">
+      <table>
+        <caption>数据源约定</caption>
+        <thead>
+          <tr><th>项目</th><th>约定</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>气象 / 空气质量数据</td><td>Open-Meteo，<strong>非商业用途</strong>免费，商业使用请自行确认授权</td></tr>
+          <tr><td>额度口径</td><td>免费层按<strong>出口 IP</strong>计：每日 10,000 次 / 每小时 5,000 次，非按账号</td></tr>
+          <tr><td>多点批量</td><td>逗号多点单请求，&gt; 30 点分批，批间留白，避免触顶</td></tr>
+          <tr><td>缓存</td><td>结果本地缓存 3 小时（地图）/ 就近复用，减少重复取数</td></tr>
+          <tr><td>署名</td><td>界面与页脚保留数据源声明，二次分发请同样保留</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= 09 ================= -->
+  <section class="chapter" id="ch9">
+    <div class="ch-head">
+      <span class="ch-num">09</span>
+      <h2>常见问题</h2>
+      <span class="ch-en">FAQ</span>
+    </div>
+
+    <div class="qa">
+      <div class="q"><span class="qm">Q1</span>为什么结论说「有霞」，实际却看不到？</div>
+      <p class="a">
+        按顺序排查四件事：① <strong>方向</strong>——晚霞看西边，朝霞看东边，你所在的位置是否真能看到那一侧地平线；
+        ② <strong>本地云</strong>——本地上空有厚云就直接被遮死，观测场色面只代表区域评分，不代表你头顶；
+        ③ <strong>云底承接</strong>——西边天际若毫无云层，红光没有幕布，只剩一条窄窄的红边；
+        ④ <strong>污烧</strong>——气溶胶爆表时细节被灰霾吞掉，评分为「良」但观感发灰。
+        另外可信度「低」时，结论本身就不稳，请以实况为准。
+      </p>
+    </div>
+
+    <div class="qa">
+      <div class="q"><span class="qm">Q2</span>提示「今日气象数据额度已用尽」怎么办？</div>
+      <p class="a">
+        Open-Meteo 免费层按<strong>出口 IP</strong>计（每日 10,000 次 / 每小时 5,000 次），不是按账号。
+        若你在公司、学校、代理等共享网络下，很可能是同一出口 IP 的其他使用者消耗掉的。
+        额度次日重置后即可恢复；也可切换到手机热点等独立出口网络。本地缓存的结果在额度用尽期间仍可回看。
+      </p>
+    </div>
+
+    <div class="qa">
+      <div class="q"><span class="qm">Q3</span>结果快照链接是什么？能保存多久？</div>
+      <p class="a">
+        快照链接把当前地点、日期与全部结论编码进 URL，分享给别人即可复现同一屏结果，
+        对方无需重新计算。链接不含任何个人信息，长期有效；
+        但预报数据本身是历史快照，随时间推移与新版算法上线，重新打开的「复算」结果可能与快照不同——
+        以快照中冻结的数字为准。
+      </p>
+    </div>
+
+    <div class="qa">
+      <div class="q"><span class="qm">Q4</span>实况校准的数据存在哪里？会被上传吗？</div>
+      <p class="a">
+        只存在你本机浏览器的 <code>localStorage</code>，不上传、不跨设备同步。
+        换浏览器或清空站点数据即丢失。校准遵循两条纪律：只展示、不回改模型；
+        样本不足不给结论（组内 <code>CALIB_MIN_N = 8</code>、桶内 <code>CALIB_MIN_BUCKET = 3</code>）。
+        刚开始记录时面板是空的，这是正常设计而非 bug。
+      </p>
+    </div>
+
+    <div class="qa">
+      <div class="q"><span class="qm">Q5</span>为什么概率很高但质量分一般？</div>
+      <p class="a">
+        P 与 Q 回答的是两个问题。概率高说明「霞大概率出现」（光学链条走通了），
+        质量分低说明「出现了也不够好看」——常见原因：中高云结构平淡、缺乏层次、
+        轻度污烧压饱和度、或掠地窗口过短。反之亦然：质量潜力高但概率低，说明「好看的前提条件在，但未必凑齐」。
+      </p>
+    </div>
+
+    <div class="qa">
+      <div class="q"><span class="qm">Q6</span>支持朝霞吗？和晚霞是同一套算法吗？</div>
+      <p class="a">
+        同一套。区别仅在几何输入：朝霞用日出前后的太阳高度角与东侧剖面，晚霞用日落前后与西侧剖面。
+        经验上晚霞的气溶胶条件更复杂（一天的累积排放），朝霞常更通透但窗口更短，两者在天色带上的表现差异会很直观。
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<!-- ================= 页脚 ================= -->
+<footer class="foot">
+  <div class="foot-inner">
+    <div class="foot-brand">
+      <svg class="brand-logo" viewBox="0 0 48 48" aria-hidden="true">
+        <defs>
+          <linearGradient id="specRingFoot" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ff4d82"/>
+            <stop offset="0.5" stop-color="#ff9c3f"/>
+            <stop offset="1" stop-color="#2ed5e8"/>
+          </linearGradient>
+        </defs>
+        <circle cx="24" cy="24" r="18" fill="none" stroke="url(#specRingFoot)" stroke-width="3.2" stroke-linecap="round" stroke-dasharray="84 29"/>
+        <circle cx="24" cy="24" r="9.5" fill="none" stroke="url(#specRingFoot)" stroke-width="1.6" opacity="0.72" stroke-dasharray="42 18"/>
+        <circle cx="24" cy="24" r="3.2" fill="url(#specRingFoot)"/>
+      </svg>
+      <span class="n">霞光预报 GLOWCAST · 使用教程</span>
+    </div>
+    <p>
+      数据源声明：气象与空气质量数据来自 <strong>Open-Meteo</strong>，其免费层仅限<strong>非商业用途</strong>；
+      商业场景请自行取得授权或改用自建数据源。地图观测场为本地计算结果的可视化，底图与图层均在客户端生成。
+    </p>
+    <p>
+      本页为自包含单文件教程：CSS 与脚本全部内联，不含任何外部资源请求，可离线阅读与分发。
+      界面中的辉光只用于概率数字与结论标题，配色遵循「大气光谱观测站 / 晨光实验室」双主题。
+    </p>
+    <div class="fine">
+      <span>GLOWCAST v2 · Tutorial</span>
+      <a href="../index.html#/">返回应用</a>
+      <span>主题跟随系统，可在右上角手动切换</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  var PREF_KEY = "glowcast.v2.pref";
+  var MODES = ["auto", "light", "dark"];
+  var LABEL = { auto: "跟随系统", light: "晨光实验室", dark: "光谱观测站" };
+
+  function readMode() {
+    try {
+      var raw = localStorage.getItem(PREF_KEY);
+      if (raw) {
+        var j = JSON.parse(raw);
+        if (j && MODES.indexOf(j.theme) >= 0) return j.theme;
+      }
+    } catch (e) { /* 忽略存储异常 */ }
+    return "auto";
+  }
+
+  function writeMode(m) {
+    try {
+      var obj = {};
+      try {
+        var raw = localStorage.getItem(PREF_KEY);
+        if (raw) obj = JSON.parse(raw) || {};
+      } catch (e) { obj = {}; }
+      obj.theme = m;
+      localStorage.setItem(PREF_KEY, JSON.stringify(obj));
+    } catch (e) { /* 存储不可用时静默降级 */ }
+  }
+
+  function systemDark() {
+    return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  }
+
+  function resolved(m) {
+    return m === "auto" ? (systemDark() ? "dark" : "light") : m;
+  }
+
+  var btn = document.getElementById("themeBtn");
+  var label = document.getElementById("themeLabel");
+  var icon = document.getElementById("themeIcon");
+
+  var ICONS = {
+    auto: '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.8v2.2M12 19v2.2M2.8 12h2.2M19 12h2.2M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6"/>',
+    light: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.2 5.2l1.4 1.4M17.4 17.4l1.4 1.4M18.8 5.2l-1.4 1.4M6.6 17.4l-1.4 1.4"/>',
+    dark: '<path d="M20 13.2A8 8 0 0 1 10.8 4 8.2 8.2 0 1 0 20 13.2z"/>'
+  };
+
+  function render() {
+    var m = readMode();
+    var d = resolved(m);
+    document.documentElement.setAttribute("data-theme", d);
+    document.documentElement.setAttribute("data-theme-mode", m);
+    if (label) label.textContent = LABEL[m] || m;
+    if (icon) {
+      icon.innerHTML = ICONS[m] || ICONS.auto;
+      icon.setAttribute("stroke-width", "1.8");
+    }
+  }
+
+  if (btn) {
+    btn.addEventListener("click", function () {
+      var m = readMode();
+      var next = MODES[(MODES.indexOf(m) + 1) % MODES.length];
+      writeMode(next);
+      render();
+    });
+  }
+
+  if (window.matchMedia) {
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    var onChange = function () {
+      if (readMode() === "auto") render();
+    };
+    if (mq.addEventListener) mq.addEventListener("change", onChange);
+    else if (mq.addListener) mq.addListener(onChange);
+  }
+
+  render();
+
+  /* ---- 目录滚动高亮 ---- */
+  var links = Array.prototype.slice.call(document.querySelectorAll(".toc a"));
+  var sections = links.map(function (a) {
+    var id = a.getAttribute("href");
+    return id && id.charAt(0) === "#" ? document.querySelector(id) : null;
+  });
+
+  function setActive(id) {
+    links.forEach(function (a) {
+      var on = a.getAttribute("href") === id;
+      if (on) a.classList.add("active");
+      else a.classList.remove("active");
+      if (on) {
+        try { a.scrollIntoView({ block: "nearest", inline: "center" }); } catch (e) { /* 旧浏览器忽略 */ }
+      }
+    });
+  }
+
+  if ("IntersectionObserver" in window) {
+    var visible = {};
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        visible[en.target.id] = en.isIntersecting ? en.intersectionRatio : 0;
+      });
+      var bestId = null, best = 0;
+      Object.keys(visible).forEach(function (k) {
+        if (visible[k] > best) { best = visible[k]; bestId = k; }
+      });
+      if (bestId) setActive("#" + bestId);
+    }, { rootMargin: "-120px 0px -55% 0px", threshold: [0, 0.12, 0.4, 0.8] });
+
+    sections.forEach(function (s) { if (s) io.observe(s); });
+  }
+})();
+</script>
+
+</body>
+</html>
