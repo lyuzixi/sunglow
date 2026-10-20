@@ -79,7 +79,13 @@ onMounted(() => {
               @focus="onInput"
               aria-label="搜索城市"
             />
-            <button class="mini" @click="useGeo" :title="t('使用我的位置')">✛</button>
+            <button class="mini" @click="useGeo" :title="t('使用我的位置')" :aria-label="t('使用我的位置')">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 21.5s6.5-5.8 6.5-11a6.5 6.5 0 1 0-13 0c0 5.2 6.5 11 6.5 11z" />
+                <circle cx="12" cy="10.2" r="2.4" />
+              </svg>
+            </button>
             <div v-if="showSug" class="sug glass">
               <button v-for="c in suggestions" :key="c.name" @click="pick(c)">
                 <b>{{ c.name }}</b>
