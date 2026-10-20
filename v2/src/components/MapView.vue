@@ -56,21 +56,30 @@ function loadSdk(): Promise<boolean> {
   });
 }
 
+/* 投影：必须用 projectToContainer（原版同口径）。早前误用 map.project()，
+   该方法在 GL JS 里不存在 ⇒ 静默回退成静态投影 ⇒ 图层不跟地图走（用户反馈的 bug）。 */
+function ptOf(p: unknown): { x: number; y: number } | null {
+  if (!p) return null;
+  const o = p as { getX?: () => number; getY?: () => number; x?: number; y?: number };
+  const x = typeof o.getX === "function" ? o.getX() : o.x;
+  const y = typeof o.getY === "function" ? o.getY() : o.y;
+  return typeof x === "number" && typeof y === "number" ? { x, y } : null;
+}
+
 function initProjection() {
   if (map && TMapNS) {
     projFn = (lat, lon) => {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const p = map.project(new TMapNS.LatLng(lat, lon));
-        return { x: p.x, y: p.y };
-      } catch {
-        return fallbackProj(lat, lon);
-      }
+        const q = ptOf(map.projectToContainer(new TMapNS.LatLng(lat, lon)));
+        if (q) return q;
+      } catch { /* ignore */ }
+      return fallbackProj(lat, lon);
     };
-    map.on && map.on("moveend", schedulePaint);
-    map.on && map.on("zoomend", schedulePaint);
-    map.on && map.on("move", schedulePaint);
-    map.on && map.on("zoom", schedulePaint);
+    /* 地图一动，覆盖层立即重贴合（只重算屏幕位置，不重新取数） */
+    ["bounds_changed", "zoom_changed", "center_changed", "drag", "idle",
+      "tilesloaded", "pitch_changed", "rotation_changed"].forEach((ev) => {
+      try { map.on && map.on(ev, schedulePaint); } catch { /* ignore */ }
+    });
     return;
   }
   projFn = fallbackProj;
@@ -204,7 +213,10 @@ watch(() => state.mapModel, () => { savePrefs(); schedulePaint(); });
 watch(() => state.mapDim, () => { savePrefs(); schedulePaint(); });
 watch(
   () => [state.theme, state.numLabels, state.showTx, state.showGrid, state.showPts],
-  () => schedulePaint()
+  () => {
+    savePrefs();
+    schedulePaint();
+  }
 );
 
 /* ---------------- 绘制 ---------------- */
@@ -387,8 +399,13 @@ function toggleFs() {
 }
 
 /* ---------------- 生命周期 ---------------- */
+function onKey(e: KeyboardEvent) {
+  if (e.key === "Escape" && fs.value) toggleFs();
+}
+
 onMounted(async () => {
   rebuildGrid();
+  window.addEventListener("keydown", onKey);
   const ok = await loadSdk();
   sdkReady.value = ok;
   sdkFail.value = !ok;
@@ -409,6 +426,7 @@ onMounted(async () => {
   schedulePaint();
 });
 onUnmounted(() => {
+  window.removeEventListener("keydown", onKey);
   if (paintRaf) cancelAnimationFrame(paintRaf);
   try { map && map.destroy && map.destroy(); } catch { /* ignore */ }
 });
@@ -461,12 +479,19 @@ function fmtV(v: number | null): string {
           <button class="btn btn-ghost" @click="toggleFs">{{ fs ? t("退出全屏") : t("全屏") }}</button>
         </div>
 
+        <!-- 地图显示开关：统一放在观测场内（不再进全局设置） -->
+        <div class="map-opts">
+          <label><input v-model="state.showTx" type="checkbox" />{{ t("云纹层") }}</label>
+          <label><input v-model="state.showGrid" type="checkbox" />{{ t("经纬网") }}</label>
+          <label><input v-model="state.numLabels" type="checkbox" />{{ t("数值直标") }}</label>
+          <label><input v-model="state.showPts" type="checkbox" />{{ t("采样点") }}</label>
+        </div>
+
         <!-- 图面 -->
         <div class="canvas-host">
           <div ref="box" class="map-box" @mousemove="onMove" @click="onClick" @touchend="onTouchEnd">
             <div ref="mapHost" class="map-host" />
             <canvas ref="cv" class="overlay" />
-            <button v-if="fs" class="fs-exit" @click="toggleFs">✕ 退出全屏</button>
 
             <!-- 悬停提示卡 -->
             <div
@@ -616,17 +641,21 @@ function fmtV(v: number | null): string {
   inset: 0;
   pointer-events: none;
 }
-.fs-exit {
-  position: absolute;
-  left: 12px; top: 12px;
-  z-index: 30;
-  padding: 8px 14px;
-  border-radius: var(--r-full);
-  background: rgba(10, 18, 32, 0.85);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  font-size: var(--fs-small);
+.map-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: -4px 0 10px;
+  font-size: var(--fs-tiny);
+  color: var(--tx-2);
 }
+.map-opts label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.map-opts input { accent-color: var(--acc-1); }
 .tip {
   position: absolute;
   z-index: 40;

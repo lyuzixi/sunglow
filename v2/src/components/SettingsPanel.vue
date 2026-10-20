@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { state, savePrefs, PREF_BOOL, FOLD_KEYS } from "../state";
+import { state, savePrefs, FOLD_KEYS } from "../state";
 import { t } from "../core/i18n";
 
 const open = ref(false);
+
+/* 地图显示开关（云纹/经纬网/直标/采样点）已移到观测场面板，不再进全局设置 */
+const BOOL_SHOWN = ["hour12", "calibOff"] as const;
 
 const BOOL_LABEL: Record<string, string> = {
   numLabels: "数值直标",
@@ -57,7 +60,7 @@ function setUnits(u: "metric" | "imperial") {
 
       <div class="grp">
         <div class="grp-h">{{ t("显示") }}</div>
-        <label v-for="k in PREF_BOOL" :key="k" class="row">
+        <label v-for="k in BOOL_SHOWN" :key="k" class="row">
           <input
             type="checkbox"
             :checked="(state as any)[k]"

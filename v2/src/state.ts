@@ -72,6 +72,10 @@ function loadPrefs(): Record<string, unknown> {
 
 const prefs = loadPrefs();
 
+/** 用户是否手动选过城市（决定是否启用定位默认） */
+export const hasSavedCity = (): boolean =>
+  typeof prefs.cityName === "string" && !!cityByName(prefs.cityName);
+
 function prefBool(k: string, dflt: boolean): boolean {
   return typeof prefs[k] === "boolean" ? (prefs[k] as boolean) : dflt;
 }
@@ -88,6 +92,7 @@ export const state = reactive<AppState>({
   })(),
   city:
     (typeof prefs.cityName === "string" && cityByName(prefs.cityName)) ||
+    cityByName("广州市") ||
     CITIES[0],
   dateStr: todayStr(),
   period: "pm",
