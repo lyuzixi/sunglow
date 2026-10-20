@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>霞光预报 · 地图模块改进优化方案（天色色阶 · 2026-10-18）</title>
+<meta name="robots" content="noindex">
+<style>
+:root{
+  --bg:#f4f6fa; --card:#fff; --line:#e5e9f0; --line2:#eef1f6;
+  --tx:#1f2733; --tx2:#5b6675; --tx3:#667081;
+  --ok:#0f7a45; --okbg:#e9f7ef;
+  --warn:#9c5a09; --warnbg:#fdf3e3;
+  --bad:#c0392b; --badbg:#fdeceb;
+  --acc:#e2601f; --acc2:#bd4a17; --accbg:#fff3ec;
+  --blue:#2563eb; --bluebg:#eef3ff;
+  --r:14px; --r2:10px;
+  --sh:0 1px 2px rgba(16,24,40,.04), 0 6px 20px -8px rgba(16,24,40,.10);
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(1200px 380px at 12% -8%, #ffeede 0%, rgba(255,238,222,0) 62%),
+    radial-gradient(1000px 340px at 92% -6%, #e9f0ff 0%, rgba(233,240,255,0) 60%),
+    var(--bg);
+  color:var(--tx);
+  font:15px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px 64px}
+.top{position:sticky;top:0;z-index:50;backdrop-filter:saturate(1.4) blur(10px);
+  background:rgba(255,255,255,.9);border-bottom:1px solid var(--line)}
+.top-in{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.logo{width:30px;height:30px;border-radius:10px;flex:0 0 auto;
+  background:linear-gradient(150deg,#ffd08a,#f08a3c 46%,#c9501a);box-shadow:0 4px 12px -4px rgba(201,80,26,.5)}
+.top h1{font-size:16px;margin:0;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-tx{min-width:0}
+.top .spacer{flex:1 1 auto}
+.nav{display:flex;gap:6px;flex-wrap:wrap}
+.nav a{font-size:12.5px;color:var(--tx2);text-decoration:none;padding:4px 9px;border-radius:999px;border:1px solid var(--line)}
+.nav a:hover{background:var(--accbg);border-color:#ffd9c2;color:var(--acc2)}
+h2{font-size:21px;margin:34px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--line)}
+h3{font-size:16.5px;margin:22px 0 10px}
+h4{font-size:14.5px;margin:16px 0 8px;color:var(--tx2)}
+p{margin:8px 0}
+ul,ol{margin:8px 0;padding-left:22px}
+li{margin:4px 0}
+code{font-family:var(--mono);font-size:12.5px;background:var(--line2);border-radius:5px;padding:1px 5px;word-break:break-all}
+a{color:var(--blue)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px 18px;margin:14px 0}
+.lead{font-size:15.5px;color:var(--tx2)}
+.muted{color:var(--tx3);font-size:13px}
+.hint{font-size:12.5px;color:var(--tx3)}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:16px 0}
+.fact{background:var(--card);border:1px solid var(--line);border-radius:var(--r2);padding:11px 13px}
+.fact b{display:block;font-size:19px;line-height:1.25;color:var(--acc2)}
+.fact span{font-size:12px;color:var(--tx3)}
+table{width:100%;border-collapse:collapse;font-size:13.5px;margin:10px 0}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:#fafbfd;font-weight:700;white-space:nowrap}
+tbody tr:nth-child(even){background:#fcfdff}
+td code{background:transparent;padding:0}
+.tag{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:999px;white-space:nowrap;font-weight:600}
+.t-v{background:var(--accbg);color:var(--acc2)}
+.t-s{background:var(--bluebg);color:var(--blue)}
+.t-p0{background:var(--badbg);color:var(--bad)}
+.t-p1{background:var(--warnbg);color:var(--warn)}
+.t-p2{background:var(--line2);color:var(--tx3)}
+.t-ok{background:var(--okbg);color:var(--ok)}
+/* 色阶示意条 */
+.ramp{height:44px;border-radius:8px;border:1px solid var(--line);margin:6px 0 2px}
+.ramp-ticks{display:flex;justify-content:space-between;font-size:11.5px;color:var(--tx3);font-family:var(--mono)}
+.bandchips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.bandchip{flex:1 1 120px;min-width:110px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--card)}
+.bandchip i{display:block;height:26px}
+.bandchip div{padding:5px 8px;font-size:11.5px;line-height:1.45;color:var(--tx2)}
+.bandchip b{display:block;font-size:12.5px;color:var(--tx)}
+.kbd{font-family:var(--mono);font-size:12px;background:#eef1f6;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:860px){.twocol{grid-template-columns:1fr}}
+.batch{border-left:3px solid var(--acc);padding-left:14px;margin:18px 0}
+.batch.s{border-left-color:var(--blue)}
+.item{background:var(--card);border:1px solid var(--line);border-radius:var(--r2);padding:12px 14px;margin:10px 0}
+.item h4{margin:0 0 6px;color:var(--tx);font-size:14.5px}
+.item .meta{font-size:12.5px;color:var(--tx3);margin:2px 0 6px}
+.item ul{margin:6px 0}
+.chain{background:#fafbfd;border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:13.5px;margin:8px 0}
+.chain b{color:var(--bad)}
+.tree{font-size:13.5px}
+.tree summary{cursor:pointer;font-weight:600;padding:4px 0}
+.tree ul{margin:4px 0}
+.q{color:var(--tx2)}
+.a{color:var(--acc2);font-weight:600}
+footer{margin-top:40px;padding-top:14px;border-top:1px solid var(--line);font-size:12.5px;color:var(--tx3)}
+</style>
+</head>
+<body>
+<div class="top"><div class="top-in">
+  <div class="logo"></div>
+  <div class="top-tx"><h1>霞光预报 · 地图模块改进优化方案</h1></div>
+  <div class="spacer"></div>
+  <nav class="nav">
+    <a href="#diag">诊断</a><a href="#decisions">十条决议</a><a href="#ramp">天色色阶</a>
+    <a href="#batches">批次计划</a><a href="#probes">探针与回归</a><a href="#notdo">明确不做</a><a href="#risk">风险</a>
+  </nav>
+</div></div>
+
+<div class="wrap">
+
+<p class="lead" style="margin-top:18px">日期：2026-10-18 · 对象：地图模块（<code>#cardMap</code>，源文件 <code>_p6.js</code> / <code>tpl/template.html</code> / <code>_p4.js</code>）<br>
+前置状态：B13 局部化、M1/M2/M3 三批地图改进、第五轮 UI、视觉方案一至四全部落地；一键序列 <b>25 项全绿</b>、具名断言 428 条。<br>
+本方案来自一次 <b>grill-me 决策树拷问</b>（10 个分支全部闭合），全文每个数字都标了来源。</p>
+
+<p class="lead" style="margin-top:10px;border-left:3px solid var(--acc);padding-left:12px">
+<b>落地状态（2026-10-18 当日收尾）</b>：第一批 V1–V4 与第二批 S1–S6 <b>已全部实施并回归通过</b>（<code>all.py</code> 25 项全绿；具名断言合计 481 → <b>509</b> 条：<code>mapaudit</code> 26→40、<code>mobileprobe</code> 28→35×两档）。§三 的锚点是<b>定稿实测值</b>（Variant C，含对比度/亮度弧线/色相回摆的实测结论）；§四 各条的"改动"列为最终实现口径，其中 S1 云纹触发了一次缓存升级（v5→v6）。</p>
+
+<div class="facts">
+  <div class="fact"><b>9 分</b><span>当日值域宽度（总跨 77 分）——全图挤在色阶顶端 12% 的直接原因</span></div>
+  <div class="fact"><b>1.13–1.36</b><span>色阶顶端相邻档的对比度——那几档本来就分不出（源码注释自述）</span></div>
+  <div class="fact"><b>0.9 × 0.45</b><span>色面不透明度 × 底图压暗——底图地名/海岸不可辨的两个乘数</span></div>
+  <div class="fact"><b>10 项</b><span>本方案决议数：视觉 4 + 结构/实用 6，分两批落地</span></div>
+  <div class="fact"><b>0 断言</b><span>因换色阶而要改的像素级断言数（探针取色全部自指，自动跟随）</span></div>
+  <div class="fact"><b>v5→v6</b><span>云纹需要云量进缓存载荷 ⇒ 唯一一次缓存版本升级</span></div>
+</div>
+
+<h2 id="diag">一、诊断：地图到底"怪"在哪里</h2>
+
+<p>用户原话："有点怪怪的"。经决策树定位为两个症状，都指向同一族根因——<b>色面太重、太闷、把地图盖死了</b>。逐层挖下去，每个症状都有一条完整的证据链。</p>
+
+<h3>症状一 · 色面像一张"大橘饼"</h3>
+
+<div class="chain">
+<b>根因链</b>（三乘一）：当日值域拉伸 <span style="color:var(--tx3)">×</span> 顶端档间对比度不足 <span style="color:var(--tx3)">×</span> 单色相平涂 <span style="color:var(--tx3)">×</span> 0.9 不透明度糊成一片
+</div>
+
+<ol>
+<li><b>当日值域拉伸是直接根因。</b><code>_p6.js:2117</code> 把 57 个点的数值按当日值域 <code>scaleT(v, R.lo, R.hi)</code> 拉伸到 0–100 再切档。而当天实测<b>中间一半格子只跨 9 分（当日值域共 77 分）</b>，且高值点占多数 ⇒ 整张色面全挤在色阶最顶端约 12% 的位置。<b>源码注释自己写着</b>（<code>_p6.js:194–195</code>）："整片色面落在一条很窄的色段里，看上去就是一坨"。</li>
+<li><b>顶端那几条档本来就分不出。</b><code>N_BANDS=7</code> 的相邻档对比度只有 <b>1.13–1.36</b>（源码注释自述），档界读得出来靠的是等值线而不是色差。于是"一坨深橙/红 + 几条蜿蜒细线"就是全部画面。</li>
+<li><b>单色相平涂没有第二个维度。</b><code>HEAT_RAMP</code>（<code>_p4.js:545</code>）是白→黄→橙→红的单一暖色相 8 锚点。即便值域正常，一整片同色相仍然没有空间结构可读。</li>
+<li><b>0.9 的不透明度把底色糊死。</b>色面以 0.9 盖在被压暗 0.45 的底图上，剩下的 0.1 × 0.55 约 5% 底图信息，等于没有。</li>
+</ol>
+
+<p class="hint">附带一处"名不副实"：图例刻度写着 <code>0 20 40 60 80 100</code>（<code>template.html:1397</code>），但色条实际显示的是<b>拉伸后的位置</b>——刻度是绝对的、色条是相对的，读者会被系统性地误导。固定刻度后这把尺子才变成真的。</p>
+
+<h3>症状二 · 底图被盖住、地图感弱</h3>
+
+<div class="chain">
+<b>根因链</b>：色面 0.9 不透明度 × 底图 0.45 压暗 ⇒ 底图地名/海岸/道路不可辨 ⇒ 色面从"地图上的数据层"退化成的"一张热力图贴纸"
+</div>
+
+<p>用户要的是"地图"，不是热力图。方位距离环、经纬网都在讲地理故事，但承载它们的地图本身看不见。这与"数据优先"并不矛盾——<b>数据优先可以让颜色最饱和，但不该让地图消失</b>。</p>
+
+<h3>两个"不是问题"的排除项</h3>
+<ul>
+<li><b>线条乱</b>：等值线/经纬网/方位环/范围线四套线，用户实测无感（决策树第 1 问未选）。本轮不动线元素，只把有机边缘与云纹这两个"面"的层次做出来。</li>
+<li><b>信息没主次</b>：未选。说明当前"图例 + 排行榜 + 提示卡"的分工是可接受的，本轮只做配套改写（固定色阶后图例文案必须重写），不重排信息架构。</li>
+</ul>
+
+<h2 id="decisions">二、grill-me 决策树 · 十条决议</h2>
+
+<details class="tree" open>
+<summary>展开/收起完整决策路径</summary>
+<ul>
+<li><span class="q">Q1 怪在哪？</span> → <span class="a">色面像一张大橘饼 + 底图被盖住、地图感弱</span>（线条乱/信息主次未选）</li>
+<li><span class="q">Q2 美观方向？</span> → <span class="a">层次重构（数据优先）</span>——放弃"轻透纱（底图优先）"与"符号点阵地图"</li>
+<li><span class="q">Q3 色阶怎么锚？</span> → <span class="a">固定 0–100 绝对刻度</span>——弃"当日拉伸"；颜色含义永久固定，跨天跨城可比</li>
+<li><span class="q">Q4 配色家族？</span> → <span class="a">天色色阶</span>——差＝天色已暗的深蓝、一般＝暮灰、良＝金、优＝橙红；与首屏天色带同源</li>
+<li><span class="q">Q5 八边形边缘？</span> → <span class="a">有机噪声边缘</span>——只动 70 km 羽化的外沿，内边界（凸包）不动，三对齐不破</li>
+<li><span class="q">Q6 大色块里放什么？</span> → <span class="a">云量淡纹</span>——接受像素断言风险，用独立图层方案化解</li>
+<li><span class="q">Q7 底图关系？</span> → <span class="a">双降不透明度</span>——色面 0.9→0.75、压暗 0.45→0.3</li>
+<li><span class="q">Q8 实用补哪些？</span> → <span class="a">四项全要</span>：手机地图可视面积 / 图例与读图说明 / 悬停提示卡重排 / 全屏看地图</li>
+<li><span class="q">Q9 允许打破什么？</span> → <span class="a">一次做全</span>——允许升 <code>MAP_CACHE_PREFIX</code> v5→v6、重定受影响断言的基线</li>
+<li><span class="q">Q10 交付方式？</span> → <span class="a">方案 HTML + 同会话直接实施</span>——跑全套回归后交付</li>
+</ul>
+</details>
+
+<h2 id="ramp">三、天色色阶（本方案的核心）</h2>
+
+<p><b>设计语义：地图上的颜色就是天空的颜色。</b>这与视觉设计方案的核心判断一脉相承——"界面不该装饰霞光而该把天色变成信息"：差＝天色已暗（墨蓝），一般＝暮色四合的雾灰，良＝金色霞光，优＝最浓的橙红。用户已经在首屏天色带上学过这套语言（深蓝段＝天黑），地图只是把它延伸到空间维度。</p>
+
+<p><b>工程约束（为什么可以放心换）：</b>全应用取色只有一个源头——<code>bandColor() → rampColor() → HEAT_RAMP</code>（<code>_p4.js:545–562</code>）。色面栅格 LUT、省级色块、图例色条、排行榜条形、悬停色块全部从它取色；<b>重定义 <code>HEAT_RAMP</code> 一处，全应用同步换肤</b>。探针的取色断言（zoomprobe 136 项、mapaudit I 段）全部是<b>自指</b>的——期望色由页面自己的 <code>bandColor()</code> 算出，所以换色阶<b>零断言改动</b>。</p>
+
+<h3>定稿锚点（7 档 · 8 锚点 · 已落地实测）</h3>
+<div class="ramp" style="background:linear-gradient(90deg,#3c5178 0%,#56748f 14.29%,#7d93ab 28.57%,#9b97a4 42.86%,#b8924a 57.14%,#e08a2e 71.43%,#e05a1f 85.71%,#d14418 100%)"></div>
+<div class="ramp-ticks"><span>0</span><span>20</span><span>40</span><span>60</span><span>80</span><span>100</span></div>
+
+<div class="bandchips">
+  <div class="bandchip"><i style="background:#496284"></i><div><b>差 · 天色已暗</b>0–14.3 · 墨蓝。深色对白底对比度约 10:1，顺手解决老问题"低值区贴白底"（旧浅黄仅 1.05）</div></div>
+  <div class="bandchip"><i style="background:#6a849d"></i><div><b>较差 · 暮蓝</b>14.3–28.6</div></div>
+  <div class="bandchip"><i style="background:#8c95a8"></i><div><b>偏差 · 薄暮</b>28.6–42.9 · 雾蓝灰</div></div>
+  <div class="bandchip"><i style="background:#aa9477"></i><div><b>一般 · 暮灰</b>42.9–57.1 · 中性过渡带，蓝与金之间的"天色将变未变"（冷暖分界落在 44/45%）</div></div>
+  <div class="bandchip"><i style="background:#cc8e3c"></i><div><b>良 · 金色霞光</b>57.1–71.4</div></div>
+  <div class="bandchip"><i style="background:#e07226"></i><div><b>较优 · 橙</b>71.4–85.7</div></div>
+  <div class="bandchip"><i style="background:#d84f1c"></i><div><b>优 · 橙红</b>85.7–100 · 霞光最浓</div></div>
+</div>
+
+<ul>
+<li><b>档位数不变</b>（<code>N_BANDS=7</code>）：档界位置、等值线层级、图例硬停止渐变全部不动，只换色值。</li>
+<li><b>顶端不走深黑红</b>：旧尺顶端 <code>#d51313</code> 的教训是"高值区显得更暗、被误读成低值"。新尺顶端用<b>亮朱红</b> <code>#d14418</code>，明度不低于相邻档，色相（橙→红）承担"更浓"的语义。</li>
+<li><b>对比度实测结论</b>（<code>_scratch/measure_ramp.py</code>，随第一批一并落地）：白底最差对比度 <b>2.68</b>（暮灰中段，达标）、深色底图（#3a424e）最差 <b>1.28</b>（同一段，靠等值线/边界线/方位环补第二重线索）；亮度弧线峰 <b>152.7 @43%</b>（峰-起 73.4 / 峰-终 57.9，两端各自低于峰 40+ ⇒ "暗—亮—浓"读得成弧线）；暖端（v≥60）色相严格单向 36.8°→14.3°（<b>0 回摆</b>）、冷端（v≤35）稳在 207.9–219.3°；1% 步进最大通道跳变 <b>7</b>（无肉眼可见的色带断裂）。中段两锚（#7d93ab/#9b97a4）即按实测从初稿各偏一档的结果。</li>
+<li><b>深色底图模式</b>：字段色经"双层 filter 互相抵消"原样保留（硬约束 36）；低端墨蓝压在深色底图上仍有可辨差，且等值线/边缘线/方位环提供第二重线索。</li>
+<li><b>语义纪律的刻意扩展</b>："暖色只给数据"扩展为"<b>天色只给数据</b>——地图是全天色语汇的唯一栖息地，页面纸面仍旧冷中性"。</li>
+<li><b>分歧（dv）维度说明</b>：固定刻度下模型分歧（通常 &lt;30 分）自然落在低段蓝区——这是诚实的（三模型很少强烈分歧），图例按维度给档位名，不与"优/良"混排。</li>
+</ul>
+
+<h2 id="batches">四、批次计划</h2>
+
+<div class="batch">
+<h3 style="margin-top:6px">第一批 · 治"怪"（视觉四件套）<span class="tag t-v">直接回应用户两张原票</span></h3>
+
+<div class="item">
+<h4>V1 · 固定 0–100 绝对刻度 <span class="tag t-p1">改计算口径 · 不动缓存</span></h4>
+<p class="meta">改动：<code>_p6.js</code>（<code>buildField</code> 的 cv 计算、<code>updateLegend</code> 两处调用、<code>mapRangeOf</code> 去留）· 图例文案 <code>_pi18n.js</code></p>
+<ul>
+<li><code>cv[i] = 100 * scaleT(dimOf(...), R.lo, R.hi)</code> → <code>cv[i] = clamp(dimOf(...), 0, 100)</code>；<code>updateLegend</code> 的 R 参数固化为 <code>{lo:0, hi:100}</code>（保留签名，最小 diff）。</li>
+<li><b>不升缓存版本</b>：拉伸发生在绘制期，缓存里存的是逐点 P/Q 原值（约束 29），换映射不换数据。</li>
+<li><code>mapRangeOf</code> 若仅服务拉伸则删除；先全仓 grep 确认 <code>scaleT</code> 其他调用点。</li>
+<li>悬停提示卡、排行榜数值同步变成绝对分；"当日相对"的文案全部改写。</li>
+</ul>
+<p class="hint">验收：图例刻度 0–100 与色条逐位对齐；跨日期同城同维度同值 ⇒ 同色（uiprobe 新增）；dv 维度不报错、档位名正确。</p>
+</div>
+
+<div class="item">
+<h4>V2 · 天色色阶换肤 <span class="tag t-p1">改一处常量 · 全应用跟随</span></h4>
+<p class="meta">改动：<code>_p4.js</code> 的 <code>HEAT_RAMP</code>（8 锚点重定义）· 相关注释同步</p>
+<ul>
+<li>只改 <code>HEAT_RAMP</code> 数组；<code>rampColor/bandColor/bandGradientCss</code> 逻辑不动。</li>
+<li>落地时实测：a11yprobe 对比度全过；darkprobe 硬编码色预算（现 43/45）不增加——色值是数组内替换，不新增字面量。</li>
+<li>深色模式实拍复核：墨蓝低端在深色底图上的可辨性。</li>
+</ul>
+<p class="hint">验收：色面/图例/排行榜/悬停色块/省级色块五处同源同色（mapaudit 既有断言）；实拍 before/after 对比。</p>
+</div>
+
+<div class="item">
+<h4>V3 · 有机噪声边缘 <span class="tag t-p2">改绘制 · 三对齐不破</span></h4>
+<p class="meta">改动：<code>_p6.js</code>（<code>evalField</code> 的凸包外羽化计算，新增确定性噪声函数）</p>
+<ul>
+<li>70 km 羽化的<b>外沿</b>叠加低频确定性噪声（网格坐标哈希值噪声，波长约 150–250 km、幅度约 ±25 km）⇒ 色面边缘像天气系统的覆盖区渐隐入地图，不再是一条几何折线。</li>
+<li><b>只用确定性噪声</b>（禁 <code>Math.random</code>）：同一栅格永远同一边缘，探针才可复现。</li>
+<li><b>内边界（凸包）一动不动</b> ⇒ B1 范围虚线 / 可信度纱内边界 / 色面淡出内边界的三对齐（约束 19）原样成立；纱的"起纱≡外推"判据读实际像素，自动跟随。</li>
+<li>与"磨圆折角"（第三轮已判定回退）是两件事：不动顶点，只软化外沿。</li>
+</ul>
+<p class="hint">验收：mapaudit J 段三对齐断言全绿；边缘目视无折角；两次构建的色面边缘逐位一致（确定性）。</p>
+</div>
+
+<div class="item">
+<h4>V4 · 双降不透明度 <span class="tag t-p2">改 CSS · 像素探针零影响</span></h4>
+<p class="meta">改动：<code>template.html</code>（<code>.rlayer</code> 基础 <code>opacity:.75</code>、<code>.dimbase.on</code> <code>.45→.3</code>）· <code>_p6.js</code> 的 <code>FIELD_OPACITY</code> 保持 0.9 不变</p>
+<ul>
+<li><b>关键实现决策</b>：不把 0.75 写进画布 alpha（<code>img[o*4+3]</code>），而是用 CSS 层透明度实现——视觉等效，但 zoomprobe/mapaudit 读的是画布像素，<b>所有像素级断言原样有效</b>（否则 alpha 峰值 207→172，I 段"≥200 不透明区"会退化成空集、线宽归一标尺失效，白白削弱守卫）。</li>
+<li><code>.rlayer.stale</code>（opacity:.4）特异性高于 <code>.rlayer</code>，陈旧态不受影响；深色模式 filter 与 opacity 可叠加。</li>
+<li><code>mapVisibleAt()</code> 读画布 alpha&gt;0，与 CSS 透明度无关，排行榜口径不变。</li>
+</ul>
+<p class="hint">验收：底图地名/海岸在色面下可辨（实拍）；zoomprobe 136 项与 mapaudit I 段零改动全绿。</p>
+</div>
+</div>
+
+<div class="batch s">
+<h3 style="margin-top:6px">第二批 · 结构与实用（六项）<span class="tag t-s">含唯一一次缓存升级</span></h3>
+
+<div class="item">
+<h4>S1 · 云量淡纹 <span class="tag t-p0">动缓存 · 动图层号 · 需实测拿捏</span></h4>
+<p class="meta">改动：<code>_p6.js</code>（<code>box.pts</code> 加 <code>cld</code> 字段、<code>buildField</code> 增云量值场、新图层 <code>.txlayer</code> 绘制）· <code>template.html</code>（图层号重排 + z-index + 深色 filter 名单）· <code>MAP_CACHE_PREFIX</code> v5→v6</p>
+<ul>
+<li><b>数据侧</b>：逐点低/中云遮挡量在管线里已算出（提示卡"主要云层"同源，<code>_p6.js:3010–3021</code>），但<b>不在缓存载荷里</b>（<code>box.pts</code> 只有 P/Q/type/cover/d/dur…）⇒ 每点补一个 <code>cld</code>（低+中云加权，0–100）并升 <code>MAP_CACHE_PREFIX</code>。旧版缓存缺字段 ⇒ 静默走"无纹理"路径，不报错（坏行降级是项目惯例）。</li>
+<li><b>绘制侧</b>：云量按同一套 IDW 插值成场，画在<b>独立新图层</b> <code>.txlayer</code>（z-index 2，逐纬度条带画布，与 <code>.conflayer</code> 同构），深云影 <code>#1e2a44</code>、目标 α≤0.18。<b>绝不画进色面栅格</b>——这是"像素色↔档位 ±2"断言（mapaudit I 段 / zoomprobe）保住的关键。</li>
+<li><b>图层号重排</b>：0 底图压暗 / 1 色面 / <b>2 云纹</b> / 3 等值线+经纬网 / 4 可信度纱 / 5 方位环 / 6 数值直标 / 7 图钉 / 8 加载遮罩 / 20 提示卡。三处同步：template 注释表（全项目唯一来源）、各层 z-index、<code>.mapwrap.dark</code> 的 filter 名单。</li>
+<li><b>风险兜底</b>：若实测 α 拿不到"看得见又不破 ±2"（其实独立图层已经不破 ±2，剩下的是纯观感问题），退化为"仅图例说明云量、不画纹理"，S1 降级为纯数据准备。</li>
+</ul>
+<p class="hint">验收：新层存在且有内容；色面不透明像素仍 100% 落在档位色 ±2（既有断言即证明）；云纹像素只出现在色面有像素处、α≤0.2（新增）；缓存 v6 读写正常、旧缓存不炸。</p>
+</div>
+
+<div class="item">
+<h4>S2 · 采样点符号精致化 + 默认开启 <span class="tag t-p2">改 DOM 层 · 零像素风险</span></h4>
+<p class="meta">改动：<code>template.html</code>（<code>.pin.s</code> 样式、<code>#showPts</code> 默认勾选）· <code>_p6.js</code>（<code>renderPins</code> 样式细节）</p>
+<ul>
+<li>57 个采样点从"默认隐藏的小圆点"升级为<b>细点 + 极淡描边</b>（任何色块上都可见，颜色不抢戏）；缩放足够大时数值微标复用现有 <code>LABEL_TIERS</code> 阶梯。</li>
+<li>回答"颜色从哪来"——大色块有了锚点，也是地图感的一部分（真实测点铺在真实地图上）。</li>
+<li>纯 DOM 叠加（现有架构），不碰色面栅格 ⇒ 像素断言零风险。</li>
+</ul>
+<p class="hint">验收：默认开启；点数＝57 + 查询点图钉；拖动不重建 DOM（既有 pinSig 机制）；不与数值直标叠字。</p>
+</div>
+
+<div class="item">
+<h4>S3 · 图例与读图说明重写 <span class="tag t-p2">文案 + 结构 · 零风险</span></h4>
+<p class="meta">改动：<code>_p6.js</code>（<code>updateLegend</code> 的 <code>#lgNote</code>/<code>#lgMore</code> 文案）· <code>_pi18n.js</code>（两份词典）</p>
+<ul>
+<li>固定色阶的配套解释："颜色＝绝对的霞光质量（0–100），不随当天拉伸——今天和昨天、这里和那里可以直接比。"</li>
+<li>新增"怎么读这张图"六件套各一句：色面（采样点插值）/ 等值线（档界）/ 有机边缘（渐隐＝外推减弱）/ 云纹（低中云量）/ 采样点（数据来源）/ 可信度纱（凸包外＝外推）。</li>
+<li>掩膜说明常驻不动（硬约束：mapaudit G 段守着它在场）；"当日值域拉伸为什么这么算"整段删除。</li>
+</ul>
+<p class="hint">验收：mapaudit G 段（掩膜字样在场）全绿；图例不再出现"拉伸"表述；中英文案各一份。</p>
+</div>
+
+<div class="item">
+<h4>S4 · 悬停提示卡重排 <span class="tag t-p2">改 DOM · 小改动</span></h4>
+<p class="meta">改动：<code>_p6.js</code>（<code>showMapTip</code> 的卡片 HTML，<code>_p6.js:3467</code>）</p>
+<ul>
+<li>借固定刻度的契机重排条目顺序：<b>① 距查询点（距离·方位，从第 8 位提前到第 1 位）</b>② 综合指数（绝对分）③ 出现概率/观赏质量 ④ 主要云层 + 云底/云边界 ⑤ 数据可信度 ⑥ 来源说明。</li>
+<li>方位与距离沿用 M2-1 既有通路（<code>bearingOf</code>/haversine），不新造三角函数。</li>
+<li>窄屏 dock、翻转、四条关闭路径全部不动（约束 44/45 的既有成果）。</li>
+</ul>
+<p class="hint">验收：mapaudit 既有提示卡断言（不被裁、给出距离/方位）全绿；悬停双重节流不回归。</p>
+</div>
+
+<div class="item">
+<h4>S5 · 全屏看地图 <span class="tag t-p1">新功能 · 探针可测</span></h4>
+<p class="meta">改动：<code>template.html</code>（卡片头按钮 + <code>.mapwrap.fs</code> 样式）· <code>_p6.js</code>（切换逻辑、Esc、resize 重拟合）</p>
+<ul>
+<li>卡片头（<code>mapTag</code> 旁）加"全屏"按钮；点击后 <code>.mapwrap</code> 切 <code>position:fixed; inset:0</code>（z-index 高于页面一切内容，具体值实施时核对 TOC 面板后定）、<code>#map</code> 高度撑满视口；再点 / <kbd class="kbd">Esc</kbd> / 窄屏下点击地图外 退出。</li>
+<li><b>用 CSS 展开式而不是浏览器 Fullscreen API</b>：headless 探针里 Fullscreen API 基本不可用，CSS 模式可被端到端断言；iOS 兼容也更稳。</li>
+<li>画布重拟合走既有 ResizeObserver → <code>fitRaster</code> 通路，不新造 resize 逻辑；全屏下提示卡/方位环/图钉全部照常。</li>
+</ul>
+<p class="hint">验收：进入后 wrap 为 fixed 且 #map 高度＝视口高；Esc 还原；resize 后画布与容器仍合一（复用"连续多次读数不变"的等待纪律，不用固定 sleep）。</p>
+</div>
+
+<div class="item">
+<h4>S6 · 手机地图可视面积 <span class="tag t-p1">改布局 · mobileprobe 同步</span></h4>
+<p class="meta">改动：<code>template.html</code>（窄屏媒体查询内的图例/排行榜/工具条压缩）· <code>_p6.js</code>（排行榜移动端默认前 4 条 + 展开）</p>
+<ul>
+<li>手机上：排行榜默认只显示前 4 条 + "查看全部"展开钮；图例色条与刻度行紧凑化；两处 <code>&lt;details&gt;</code> 摘要文案缩短；工具条组间距收敛。</li>
+<li><code>#map</code> 窄屏高度 420 → 460 px（小步，不激进）。</li>
+<li><b>mobileprobe 的布局断言要重新量</b>（工具条行高/行数、卡片总高、地图占比），按实测新值更新——这是"一次做全"里明确允许的基线重定，不是放水：判据仍按身份/集合断，不断"元素总数"。</li>
+<li>全屏按钮（S5）是手机端的真正答案：卡片里一小条 → 一键全屏。S6 是压缩，S5 是出口，两者互补。</li>
+</ul>
+<p class="hint">验收：mobileprobe 两档视口 26+2 条全绿（按新实测值）；地图区占模块高度比例实拍对比提升；横向不溢出（约束 46/47 不动）。</p>
+</div>
+</div>
+
+<h2 id="probes">五、探针与回归</h2>
+
+<h3>断言影响盘点</h3>
+<table>
+<thead><tr><th>探针</th><th>影响</th><th>处置</th></tr></thead>
+<tbody>
+<tr><td>zoomprobe（136 项）</td><td>换色阶：取色自指 ⇒ <b>零影响</b>；固定刻度：期望值改用原始分 ⇒ 同步改一行口径</td><td>改期望值计算（与页面同源）</td></tr>
+<tr><td>mapaudit（26 条）</td><td>I 段"不透明像素＝档位色 ±2"自指 ⇒ 零影响；V4 若走 CSS 透明度 ⇒ alpha 相关阈值零影响；S1 云纹独立图层 ⇒ 既有断言恰好成为"色面未被动过"的证明</td><td>新增 3 条：云纹层存在/α≤0.2/只在色面有像素处；有机边缘两条（确定性 + 三对齐复查）</td></tr>
+<tr><td>uiprobe（39→43+）</td><td>新增：全屏进入/退出/Esc、图例文案（无"拉伸"字样、出现"绝对"）、跨日同色、采样点默认开启</td><td>加断言</td></tr>
+<tr><td>mobileprobe（28 条）</td><td>S6 改布局 ⇒ 工具条行高/行数、卡片总高的实测值变</td><td>按新实测值更新（记录新旧对照）</td></tr>
+<tr><td>darkprobe</td><td>硬编码色预算 43/45：色阶是数组内替换不增量；新增 CSS 若有新 rgba 先收令牌</td><td>守住预算</td></tr>
+<tr><td>a11yprobe（16 条）</td><td>天色色阶低端墨蓝对比度大幅改善，中段暮灰需实测</td><td>实测不过就微调锚点（记录回方案 §三）</td></tr>
+<tr><td>persistprobe（20 条）</td><td>无新偏好键（全屏态、采样点默认值都不持久化——与既有 4 个图层开关同纪律）</td><td>加 1 条：无新键写入</td></tr>
+<tr><td>cachesize / pointcache / raceprobe / 404probe 等</td><td>缓存 v6 ⇒ cachesize 的版本号口径同步；其余无感</td><td>同步版本号</td></tr>
+</tbody>
+</table>
+
+<h3>固定流程（每批做完）</h3>
+<ol>
+<li><code>SITE_BASE=sunglow python assemble.py</code>（确认输出字节数；<b>必须带 SITE_BASE</b>，否则 404probe 假失败）</li>
+<li><code>python mkpreview.py</code> → <code>python _check/all.py</code>（同一时间只跑一个）</li>
+<li>本批相关探针单独复量 + 实拍 before/after 各一张</li>
+<li>改过探针 ⇒ 跑完 <code>all.py</code> 再跑 <code>docfacts</code>（顺序纪律，约束 49）</li>
+</ol>
+
+<h2 id="notdo">六、明确不做的</h2>
+<table>
+<thead><tr><th>事项</th><th>为什么不</th></tr></thead>
+<tbody>
+<tr><td>换 Leaflet/MapLibre 底图</td><td>中国区域需测绘资质与审图号，腾讯 SDK 是已验证合规项；对引擎依赖仅"瓦片+投影+事件"，无切换动机</td></tr>
+<tr><td>符号点阵地图（弃连续色面）</td><td>等值线、悬停取值、可信度纱全部建立在连续值场上；丢掉连续性是拿核心能力换观感</td></tr>
+<tr><td>按数值分透明度</td><td>透明度也编码数值 ⇒ "看图反查数值"多一个变量，像素断言全部要重新论证</td></tr>
+<tr><td>用 ETOPO1 高程判海</td><td>M1 轮已实测否掉：10 个已知点判错 2 个，且错的方向最坏（真海判成陆）</td></tr>
+<tr><td>磨圆凸包折角</td><td>第三轮已判定并回退：500 km 尺度下顶点可挪动量仅约 4 px，且与覆盖/可信半径不可兼得</td></tr>
+<tr><td>当日拉伸改"直方图均衡"等智能拉伸</td><td>治的是同一个病，但把"颜色含义"变成一段算法——用户永远说不清某个颜色是多少分。固定刻度 + 云纹 + 等值线已经给了足够结构</td></tr>
+<tr><td>全屏态/采样点默认值进偏好持久化</td><td>图层开关一律不持久化是既有纪律（约束 43）；全屏是临时态，更不该存</td></tr>
+</tbody>
+</table>
+
+<h2 id="risk">七、风险与兜底</h2>
+<table>
+<thead><tr><th>风险</th><th>概率/影响</th><th>兜底</th></tr></thead>
+<tbody>
+<tr><td>天色色阶中段（暮灰）落在白底上发闷</td><td>中 / 观感</td><td>锚点微调（向暖灰或向雾蓝各偏一档），a11y 实测为准，记录回 §三</td></tr>
+<tr><td>云纹 α 拿捏"看得见又不脏"失败</td><td>中 / 观感</td><td>降级为仅图例说明（数据与缓存升级保留，不浪费）</td></tr>
+<tr><td>缓存 v6 升级后老用户首帧无云纹</td><td>高 / 轻微</td><td>预期行为：缺字段走无纹理路径，一次正常刷新后即有</td></tr>
+<tr><td>深色模式下墨蓝低端与深色底图相近</td><td>中 / 观感</td><td>等值线/边缘线/方位环提供第二重线索；实拍复核后可把低端提亮半档</td></tr>
+<tr><td>全屏与 TOC 面板/提示卡 dock 的 z-index 战争</td><td>低 / 功能</td><td>实施时核对现有最高 z 值取更高一档；探针端到端断 elementFromPoint</td></tr>
+<tr><td>图层号重排漏同步一处（注释表/z-index/filter 名单）</td><td>中 / 深色模式颜色错</td><td>三处同批改 + mapaudit 既有层序断言 + darkprobe 实拍</td></tr>
+</tbody>
+</table>
+
+<h2>八、验收清单</h2>
+<div class="card">
+<ol>
+<li><b>治怪</b>：固定刻度 + 天色色阶 + 有机边缘 + 双降不透明度后，默认取景实拍与 <code>_check/shot-map-desktop.png</code> 对比——色面有结构（≥2 个可辨大区）、底图地名可辨、边缘无折角。</li>
+<li><b>结构</b>：云纹层在场且不碰色面（mapaudit I 段 offPalette＝0 即证明）；采样点默认开启、57 + 1。</li>
+<li><b>实用</b>：图例出现"绝对"与读图六件套、不再出现"拉伸"；提示卡首条是距离·方位；全屏进出/Esc/resize 全部端到端通过；手机上地图占比提升且横向不溢出。</li>
+<li><b>回归</b>：<code>SITE_BASE=sunglow assemble → mkpreview → all.py</code> 全绿（25 项 + 新增断言）；<code>docfacts</code> 0 不一致；产物字节数与文档同步。</li>
+<li><b>留证</b>：before/after 实拍各一套（桌面 + 窄屏 + 深色底图 + 全屏四态）。</li>
+</ol>
+</div>
+
+<footer>
+霞光预报 · 地图模块改进优化方案 · 2026-10-18 · 由 grill-me 决策树拷问定稿（10 分支全闭合）· 本文档自包含、noindex<br>
+配套阅读：《地图改进方案.md》（M1–M3 前一轮）·《视觉设计方案.md》（纸面仪器）· `.workbuddy/memory/硬约束详解.md`（55 条）
+</footer>
+
+</div>
+</body>
+</html>

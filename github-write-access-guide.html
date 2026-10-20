@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GitHub 写权限配置教程 · 让助手能创建仓库</title>
+<style>
+  :root{
+    --bg:#faf9f7; --card:#ffffff; --line:#e3e1dc; --line-strong:#c9c6bf;
+    --ink:#1f1e1c; --ink2:#5c5a55; --ink3:#8a8781;
+    --blue:#185fa5; --blue-bg:#e6f1fb; --red:#a32d2d; --red-bg:#fcebeb;
+    --green:#3b6d11; --green-bg:#eaf3de; --amber-bg:#faeeda; --amber:#854f0b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    font-size:15px;line-height:1.75}
+  .wrap{max-width:820px;margin:0 auto;padding:48px 24px 80px}
+  h1{font-size:26px;font-weight:600;margin:0 0 10px}
+  .lead{color:var(--ink2);margin:0 0 32px}
+  h2{font-size:19px;font-weight:600;margin:44px 0 12px;padding-top:8px}
+  h3{font-size:15px;font-weight:600;margin:24px 0 8px}
+  p{margin:10px 0}
+  a{color:var(--blue);text-decoration:none;border-bottom:1px solid #cfe0f2}
+  code{font-family:"SFMono-Regular",Consolas,Menlo,monospace;font-size:13px;
+    background:#f1efe9;padding:2px 6px;border-radius:4px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:16px 0}
+  .note{background:var(--amber-bg);border:1px solid #f0d9ad;border-radius:10px;padding:14px 16px;color:#5c4208;font-size:14px}
+  .bad{background:var(--red-bg);border:1px solid #f2cdcd;border-radius:10px;padding:14px 16px;color:#6d1f1f;font-size:14px}
+  .ok{background:var(--green-bg);border:1px solid #c8e0a4;border-radius:10px;padding:14px 16px;color:#2c4a0c;font-size:14px}
+  .steps{margin:0;padding-left:0;list-style:none;counter-reset:s}
+  .steps li{counter-increment:s;position:relative;padding-left:38px;margin:18px 0}
+  .steps li::before{content:counter(s);position:absolute;left:0;top:2px;width:26px;height:26px;
+    border-radius:50%;background:var(--blue-bg);color:var(--blue);font-size:13px;font-weight:600;
+    display:flex;align-items:center;justify-content:center}
+  .win{border:1px solid var(--line-strong);border-radius:10px;overflow:hidden;margin:16px 0;background:#fff}
+  .bar{display:flex;align-items:center;gap:7px;background:#f1efe9;padding:9px 12px;border-bottom:1px solid var(--line)}
+  .dot{width:10px;height:10px;border-radius:50%}
+  .url{flex:1;background:#fff;border:1px solid var(--line);border-radius:5px;padding:3px 10px;
+    font-size:12px;color:var(--ink2);font-family:Consolas,Menlo,monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .page{padding:18px 20px;font-size:14px}
+  .page h4{margin:0 0 4px;font-size:16px;font-weight:600}
+  .muted{color:var(--ink2);font-size:13px}
+  .row{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;
+    padding:11px 0;border-top:1px solid var(--line)}
+  .row:first-child{border-top:0}
+  .chk{display:inline-flex;align-items:center;gap:9px}
+  .box{width:15px;height:15px;border:1.5px solid #9c998f;border-radius:3px;background:#fff;flex:none}
+  .box.on{background:#1f883d;border-color:#1f883d;position:relative}
+  .box.on::after{content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;
+    border:solid #fff;border-width:0 2px 2px 0;transform:rotate(42deg)}
+  .pill{background:#1f883d;color:#fff;font-size:12px;padding:2px 10px;border-radius:999px}
+  .pill.gray{background:#e9e7e1;color:#5c5a55;border:1px solid var(--line)}
+  .term{background:#1f1e1c;color:#e8e6e1;padding:16px 18px;font-family:Consolas,Menlo,monospace;
+    font-size:13px;line-height:1.9;overflow-x:auto}
+  .term .g{color:#7ee787}.term .y{color:#e3b341}.term .b{color:#79c0ff}.term .d{color:#8b8a85}
+  pre{background:#f6f5f2;border:1px solid var(--line);border-radius:10px;padding:14px 16px;
+    overflow-x:auto;font-family:Consolas,Menlo,monospace;font-size:13px;line-height:1.7;margin:12px 0}
+  table{width:100%;border-collapse:collapse;font-size:14px;margin:12px 0}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--ink2);font-weight:600;background:#f6f5f2}
+  .hl{background:#fff8e6;border-left:3px solid #e0b34d;padding-left:10px}
+  footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);color:var(--ink3);font-size:13px}
+  @media(max-width:640px){.wrap{padding:28px 16px 60px}h1{font-size:22px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>让 GitHub 连接器拥有写权限</h1>
+<p class="lead">目标：让助手能替你执行「创建公开仓库 sunglow」这类写操作。先解释为什么没有勾选框，再给三条可落地的路径。</p>
+
+<div class="bad">
+<strong>先纠正一个说法：</strong>「授权时勾选 repo 权限」这个界面真实并不存在。WorkBuddy 里的 GitHub 连接器用的是 GitHub 官方远程 MCP 服务（<code>https://api.githubcopilot.com/mcp/</code>），走的是 OAuth 登录。GitHub 的 OAuth 授权页由服务端固定申请权限，页面上<strong>没有任何权限勾选框</strong>也不支持手动追加 scope，所以无论重连多少次，结果都一样：读可以，写返回 403。
+</div>
+
+<h2>为什么读得到、写不了</h2>
+<div class="card">
+<table>
+<tr><th style="width:34%">环节</th><th>实际情况</th></tr>
+<tr><td>连接方式</td><td>Streamable HTTP，直连 GitHub 官方远程 MCP，OAuth 登录</td></tr>
+<tr><td>读取类操作</td><td>正常。查账号、列仓库、搜代码都不需要写权限</td></tr>
+<tr><td>写入类操作</td><td><code>create_repository</code> 返回 <code>403 Resource not accessible by integration</code></td></tr>
+<tr><td>根因</td><td>当前令牌未包含 <code>repo</code> / <code>public_repo</code> 作用域；官方 MCP 对缺失作用域采用「调用时动态申请」的机制，客户端若不支持该流程就直接 403</td></tr>
+<tr><td>能不能补权限</td><td>不能。只能换认证方式，或改用其他工具链</td></tr>
+</table>
+<p class="muted">可以自查授权记录：<a href="https://github.com/settings/applications">github.com/settings/applications</a>（Authorized OAuth Apps / Installed GitHub Apps），但那里只有「撤销」，没有「加权限」。</p>
+</div>
+
+<h2>方案 A：个人访问令牌 PAT（推荐，一次配置长期可用）</h2>
+<p>把连接器换成用你自己的令牌访问同一个 MCP 服务，令牌上带 <code>repo</code>，写操作立刻可用。</p>
+
+<h3>第 1 步 · 打开令牌页面</h3>
+<div class="win">
+  <div class="bar"><span class="dot" style="background:#e05561"></span><span class="dot" style="background:#e0b341"></span><span class="dot" style="background:#5bbf5b"></span><span class="url">https://github.com/settings/tokens</span></div>
+  <div class="page">
+    <h4>Personal access tokens</h4>
+    <p class="muted">路径：头像 → Settings → Developer settings → Personal access tokens → Tokens (classic)</p>
+    <div class="row"><span>选择令牌类型</span><span><span class="pill gray">Fine-grained tokens</span> &nbsp;<span class="pill">Tokens (classic)</span></span></div>
+    <div class="row"><span>Generate new token</span><span>点击 <span class="pill">Generate new token (classic)</span></span></div>
+  </div>
+</div>
+<div class="note">这里要选 <strong>Tokens (classic)</strong>。细粒度令牌只能绑定到已存在的仓库，用它建新仓同样会被拒。</div>
+
+<h3>第 2 步 · 填写并勾选</h3>
+<div class="win">
+  <div class="bar"><span class="dot" style="background:#e05561"></span><span class="dot" style="background:#e0b341"></span><span class="dot" style="background:#5bbf5b"></span><span class="url">https://github.com/settings/tokens/new</span></div>
+  <div class="page">
+    <div class="row"><span>Note（备注）</span><span class="muted">WorkBuddy MCP</span></div>
+    <div class="row"><span>Expiration（有效期）</span><span class="muted">90 days（到期前记得续）</span></div>
+    <div class="row">
+      <span>Select scopes（权限）</span>
+      <span>
+        <div class="chk"><span class="box on"></span> <strong>repo</strong> &nbsp;<span class="muted">Full control of private repositories</span></div>
+        <div class="muted" style="margin-top:6px">勾 repo 会自动带上下级：<code>repo:status</code> <code>public_repo</code> <code>repo_deployment</code></div>
+        <div class="chk" style="margin-top:10px"><span class="box"></span> <span class="muted">workflow（可选，要改 Actions 才勾）</span></div>
+        <div class="chk" style="margin-top:8px"><span class="box"></span> <span class="muted">gist / notifications（不需要，别勾）</span></div>
+      </span>
+    </div>
+    <div class="row"><span></span><span><span class="pill">Generate token</span></span></div>
+  </div>
+</div>
+
+<h3>第 3 步 · 复制令牌</h3>
+<p>生成后页面会显示一次以 <code>ghp_</code> 开头的字符串，<strong>关掉就看不到了</strong>，先复制保存。然后把它发给对话里的助手，由助手写入本地配置；也可以自己改文件 <code>C:\Users\&lt;你的用户名&gt;\.workbuddy\mcp.json</code>：</p>
+<pre>{
+  "mcpServers": {
+    "github": {
+      "type": "streamable-http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ghp_在这里粘贴你的令牌"
+      }
+    }
+  }
+}</pre>
+
+<h3>第 4 步 · 启用并验证</h3>
+<ol class="steps">
+  <li>在会话窗口左下角的「+」菜单里打开连接器管理，右上角找到自定义连接器入口，对新出现的 <code>github</code> 点击 <strong>Trust（信任）</strong>，它才会真正生效。</li>
+  <li>让助手重试建仓；或自己用下面的命令确认令牌带上写权限：</li>
+</ol>
+<div class="term">
+<span class="d"># Git Bash / PowerShell 均可，看到 repo 就说明有写权限</span><br>
+curl -sI -H <span class="y">"Authorization: Bearer ghp_xxxx"</span> https://api.github.com/user | grep -i x-oauth-scopes<br>
+<span class="d"># 期望输出： x-oauth-scopes: repo, ...</span>
+</div>
+<div class="ok">到这一步，助手就能执行 <code>create_repository</code> 与后续推送文件了。</div>
+<div class="note"><strong>安全提示：</strong>令牌等同你的账号写权限，只保存在本机配置文件里，不要贴进公开仓库、Issues 或截图；不用时到 GitHub 同一页面点 Delete 即可随时吊销。</div>
+
+<h2>方案 B：GitHub 官方命令行 gh（不想在文件里存令牌）</h2>
+<p>gh 登录时会一次性拿到 <code>repo</code> 写权限，凭据交给系统凭据管理器保管，之后建仓、推代码都能用。</p>
+<ol class="steps">
+  <li>安装（PowerShell，任选一行执行）：
+    <div class="term">winget install --id GitHub.cli<br><span class="d"># 或用 Scoop： scoop install gh</span></div>
+  </li>
+  <li>登录并按提示操作：
+    <div class="term">
+      <span class="g">$</span> gh auth login<br>
+      ? Where do you use GitHub? <span class="b">GitHub.com</span><br>
+      ? What is your preferred protocol? <span class="b">HTTPS</span><br>
+      ? Authenticate Git with your GitHub credentials? <span class="b">Yes</span><br>
+      ? How would you like to authenticate? <span class="b">Login with a web browser</span><br>
+      ! First copy your one-time code: <span class="y">A1B2-C3D4</span><br>
+      <span class="d"># 浏览器自动打开，粘贴上方一次性码 → Continue → Authorize GitHub</span>
+    </div>
+  </li>
+  <li>建仓（这一步可以直接让助手代跑）：
+    <div class="term">
+      <span class="g">$</span> gh repo create sunglow --public --confirm<br>
+      <span class="g">✓</span> Created repository lyuzixi/sunglow on GitHub
+    </div>
+  </li>
+</ol>
+<div class="note">网页授权那一步同样<strong>没有权限勾选框</strong>——gh 的 OAuth 应用是固定申请 <code>repo</code>、<code>read:org</code> 等权限的，直接点 Authorize 即可。</div>
+
+<h2>方案 C：网页端手动建仓（最快，30 秒）</h2>
+<div class="win">
+  <div class="bar"><span class="dot" style="background:#e05561"></span><span class="dot" style="background:#e0b341"></span><span class="dot" style="background:#5bbf5b"></span><span class="url">https://github.com/new</span></div>
+  <div class="page">
+    <h4>Create a new repository</h4>
+    <div class="row"><span>Owner / Repository name *</span><span class="muted">lyuzixi / <strong>sunglow</strong></span></div>
+    <div class="row"><span>Description</span><span class="muted">可选，留空也行</span></div>
+    <div class="row"><span>可见性</span><span><span class="chk"><span class="box on"></span> <strong>Public</strong></span> &nbsp;&nbsp; <span class="chk"><span class="box"></span> Private</span></span></div>
+    <div class="row"><span>Initialize this repository with</span><span class="chk"><span class="box on"></span> Add a README file</span></div>
+    <div class="row"><span></span><span><span class="pill">Create repository</span></span></div>
+  </div>
+</div>
+<p>创建完把地址告诉助手，后续初始化文件、推代码都可以继续交给它（推代码仍需要方案 A 或 B 的写权限）。</p>
+
+<h2>三条路怎么选</h2>
+<div class="card">
+<table>
+<tr><th style="width:22%">方案</th><th style="width:30%">适合谁</th><th>代价</th></tr>
+<tr><td><strong>A · PAT</strong></td><td>希望助手长期代管 GitHub</td><td>令牌存本机文件，需自己保管、到期续期</td></tr>
+<tr><td><strong>B · gh CLI</strong></td><td>不想明文存令牌</td><td>要装一个命令行工具，建仓需助手跑命令</td></tr>
+<tr><td><strong>C · 网页</strong></td><td>只想先有个仓库</td><td>最快，但助手仍写不了，后续推送还得配 A 或 B</td></tr>
+</table>
+</div>
+<p class="hl">如果只是想马上拿到 <code>sunglow</code> 这个仓库，走方案 C；如果想让助手以后都能直接建仓、推代码，走方案 A。</p>
+
+<footer>教程生成于 2026-10-12 · 图中页面均为示意，按钮名称与 GitHub 官方界面一致，实际配色可能随 GitHub 改版略有差异。</footer>
+</div>
+</body>
+</html>

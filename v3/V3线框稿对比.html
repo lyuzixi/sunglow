@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V3 信息架构线框稿 · 两套对比</title>
+<style>
+  :root{
+    --ink:#1a1a1a; --mid:#666; --line:#c9c9c9; --blk:#f3f3f3; --blk2:#e9e9e9;
+    --acc:#1d4ed8; --acc-bg:#eef2ff; --ok:#2f6f4f; --warn:#8a6d1f; --bad:#8a3030;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#fafafa;color:var(--ink);
+       font:15px/1.7 "PingFang SC","Microsoft YaHei","Source Han Sans SC",sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:36px 28px 80px}
+  header.top{border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:8px}
+  h1{font-size:22px;margin:0 0 6px;letter-spacing:.02em}
+  .sub{color:var(--mid);font-size:13px}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 18px;margin:16px 0 30px;font-size:12px;color:var(--mid)}
+  .legend i{display:inline-block;width:11px;height:11px;border:1px solid var(--line);margin-right:5px;vertical-align:-1px}
+  .legend .sw-blk{background:var(--blk)}
+  .legend .sw-img{background:repeating-linear-gradient(45deg,#fff,#fff 4px,#e4e4e4 4px,#e4e4e4 8px)}
+  .legend .sw-acc{background:var(--acc-bg);border-color:var(--acc)}
+
+  section{margin:44px 0}
+  h2{font-size:18px;margin:0 0 4px;padding-left:10px;border-left:4px solid var(--acc)}
+  .lede{color:var(--mid);font-size:13.5px;margin:8px 0 18px;max-width:72em}
+
+  /* ---------- 通用线框零件 ---------- */
+  .wire{border:1.5px solid var(--ink);background:#fff}
+  .w-top{display:flex;align-items:center;gap:14px;padding:10px 14px;border-bottom:1.5px solid var(--ink);font-size:12.5px}
+  .w-top .brand{font-weight:700;letter-spacing:.06em}
+  .w-top nav{display:flex;gap:12px;color:var(--mid)}
+  .w-top .right{margin-left:auto;color:var(--mid)}
+  .blk{border:1px solid var(--line);background:var(--blk);padding:12px 14px}
+  .blk + .blk{margin-top:10px}
+  .blk-h{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--mid);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+  .num{display:inline-flex;width:18px;height:18px;border-radius:50%;background:var(--acc);color:#fff;
+       font-size:11px;align-items:center;justify-content:center;font-weight:700;flex:none}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:2px;padding:1px 7px;font-size:11px;color:var(--mid)}
+  .chip.a{border-color:var(--acc);color:var(--acc);background:var(--acc-bg)}
+  .ph{background:repeating-linear-gradient(45deg,#fff,#fff 5px,#ececec 5px,#ececec 10px);
+      border:1px dashed var(--line);color:var(--mid);font-size:11px;text-align:center;padding:8px}
+  .row{display:flex;gap:10px}
+  .row > *{flex:1;min-width:0}
+  .stat{font-size:26px;font-weight:700;line-height:1.2}
+  .stat .u{font-size:13px;font-weight:400;color:var(--mid);margin-left:4px}
+  .kv{font-size:12px;color:var(--mid);line-height:1.9}
+  .kv b{color:var(--ink);font-weight:600}
+  .foot{border-top:1.5px solid var(--ink);padding:10px 14px;font-size:11.5px;color:var(--mid);display:flex;gap:16px;flex-wrap:wrap}
+  .meter{height:10px;border:1px solid var(--line);background:#fff;position:relative;overflow:hidden}
+  .meter i{position:absolute;inset:0;width:0;background:repeating-linear-gradient(90deg,var(--blk2),var(--blk2) 6px,#fff 6px,#fff 12px)}
+  .day{border:1px solid var(--line);background:#fff;padding:8px 6px;text-align:center;font-size:11px;flex:1;min-width:0}
+  .day .d{color:var(--mid)}
+  .day .p{font-size:15px;font-weight:700;margin:2px 0}
+  .day .bar{height:26px;display:flex;align-items:flex-end;justify-content:center}
+  .day .bar i{width:60%;background:var(--blk2);border:1px solid var(--line);border-bottom:none}
+  .day.best{outline:2px solid var(--acc);outline-offset:-2px}
+  .day.best .bar i{background:var(--acc-bg);border-color:var(--acc)}
+  .fold{border:1px solid var(--line);background:#fff;padding:10px 12px;font-size:12.5px;color:var(--mid)}
+  .fold b{color:var(--ink)}
+
+  /* 方案 A：剧本式单列 */
+  .a-hero{padding:18px 18px 16px}
+  .a-hero .line{font-size:13px;color:var(--mid);margin-top:6px}
+  .a-hero .acts{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+  .btn{border:1.5px solid var(--ink);padding:5px 12px;font-size:12px;background:#fff}
+  .btn.p{background:var(--ink);color:#fff}
+
+  /* 方案 B：指挥台三栏 */
+  .b-grid{display:grid;grid-template-columns:170px 1fr 210px;gap:10px;padding:12px}
+  .b-grid .col{min-width:0}
+  .map-stage{border:1.5px solid var(--ink);background:#fff;padding:10px}
+  .map-stage .ph{height:250px;display:flex;align-items:center;justify-content:center}
+  .pin{position:absolute;font-size:10px;background:var(--acc);color:#fff;padding:1px 6px;border-radius:8px}
+
+  /* 注释 */
+  .notes{margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:8px 22px}
+  .note{font-size:12.5px;color:var(--mid);line-height:1.75}
+  .note b{color:var(--ink)}
+
+  /* 对比表 */
+  table{border-collapse:collapse;width:100%;background:#fff;font-size:13px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:var(--blk);font-size:12px;letter-spacing:.06em}
+  td.good{color:var(--ok);font-weight:600}
+  td.warn{color:var(--warn);font-weight:600}
+
+  /* 窄屏缩略 */
+  .mini{display:flex;gap:14px;margin-top:14px;flex-wrap:wrap}
+  .mini .phone{width:150px;border:1.5px solid var(--ink);background:#fff;padding:8px;font-size:10px;color:var(--mid)}
+  .mini .phone .b{border:1px solid var(--line);background:var(--blk);padding:6px;margin-bottom:5px;color:var(--ink)}
+  .mini .phone .map{height:74px;background:repeating-linear-gradient(45deg,#fff,#fff 5px,#ececec 5px,#ececec 10px);border:1px dashed var(--line);margin-bottom:5px}
+  .cap{font-size:12px;color:var(--mid);margin-top:8px}
+  .todo{border:1px solid var(--line);background:var(--acc-bg);padding:12px 16px;font-size:13px;margin-top:36px}
+  .todo b{color:var(--acc)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <h1>V3 信息架构线框稿 · 两套对比</h1>
+  <div class="sub">lo-fi 线框，只比结构与叙事，不掺视觉风格 · 功能前提：双主轴「今晚去哪拍 + 敢不敢信」 · 2026-10-20</div>
+</header>
+
+<div class="legend">
+  <span><i class="sw-blk"></i>内容区块（灰底为示意填充）</span>
+  <span><i class="sw-img"></i>图片/地图占位</span>
+  <span><i class="sw-acc"></i>标注与强调</span>
+  <span>○ 编号 = 注释条目对应</span>
+</div>
+
+<!-- ================= 方案 A ================= -->
+<section id="A">
+  <h2>方案 A · 剧本式（今晚叙事）</h2>
+  <p class="lede">按用户的真实提问顺序讲故事：<b>值不值得出门 → 去哪、几点到 → 未来几天还有没有机会 → 这个结论能不能信 → 想深究再看明细</b>。
+  原版模块（天色带 / 地图 / 分歧 / 因素 / 校准）不单独立块陈列，全部改写成新形态并折叠在末段 —— 首屏只回答决策。</p>
+
+  <div class="wire">
+    <div class="w-top">
+      <span class="brand">GLOWCAST V3</span>
+      <nav><span>今晚</span><span>机会</span><span>可信度</span></nav>
+      <span class="right">简/繁/EN · ☾ · 原版 ↗ · V2 ↗</span>
+    </div>
+
+    <!-- ① hero -->
+    <div class="blk a-hero" style="background:#fff;border-top:none;border-left:none;border-right:none">
+      <div class="blk-h"><span class="num">①</span>今晚 · 结论</div>
+      <div class="row" style="align-items:flex-end">
+        <div>
+          <div class="stat">值得出门<span class="u">晚霞 · 78%</span></div>
+          <div class="line">西侧中高云成带，日落后 10–20 分钟最可能烧起来；低空通透。</div>
+        </div>
+        <div class="kv" style="flex:0 0 210px;text-align:right">
+          <b>日落</b> 17:42 &nbsp;·&nbsp; <b>蓝调至</b> 18:11<br>
+          <b>距最佳窗口</b> 1 小时 23 分<br>
+          <b>建议</b> 17:00 前到位
+        </div>
+      </div>
+      <div class="acts">
+        <span class="btn p">看去哪拍</span>
+        <span class="btn">为什么是 78%？</span>
+        <span class="btn">生成分享卡</span>
+      </div>
+    </div>
+
+    <!-- ② 去哪拍 -->
+    <div class="blk">
+      <div class="blk-h"><span class="num">②</span>去哪拍 · 今日 Top 3 <span class="chip">按观测场 57 点筛</span><span class="chip">← 详情进地图</span></div>
+      <div class="row">
+        <div class="blk" style="background:#fff;margin:0">
+          <div class="kv"><b>城西观景台</b> 2.1 km</div>
+          <div class="kv">朝向 <b>WSW 247°</b> · 窗口 <b>17:20–17:55</b></div>
+          <div class="kv">云量预期 42% · 西侧视野开阔</div>
+        </div>
+        <div class="blk" style="background:#fff;margin:0">
+          <div class="kv"><b>湖东岸</b> 5.4 km</div>
+          <div class="kv">朝向 <b>W 268°</b> · 窗口 <b>17:15–17:50</b></div>
+          <div class="kv">云量预期 38% · 有水面反射</div>
+        </div>
+        <div class="blk" style="background:#fff;margin:0">
+          <div class="kv"><b>北岭步道口</b> 8.0 km</div>
+          <div class="kv">朝向 <b>NW 312°</b> · 窗口 <b>17:30–18:05</b></div>
+          <div class="kv">云量预期 51% · 高处视野，注意风</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ③ 日历 -->
+    <div class="blk">
+      <div class="blk-h"><span class="num">③</span>机会日历 · 未来 7 天 <span class="chip">日落 ▾</span><span class="chip">日出</span></div>
+      <div class="row">
+        <div class="day"><div class="d">二 21</div><div class="p">72%</div><div class="bar"><i style="height:72%"></i></div></div>
+        <div class="day"><div class="d">三 22</div><div class="p">41%</div><div class="bar"><i style="height:41%"></i></div></div>
+        <div class="day"><div class="d">四 23</div><div class="p">15%</div><div class="bar"><i style="height:15%"></i></div></div>
+        <div class="day"><div class="d">五 24</div><div class="p">63%</div><div class="bar"><i style="height:63%"></i></div></div>
+        <div class="day best"><div class="d">六 25</div><div class="p">80%</div><div class="bar"><i style="height:80%"></i></div></div>
+        <div class="day"><div class="d">日 26</div><div class="p">33%</div><div class="bar"><i style="height:33%"></i></div></div>
+        <div class="day"><div class="d">一 27</div><div class="p">22%</div><div class="bar"><i style="height:22%"></i></div></div>
+      </div>
+    </div>
+
+    <!-- ④ 可信度 -->
+    <div class="blk">
+      <div class="blk-h"><span class="num">④</span>可信度 · 这个结论敢不敢信 <span class="chip a">双主轴之二</span></div>
+      <div class="row">
+        <div class="blk" style="background:#fff;margin:0">
+          <div class="kv"><b>多模型分歧</b></div>
+          <div class="kv">GFS 82 · EC 71 → 差 <b>11 分</b>（中等）</div>
+          <div class="meter" title="分歧"><i style="width:45%"></i></div>
+        </div>
+        <div class="blk" style="background:#fff;margin:0">
+          <div class="kv"><b>综合置信度</b></div>
+          <div class="kv">可信 · 集合离散度低</div>
+          <div class="meter"><i style="width:74%"></i></div>
+        </div>
+        <div class="blk" style="background:#fff;margin:0">
+          <div class="kv"><b>你的校准档案</b> <span class="chip">F4 →</span></div>
+          <div class="kv">18 次记录 · 高估偏多 <b>+6%</b></div>
+          <div class="kv">样本仍不足，继续积累</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⑤ 明细折叠 -->
+    <div class="blk" style="background:#fff">
+      <div class="blk-h"><span class="num">⑤</span>明细 · 默认折叠</div>
+      <div class="row">
+        <div class="fold">▸ <b>天色带与逐时</b><br>太阳事件轴、now 游标、逐时云量</div>
+        <div class="fold">▸ <b>影响因素</b><br>火三角、云层结构、光路消光</div>
+        <div class="fold">▸ <b>模式对比</b><br>观赏质量 / 出现概率 双口径</div>
+        <div class="fold">▸ <b>完整观测场</b><br>地图色面、排行榜、任意点查询</div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <span>数据源 Open-Meteo（非商业）</span><span>教程</span><span>校准档案</span><span>原版 ↗</span><span>V2 ↗</span>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note"><span class="num">①</span> <b>首屏只给决策</b>：结论词 + 概率 + 一句话理由 + 时间与倒计时，四个元素回答「今晚去不去」。</div>
+    <div class="note"><span class="num">②</span> <b>去哪拍是新增能力</b>：从观测场 57 点里筛 Top 3，给出朝向与到场窗口；地图降级为详情页。</div>
+    <div class="note"><span class="num">③</span> <b>机会日历承接原趋势模块</b>：7 天从折线图改写成「哪天值得去」的日历格，六 25 这类峰值日自动高亮。</div>
+    <div class="note"><span class="num">④</span> <b>可信度独立成段</b>：分歧 / 置信度 / 校准三件套并排，直接回应「概率误报」这个行业痛点。</div>
+    <div class="note"><span class="num">⑤</span> <b>明细不消失、只退后</b>：原版的数据模块全部保留为折叠区，深度用户仍能下钻。</div>
+    <div class="note"><b>窄屏</b>：单列天然顺序堆叠，无结构改动 —— 这是剧本式最大的工程优势。</div>
+  </div>
+
+  <div class="mini">
+    <div class="phone">
+      <div class="b"><b>值得出门 78%</b><br>日落 17:42 · 1h23m</div>
+      <div class="b">去哪拍 · 3 个点</div>
+      <div class="b">机会日历（横滑 7 格）</div>
+      <div class="b">可信度三件套</div>
+      <div class="b">明细折叠 ×4</div>
+      <div>方案 A 窄屏：顺序堆叠</div>
+    </div>
+    <div>
+      <div class="cap">A 的取舍：决策叙事最强、实现与响应式成本最低；代价是地图退居折叠区，「空间决策」的临场感弱于 B。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 方案 B ================= -->
+<section id="B">
+  <h2>方案 B · 指挥台式（地图主舞台）</h2>
+  <p class="lede">把「去哪拍」这个空间问题摆到主舞台：<b>结论压成一条，中间让给全宽观测场地图</b>（推荐点、朝向线、点选浮卡），
+  机会日历与可信度分列两翼，明细横滑收尾。信息密度最高，适合宽屏与深度用户。</p>
+
+  <div class="wire">
+    <div class="w-top">
+      <span class="brand">GLOWCAST V3</span>
+      <nav><span>今晚</span><span>机会</span><span>可信度</span></nav>
+      <span class="right">简/繁/EN · ☾ · 原版 ↗ · V2 ↗</span>
+    </div>
+
+    <!-- ① 结论条 -->
+    <div class="blk" style="border-top:none;border-left:none;border-right:none;background:#fff;display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+      <div class="blk-h" style="margin:0"><span class="num">①</span>今晚</div>
+      <div style="font-size:19px;font-weight:700">值得出门 · 78%</div>
+      <div class="kv">日落 <b>17:42</b> · 蓝调至 <b>18:11</b> · 距窗口 <b>1h23m</b></div>
+      <div class="kv" style="flex:1;min-width:180px">西侧中高云成带，日落后 10–20 分钟最可能烧起来</div>
+      <span class="btn p">生成分享卡</span>
+    </div>
+
+    <!-- ② 三栏 -->
+    <div class="b-grid">
+      <!-- 左：日历 -->
+      <div class="col">
+        <div class="blk" style="height:100%;margin:0">
+          <div class="blk-h"><span class="num">③</span>机会日历</div>
+          <div class="kv" style="line-height:2.1">
+            <b>二 21</b> &nbsp;72%<br>
+            三 22 &nbsp;41%<br>
+            四 23 &nbsp;15%<br>
+            五 24 &nbsp;63%<br>
+            <b style="color:var(--acc)">六 25 &nbsp;80% ◀ 本周最佳</b><br>
+            日 26 &nbsp;33%<br>
+            一 27 &nbsp;22%
+          </div>
+          <div class="chip" style="margin-top:8px">日出 ▾</div>
+        </div>
+      </div>
+
+      <!-- 中：地图 -->
+      <div class="col">
+        <div class="map-stage">
+          <div class="blk-h"><span class="num">②</span>观测场 · 去哪拍 <span class="chip a">主舞台</span><span class="chip">色面 0–100</span><span class="chip">朝向线</span><span class="chip">Top 3 标记</span></div>
+          <div class="ph">地图色面 + 推荐点 pin + 太阳方位朝向线 + 点选浮卡（点名 / 距离 / 窗口 / 朝向）</div>
+          <div class="row" style="margin-top:8px">
+            <div class="blk" style="background:#fff;margin:0;padding:8px 10px">
+              <div class="kv"><b>城西观景台</b> · WSW 247° · 17:20–17:55</div>
+            </div>
+            <div class="blk" style="background:#fff;margin:0;padding:8px 10px">
+              <div class="kv"><b>湖东岸</b> · W 268° · 17:15–17:50</div>
+            </div>
+            <div class="blk" style="background:#fff;margin:0;padding:8px 10px">
+              <div class="kv"><b>北岭步道口</b> · NW 312° · 17:30–18:05</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右：可信度 -->
+      <div class="col">
+        <div class="blk" style="height:100%;margin:0">
+          <div class="blk-h"><span class="num">④</span>可信度</div>
+          <div class="kv"><b>分歧</b> GFS 82 / EC 71</div>
+          <div class="meter"><i style="width:45%"></i></div>
+          <div class="kv" style="margin-top:10px"><b>置信度</b> 可信</div>
+          <div class="meter"><i style="width:74%"></i></div>
+          <div class="kv" style="margin-top:10px"><b>校准档案</b> 18 次 · +6%</div>
+          <div class="chip" style="margin-top:6px">打开完整档案 →</div>
+          <div class="kv" style="margin-top:12px"><b>因素速览</b><br>云带 ✓ 通透 ✓ 风速 ✓</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⑤ 明细横滑 -->
+    <div class="blk" style="border-top:1.5px solid var(--ink);border-left:none;border-right:none;border-bottom:none">
+      <div class="blk-h"><span class="num">⑤</span>明细 · 横向滑动</div>
+      <div class="row">
+        <div class="fold"><b>天色带</b><br>事件轴 + now 游标</div>
+        <div class="fold"><b>影响因素</b><br>火三角 / 云层 / 光路</div>
+        <div class="fold"><b>模式对比</b><br>质量 / 概率</div>
+        <div class="fold"><b>逐时表</b><br>云量 / 能见度</div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <span>数据源 Open-Meteo（非商业）</span><span>教程</span><span>校准档案</span><span>原版 ↗</span><span>V2 ↗</span>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note"><span class="num">①</span> <b>结论压成横条</b>：决策信息仍全（结论 / 概率 / 时间 / 理由），但让出垂直空间给地图。</div>
+    <div class="note"><span class="num">②</span> <b>地图即推荐器</b>：Top 3 标记 + 朝向线直接画在色面上，点选出浮卡 —— 空间决策一步完成。</div>
+    <div class="note"><span class="num">③</span> <b>左翼机会日历</b>：竖排日历常驻，切换日期地图随之重算（与原版 mapPeriod 时段切换同构）。</div>
+    <div class="note"><span class="num">④</span> <b>右翼可信度</b>：三仪表常驻视野，随时回答「敢不敢信」；因素速览只留结论。</div>
+    <div class="note"><span class="num">⑤</span> <b>明细横滑</b>：宽屏信息密度高，但横滑区在移动端体验一般，需要额外设计。</div>
+    <div class="note"><b>窄屏</b>：三栏塌缩为「结论 → 地图 → 日历 → 可信度」竖排，实际退化成方案 A 的顺序 —— 结构要在断点处重新编排。</div>
+  </div>
+
+  <div class="mini">
+    <div class="phone">
+      <div class="b"><b>值得出门 78%</b><br>日落 17:42</div>
+      <div class="map">地图（固定高 460）</div>
+      <div class="b">Top 3（横滑）</div>
+      <div class="b">机会日历（横滑）</div>
+      <div class="b">可信度三仪表</div>
+      <div>方案 B 窄屏：塌缩为竖排</div>
+    </div>
+    <div>
+      <div class="cap">B 的取舍：空间决策的临场感与信息密度最高，宽屏体验最好；代价是地图交互复杂（pin / 朝向线 / 浮卡 / 联动日历）+ 窄屏要重新编排，实现与调优成本明显高于 A。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 对比 ================= -->
+<section id="C">
+  <h2>两案对比</h2>
+  <p class="lede">同一功能前提下的结构差异。视觉气质不在本表 —— 那是下一个决策分支。</p>
+  <table>
+    <tr><th style="width:16%">维度</th><th style="width:42%">A · 剧本式</th><th style="width:42%">B · 指挥台式</th></tr>
+    <tr><td>首屏决策感</td><td class="good">强 —— 结论、理由、倒计时、下一步全在首屏</td><td class="warn">中 —— 结论被压成一条，靠地图补足</td></tr>
+    <tr><td>「去哪拍」体验</td><td class="warn">卡片列表，空间感弱</td><td class="good">地图即推荐器，临场感强</td></tr>
+    <tr><td>信息密度</td><td>中，靠折叠区下钻</td><td class="good">高，三栏常驻</td></tr>
+    <tr><td>窄屏工程量</td><td class="good">低，单列天然堆叠</td><td class="warn">高，三栏塌缩需重新编排</td></tr>
+    <tr><td>地图交互复杂度</td><td class="good">低（复用原版交互即可）</td><td class="warn">高（pin / 朝向线 / 浮卡 / 日历联动）</td></tr>
+    <tr><td>原版模块下场</td><td>折叠进⑤明细</td><td>横滑⑤明细 + 部分升入两翼</td></tr>
+    <tr><td>实现成本（估）</td><td class="good">约 1.0×</td><td class="warn">约 1.4–1.6×</td></tr>
+    <tr><td>长期扩展</td><td>新增模块往下续即可</td><td>新增能力抢两翼空间，布局易拥挤</td></tr>
+  </table>
+
+  <div class="todo">
+    <b>待你拍板：</b>选 A、选 B，或「B 的地图主舞台 + A 的剧本首屏」混合（首屏结论块完整保留，地图随后全宽展开 —— 取两者长处，代价是首屏到地图有一次滚动衔接）。
+  </div>
+</section>
+
+</div>
+</body>
+</html>
