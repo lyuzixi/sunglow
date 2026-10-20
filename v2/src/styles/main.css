@@ -427,6 +427,18 @@ input, select {
   pointer-events: auto; visibility: visible;
   transition: transform 0.2s ease, opacity 0.2s ease, visibility 0s;
 }
+/* 液态玻璃（原版同配方）：高光渐变 + 磨砂提饱和 + 内侧 1px 高光。
+   不支持 backdrop-filter 时保持上面的实心底色，不降级成半透明糊片。 */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .mdrawer {
+    background: linear-gradient(180deg, var(--glass-sheen), transparent 42%) var(--glass);
+    backdrop-filter: saturate(1.55) blur(18px);
+    -webkit-backdrop-filter: saturate(1.55) blur(18px);
+    box-shadow: 0 24px 60px -26px rgba(8, 14, 26, 0.5), inset 0 1px 0 var(--glass-hi);
+  }
+  .md-group { border-top-color: color-mix(in srgb, var(--glass-hi) 55%, transparent); }
+}
+
 .md-label {
   padding: 16px 20px 8px;
   font-size: 11px; letter-spacing: 0.2em; color: var(--tx-3);
