@@ -5,10 +5,16 @@ import { t } from "../core/i18n";
 import { solarPosition } from "../core/astro";
 import { uClock } from "../core/units";
 
+/* 天色带（内联版，供结论卡使用）
+   口径对齐原版 _p5b：
+   · 五段固定曙暮光序列，段宽＝该段真实时长（太阳高度角 0/−6/−12/−18/−20° 分段）
+   · 轴用通俗术语：晚霞 日落/渐暗/深蓝/天黑；朝霞 日出/渐亮/淡蓝/天亮
+   · 霞光窗口（云边界→地球遮挡之间）+ 现在游标，两行轴 */
 const res = computed(() => state.result);
+const hostW = ref(800);
+const axisEl = ref<HTMLDivElement | null>(null);
 const nowMs = ref(Date.now());
 let timer = 0;
-const hostW = ref(800);
 
 onMounted(() => {
   timer = window.setInterval(() => (nowMs.value = Date.now()), 60000);
@@ -20,259 +26,250 @@ onUnmounted(() => {
   window.removeEventListener("resize", measure);
 });
 function measure() {
-  const el = document.getElementById("skyAxis");
-  if (el) hostW.value = el.clientWidth;
+  if (axisEl.value) hostW.value = axisEl.value.clientWidth;
 }
 
-/* 天色带：以事件为中心的 ±70 分钟窗口 */
-const winStart = computed(() => (res.value ? res.value.evMs - 70 * 60000 : 0));
-const winEnd = computed(() => (res.value ? res.value.evMs + 70 * 60000 : 0));
+const band = computed(() => {
+  const r = res.value;
+  if (!r) return null;
+  const isAM = r.period === "am";
+  const dir = isAM ? -1 : 1; // 时间推进方向
+  const evMs = r.evMs;
+  const altOf = (ms: number) => solarPosition(ms, r.city.lat, r.city.lon).altitude;
+  const cross = (target: number, d: number): number | null => {
+    let lo = evMs, hi = evMs + d * 6 * 3600000;
+    const f = (ms: number) => altOf(ms) - target;
+    if (!(f(lo) * f(hi) <= 0)) return null;
+    for (let i = 0; i < 44; i++) {
+      const mid = (lo + hi) / 2;
+      if (f(mid) * f(lo) > 0) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
+  };
+  const tEdge = cross(2, -dir);
+  const t6 = cross(-6, dir), t12 = cross(-12, dir);
+  const t18 = cross(-18, dir), t20 = cross(-20, dir);
+  if (tEdge == null || t6 == null || t12 == null || t18 == null || t20 == null) return null;
+  const tStart = Math.min(tEdge, t20), tEnd = Math.max(tEdge, t20);
+  const span = tEnd - tStart;
+  if (!(span > 60000)) return null;
 
-interface Mark {
-  p: number;
-  alt: number;
-  label: string;
-  big?: boolean;
-  now?: boolean;
-  sub?: string;
-}
+  const seg = (cls: string, a: number, b: number, title: string) => ({
+    cls, m: Math.max(0.01, (b - a) / 60000), title
+  });
+  const segs = isAM
+    ? [seg("s-night", tStart, t18, t("夜间")),
+       seg("s-astro", t18, t12, t("天文曙暮光")),
+       seg("s-naut", t12, t6, t("航海曙暮光")),
+       seg("s-civil", t6, evMs, t("民用曙暮光")),
+       seg("s-day", evMs, tEnd, t("白昼余晖"))]
+    : [seg("s-day", tStart, evMs, t("白昼余晖")),
+       seg("s-civil", evMs, t6, t("民用曙暮光")),
+       seg("s-naut", t6, t12, t("航海曙暮光")),
+       seg("s-astro", t12, t18, t("天文曙暮光")),
+       seg("s-night", t18, tEnd, t("夜间"))];
 
-/* 第一行：太阳事件（0/−6/−12/−18° 分界） */
-const eventMarks = computed<Mark[]>(() => {
-  if (!res.value) return [];
-  const { evMs, period, evName } = res.value;
-  const defs = [
-    { off: -55, label: t("天文" + (period === "am" ? "晨光始" : "昏影终")), alt: -18 },
-    { off: -30, label: t("航海" + (period === "am" ? "晨光始" : "昏影终")), alt: -12 },
-    { off: -12, label: t("民用" + (period === "am" ? "晨光始" : "昏影终")), alt: -6 },
-    { off: 0, label: t(evName), alt: -0.833, big: true },
-    { off: 18, label: t(period === "am" ? "日出后" : "日落后"), alt: -2 }
+  /* 霞光窗口：θnear（云边界）→ θfar（地球遮挡） */
+  let win: { left: number; width: number } | null = null;
+  const g = r.sRT.geom;
+  if (g && g.ok && isFinite(g.thNearDeg) && isFinite(g.thFarDeg)) {
+    const a = cross(-g.thNearDeg, dir), b = cross(-g.thFarDeg, dir);
+    if (a != null && b != null) {
+      const ws = Math.max(tStart, Math.min(a, b));
+      const we = Math.min(tEnd, Math.max(a, b));
+      if (we > ws) {
+        win = {
+          left: ((ws - tStart) / span) * 100,
+          width: ((we - ws) / span) * 100
+        };
+      }
+    }
+  }
+
+  const pct = (ms: number) => ((ms - tStart) / span) * 100;
+  const now = new Date();
+  const today =
+    now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") +
+    "-" + String(now.getDate()).padStart(2, "0");
+  const nowIn = state.dateStr === today && nowMs.value >= tStart && nowMs.value <= tEnd;
+
+  const nameOf = (k: "ev" | "a" | "b" | "c") =>
+    isAM
+      ? { ev: t("日出"), a: t("渐亮"), b: t("淡蓝"), c: t("天亮") }[k]
+      : { ev: t("日落"), a: t("渐暗"), b: t("深蓝"), c: t("天黑") }[k];
+
+  const marks = [
+    { p: pct(evMs), name: nameOf("ev"), time: uClock(evMs), cls: "an-l" },
+    { p: pct(t6), name: nameOf("a"), time: uClock(t6), cls: "" },
+    { p: pct(t12), name: nameOf("b"), time: uClock(t12), cls: "" },
+    { p: pct(t18), name: nameOf("c"), time: uClock(t18), cls: "an-r" }
   ];
-  return defs.map((d) => ({
-    p: (evMs + d.off * 60000 - winStart.value) / (winEnd.value - winStart.value),
-    alt: d.alt,
-    label: d.label,
-    big: d.big
-  }));
-});
 
-/* 第二行：now 游标 + 本地时间刻度 */
-const nowMark = computed<Mark | null>(() => {
-  if (!res.value) return null;
-  const p = (nowMs.value - winStart.value) / (winEnd.value - winStart.value);
-  if (p < -0.02 || p > 1.02) return null;
   return {
-    p: Math.max(0, Math.min(1, p)),
-    alt: solarPosition(nowMs.value, res.value.city.lat, res.value.city.lon).altitude,
-    label: t("此刻"),
-    now: true,
-    sub: fmt(nowMs.value)
+    segs, win, marks,
+    glowX: win ? win.left + win.width / 2 : 50,
+    nowPct: nowIn ? pct(nowMs.value) : null,
+    nowText: nowIn ? uClock(nowMs.value) : ""
   };
 });
 
-const hourTicks = computed(() => {
-  const out: Array<{ p: number; label: string }> = [];
-  const start = winStart.value, end = winEnd.value;
-  const d0 = new Date(start);
-  d0.setMinutes(0, 0, 0);
-  for (let ms = d0.getTime(); ms <= end; ms += 3600000) {
-    if (ms < start) continue;
-    out.push({ p: (ms - start) / (end - start), label: fmt(ms) });
-  }
-  return out;
-});
-
-/* fitAxis：窄屏降级（幂等）——每隔一个隐藏小标 */
-const showEvery = computed(() => (hostW.value < 560 ? 2 : 1));
-
-function fmt(ms: number): string { return uClock(ms); }
+/* fitAxis：窄屏降级（幂等）—— 隐藏分界名称，只留时刻 */
+const showNames = computed(() => hostW.value >= 560);
 </script>
 
 <template>
-  <section id="sky" class="section">
-    <div class="wrap">
-      <div class="section-head">
-        <h2>{{ t("天色带") }}</h2>
-        <div class="sub" v-if="res">
-          {{ fmt(winStart) }} — {{ fmt(winEnd) }} · {{ t("本地时间") }}
-        </div>
-      </div>
-
-      <div class="glass band-card">
-        <div class="band-sky" aria-hidden="true">
-          <div class="sky-grad" />
-          <div class="sun-orb">☀</div>
-        </div>
-
-        <!-- 两行轴：行1 太阳事件，行2 now 游标 + 小时刻度 -->
-        <div id="skyAxis" class="axis">
-          <div class="axis-row events">
-            <div
-              v-for="(m, i) in eventMarks"
-              :key="i"
-              class="mk"
-              :class="{ big: m.big }"
-              :style="{ left: m.p * 100 + '%' }"
-            >
-              <div class="mk-line" />
-              <div class="mk-label">
-                <b>{{ m.label }}</b>
-                <span>{{ m.alt.toFixed(0) }}°</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="axis-row cursor">
-            <div
-              v-for="(tk, i) in hourTicks"
-              :key="'h' + i"
-              class="tick"
-              :style="{ left: tk.p * 100 + '%' }"
-            >
-              <div class="tick-line" />
-              <span v-if="i % showEvery === 0" class="tick-label">{{ tk.label }}</span>
-            </div>
-            <div
-              v-if="nowMark"
-              class="mk now"
-              :style="{ left: nowMark.p * 100 + '%' }"
-            >
-              <div class="mk-line" />
-              <div class="mk-label">
-                <b>{{ nowMark.label }}</b>
-                <span>{{ nowMark.sub }} · {{ nowMark.alt.toFixed(0) }}°</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="band-legend">
-          <span><i class="d" />{{ t("太阳高度角 0° / −6° / −12° / −18°（事件行）") }}</span>
-          <span v-if="res">{{ t(res.evName) }} {{ uClock(res.evMs) }}</span>
-        </div>
-      </div>
+  <div v-if="band" class="skywrap">
+    <div class="sky">
+      <div
+        v-for="(s, i) in band.segs"
+        :key="i"
+        class="s"
+        :class="s.cls"
+        :style="{ flexGrow: s.m }"
+        :title="s.title"
+      />
+      <div class="glow" :style="{ '--x': band.glowX + '%' }" />
+      <div
+        v-if="band.win"
+        class="win"
+        :style="{ left: band.win.left + '%', width: band.win.width + '%' }"
+        :title="t('霞光窗口')"
+      />
+      <div v-if="band.nowPct != null" class="now" :style="{ left: band.nowPct + '%' }" />
+      <div class="grain" />
     </div>
-  </section>
+
+    <div ref="axisEl" class="skyaxis two" :class="{ tonly: !showNames }">
+      <span
+        v-for="(m, i) in band.marks"
+        :key="i"
+        class="mk"
+        :class="m.cls"
+        :style="{ left: m.p + '%' }"
+      >
+        <i class="nm">{{ m.name }}</i><b>{{ m.time }}</b>
+      </span>
+      <span
+        v-if="band.nowPct != null"
+        class="mk nowlbl"
+        :class="band.nowPct > 82 ? 'an-r' : band.nowPct < 18 ? 'an-l' : 'an-m'"
+        :style="{ left: band.nowPct + '%' }"
+      >
+        {{ t("此刻") }} {{ band.nowText }}
+      </span>
+    </div>
+
+    <div class="skyfoot">
+      <span>{{ t("五段曙暮光：白昼余晖 / 民用 / 航海 / 天文 / 夜间") }}</span>
+      <span v-if="band.win">{{ t("底部橙条＝霞光窗口") }}</span>
+    </div>
+  </div>
 </template>
 
 <style scoped>
-.band-card {
-  padding: 22px 22px 16px;
+.skywrap { margin: 0 0 16px; }
+/* 带子两侧出血，由卡片圆角裁齐（与原版 .sky 同构） */
+.sky {
+  display: flex;
+  height: 84px;
+  margin: 0 -26px;
   overflow: hidden;
-}
-.band-sky {
   position: relative;
-  height: 118px;
-  border-radius: var(--r-md);
-  overflow: hidden;
-  border: 1px solid var(--stroke);
 }
-.sky-grad {
-  position: absolute; inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(46, 213, 232, 0.16) 0%,
-    rgba(255, 156, 63, 0.28) 55%,
-    rgba(255, 77, 130, 0.32) 78%,
-    rgba(20, 18, 40, 0.55) 100%
+.sky .s { display: block; min-width: 1px; }
+.s-day { background: var(--dusk-day); }
+.s-civil { background: var(--dusk-civil); }
+.s-naut { background: var(--dusk-nautical); }
+.s-astro { background: var(--dusk-astro); }
+.s-night { background: var(--dusk-night); }
+/* 霞光位置柔光 */
+.glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    46% 150% at var(--x, 50%) 96%,
+    rgba(255, 166, 87, 0.3) 0%,
+    transparent 68%
   );
 }
-[data-theme="light"] .sky-grad {
-  background: linear-gradient(
-    180deg,
-    #cfeef8 0%,
-    #ffe1b8 55%,
-    #ffb3c3 78%,
-    #d9a3c8 100%
-  );
-}
-.sun-orb {
+/* 颗粒 */
+.grain {
   position: absolute;
-  left: 50%; top: 42%;
-  transform: translate(-50%, -50%);
-  font-size: 30px;
-  filter: drop-shadow(0 0 18px rgba(255, 180, 80, 0.7));
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  opacity: 0.1;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
 }
-.axis {
-  position: relative;
-  margin: 10px 6px 0;
-}
-.axis-row {
-  position: relative;
-}
-.axis-row.events { height: 58px; }
-.axis-row.cursor {
-  height: 42px;
-  border-top: 1px solid var(--stroke);
-  margin-top: 2px;
-}
-.mk {
+[data-theme="light"] .grain { opacity: 0.12; }
+/* 霞光窗口：橙底线 + 白上沿 */
+.win {
   position: absolute;
-  top: 0;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
+  bottom: 0;
+  height: 4px;
+  min-width: 3px;
+  background: var(--acc-1);
+  border-top: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 2px;
+  pointer-events: none;
 }
-.mk-line {
-  width: 1px; height: 18px;
-  background: var(--stroke-2);
+.win::before, .win::after {
+  content: "";
+  position: absolute;
+  top: -6px;
+  width: 1px;
+  height: 9px;
+  background: var(--acc-1);
+  opacity: 0.9;
 }
-.mk.big .mk-line {
-  width: 2px;
-  background: var(--spectrum);
-}
-.mk.now .mk-line {
-  background: var(--acc-3);
-  box-shadow: 0 0 8px var(--acc-3);
-  height: 26px;
-}
-.mk-label {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  font-size: 0.62rem;
-  color: var(--tx-3);
-  white-space: nowrap;
-}
-.mk-label b {
-  font-weight: 550;
-  color: var(--tx-2);
-  font-size: 0.68rem;
-}
-.mk.big .mk-label b { color: var(--tx-1); }
-.mk.now .mk-label b { color: var(--acc-3); }
-.cursor .mk { top: 0; }
-.tick {
+.win::before { left: 0; }
+.win::after { right: 0; }
+/* 现在线 */
+.now {
   position: absolute;
   top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0 0 1px rgba(20, 30, 45, 0.35);
+  pointer-events: none;
+}
+/* 两行轴 */
+.skyaxis {
+  position: relative;
+  height: 34px;
+  margin: 7px -26px 0;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--tx-3);
+}
+.skyaxis span {
+  position: absolute;
+  top: 0;
+  white-space: nowrap;
   transform: translateX(-50%);
 }
-.tick-line {
-  width: 1px; height: 6px;
-  background: var(--stroke-2);
-  margin: 0 auto;
+.skyaxis .mk.an-l { transform: none; }
+.skyaxis .mk.an-r { transform: translateX(-100%); }
+.skyaxis b { font-weight: 600; color: var(--tx-2); margin-left: 4px; }
+.skyaxis .nm { font-style: normal; }
+.skyaxis.tonly .nm { display: none; }
+.skyaxis .nowlbl {
+  top: 16px;
+  font-weight: 700;
+  color: var(--acc-3);
 }
-.tick-label {
-  display: block;
-  font-size: 0.58rem;
-  color: var(--tx-3);
-  margin-top: 2px;
-  white-space: nowrap;
-}
-.band-legend {
+.skyaxis .nowlbl.an-m { transform: translateX(-50%); }
+.skyaxis .nowlbl.an-l { transform: none; }
+.skyaxis .nowlbl.an-r { transform: translateX(-100%); }
+.skyfoot {
   display: flex;
   justify-content: space-between;
-  margin-top: 6px;
+  gap: 12px;
   font-size: var(--fs-tiny);
   color: var(--tx-3);
-}
-.d {
-  display: inline-block;
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--spectrum);
-  margin-right: 6px;
+  margin-top: 2px;
 }
 </style>

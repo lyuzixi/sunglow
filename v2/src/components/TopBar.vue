@@ -47,8 +47,7 @@ const themeLabel = () =>
 
       <nav class="nav-tabs">
         <a href="#verdict">{{ t("结论") }}</a>
-        <a href="#sky">{{ t("天色带") }}</a>
-        <a href="#trend">{{ t("七日趋势") }}</a>
+        <a href="#trend">{{ t("十日趋势") }}</a>
         <a href="#field">{{ t("观测场") }}</a>
         <a href="./tutorial.html">{{ t("使用教程") }}</a>
       </nav>

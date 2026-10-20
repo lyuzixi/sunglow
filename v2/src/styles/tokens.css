@@ -42,6 +42,9 @@
 
 /* ===================== 深色 · 光谱观测站 ===================== */
 [data-theme="dark"] {
+  /* 天色带固定曙暮光序列（与原版 _p5b 同源，不参与任何数据拉伸） */
+  --dusk-day: #3a4354; --dusk-civil: #e8b678; --dusk-nautical: #cf6f42;
+  --dusk-astro: #6f6a92; --dusk-night: #1e2536;
   --bg-base: #070b14;
   --bg-deep: #04070e;
   --bg-elev: #0b1220;
@@ -76,6 +79,8 @@
 
 /* ===================== 浅色 · 晨光实验室 ===================== */
 [data-theme="light"] {
+  --dusk-day: #dde5ee; --dusk-civil: #f0c48c; --dusk-nautical: #d9784a;
+  --dusk-astro: #7a759f; --dusk-night: #2b3450;
   --bg-base: #f2f5fb;
   --bg-deep: #e8edf7;
   --bg-elev: #ffffff;

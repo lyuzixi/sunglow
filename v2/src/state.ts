@@ -83,7 +83,7 @@ function prefStr<T extends string>(k: string, dflt: T): T {
 export const state = reactive<AppState>({
   lang: prefStr<Lang>("lang", detectLang()),
   theme: (() => {
-    const raw = prefStr<string>("theme", "dark");
+    const raw = prefStr<string>("theme", "system");
     return (raw === "auto" ? "system" : raw) as ThemeMode;
   })(),
   city:

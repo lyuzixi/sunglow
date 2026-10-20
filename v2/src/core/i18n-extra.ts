@@ -143,7 +143,24 @@ export const HANT_EXTRA: Record<string, string> = {
   "公制 (km / m / ℃)": "公制 (km / m / ℃)",
   "英制 (mi / ft / ℉)": "英制 (mi / ft / ℉)",
   "偏好存 glowcast.v2.pref，与原版 sunsetbot.pref.v1 相互独立。位置、日期与地图时段不持久化。": "偏好存 glowcast.v2.pref，與原版 sunsetbot.pref.v1 相互獨立。位置、日期與地圖時段不持久化。",
-  "个网格点 · 缓存": "個網格點 · 快取"
+  "个网格点 · 缓存": "個網格點 · 快取",
+  "十日趋势": "十日趨勢",
+  "霞光窗口": "霞光視窗",
+  "夜间": "夜間",
+  "天文曙暮光": "天文曙暮光",
+  "航海曙暮光": "航海曙暮光",
+  "民用曙暮光": "民用曙暮光",
+  "白昼余晖": "白晝餘暉",
+  "渐暗": "漸暗",
+  "深蓝": "深藍",
+  "天黑": "天黑",
+  "渐亮": "漸亮",
+  "淡藍": "淡藍",
+  "淡蓝": "淡藍",
+  "天亮": "天亮",
+  "日落": "日落",
+  "五段曙暮光：白昼余晖 / 民用 / 航海 / 天文 / 夜间": "五段曙暮光：白晝餘暉 / 民用 / 航海 / 天文 / 夜間",
+  "底部橙条＝霞光窗口": "底部橙條＝霞光視窗"
 };
 
 export const EN_EXTRA: Record<string, string> = {
@@ -286,5 +303,21 @@ export const EN_EXTRA: Record<string, string> = {
   "公制 (km / m / ℃)": "Metric (km / m / ℃)",
   "英制 (mi / ft / ℉)": "Imperial (mi / ft / ℉)",
   "偏好存 glowcast.v2.pref，与原版 sunsetbot.pref.v1 相互独立。位置、日期与地图时段不持久化。": "Preferences live in glowcast.v2.pref, isolated from the classic sunsetbot.pref.v1. Location, date and map period are not persisted.",
-  "个网格点 · 缓存": "grid points · cached"
+  "个网格点 · 缓存": "grid points · cached",
+  "十日趋势": "10-Day Trend",
+  "霞光窗口": "Glow window",
+  "夜间": "Night",
+  "天文曙暮光": "Astronomical twilight",
+  "航海曙暮光": "Nautical twilight",
+  "民用曙暮光": "Civil twilight",
+  "白昼余晖": "Daylight afterglow",
+  "渐暗": "Darkening",
+  "深蓝": "Deep blue",
+  "天黑": "Dark",
+  "渐亮": "Brightening",
+  "淡蓝": "Pale blue",
+  "天亮": "Daylight",
+  "日落": "Sunset",
+  "五段曙暮光：白昼余晖 / 民用 / 航海 / 天文 / 夜间": "Five twilight stages: afterglow / civil / nautical / astronomical / night",
+  "底部橙条＝霞光窗口": "Orange bar = glow window"
 };

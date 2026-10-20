@@ -48,7 +48,7 @@ const byDay = computed(() => {
   <section id="trend" class="section">
     <div class="wrap">
       <div class="section-head">
-        <h2>{{ t("七日趋势") }}</h2>
+        <h2>{{ t("十日趋势") }}</h2>
         <div class="sub">
           {{ rows.length ? rows.length + " " + t("条实算结果") : t("暂无数据") }}
           <button class="btn btn-ghost sm" style="margin-left: 10px" :disabled="loading" @click="go(true)">
@@ -88,7 +88,7 @@ const byDay = computed(() => {
           </div>
         </div>
         <div v-else-if="!loading && !error" class="hint">
-          {{ t("趋势需要一次性取 34 个坐标 × 多日数据（额度较重），点击「加载趋势」显式触发。") }}
+          {{ t("趋势需要一次性取 34 个坐标 × 10 天数据（额度较重），点击「加载趋势」显式触发。") }}
         </div>
         <div class="trend-key">
           <span><i class="k1" />{{ t("出现概率") }}</span>
