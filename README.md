@@ -210,8 +210,14 @@ B5 并发点击 —— 另有 `raceprobe` 覆盖），且**各自打一行「已
 > （已踩过）。省时间的唯一正路是"少做真正慢的那几段"。
 
 **不进一键序列**（会花真实额度或依赖实时接口）：`consistency.js`、`shotdefault.js`、
-`tzprobe.js`。另有 `pointcache.js`（单点缓存专项）、`perfprobe.js`（绘制性能基线，
-只测量、不判成败）与 `aodscale.js`（AOD 空间统计的一次性量化，结论已定，不重复跑）。
+`tzprobe.js`。另有 `pointcache.js`（单点缓存专项）与 `perfprobe.js`（绘制性能基线，
+只测量、不判成败）。
+
+> `styleprobe.js` / `_shotonly.js` / `shotnext.js` / `aodscale.js` 四个**一次性脚本**已在
+> 2026-10-20 的仓库清理中移到仓库外（任务已完成，证据留在归档目录）。前两个的用途分别是
+> 「把色面雾感量化成数字」与「换入旧源码后截图」，`shotnext` 是可信度徽标的一次性视觉核对，
+> `aodscale` 的结论是「不支持隔点取样，保持 57 点全取」—— 这正是 `pointcache` / `perfprobe`
+> 被保留、而这四个被归档的区别：前者还会再跑，后者不会。
 
 > `mobileprobe.js` 现在**在一键序列里**（两个视口各跑一次），**不花额度**（走合成数据）。
 > 单独跑：`node _check/mobileprobe.js`；换视口用 `VW=360 VH=640 node _check/mobileprobe.js`
