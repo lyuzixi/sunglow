@@ -39,29 +39,27 @@ v2/
 │   ├── components/          Hero/结论/天色带/趋势/观测场/模式/因素/校准/顶栏
 │   ├── views/               Home / Tutorial / 404
 │   └── styles/              tokens.css（双主题设计令牌）+ main.css
-└── dist/                    构建产物（标准多文件）
+├── app.html                 源码入口（开发用，不对外）
+└── index.html               交付产物（单文件，构建生成）
 ```
 
-## 交付产物（双轨）
+## 交付产物（单一形态）
 
 | 产物 | 路径 | 怎么打开 |
 |---|---|---|
-| **单文件版**（推荐体验） | `v2/standalone.html` | **直接双击**，断网可用。JS/CSS/西文字体全内联，590KB |
-| 标准多文件版（部署用） | `v2/dist/index.html` | 需 HTTP 服务：`cd v2 && npm run preview` |
-| 开发 | `v2/index.html` 是**源码入口**，不是产物 | `cd v2 && npm run dev`（双击它只会看到指引页） |
+| **唯一交付** | `v2/index.html` | **直接双击**，断网可用。JS/CSS/字体内联，约 650KB |
+| 开发 | 源码入口 `v2/app.html`（不对外） | `cd v2 && npm run dev` → 打开 `/app.html` |
 
 ```bash
 cd v2
 npm install
 npm run dev                # 开发服务器
-npm run build              # 多文件产物 → dist/
-npm run build:standalone   # 单文件产物 → standalone.html
-npm run preview            # 预览 dist/ 产物
+npm run build              # 单文件产物 → index.html
 ```
 
-> 为什么不能直接双击 `v2/index.html` / `dist/index.html`：Vite 默认产物是 ES module 多文件，
+> 为什么不直接双击源码入口 `v2/app.html`：Vite 默认产物是 ES module 多文件，
 > 浏览器从 `file://` 加载 module 脚本会被 CORS 拦截。单文件版把脚本内联进 HTML 才绕开这条限制。
-> 再次双击 `v2/index.html` 现在会显示指引页（Vue 挂载后该提示自动消失）。
+> `v2/index.html` 由 `npm run build` 生成，**不要手改**；它是唯一交付文件。
 
 ## 与原版的关系
 | 项 | 原版 | v2 |

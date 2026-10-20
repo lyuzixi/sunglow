@@ -1,20 +1,24 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import { viteSingleFile } from "vite-plugin-singlefile";
+import { resolve } from "node:path";
 
-// 霞光预报 GLOWCAST v2 —— 独立构建链，与原版 assemble.py 完全隔离。
-// 双轨产物：
-//   npm run build           → dist/            标准多文件（部署用，需 HTTP 服务）
-//   npm run build:standalone → standalone.html  单文件（JS/CSS/字体全内联，断网双击即开）
-export default defineConfig(({ mode }) => {
-  const standalone = mode === "standalone";
-  return {
-    plugins: standalone ? [vue(), viteSingleFile()] : [vue()],
-    base: "./",
-    build: {
-      outDir: standalone ? "dist-standalone" : "dist",
-      assetsInlineLimit: standalone ? 2 * 1024 * 1024 : 2048,
-      chunkSizeWarningLimit: 1200
+// GLOWCAST v2 —— 单一交付形态：**一个 HTML 文件**（JS/CSS/字体全部内联）。
+//   源码入口：app.html（开发/构建入口，不对外）
+//   交付产物：index.html（npm run build 生成，双击即可离线使用）
+// 已删除：dist/ 多文件产物、PWA（sw.js/manifest/图标）、v2 独立 404 页 ——
+// 它们都要"多个文件"才能成立，与单文件形态互斥。
+export default defineConfig(() => ({
+  plugins: [vue(), viteSingleFile()],
+  base: "./",
+  build: {
+    outDir: "dist-standalone",
+    emptyOutDir: true,
+    assetsInlineLimit: 4 * 1024 * 1024,
+    chunkSizeWarningLimit: 2000,
+    /* 入口不是 index.html：index.html 是**产物名**，源码入口叫 app.html */
+    rollupOptions: {
+      input: resolve(__dirname, "app.html")
     }
-  };
-});
+  }
+}));
