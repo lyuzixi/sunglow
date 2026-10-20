@@ -350,17 +350,22 @@ export function paintField(ctx: CanvasRenderingContext2D, o: PaintOpts): void {
           const e2 = v01 !== v11 ? { c: c + 1 - (t - v11) / (v01 - v11), r: r + 1 } : null;
           const e3 = v00 !== v01 ? { c, r: r + 1 - (t - v01) / (v00 - v01) } : null;
           const idx = (v00 > t ? 8 : 0) | (v10 > t ? 4 : 0) | (v11 > t ? 2 : 0) | (v01 > t ? 1 : 0);
+          /* 16 案表（位序 8=左上 4=右上 2=右下 1=左下；边序 0=上 1=右 2=下 3=左）。
+             之前这张表连错了边，线会斜穿格子（用户报"等值线奇怪、乱飘"的根因）。 */
           const TAB: Array<Array<[number, number]> | null> = [
-            null, [[3, 0]], [[0, 1]], [[3, 1]],
-            [[1, 2]], null, [[0, 2]], null,
-            [[2, 3]], null, null, [[2, 0]],
-            [[1, 3]], null, null, null
+            null, [[3, 2]], [[2, 1]], [[3, 1]],
+            [[0, 1]], null, [[0, 2]], [[3, 0]],
+            [[0, 3]], [[0, 2]], null, [[0, 1]],
+            [[3, 1]], [[1, 2]], [[2, 3]], null
           ];
           const edges = [e0, e1, e2, e3];
           let pairs = TAB[idx];
           if (idx === 5 || idx === 10) {
             const mid = (v00 + v10 + v11 + v01) / 4 > t;
-            pairs = (idx === 5) !== mid ? [[0, 1], [2, 3]] : [[0, 3], [1, 2]];
+            /* 格心也在阈值之上 ⇒ 两个"在上"的角经格心连通 ⇒ 去切另一对 */
+            const a: Array<[number, number]> = [[0, 1], [2, 3]];
+            const b: Array<[number, number]> = [[0, 3], [1, 2]];
+            pairs = idx === 5 ? (mid ? a : b) : (mid ? b : a);
           }
           if (!pairs) continue;
           for (const [ia, ib] of pairs) {
