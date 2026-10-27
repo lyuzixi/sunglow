@@ -6,9 +6,11 @@
   "description": "霞光预报 GLOWCAST · 大气光谱观测站版",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/emit-single.mjs",
+    "build": "vite build && node scripts/emit-single.mjs && node scripts/publish-root.mjs",
     "typecheck": "tsc --noEmit",
     "probe": "node scripts/probe.mjs",
+    "probe:tz": "node scripts/probe-tz.mjs",
+    "probe:ui": "node scripts/probe-ui.mjs",
     "probe:consist": "node scripts/probe-consist.mjs"
   },
   "dependencies": {
@@ -19,6 +21,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.1",
+    "opencc-js": "^1.4.2",
     "typescript": "^5.7.3",
     "vite": "^6.0.11",
     "vite-plugin-singlefile": "^2.3.4"
