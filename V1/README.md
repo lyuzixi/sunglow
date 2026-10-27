@@ -365,3 +365,5 @@ B5 并发点击 —— 另有 `raceprobe` 覆盖），且**各自打一行「已
 本项目仅用于学习与个人使用。气象与空气质量数据来自
 [Open-Meteo](https://open-meteo.com)，省界数据来自阿里云 DataV，
 地图服务来自[腾讯位置服务](https://lbs.qq.com)，请遵守各自的服务条款。
+
+> 注：仓库内的 `Skyglow/` 为第三方项目 [couletian/Skyglow](https://github.com/couletian/Skyglow) 的改进版（上游未附 LICENSE，默认版权保留），不适用本节「本项目」表述；详见 `Skyglow/README.md` 顶部来源说明。

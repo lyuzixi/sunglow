@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>霞光预报 sunglow · Code Wiki</title>
-<meta name="description" content="霞光预报（sunglow）仓库 Code Wiki：V1 / v2 / Skyglow 三套工程的架构、模块职责、关键类与函数、依赖关系、运行方式，以及对该项目的理解与改进清单。">
+<meta name="description" content="霞光预报（sunglow）仓库 Code Wiki：V1 / v2 两套自研工程与第三方 Skyglow 改进版的架构、模块职责、关键类与函数、依赖关系、运行方式，以及对该项目的理解与改进清单。">
 <style>
 :root{
   --bg:#070b14; --bg2:#0c1322; --bg3:rgba(255,255,255,.035); --bg4:rgba(255,255,255,.06);
@@ -273,7 +273,7 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
       <a href="#v2-build" class="sub">构建与发布链</a>
       <a href="#v2-core" class="sub">core 模块与函数</a>
       <a href="#v2-ui" class="sub">组件与状态</a>
-      <a href="#skyglow">06 · Skyglow 工程</a>
+      <a href="#skyglow">06 · Skyglow 改进版</a>
       <a href="#sg-api" class="sub">HTTP 路由</a>
       <a href="#sg-core" class="sub">core 模块与函数</a>
       <a href="#sg-web" class="sub">前端与 tools</a>
@@ -289,7 +289,7 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
     </nav>
     <div class="sidefoot">
       依据：仓库当前工作区源码逐行核对（2026-10-26）<br>
-      覆盖：V1 / v2 / Skyglow
+      覆盖：V1 / v2 / Skyglow（第三方改进）
     </div>
   </aside>
 
@@ -301,9 +301,9 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
     <h1>霞光预报 <span class="g">sunglow</span><br>工程代码地图</h1>
     <p class="lede">
       一个「预测朝霞 / 晚霞（火烧云）出现概率与观赏质量」的气象可视化产品家族。
-      仓库里并存<b>三套互相隔离的工程</b>：V1（单文件拼装，算法权威）、v2（Vue 主线，交付落仓库根）
-      与 Skyglow（Python 服务端定量版）。
-      本文档把三套主工程的<b>架构、模块职责、关键类与函数、依赖关系、运行方式</b>整理成一张可检索的地图，
+      仓库里并存<b>两套自研工程</b>：V1（单文件拼装，算法权威）、v2（Vue 主线，交付落仓库根），
+      以及<b>第三方改进版</b> Skyglow（上游 Python 服务端 + 本仓库的单文件 JS 移植增强）。
+      本文档把三套工程的<b>架构、模块职责、关键类与函数、依赖关系、运行方式</b>整理成一张可检索的地图，
       并在末尾给出对该项目的理解与可执行的改进清单。
     </p>
     <div class="chips">
@@ -325,7 +325,7 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
         <div class="d">构建链三级：vite → 单文件 → 发布落根</div>
       </div>
       <div class="stat">
-        <div class="n">13 / 16</div>
+        <div class="n">13 / 20</div>
         <div class="l">Skyglow core 模块 / tools 脚本</div>
         <div class="d">运行时零第三方依赖，可选依赖优雅降级</div>
       </div>
@@ -342,7 +342,7 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
     <h2><span class="num">01</span>速览与导读<span class="caret">▾</span></h2>
     <div class="sec-body">
       <p class="sub">先给结论：这个仓库真正的资产是<mark class="key">算法口径 + 回归套件 + 文档纪律</mark>，UI 是可替换的表层。
-        三套前端共用同一套判据（GFS / ECMWF / 光追三路 + 加权几何平均），Skyglow 则是把它落到服务端并加了标定层与神经网络。</p>
+        V1 与 v2 共用同一套判据（GFS / ECMWF / 光追三路 + 加权几何平均）；Skyglow 源自第三方项目，在服务端实现同一物理思路并加了标定层与神经网络，代码互不共享。</p>
 
       <h3 id="tl-dr">一页速览（TL;DR）</h3>
       <div class="table-wrap">
@@ -392,7 +392,7 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
 
       <div class="callout">
         <span class="tt">覆盖边界</span>
-        本文写 V1、v2、Skyglow 三套工程。
+        本文写 V1、v2 两套自研工程，以及第三方 Skyglow 的改进版（上游 Python 服务端 + 本仓库的移植增强单文件版）。
         仓库内既有的两份方案文档（<span class="ref">项目架构与技术实现方案.md</span>、<span class="ref">Skyglow-项目架构与技术实现方案.md</span>）
         是本文的重要交叉来源，本文在其基础上补齐了 Skyglow 的 core/tools 细节与三套工程的运行方式，并加入了我自己的判读与改进清单。
       </div>
@@ -444,11 +444,11 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
               <td><strong>项目主线</strong>：视觉重做，算法口径与 V1 逐点对齐</td>
             </tr>
             <tr>
-              <td><b>Skyglow</b> <span class="ref">Skyglow/</span></td>
-              <td>Python 标准库 HTTP 服务 + 原生 JS/Canvas 前端（无构建）</td>
-              <td>无（解释器直接跑）</td>
+              <td><b>Skyglow</b>（改进版） <span class="ref">Skyglow/</span></td>
+              <td>上游 Python 标准库 HTTP 服务 + 原生 JS/Canvas 前端；<code>index.html</code> 为单文件移植产物</td>
+              <td>无（解释器直接跑）/ <code>tools/build_single.py</code> 打包单文件</td>
               <td>本地 / 自托管 Web 服务</td>
-              <td>服务端定量版：ERA5 / CAMS / GRIB2 直连、全国地图、<strong>标定层 + 神经网络</strong></td>
+              <td>上游服务端定量版 + 本仓库移植增强：ERA5 / CAMS / GRIB2 直连、全国地图、<strong>标定层 + 神经网络</strong></td>
             </tr>
           </tbody>
         </table>
@@ -515,7 +515,7 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
               <div class="card"><b>评分</b><code>W_STAT</code> 九因子统计模型 + 光追物理模型 + 综合几何平均</div>
               <div class="card"><b>可信度</b>模型分歧 ΔI → 一致性 / 置信档；<code>mixedIndex</code> 综合指数</div>
               <div class="card"><b>标定（仅 Skyglow）</b>岭回归标定层 <code>data/model.json</code> + 纯 Python MLP 辅助概率</div>
-              <div class="card"><b>三处实现</b>V1 JS（权威）· v2 TS（移植）· Skyglow Python（重写 + 标定）</div>
+              <div class="card"><b>三处实现</b>V1 JS（权威）· v2 TS（移植）· Skyglow Python（上游第三方 + 标定）· 单文件 JS（本仓库移植）</div>
             </div>
           </div>
           <div class="layer">
@@ -627,9 +627,9 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
           <div class="arrows">→</div>
           <div class="fnode ok"><div class="h">仓库根产物</div><div class="b">线上入口；根 404/tutorial/sw/manifest/图标由 v2 提供</div></div>
           <div class="arrows">独立</div>
-          <div class="fnode"><div class="h">Skyglow/</div><div class="b">不与前端共享代码，自带 <code>web/</code> + <code>core/</code> + <code>tools/</code></div></div>
+          <div class="fnode"><div class="h">Skyglow/</div><div class="b">第三方改进：上游 <code>core/</code> + 本仓库 <code>js/</code> 移植与 <code>tools/</code>；不与前端共享代码</div></div>
         </div>
-        <figcaption>图 3-5 依赖方向：V1 → v2 是<b>单向参考</b>（冻结副本，不参与构建）；Skyglow 与两套前端完全解耦，只有「判据同源」这一层软件之外的联系。</figcaption>
+        <figcaption>图 3-5 依赖方向：V1 → v2 是<b>单向参考</b>（冻结副本，不参与构建）；Skyglow 源自第三方项目，与两套自研前端完全解耦；三者的判据都参考 sunsetbot，但代码互不共享。</figcaption>
       </figure>
 
       <div class="callout">
@@ -1307,14 +1307,15 @@ npm run probe:consist</pre>
 
   <!-- ============================== 06 ============================== -->
   <section class="sec" id="skyglow">
-    <h2><span class="num">06</span>Skyglow 工程：Python 服务端定量版<span class="caret">▾</span></h2>
+    <h2><span class="num">06</span>Skyglow 改进版：上游 Python 服务端 + 单文件移植<span class="caret">▾</span></h2>
     <div class="sec-body">
-      <p class="sub">Skyglow 是家族里唯一的服务端实现：核心链路只依赖 Python 标准库，
+      <p class="sub"><b>来源</b>：本目录源自第三方项目 <span class="ref">couletian/Skyglow</span>，Python 服务端沿用上游，<code>index.html</code> 由本仓库把上游算法逐行移植为纯 JS 并打包；上游未附 LICENSE，默认版权保留。
+        它是本仓库唯一的服务端实现：核心链路只依赖 Python 标准库，
         引入 ERA5 / CAMS / 官方档案 GRIB2 直连，并把「物理子评分 + 岭回归标定层 + 神经网络辅助」串成一条定量管线。
-        它产出的六档强度与全国晚霞图，是前端两套工程目前没有的能力。</p>
+        它产出的六档强度与全国晚霞图，是前端两套自研工程目前没有的能力。</p>
 
       <div class="kv">
-        <div class="i"><span class="k">构成</span>server.py（362 行）+ core/ 13 个模块 + web/ 3 个 JS + tools/ 16 个脚本 + data/</div>
+        <div class="i"><span class="k">构成</span>server.py（402 行）+ core/ 13 个模块 + web/ 3 个 JS + js/ 17 个移植模块 + tools/ 20 个脚本 + data/</div>
         <div class="i"><span class="k">运行时依赖</span>仅标准库；可选 <code>eccodes</code>（GRIB2）、<code>numpy</code>（ICON）、<code>cryptography</code>（和风 JWT）</div>
         <div class="i"><span class="k">并发模型</span><code>ThreadingHTTPServer</code>，每请求一线程，无线程池上限</div>
         <div class="i"><span class="k">默认端口</span>8770，默认绑定 <code>127.0.0.1</code>；存在 <code>PORT</code> 环境变量时绑 <code>0.0.0.0</code></div>
@@ -1610,7 +1611,7 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
         <li><b>降级要说话</b>：EC 请求失败 → 附注说明；Skyglow 缺 eccodes → 界面标「缺解码器」；v2 全失败 → 标 <code>MOCK</code>。</li>
         <li><b>假数据不落盘</b>：v2 <code>src==="mock"</code> 不写缓存；Skyglow 直连失败不写结果缓存。</li>
         <li><b>429 双分类</b>：日额度耗尽与短时限流给相反的建议；V1 用响应体关键词判别，v2 用不重试 + retry-after 上限。</li>
-        <li><b>取数必须显式触发</b>：三套前端都遵守；唯一例外是缓存命中。</li>
+        <li><b>取数必须显式触发</b>：三套工程都遵守；唯一例外是缓存命中。</li>
       </ul>
     </div>
   </section>
@@ -1969,12 +1970,12 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
             <tr><td><code>v2/src/state.ts</code></td><td class="n">—</td><td>响应式全局状态与偏好白名单</td></tr>
             <tr><td><code>v2/src/components/</code></td><td class="n">19 个组件</td><td>界面层</td></tr>
             <tr><td><code>v2/vendor/src-verbatim/</code></td><td class="n">—</td><td>V1 七脚本冻结副本（diff 基线，不参与构建）</td></tr>
-            <tr><td><code>Skyglow/server.py</code></td><td class="n">362 行</td><td>HTTP 服务与 12 个 JSON API</td></tr>
+            <tr><td><code>Skyglow/server.py</code></td><td class="n">402 行</td><td>HTTP 服务与 12 个 JSON API</td></tr>
             <tr><td><code>Skyglow/core/service.py</code></td><td class="n">451 行</td><td>预报装配（缓存 → 四源 × 两事件）</td></tr>
             <tr><td><code>Skyglow/core/model.py</code> + <code>data/model.json</code></td><td class="n">262 行</td><td>物理子评分与岭回归标定层（ridge-v2.1）</td></tr>
             <tr><td><code>Skyglow/core/meteo.py · direct.py · glowmap.py</code></td><td class="n">398 / 363 / 263</td><td>数据接入、GRIB2 直连、格点场</td></tr>
             <tr><td><code>Skyglow/web/*.js</code></td><td class="n">1168 / 508 / 310</td><td>主界面 / Canvas 地图 / 方位分析</td></tr>
-            <tr><td><code>Skyglow/tools/</code></td><td class="n">16 个脚本</td><td>数据集、标定、训练、回测与实测校验</td></tr>
+            <tr><td><code>Skyglow/tools/</code></td><td class="n">20 个脚本</td><td>数据集、标定、训练、回测与实测校验</td></tr>
             <tr><td>仓库根 7 文件</td><td class="n">≈977 KB 合计（index 829 KB）</td><td>线上交付物（由 v2 发布）</td></tr>
           </tbody>
         </table>
