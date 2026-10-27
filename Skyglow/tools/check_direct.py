@@ -114,3 +114,9 @@ def icon():
 
 
 if __name__ == "__main__":
+    print("run", RUN.isoformat(timespec="hours"), "UTC\n")
+    gfs()
+    print()
+    ecmwf()
+    print()
+    icon()

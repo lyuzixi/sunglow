@@ -336,4 +336,9 @@ def hourly(lat, lon, t_local, ttl=3600):
         "time": h.get("forecastTime"),
         "cloud_total": None if cloud is None else round(float(cloud) * 100, 1),
         "humidity": None if h.get("humidity") is None else round(float(h["humidity"]) * 100, 1),
-        "visibility_km": None if not h.get("visibility") else round(float(h["visib
+        "visibility_km": None if not h.get("visibility") else round(float(h["visibility"]["value"]) / 1000, 1),
+        "precip_mm": None if not h.get("precipitation") else h["precipitation"].get("amount", {}).get("value"),
+        "dew_point": None if not h.get("dewPoint") else h["dewPoint"].get("value"),
+        "condition": (h.get("condition") or {}).get("text"),
+        "offset_minutes": int(best[0] / 60),
+    }

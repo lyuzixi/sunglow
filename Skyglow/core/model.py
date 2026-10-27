@@ -298,4 +298,9 @@ def best_window(tl, model=None):
     if not best:
         return None
     return {
- 
+        "start_min": best[0]["minute"], "end_min": best[-1]["minute"],
+        "peak_min": max(best, key=lambda x: x["view"])["minute"],
+        "peak_probability": round(max(x["view"] for x in best), 3),
+        "start": best[0]["time"], "end": best[-1]["time"],
+        "duration": len(best),
+    }

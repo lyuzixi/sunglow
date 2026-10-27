@@ -348,3 +348,13 @@ def main():
     with open(os.path.join(DATA, "model.json"), "w", encoding="utf-8") as f:
         json.dump(model, f, ensure_ascii=False, indent=1)
     with open(os.path.join(DATA, "validation.json"), "w", encoding="utf-8") as f:
+        json.dump(out, f, ensure_ascii=False, indent=1)
+
+    print(json.dumps({"train": mt, "test": ms, "bench": out["benchmark"]["metrics"],
+                      "thresholds": thr_all, "dist": out["distribution"]},
+                     ensure_ascii=False, indent=1))
+    print("coef", out["coefficients"])
+
+
+if __name__ == "__main__":
+    main()

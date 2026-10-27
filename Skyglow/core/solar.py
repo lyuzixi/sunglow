@@ -119,4 +119,7 @@ def elevation_curve(lat, lon, center, minutes_before=60, minutes_after=60, step=
 
 
 def illumination_limit(cloud_base_km):
-    """Sun elevation (deg) below which a cloud base at this height enters Earth's sha
+    """Sun elevation (deg) below which a cloud base at this height enters Earth's shadow."""
+    if cloud_base_km <= 0:
+        return 0.0
+    return -math.degrees(math.sqrt(2.0 * cloud_base_km / R_EARTH))
