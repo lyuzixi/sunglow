@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>霞光预报 GLOWCAST · V3 / V2 / 原版 三版功能差异对比报告</title>
+<style>
+  :root{--bg:#0E2233;--panel:#13293d;--line:#27425c;--tx:#eaf0f2;--mut:#9ac2d2;
+        --gold:#D9A441;--coral:#E2725B;--cyan:#2E6F7E;--ok:#5fbf8a;--bad:#E2725B;}
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.7 -apple-system,"Segoe UI",system-ui,"Microsoft YaHei",sans-serif;
+       background:var(--bg);color:var(--tx);padding:32px}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font:600 26px/1.3 Georgia,serif;color:var(--gold);margin:0 0 6px}
+  h2{font:600 20px/1.4 Georgia,serif;color:var(--gold);margin:38px 0 12px;
+     border-left:4px solid var(--coral);padding-left:12px}
+  h3{color:var(--cyan);margin:18px 0 8px}
+  p,li{color:var(--tx)} .mut{color:var(--mut)}
+  .lead{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+        padding:16px 20px;margin:14px 0}
+  table{border-collapse:collapse;width:100%;margin:10px 0 6px;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:8px 10px;vertical-align:top;text-align:left}
+  th{background:#16314a;color:var(--gold);font-weight:600}
+  tr:nth-child(even) td{background:rgba(255,255,255,.02)}
+  .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:20px;
+       margin:1px 2px;white-space:nowrap;border:1px solid}
+  .t-base{color:var(--mut);border-color:var(--line)}
+  .t-new{color:#bfe9cf;border-color:var(--ok);background:rgba(95,191,138,.12)}
+  .t-del{color:#ffd0c4;border-color:var(--bad);background:rgba(226,114,91,.12)}
+  .t-chg{color:#ffe2ad;border-color:var(--gold);background:rgba(217,164,65,.12)}
+  .t-warn{color:#ffd0c4;border-color:var(--coral)}
+  .yes{color:var(--ok)} .no{color:var(--bad)} .par{color:var(--gold)}
+  code{background:#0a1a28;padding:1px 5px;border-radius:4px;color:#cfe9f2;font-size:12.5px}
+  .legend{font-size:12.5px;color:var(--mut);margin:6px 0 4px}
+  .foot{margin-top:40px;color:var(--mut);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px}
+  .kpi{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0}
+  .card{flex:1;min-width:220px;background:var(--panel);border:1px solid var(--line);
+        border-radius:10px;padding:14px}
+  .card b{color:var(--gold)}
+  ul{margin:6px 0 6px 0;padding-left:20px}
+</style>
+</head>
+<body><div class="wrap">
+
+<h1>霞光预报 GLOWCAST · 三版功能差异对比报告</h1>
+<div class="mut">V3「追光航志」 / V2「大气光谱观测站」 / 原版（单文件 assemble 链）</div>
+
+<div class="lead">
+  <b>分析方法：</b>纯只读。基于 <code>v3/</code>、<code>v2/</code> 源码与 README，以及根目录原版 README、<code>_p2…_p6.js</code>、
+  <code>vendor/src-verbatim/</code> 冻结基线交叉核对。未创建 / 修改 / 移动 / 删除任何文件。<br>
+  <b>生成时间：</b>2026-10-21 · <b>口径基线：</b>原版为算法唯一权威；V2 曾有 3 处漂移（mixedIndex 权重、算术综合、一致性公式），V3 已回正。
+</div>
+
+<div class="kpi">
+  <div class="card"><b>原版</b><br>单文件 assemble 链 · 纸面仪器风 · TMap 地图 · 功能最全（含明细区/对比/校准/分享/教程）</div>
+  <div class="card"><b>V2</b><br>Vite+Vue3+TS 单文件 · 大气光谱玻璃拟态 · TMap · 严格城市当地钟 · 170 探针断言</div>
+  <div class="card"><b>V3</b><br>Vite+Vue3+TS 双轨产物 · 暮色航图 Canvas · 无外部地图/省界 · 指挥台 IA · 算法回正口径</div>
+</div>
+
+<h2>一、核心特性对比</h2>
+<table>
+  <tr><th>维度</th><th>原版</th><th>V2</th><th>V3</th></tr>
+  <tr><td>技术栈</td><td>原生 JS + <code>assemble.py</code> 单文件</td><td>Vite + Vue3 + TS，构建为单文件 <code>index.html</code></td><td>Vite + Vue3 + TS，<b>双轨</b>（<code>dist/</code> 多文件 + <code>standalone.html</code> 单文件）</td></tr>
+  <tr><td>地图引擎</td><td><span class="no">TMap</span> 腾讯地图（JS API + 服务端代理，需 key）</td><td><span class="no">TMap</span>（同占位符，产物无密钥）</td><td><span class="yes">Canvas 自绘「航图」</span>（无 TMap / 无代理 / 无 key）</td></tr>
+  <tr><td>地图离线</td><td>需网络+key；<code>file://</code> 打开无图，显示说明</td><td>同原版（TMap 需网络）</td><td><span class="yes">双击 / 断网即可出图</span>（自绘，无外部依赖）</td></tr>
+  <tr><td>视觉语言</td><td>纸面仪器（两级卡片，仅结论/地图有面）</td><td>大气光谱观测站（玻璃拟态 + 光谱色阶 + 星尘）</td><td>暮色航图（深蓝图纸 + 经纬网/罗盘/比例尺）</td></tr>
+  <tr><td>信息架构</td><td>长页分区 + 详情区；顶栏两行</td><td>Hero + 分区 + 设置面板；导航 6 项（含「多地对比」）</td><td><b>指挥台三栏</b>：结论条 →（日历翼｜地图主舞台｜可信度翼）</td></tr>
+  <tr><td>外部依赖</td><td>Open-Meteo + <b>DataV 省界</b> + TMap 代理</td><td>Open-Meteo + TMap 代理</td><td><span class="yes">仅 Open-Meteo</span></td></tr>
+  <tr><td>确定性 MOCK 回落</td><td><span class="no">无</span>（离线靠 PWA 壳，数据失败即降级/报错）</td><td><span class="yes">有</span>（超时预算 9s → 确定性 mock + MOCK 标）</td><td><span class="yes">有</span>（失败/超时 → 确定性 mock + MOCK 模式标）</td></tr>
+  <tr><td>时区处理</td><td>基础（API 返回当地墙钟）</td><td><span class="yes">严格城市当地钟</span>（<code>tz.ts</code>，<code>offsetAt</code> 秒级，28 断言）</td><td><span class="par">弱化</span>（API 层 <code>utc_offset</code> 对齐；<code>todayStr()</code> 取浏览器当地）</td></tr>
+  <tr><td>URL 深链（地点/日期）</td><td><span class="yes">有</span>（<code>?name=</code> / 日期 / <code>?lang=</code>）</td><td><span class="yes">有</span>（<code>urlstate.ts</code>）</td><td><span class="no">无</span>（仅 hash 路由 home/404；分享靠快照，UI 未做）</td></tr>
+  <tr><td>质量门槛</td><td>回归套件（多探针，总表 26 项）</td><td>探针 ui/tz/consist，<b>170 断言</b></td><td>探针 <b>89 断言</b>（typecheck + build）</td></tr>
+  <tr><td>存储命名空间</td><td><code>sunsetbot.*</code></td><td><code>glowcast.v2.*</code></td><td><code>glowcast.v3.*</code>（三方隔离，互不碰）</td></tr>
+</table>
+
+<h2>二、功能范围逐项矩阵</h2>
+<div class="legend">
+  标签：<span class="tag t-base">基准</span>原版首创 ·
+  <span class="tag t-new">V2·新增</span> <span class="tag t-del">V2·移除</span> <span class="tag t-chg">V2·变更</span> ·
+  <span class="tag t-new">V3·新增</span> <span class="tag t-del">V3·移除</span> <span class="tag t-chg">V3·变更</span> <span class="tag t-warn">V3·暂缺(二期)</span>
+</div>
+<table>
+  <tr><th>功能点</th><th>原版</th><th>V2</th><th>V3</th><th>差异标注</th></tr>
+  <tr><td>单点预报（概率/质量/等级）</td><td>✅</td><td>✅</td><td>✅</td><td><span class="tag t-base">基准</span></td></tr>
+  <tr><td>多模型三路（GFS/ECMWF/光追）</td><td>✅ W_ENS=0.30/0.34/0.36</td><td>✅ 口径一致</td><td>✅ 回正 v2 漂移</td><td><span class="tag t-chg">V3·变更</span>口径回正</td></tr>
+  <tr><td>趋势（多日逐日打分）</td><td>✅ 缓存零请求</td><td>✅</td><td>✅</td><td><span class="tag t-base">基准</span></td></tr>
+  <tr><td>最佳窗口日历（F3）</td><td>✅ 跨日 Top3</td><td>✅</td><td>✅ CalendarWing 7天双档</td><td><span class="tag t-base">基准</span></td></tr>
+  <tr><td>天色带（skyband）</td><td>✅ 五段+大气层</td><td>✅ <code>skyband.ts</code></td><td>❌ 仅算好无 UI</td><td><span class="tag t-warn">V3·暂缺(二期)</span></td></tr>
+  <tr><td>影响因素分解（factors）</td><td>✅ 13 项</td><td>✅ 13 项含模式一致性</td><td>❌ <code>factorRows</code> 算好无 UI</td><td><span class="tag t-warn">V3·暂缺(二期)</span></td></tr>
+  <tr><td>模式对比 / 2×2 模型卡</td><td>✅ #models 表</td><td>✅ 模型 2×2 卡</td><td>⚠️ 简化三模型 P/Q/I 表</td><td><span class="tag t-chg">V3·变更</span>弱化</td></tr>
+  <tr><td>逐时表</td><td>✅</td><td>✅</td><td>❌</td><td><span class="tag t-warn">V3·暂缺(二期)</span></td></tr>
+  <tr><td>多观测点对比（F2 跨城）</td><td>✅ 收藏 5 点横向排序</td><td>✅ <code>compare.ts</code> CMP_MAX=4</td><td>❌ 仅同城周边 Top3</td><td><span class="tag t-del">V3·移除</span></td></tr>
+  <tr><td>本地校准（F4）</td><td>✅ 完整 UI + 25 断言</td><td>✅ <code>calib</code> UI</td><td>⚠️ 数据层移植，占位「敬请期待」</td><td><span class="tag t-warn">V3·暂缺(二期)</span></td></tr>
+  <tr><td>分享卡 / 快照（F5）</td><td>✅ PNG canvas 导出</td><td>✅ <code>sharecard.ts</code> 780×400</td><td>⚠️ <code>snap.ts</code> SNAP_VER=1，无 UI</td><td><span class="tag t-warn">V3·暂缺(二期)</span></td></tr>
+  <tr><td>使用教程</td><td>✅ <code>tutorial.html</code> 独立</td><td>✅ 应用内 Tutorial 视图</td><td>⚠️ 链原版 tutorial</td><td><span class="tag t-del">V3·移除</span>应用内</td></tr>
+  <tr><td>城市搜索</td><td>✅</td><td>✅</td><td>✅ 含坐标+MOCK 标</td><td><span class="tag t-base">基准</span></td></tr>
+  <tr><td>三语（简/繁/英）</td><td>✅ 键=简体原文</td><td>✅</td><td>✅</td><td><span class="tag t-base">基准</span></td></tr>
+  <tr><td>主题三态（auto/light/dark）</td><td>✅ 无闪烁引导</td><td>✅</td><td>✅ 防 FOUC</td><td><span class="tag t-base">基准</span></td></tr>
+  <tr><td>时段切换（朝/晚霞）</td><td>✅</td><td>✅</td><td>✅ 结论条切换</td><td><span class="tag t-base">基准</span></td></tr>
+  <tr><td>确定性 MOCK 回落</td><td>❌</td><td>✅</td><td>✅</td><td><span class="tag t-new">V2·新增</span>→<span class="tag t-new">V3·继承</span></td></tr>
+  <tr><td>严格城市当地钟</td><td>基础</td><td>✅</td><td>⚠️ 弱化</td><td><span class="tag t-new">V2·新增</span>·<span class="tag t-chg">V3·变更</span>弱化</td></tr>
+  <tr><td>URL 深链地点/日期</td><td>✅</td><td>✅</td><td>❌</td><td><span class="tag t-del">V3·移除</span></td></tr>
+  <tr><td>PWA / 可安装 + 离线壳</td><td>✅ 可选 <code>PWA=1</code></td><td>△ 有 <code>sw.js</code>（用途未明确）</td><td>❌ 单文件离线无需 SW</td><td><span class="tag t-chg">V3·变更</span></td></tr>
+  <tr><td>合规地图底图</td><td>✅ TMap 具测绘资质</td><td>✅ TMap</td><td>△ Canvas 无行政边界（无合规风险，也无底图）</td><td><span class="tag t-chg">V3·变更</span></td></tr>
+</table>
+
+<h2>三、接口与 API 对比</h2>
+<table>
+  <tr><th>接口 / API</th><th>原版</th><th>V2</th><th>V3</th></tr>
+  <tr><td>气象数据源</td><td>Open-Meteo（免费层，按访客 IP 额度）</td><td>同</td><td>同</td></tr>
+  <tr><td>空气质量 / AOD</td><td>Open-Meteo Air Quality</td><td>同</td><td>同（逐点取）</td></tr>
+  <tr><td>省界 / GeoJSON</td><td><b>DataV 省界</b>（外部，XSS 风险源）</td><td>不使用（TMap 自带底图）</td><td>不使用（Canvas 航图无需）</td></tr>
+  <tr><td>地图 API</td><td>TMap JS API + Pages Functions 代理（<code>__TMAP_SERVICE_HOST__</code>）</td><td>同（产物无密钥）</td><td><span class="yes">无</span>（自绘 Canvas）</td></tr>
+  <tr><td>存储（localStorage）</td><td><code>sunsetbot.pref.v1</code>(112B/9 显示态) · <code>sunsetbot.calib.v1</code> · <code>sunsetbot.spots.v1</code></td><td><code>glowcast.v2.pref</code> · <code>glowcast.v2.calib</code> · <code>glowcast.v2.cmp.v1</code> · <code>point.v2/map.v7/trend</code> 缓存</td><td><code>glowcast.v3.pref</code>(lang/theme/city) · <code>glowcast.v3.map.v1.*</code> · <code>glowcast.v3.trend.v1.*</code> · <code>glowcast.v3.calib</code></td></tr>
+  <tr><td>路由</td><td>无前端路由（静态 + <code>404.html</code>）；URL query 承载地点/日期/语言</td><td>hash 路由 + <code>urlstate.ts</code></td><td>hash 路由（home / 404 仅两路）</td></tr>
+  <tr><td>i18n</td><td>键=简体原文，缺译回落中文原文；优先级 URL&gt;偏好&gt;浏览器&gt;简体</td><td>同</td><td>同（简体原文为键）</td></tr>
+  <tr><td>快照编解码</td><td><code>SNAP_VER=1</code></td><td>互通（任一侧生成对方可解）</td><td>互通（<code>snap.ts</code> 已移植）</td></tr>
+</table>
+
+<h2>四、行为逻辑对比</h2>
+<table>
+  <tr><th>行为</th><th>原版</th><th>V2</th><th>V3</th></tr>
+  <tr><td>取数纪律</td><td>单点开页自动；地图<b>显式点击</b>（默认不自动）；缓存命中零请求</td><td>三档 auto/click/force；TTL 6h</td><td>结论/趋势开页自动；观测场<b>显式点击</b>；缓存命中自动绘制；TTL 3h LRU 6</td></tr>
+  <tr><td>缓存策略</td><td>趋势算好的 rows 落盘（~1.9KB/条，上限 3）；地图缓存 B14；不存原始响应（~5MB 会爆配额）</td><td><code>point.v2/map.v7/trend</code>，TTL 6h</td><td><code>glowcast.v3.map.v1.*/trend.v1.*</code>，按日期 3h</td></tr>
+  <tr><td>离线 / 失败</td><td>PWA 壳可开；数据失败降级（无确定性 mock）；地图需代理</td><td>超时 9s → 确定性 mock + MOCK 标</td><td>失败/超时 → 确定性 mock + MOCK 模式标</td></tr>
+  <tr><td>「今天」判定</td><td>浏览器/URL 日期</td><td><b>城市当地今天</b>（<code>todayStr</code> 按城市时区，跨时区不差一天）</td><td><b>浏览器当地今天</b>（<code>new Date()</code>）</td></tr>
+  <tr><td>校准逻辑</td><td>四条硬边界（只展示不回改 / 样本≥8 且档≥3 / a=-1 不计 / 关≠删）</td><td>同（<code>calib</code> 完整）</td><td>同口径（数据层），UI 占位未做</td></tr>
+  <tr><td>分享 / 快照</td><td>导出 PNG 结论卡</td><td><code>sharecard.ts</code> canvas 780×400</td><td>编解码就绪，UI 未做（二期）</td></tr>
+  <tr><td>偏好持久化</td><td>9 显示态同键；位置/日期不存（交 URL）</td><td>pref + 城市当地钟；位置/日期不持久化</td><td>pref(lang/theme/city)；位置/日期不持久化</td></tr>
+</table>
+
+<h2>五、性能与额度</h2>
+<table>
+  <tr><th>指标</th><th>原版</th><th>V2</th><th>V3</th></tr>
+  <tr><td>首屏单点调用</td><td>~65 加权调用</td><td>~51</td><td>~51（开页 <code>runForecast</code>）</td></tr>
+  <tr><td>地图一次取数</td><td>~171（57 点 × 3 路）</td><td>~171</td><td>~171（57 点 × 3 路，明示代价）</td></tr>
+  <tr><td>趋势一次取数</td><td>~129（占单页 55%）</td><td>~102</td><td>~102</td></tr>
+  <tr><td>免费额度</td><td>10,000 次/天/人（按出口 IP）</td><td>同</td><td>同</td></tr>
+  <tr><td>产物体积</td><td>单文件内联（JS/CSS/城市数据全内联）</td><td>单文件 ~650KB（字体内联）</td><td><code>standalone.html</code> 单文件 + <code>dist/</code> 多文件</td></tr>
+  <tr><td>离线分发</td><td>需 PWA=1（多文件）</td><td>双击单文件可开</td><td><span class="yes">双击 standalone 即开</span></td></tr>
+</table>
+
+<h2>六、已知限制（分版本）</h2>
+<h3>原版</h3>
+<ul>
+  <li><b>额度纪律：</b>地图必须显式点击才取（~171 调用）；唯一例外是缓存命中自动画（零请求）。</li>
+  <li><b>可信范围：</b>色面边界＝采样点凸包 + 70km 羽化；凸包之外即外推，叠可信度纱（覆盖已上色面积约 21.6%）。</li>
+  <li><b>模型分歧：</b>少于两套有值时返回「无数据」而非 0（避免把缺模型伪装成高一致）。</li>
+  <li><b>XSS：</b>49 处 <code>innerHTML</code> 插值，已加 <code>esc()</code>/<code>safeLabel()</code>，但仍有 44 处待替换，且缺 CSP。</li>
+  <li><b>地图合规：</b>需 TMap key + 代理；<code>file://</code> 打开无图。换 OSM 等境外底图会引入合规风险。</li>
+  <li><b>PWA 默认关闭：</b>与「单文件产物」约束冲突，需手动 <code>PWA=1</code>。</li>
+</ul>
+<h3>V2</h3>
+<ul>
+  <li>仍依赖 TMap（需网络/代理/key），离线地图不可用。</li>
+  <li>首发 README 标注「首发不带测试、地图代理与部署暂缓」—— 后续已补探针，但部署形态未定型。</li>
+  <li>与原版同样的 Open-Meteo 额度约束。</li>
+</ul>
+<h3>V3</h3>
+<ul>
+  <li><b>二期未做：</b>明细区（天色带/因素/逐时/模式对比）、应用内教程、分享卡、校准档案、窄屏横滑与地图浮卡键盘可达。</li>
+  <li><b>无跨城对比：</b>不能直接回答「今天去哪拍」跨城，只能单城周边 Top3。</li>
+  <li><b>时区弱化：</b><code>todayStr()</code> 取浏览器当地；当浏览器时区 ≠ 查询城市时区且接近当地午夜时，选中日期可能比城市当地差一天，事件时刻仍按城市算→轻微错位。</li>
+  <li><b>无 URL 深链：</b>分享特定地点/日期需靠快照功能（UI 未做），当前链接不带地点/日期。</li>
+  <li><b>地图为自绘 Canvas：</b>无真实底图/省界/卫星，交互精度不如 TMap；但换来了完全离线、零外部依赖与零合规风险。</li>
+  <li><b>无 PWA：</b>依赖单文件离线，未做 SW 缓存。</li>
+</ul>
+
+<h2>七、关键差异详解（具体表现 · 触发条件 · 用户影响）</h2>
+<table>
+  <tr><th>差异点（版本）</th><th>具体表现</th><th>触发条件</th><th>对用户的影响</th></tr>
+  <tr>
+    <td><b>地图引擎</b><br><span class="tag t-del">V3·移除</span> TMap</td>
+    <td>V3 改用 Canvas 自绘航图（色面+经纬网+罗盘+比例尺+Top3 pin+太阳方位线）；原版/V2 用腾讯地图 JS API（需服务端代理与 key）。</td>
+    <td>任何打开 V3 地图主舞台；或原版/V2 在 <code>file://</code> / 无代理环境打开地图。</td>
+    <td>V3 双击/断网即出图、零部署成本、无合规风险；但失去真实底图、省界与卫星图层，交互（缩放/平移/地标搜索）不如 TMap 丰富。</td>
+  </tr>
+  <tr>
+    <td><b>确定性 MOCK 回落</b><br><span class="tag t-new">V2·新增</span></td>
+    <td>V2/V3 在网络失败或超时时回落到确定性（非随机）演示数据并标注 MOCK；原版无此分支，数据失败即降级/报错。</td>
+    <td>断网、Open-Meteo 不可达、或超过超时预算（V2 为 9s）。</td>
+    <td>V2/V3 离线也能看到完整界面与演示结论，便于演示/弱网；原版离线只能看壳或报错，且 MOCK 数据不可当真。</td>
+  </tr>
+  <tr>
+    <td><b>跨城对比（F2）</b><br><span class="tag t-del">V3·移除</span></td>
+    <td>V3 无「收藏多点横向排序」，仅有单城周边 57 点的 Top3 推荐；原版收藏 5 点、V2 <code>compare.ts</code> CMP_MAX=4。</td>
+    <td>用户想比较多座城市「今天去哪拍」。</td>
+    <td>V3 必须逐城切换、逐次查看，无法直接横向排名；跨城决策效率低于原版/V2。</td>
+  </tr>
+  <tr>
+    <td><b>明细区（天色带/因素/逐时）</b><br><span class="tag t-warn">V3·暂缺</span></td>
+    <td>V3 的 <code>skyCloud</code>/<code>factorRows</code> 已在 <code>forecast.ts</code> 算好，但无 UI 组件；原版/V2 有完整天色带、13 项因素分解、逐时表。</td>
+    <td>用户想看「为什么是好/差」的逐项分解与逐时走势。</td>
+    <td>V3 一期只给结论+推荐+可信度，缺少「成因明细」，说服力与可解释性弱于原版/V2；二期补。</td>
+  </tr>
+  <tr>
+    <td><b>严格城市当地钟</b><br><span class="tag t-chg">V3·变更</span> 弱化</td>
+    <td>V2 用 <code>tz.ts</code> 按城市 IANA + <code>utc_offset_seconds</code> 算「城市当地今天」；V3 的 <code>todayStr()</code> 用 <code>new Date()</code>（浏览器当地），仅 API 层做偏移对齐。</td>
+    <td>浏览器时区 ≠ 查询城市时区，且接近该城市当地午夜时。</td>
+    <td>跨时区用户可能选中日期比城市当地差一天；事件时刻仍按城市算，出现「日期与事件轻微错位」。V2 无此问题。</td>
+  </tr>
+  <tr>
+    <td><b>URL 深链（地点/日期）</b><br><span class="tag t-del">V3·移除</span></td>
+    <td>原版/V2 把地点与日期写进 URL（<code>?name=</code>/<code>urlstate</code>），链接可复现；V3 仅 hash 路由，偏好只在 localStorage。</td>
+    <td>用户想分享「某地某日」的精确链接。</td>
+    <td>V3 当前链接不带地点/日期，分享需等快照 UI（二期）；原版/V2 链接可直达。</td>
+  </tr>
+  <tr>
+    <td><b>应用内教程</b><br><span class="tag t-del">V3·移除</span></td>
+    <td>V3 无自带教程，跳转原版 <code>tutorial.html</code>；原版独立教程、V2 应用内 Tutorial 视图。</td>
+    <td>新用户点击「教程 / 指南」。</td>
+    <td>V3 用户被带到视觉/交互不同的原版教程页，体验割裂；且原版教程不覆盖 V3 指挥台 IA。</td>
+  </tr>
+  <tr>
+    <td><b>校准 / 分享卡</b><br><span class="tag t-warn">V3·暂缺</span></td>
+    <td>V3 的 <code>calib.ts</code>/<code>snap.ts</code> 已移植（口径与原版一致），但 UI 未做（可信度翼仅占位「敬请期待」）。</td>
+    <td>用户想做本地校准或导出分享卡。</td>
+    <td>二期前完全不可用；原版/V2 已可校准与分享。</td>
+  </tr>
+  <tr>
+    <td><b>算法口径回正</b><br><span class="tag t-chg">V3·变更</span></td>
+    <td>V3 修正了 V2 的 3 处漂移：mixedIndex 权重回正 0.55/0.45、综合回正 wgeo、一致性公式回正；以原版为唯一权威。</td>
+    <td>任何结论/分歧/一致性计算。</td>
+    <td>V3 的综合指数、模型分歧、一致性最贴近原版权威口径；V2 在漂移期结论可能有细微偏差。</td>
+  </tr>
+  <tr>
+    <td><b>部署产物形态</b><br><span class="tag t-new">V3·新增</span> 双轨</td>
+    <td>V3 同时产出 <code>dist/</code>（多文件，部署用）与 <code>standalone.html</code>（单文件，断网双击）；原版单文件+PWA 可选；V2 单文件。</td>
+    <td>部署到静态托管 vs 本地双击分发。</td>
+    <td>V3 兼顾「易部署」与「易离线分发」；原版需 PWA=1 才离线，V2 仅单文件。</td>
+  </tr>
+</table>
+
+<h2>八、结论与选型建议</h2>
+<ul>
+  <li><b>功能完整度：</b>原版 ≥ V2 ＞ V3（V3 一期是聚焦 MVP，把明细区/对比/校准/分享/教程推迟到二期）。</li>
+  <li><b>离线 & 零部署：</b>V3 最佳（Canvas 航图 + standalone 双击即开，无需代理/key）；原版需 PWA=1，V2 单文件但地图仍需 TMap。</li>
+  <li><b>算法可信度：</b>V3 已回正 V2 漂移，结论口径最贴近原版权威；三版核心预报算法同源。</li>
+  <li><b>决策体验：</b>V3 的「指挥台 + 双主轴（去哪拍 / 敢不敢信）」是针对「今晚去哪拍」场景的重新设计，比原版/V2 的长页更聚焦；但代价是丢了跨城对比与明细解释。</li>
+  <li><b>合规：</b>原版/V2 用 TMap（具测绘资质）；V3 用 Canvas 自绘无行政边界，无合规风险但也无底图。</li>
+</ul>
+
+<div class="foot">
+  本报告为只读分析产物，未写入任何文件。对比依据：<code>v3/README.md</code> 及 <code>v3/src/**</code>、
+  <code>v2/README.md</code> 及 <code>v2/src/**</code>、根目录

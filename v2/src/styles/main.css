@@ -77,10 +77,6 @@ input, select {
   width: min(1180px, calc(100% - 40px));
   margin: 0 auto;
 }
-.wrap-wide {
-  width: min(1320px, calc(100% - 32px));
-  margin: 0 auto;
-}
 
 /* ---- 玻璃面板 ---- */
 .glass {
@@ -188,10 +184,181 @@ input, select {
   border-color: var(--acc-3);
   box-shadow: 0 0 0 3px var(--ring);
 }
-.field input, .field select {
+.field input {
   border: 0; background: transparent; outline: none;
   font-size: var(--fs-small); width: 100%;
 }
+
+/* ---- 自绘下拉 ----
+   原生 <select> / <input type="date"> 的弹层是浏览器自己画的：底色、行高、选中态、
+   深色适配各浏览器不同，能改的只有 select 的 background 与 option 的配色，且旧版不认。
+   所以这里整套自己画：触发器沿用胶囊外观，弹层走 .pop-card（实色卡底）。
+   定位由 core/popover.ts 算（fixed + 视口内 clamp + 放不下向上翻）。 */
+.sel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--stroke-2);
+  background: var(--bg-card-solid);
+  color: var(--tx-1);
+  font-family: inherit;
+  font-size: var(--fs-small);
+  white-space: nowrap;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.sel:hover { border-color: var(--acc-3); }
+.sel:focus-visible,
+.dp-trigger:focus-visible {
+  outline: none;
+  border-color: var(--acc-3);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+.sel-txt {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sel-arw {
+  flex: none;
+  color: var(--tx-3);
+  transition: transform var(--t-fast);
+}
+.sel-arw.on { transform: rotate(180deg); }
+
+/* ---- 自绘弹层（下拉与月历共用） ---- */
+.pop-card {
+  position: fixed;
+  z-index: 2400; /* 高于全屏地图的 2100 与顶栏浮层 */
+  padding: 6px;
+  border-radius: var(--r-md);
+  background: var(--bg-card-solid);
+  border: 1px solid var(--stroke-2);
+  box-shadow: var(--card-sh);
+  animation: rise 0.18s var(--ease-out);
+}
+.sel-pop {
+  max-height: min(60vh, 420px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.pop-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  font-family: inherit;
+  font-size: var(--fs-small);
+  color: var(--tx-2);
+  text-align: left;
+  white-space: nowrap;
+}
+.pop-item:hover,
+.pop-item:focus-visible {
+  background: var(--bg-glass-2);
+  color: var(--tx-1);
+  outline: none;
+}
+.pop-item[aria-selected="true"] {
+  background: var(--bg-glass-2);
+  color: var(--tx-1);
+}
+.pop-item:disabled { opacity: 0.45; }
+.pop-tick { color: var(--acc-3); font-size: 0.85em; }
+
+/* ---- 自绘月历 ---- */
+.dp-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--tx-1);
+  font-family: inherit;
+  font-size: var(--fs-small);
+  text-align: left;
+  border-radius: var(--r-sm);
+  white-space: nowrap;
+}
+.dp-val { font-variant-numeric: tabular-nums; }
+.dp-pop { width: 292px; }
+.dp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 2px 2px 8px;
+}
+.dp-title {
+  font-size: var(--fs-small);
+  font-weight: 600;
+  color: var(--tx-1);
+}
+.dp-nav {
+  width: 26px; height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-sm);
+  color: var(--tx-2);
+}
+.dp-nav:hover:not(:disabled) { background: var(--bg-glass-2); color: var(--tx-1); }
+.dp-nav:disabled { opacity: 0.3; }
+.dp-week, .dp-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.dp-week span {
+  padding: 4px 0;
+  text-align: center;
+  font-size: var(--fs-tiny);
+  color: var(--tx-3);
+}
+.dp-day {
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-sm);
+  font-family: inherit;
+  font-size: var(--fs-small);
+  color: var(--tx-2);
+  font-variant-numeric: tabular-nums;
+}
+.dp-day:hover:not(:disabled) { background: var(--bg-glass-2); color: var(--tx-1); }
+.dp-day:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--acc-3);
+}
+.dp-day.out { opacity: 0.5; }
+.dp-day.today { box-shadow: inset 0 0 0 1px var(--acc-3); color: var(--tx-1); }
+.dp-day.cur {
+  background: var(--spectrum);
+  color: var(--tx-inv);
+  font-weight: 600;
+}
+.dp-day:disabled { opacity: 0.26; }
+.dp-foot {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--stroke);
+  display: flex;
+  justify-content: center;
+}
+.dp-today {
+  padding: 6px 12px;
+  border-radius: var(--r-full);
+  font-family: inherit;
+  font-size: var(--fs-tiny);
+  color: var(--tx-2);
+}
+.dp-today:hover { background: var(--bg-glass-2); color: var(--tx-1); }
 
 /* ---- 数值仪表 ---- */
 .metric {
@@ -217,7 +384,8 @@ input, select {
 /* ---- 分节 ---- */
 .section {
   padding: var(--sp-8) 0;
-  scroll-margin-top: 112px;
+  /* 顶栏实际高度 + 26px 呼吸；--topbar-h 随断点变（63 / 86 / 80） */
+  scroll-margin-top: calc(var(--topbar-h) + 26px);
 }
 .section-head {
   display: flex;
@@ -294,6 +462,9 @@ input, select {
 }
 
 /* ---- 顶栏 ---- */
+/* 顶栏高度唯一来源：单行 62+1（手机 56+1）。四态全长一个样，不再是两档。
+   .section 的 scroll-margin 与导航高亮判定线都从它派生，别另写死值。 */
+:root { --topbar-h: 63px; }
 .topbar {
   position: sticky; top: 0; z-index: 120;
   backdrop-filter: blur(20px) saturate(1.3);
@@ -301,21 +472,48 @@ input, select {
   background: color-mix(in srgb, var(--bg-base) 72%, transparent);
   border-bottom: 1px solid var(--stroke);
 }
-/* 徽标：顶栏第二行（原版同款：纯文字、右对齐、tabular-nums） */
-.topbar-meta {
-  display: flex;
-  justify-content: flex-end;
-  align-items: baseline;
-  gap: 6px;
-  font-size: 12px;
-  line-height: 1.35;
-  letter-spacing: 0.2px;
-  color: var(--tx-3);
+/* 徽标（宽屏态）：四按钮右侧的幽灵胶囊，12.5px / tx-2 */
+.meta-pill {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 5px 12px;
+  border-radius: var(--r-full);
+  background: var(--bg-glass);
+  border: 1px solid var(--stroke);
+  box-shadow: inset 0 1px 0 var(--glass-hi);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.1px;
+  color: var(--tx-2);
   font-variant-numeric: tabular-nums;
-  padding-bottom: 7px;
   white-space: nowrap;
 }
-.topbar-meta i { font-style: normal; opacity: 0.55; }
+.meta-pill .dot { font-style: normal; opacity: 0.5; margin: 0 6px; }
+/* 四态长相（形态由 TopBar 的 refit() 逐级判定，CSS 只负责长什么样）：
+   one   单行 + 胶囊
+   tight 收紧导航（padding 13→9 / 字号 .78rem / 藏 GLOWCAST 副标 / 按钮 gap 6）+ 胶囊
+   menu  汉堡接管导航 + 胶囊（抽屉 armed）
+   mini  手机极简 —— **蕴含 menu**：连接紧后的导航都放不下，7 项导航必须继续藏。
+         徽标整块从顶栏撤走（340px 里放不下胶囊，折回第二行会留下一片空白），
+         教程按钮也撤走（抽屉「指南」组里本来就有入口），状态改由抽屉顶部一行承担。
+   实测「自然需宽」（2026-10-26 加第 7 项、桌面用短标签后）：中文 1200 单行 / 1000 收紧 /
+   990 及以下汉堡；英文 1280 已落到汉堡。数值随文案与语言变化，形态一律由 TopBar 的 refit() 实测决定。 */
+.topbar.mode-tight .nav-tabs a { padding: 6px 9px; font-size: 0.78rem; }
+.topbar.mode-tight .top-actions { gap: 6px; }
+.topbar.mode-tight .brand .name em { display: none; }
+.topbar.mode-menu .nav-tabs,
+.topbar.mode-mini .nav-tabs { display: none; }
+.topbar.mode-menu .hamburger,
+.topbar.mode-mini .hamburger { display: inline-flex; }
+.topbar.mode-mini .meta-pill { display: none; }
+.topbar.mode-mini .tut-btn { display: none; }
+.topbar.mode-mini .brand .name em { display: none; }
+/* mini 再让 2px/3px 出来：360 与 375 机型的容器只有 310/325，中文需 321 ——
+   不收这一档，iPhone SE 会横向溢出。视觉上看不出差别。 */
+.topbar.mode-mini .icon-btn { width: 32px; height: 32px; }
+.topbar.mode-mini .topbar-in { gap: 9px; }
 
 .topbar-in {
   display: flex;
@@ -345,9 +543,13 @@ input, select {
   background: var(--bg-base);
 }
 .brand .name { font-size: 1.02rem; }
+/* 主名与尾标各自可成行：两者之间没有空格，行内不会产生断行点，
+   英文 "Glow Forecast"+"GLOWCAST" 的最小内容宽会顶到 187px，390px 手机把整页顶出 65px 横向滚动。
+   改成 flex + wrap（去掉 margin-left，用 column-gap）后桌面观感不变、手机仍是副标另起一行。 */
+.brand .name { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 7px; }
 .brand .name em {
   font-style: normal;
-  margin-left: 7px;
+  margin-left: 0;
   font-size: 0.72rem;
   letter-spacing: 0.16em;
   color: var(--tx-3);
@@ -368,7 +570,8 @@ input, select {
   transition: color var(--t-fast), background var(--t-fast);
 }
 .nav-tabs a:hover { color: var(--tx-1); background: var(--bg-glass); text-decoration: none; }
-.nav-tabs a.router-link-exact-active {
+.nav-tabs a.router-link-exact-active,
+.nav-tabs a.on {
   color: var(--tx-1);
   background: var(--bg-glass-2);
 }
@@ -393,7 +596,7 @@ input, select {
   border-color: var(--stroke-2);
   background: var(--bg-glass);
 }
-/* ---------- 移动端目录抽屉（≤720px）：左侧面板 + 分组 + 细线分隔，参考原版 ---------- */
+/* ---------- 移动端目录抽屉（≤860px）：左侧面板 + 分组 + 细线分隔，参考V1 ---------- */
 .hamburger {
   display: none;
   width: 34px; height: 34px; flex: 0 0 auto;
@@ -427,7 +630,7 @@ input, select {
   pointer-events: auto; visibility: visible;
   transition: transform 0.2s ease, opacity 0.2s ease, visibility 0s;
 }
-/* 液态玻璃（原版同配方）：高光渐变 + 磨砂提饱和 + 内侧 1px 高光。
+/* 液态玻璃（V1同配方）：高光渐变 + 磨砂提饱和 + 内侧 1px 高光。
    不支持 backdrop-filter 时保持上面的实心底色，不降级成半透明糊片。 */
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .mdrawer {
@@ -438,6 +641,26 @@ input, select {
   }
   .md-group { border-top-color: color-mix(in srgb, var(--glass-hi) 55%, transparent); }
 }
+
+/* 手机顶栏不显示徽标（mode-mini），状态挪到抽屉顶部这一行 —— 打开目录就能看到
+   当前看的是哪个城市、哪一天、朝霞还是晚霞，不必滚回顶部。 */
+.md-status {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 14px 20px 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--stroke);
+  font-size: 12.5px;
+  letter-spacing: 0.2px;
+  color: var(--tx-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.md-status i { font-style: normal; opacity: 0.5; }
+.md-status + .md-label { padding-top: 8px; }
 
 .md-label {
   padding: 16px 20px 8px;
@@ -459,15 +682,11 @@ input, select {
 .md-group a.ext { color: var(--acc-2); font-weight: 600; }
 .md-group a .arw { font-style: normal; font-size: 12px; opacity: 0.85; }
 
+/* 抽屉的开关由 TopBar 的形态判定（mode-menu）决定，不再用 860 media query：
+   「收紧后仍放不下」的窄桌面上需要汉堡，而 860 只是经验值。
+   armed 由 JS 挂，display 与可见性仍归 .on 管。 */
+.mdrawer.armed { display: block; }
 @media (max-width: 720px) {
-  .hamburger { display: inline-flex; }
-  .mdrawer { display: block; }
-}
-@media (min-width: 721px) {
-  .mdrawer, .mdrawer-mask { display: none !important; }
-}
-@media (max-width: 720px) {
-  .nav-tabs { display: none; }
   .topbar-in { height: 56px; }
 }
 
