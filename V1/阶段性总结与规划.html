@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>霞光预报 · 阶段性总结与规划（2026-10-12）</title>
+<meta name="robots" content="noindex">
+<style>
+:root{
+  --bg:#f4f6fa; --card:#fff; --line:#e5e9f0; --line2:#eef1f6;
+  --tx:#1f2733; --tx2:#5b6675; --tx3:#667081;
+  --ok:#0f7a45; --okbg:#e9f7ef;
+  --warn:#9c5a09; --warnbg:#fdf3e3;
+  --bad:#c0392b; --badbg:#fdeceb;
+  --acc:#e2601f; --acc2:#bd4a17; --accbg:#fff3ec;
+  --blue:#2563eb; --bluebg:#eef3ff;
+  --r:14px; --r2:10px;
+  --sh:0 1px 2px rgba(16,24,40,.04), 0 6px 20px -8px rgba(16,24,40,.10);
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(1200px 380px at 12% -8%, #ffeede 0%, rgba(255,238,222,0) 62%),
+    radial-gradient(1000px 340px at 92% -6%, #e9f0ff 0%, rgba(233,240,255,0) 60%),
+    var(--bg);
+  color:var(--tx);
+  font:15px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px 64px}
+
+/* ---- 顶部 ---- */
+.top{position:sticky;top:0;z-index:50;backdrop-filter:saturate(1.4) blur(10px);
+  background:rgba(255,255,255,.9);border-bottom:1px solid var(--line)}
+.top-in{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.logo{width:30px;height:30px;border-radius:10px;flex:0 0 auto;
+  background:linear-gradient(150deg,#ffd08a,#f08a3c 46%,#c9501a);box-shadow:0 4px 12px -4px rgba(201,80,26,.5)}
+.top h1{font-size:16px;margin:0;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-tx{min-width:0}
+.top .spacer{flex:1 1 auto}
+.nav{display:flex;gap:6px;flex-wrap:wrap}
+.nav a{font-size:12.5px;color:var(--tx2);text-decoration:none;padding:4px 9px;border-radius:999px;border:1px solid var(--line)}
+.nav a:hover{background:var(--accbg);border-color:#ffd9c2;color:var(--acc2)}
+
+/* ---- 通用 ---- */
+h2{font-size:21px;margin:34px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--line)}
+h3{font-size:16.5px;margin:22px 0 10px}
+h4{font-size:14.5px;margin:16px 0 8px;color:var(--tx2)}
+p{margin:8px 0}
+ul,ol{margin:8px 0;padding-left:22px}
+li{margin:4px 0}
+code{font-family:var(--mono);font-size:12.5px;background:var(--line2);border-radius:5px;padding:1px 5px;word-break:break-all}
+a{color:var(--blue)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px 18px;margin:14px 0}
+.lead{font-size:15.5px;color:var(--tx2)}
+.muted{color:var(--tx3);font-size:13px}
+.hint{font-size:12.5px;color:var(--tx3)}
+
+/* ---- 事实面板 ---- */
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:16px 0}
+.fact{background:var(--card);border:1px solid var(--line);border-radius:var(--r2);padding:11px 13px}
+.fact b{display:block;font-size:19px;line-height:1.25;color:var(--acc2)}
+.fact span{font-size:12px;color:var(--tx3)}
+
+/* ---- 表格 ---- */
+table{width:100%;border-collapse:collapse;font-size:13.5px;margin:10px 0}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:#fafbfd;font-weight:700;white-space:nowrap}
+tbody tr:nth-child(even){background:#fcfdff}
+td code{background:transparent;padding:0}
+
+/* ---- 徽标 ---- */
+.tag{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:999px;white-space:nowrap;font-weight:600}
+.t-p0{background:var(--badbg);color:var(--bad)}
+.t-p1{background:var(--warnbg);color:var(--warn)}
+.t-p2{background:var(--bluebg);color:var(--blue)}
+.t-p3{background:var(--line2);color:var(--tx3)}
+.t-ok{background:var(--okbg);color:var(--ok)}
+.t-phase{background:var(--accbg);color:var(--acc2)}
+.t-file{background:var(--line2);color:var(--tx2);font-family:var(--mono);font-weight:400;font-size:11.5px}
+
+/* ---- 分级区块 ---- */
+.phase{border-left:4px solid var(--acc);background:var(--card);border-radius:0 var(--r) var(--r) 0;
+  padding:12px 16px;margin:18px 0 12px;box-shadow:var(--sh)}
+.phase.green{border-left-color:var(--ok)}
+.phase.blue{border-left-color:var(--blue)}
+.phase.gray{border-left-color:#b9c0cc}
+.phase h3{margin:2px 0 6px}
+.phase .sub{font-size:12.5px;color:var(--tx3)}
+
+/* ---- 亮点 / 问题 ---- */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}}
+.box{border:1px solid var(--line);border-radius:var(--r2);padding:12px 14px;background:#fff}
+.box.good{border-color:#cfe9db;background:#fbfffd}
+.box.risk{border-color:#f3d3cf;background:#fffbfb}
+.box h4{margin-top:0}
+.box ol{padding-left:18px;margin:6px 0}
+.box li{margin:6px 0;font-size:13.5px}
+
+/* ---- 功能卡 ---- */
+.feat{border:1px solid var(--line);border-radius:var(--r);background:#fff;padding:14px 16px;margin:12px 0;box-shadow:var(--sh)}
+.feat-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.feat-h h3{margin:0;font-size:16px}
+.feat dl{margin:8px 0 0;display:grid;grid-template-columns:88px 1fr;gap:6px 12px;font-size:13.5px}
+.feat dt{color:var(--tx3);font-weight:600}
+.feat dd{margin:0}
+
+/* ---- 数据流 ---- */
+.flow{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;margin:12px 0}
+.flow .n{flex:1 1 150px;border:1px solid var(--line);border-radius:var(--r2);background:#fff;padding:9px 11px;font-size:12.5px}
+.flow .n b{display:block;font-size:13px;margin-bottom:2px}
+.flow .arw{display:flex;align-items:center;color:var(--tx3);font-size:16px}
+
+.note{border-left:3px solid var(--blue);background:var(--bluebg);padding:9px 12px;border-radius:0 8px 8px 0;font-size:13px;margin:10px 0}
+.warn{border-left:3px solid var(--bad);background:var(--badbg);padding:9px 12px;border-radius:0 8px 8px 0;font-size:13px;margin:10px 0}
+
+@media (max-width:760px){
+  .top{position:static}
+  .top h1{font-size:14px}
+  .nav{width:100%}
+  h2{font-size:18px;margin-top:26px}
+  table{font-size:12.5px}
+  th,td{padding:6px 7px}
+  .feat dl{grid-template-columns:1fr;gap:2px}
+  .feat dt{margin-top:6px}
+}
+@media print{
+  .top{position:static;background:#fff}
+  .nav{display:none}
+  body{background:#fff}
+  .card,.feat,.fact{box-shadow:none;break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="top-in">
+    <div class="logo" aria-hidden="true"></div>
+    <div class="top-tx"><h1>霞光预报 · 阶段性总结与规划</h1></div>
+    <div class="spacer"></div>
+    <div class="nav">
+      <a href="#s1">① 现状</a>
+      <a href="#s2">② 改进方案</a>
+      <a href="#s3">③ 新功能</a>
+      <a href="#s4">④ 执行顺序</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="card">
+    <p class="lead" style="margin-top:0">
+      本文基于对 <code>D:/wbfile/sunglow</code> 现有代码的逐文件通读与实测（行数、函数数、外部依赖、
+      探针输出、<code>docfacts</code> 事实表），不是模板化的清单。所有数字都可在文末「核对方式」里复现。
+    </p>
+    <div class="facts">
+      <div class="fact"><b>9,783</b><span>源码总行数（含 i18n 词典 1,142 行）</span></div>
+      <div class="fact"><b>687 KB</b><span>主产物 index.html（单文件、自包含）</span></div>
+      <div class="fact"><b>38.8%</b><span>_p6.js 占源码比重（地图模块所在文件）</span></div>
+      <div class="fact"><b>24 / 428</b><span>一键序列项数 / 已登记具名断言</span></div>
+      <div class="fact"><b>71</b><span>innerHTML 动态插值处（已收口 5 处热点）</span></div>
+      <div class="fact"><b>4</b><span>外部依赖域（气象 2 / 省界 1 / 地图 1）</span></div>
+      <div class="fact"><b>65</b><span>首屏加权调用（地图 171 需显式触发）</span></div>
+      <div class="fact"><b>3</b><span>界面语言（简体 / 繁體 / English）</span></div>
+    </div>
+    <div class="warn">
+      <b>三条最该先看的结论：</b>
+      ① 有一条<b>可被分享链接触发的反射型 DOM XSS</b>（<code>?name=</code> → <code>_p5b.js:111</code>），
+      修复成本约半天；② 唯一的版本管理曾是 <code>_backup/</code> 里 8 个手工快照目录，
+      <b>项目目录不是 git 仓库</b>；③ 代码质量其实<b>高于同类个人项目</b>——具名断言 + 文档/代码一致性探针是真正的资产，
+      下一步该做的是<b>把这套纪律扩到安全与工程化</b>，而不是重写。
+    </div>
+    <div class="note">
+      <b>更新 · 2026-10-12 15:20（S0 已落地）：</b>
+      ① 已 <code>git init</code>（<code>main</code> 分支、<code>core.autocrlf=false</code>、
+      <code>.gitignore</code> 排除 25 MB 手工快照与 27 MB 探针产物），70 个文件入库；
+      ② 已修 XSS：新增 <code>esc()</code> 与 <code>safeLabel()</code>（<code>_p2.js</code>），
+      5 个热点转义、URL 地名走白名单（<code>_p5.js</code>）；
+      ③ 新增 <code>_check/xssprobe.js</code>（<b>18 条断言</b>，含"39 字符真实载荷走分享链接路径"的端到端），
+      一键序列 17 → <b>18 项</b>；④ 产物 472,141 → <b>475,019 字节</b>（+2,878），全文 18 项全绿。
+      <b>更新 · 2026-10-12 18:40（多语言落地）：</b>
+      新增 <code>_pi18n.js</code>（742 行，含中英·中繁两份词典共 300 条）与 <code>i18nprobe.js</code>
+      （<b>23 条断言</b>），一键序列 18 → <b>19 项</b>；界面层（顶栏 / 查询控件 / 结果卡 / 地图 UI /
+      错误与额度文案 / 趋势 / 分享卡 canvas / 404 页）已三语，产物 475 → <b>590 KB</b>。
+      下表与「事实面板」已按最新代码更新，其余章节的结论不受影响。
+      <b>更新 · 2026-10-17（F1 离线 / PWA 落地）：</b>
+      新增 <code>_check/pwaprobe.js</code>（<b>18 条断言</b>），一键序列 22 → <b>23 项</b>、具名断言
+      385 → <b>403</b>；产物 <b>678,467 字节</b>；源码 9,346 → <b>9,438 行</b>。取舍按原方案执行：
+      PWA 做成 <code>PWA=1</code> 的<b>可选产物</b>（<code>manifest.json</code> + <code>sw.js</code> + 两张图标），
+      <b>默认构建仍是单文件</b> —— 探针 A 组专门守这一条。SW 绝不缓存气象响应。
+      <b>更新 · 2026-10-13（F5 结果快照落地）：</b>
+      新增 <code>_check/snapprobe.js</code>（<b>24 条断言</b>），一键序列 21 → <b>22 项</b>、具名断言
+      361 → <b>385</b>；产物 <b>671,972 字节</b>；源码 8,867 → <b>9,346 行</b>。<code>snap=</code>
+      参数承载结论摘要（base64url，187 字符），带它的链接<b>零取数</b>即出结论卡，并明确标注
+      "这是 X 时的计算结果"与过期提示。22 项全绿。
+      <b>更新 · 2026-10-17（F2 / F3 / F4 落地，五个功能方向全部收口）：</b>
+      新增 <code>_check/calibprobe.js</code>（<b>25 条断言</b>），一键序列 <b>24 项</b>、具名断言
+      <b>428</b>；产物 <b>703,841 字节</b>；源码 <b>9,783 行</b>（<code>_p5</code> 1,818 / <code>_p5b</code> 747 /
+      <code>_template</code> 1,076）。F2 多观测点对比（最多 5 点，命中缓存不进请求，<code>spotprobe</code> 21 条）、
+      F3 最佳窗口日历（渲染零取数）与 F4 实况回填与本地校准共用一个探针文件。
+      F4 按原方案的<b>纯展示</b>边界落地：标注只进本机 <code>localStorage</code>（显示"不会上传到任何服务器"），
+      <b>不改模型输出</b>（探针用 136 字符模型指纹逐个字段断死），样本不足不给结论，
+      "没看到（无法判断）"不进统计，<b>关闭 ≠ 删除</b>（两个按钮各管一件事）。
+      六个阈值常量全部纳入 <code>docfacts</code> 机读核对。<b>本轮顺带修掉一处探针脆弱点</b>：
+      <code>snapprobe</code> 原先按 <code>[data-snaphide]</code> 的<b>总数</b>断言"四张卡收起"，
+      F4 的校准块也是 <code>data-snaphide</code>（但它是结论卡的子块、不是一张卡）⇒ 改成按
+      <code>div.card[data-snaphide]</code> 的<b>身份</b>数，既能仍断死 ③④⑤⑥ 四张，又不再让"新增一个块"变成改数字式的假失败。
+    </div>
+  </div>
+
+  <!-- ==================================================================== -->
+  <h2 id="s1">① 项目现状总结</h2>
+
+  <h3>1.1 定位与技术栈</h3>
+  <p>
+    一个<b>单文件、零依赖、纯前端</b>的朝霞/晚霞（火烧云）预报应用：输入地点与日期，输出出现概率、质量评分与等级，
+    并给出逐项影响因素分解、未来 10 日趋势、周边 500 km 热力图。
+    <b>核心卖点是"物理模型 + 多模型融合"，而不是调用现成指数</b>——云层几何、大气消光光谱、光追着色全部在浏览器里算。
+  </p>
+  <table>
+    <thead><tr><th>层面</th><th>选型</th><th>说明 / 代价</th></tr></thead>
+    <tbody>
+      <tr><td>运行时</td><td>原生 ES2018+，无框架、无打包器</td><td>刻意选择：产物必须是一个可双击打开的 HTML。代价是<b>模块化靠文件拼接顺序</b>，不是靠 import</td></tr>
+      <tr><td>代码组织</td><td><code>_p2…_p6.js</code> 六个片段 → 3 个内联 <code>&lt;script&gt;</code></td><td>三段<b>共享全局作用域</b>，<code>function</code> 声明会静默覆盖（<code>_check/globals.js</code> 专门守这个）</td></tr>
+      <tr><td>数据源</td><td>Open-Meteo（forecast + air-quality）、阿里 DataV 省界、腾讯地图 GL JS</td><td>无 API key、无 CORS 问题；但<b>气象源单一、免费层仅限非商业</b></td></tr>
+      <tr><td>渲染</td><td>DOM + 手写 Canvas（色面 / 等值线 / 可信度纱 / 图钉）</td><td>刻意不用 SDK 的 <code>Heat</code>：需要可控的分档色阶与屏幕空间矢量等值线</td></tr>
+      <tr><td>构建</td><td><code>assemble.py</code>（拼装 + 注入）· <code>mkpreview.py</code>（带 SDK 桩的联调页）</td><td>纯 stdlib，连 PNG 图标都是手写 zlib 编码——好处是"换个 Python 也能跑"</td></tr>
+      <tr><td>托管</td><td>静态托管 + 可选 Cloudflare Pages Functions（地图代理）</td><td>纯静态不消耗任何服务端配额；<code>404.html</code> 由平台接管未知路径</td></tr>
+    </tbody>
+  </table>
+
+  <h3>1.2 目录与模块结构</h3>
+  <table>
+    <thead><tr><th>文件</th><th>行数</th><th>顶层函数/常量</th><th>职责</th></tr></thead>
+    <tbody>
+      <tr><td><code>_p2.js</code></td><td>328</td><td>17 / 32</td><td>常量、数学工具、天文计算（日出日落、太阳方位速度）、城市库检索、<b>转义与白名单（S0）</b></td></tr>
+      <tr><td><code>_p3.js</code></td><td>253</td><td>16 / 11</td><td><b>物理层</b>：气溶胶标高、等效地表高度、光路消光积分、CIE 色度、云层几何</td></tr>
+      <tr><td><code>_p4.js</code></td><td>585</td><td>29 / 18</td><td><b>数据获取 + 评分模型</b>：<code>jget</code>（12 s 超时 + 重试）、三路模型、合成权重、计费登记</td></tr>
+      <tr><td><code>_p5.js</code></td><td>881</td><td>16 / 12</td><td><b>主流程</b>：<code>State</code>、URL 状态同步（含地名白名单）、偏好持久化、事件绑定、取数编排</td></tr>
+      <tr><td><code>_p5b.js</code></td><td>534</td><td>24 / 1</td><td><b>结果渲染</b>：结论卡、仪表盘、因素表、单位制/12 小时制</td></tr>
+      <tr><td><code>_p6.js</code></td><td><b>3,782</b></td><td><b>112 / 55</b></td><td><b>地图模块</b>：网格几何、IDW 值场、栅格分条带绘制、等值线、可信度纱、悬停/钉住、图例、排行榜</td></tr>
+      <tr><td><code>tpl/template.html</code></td><td>819</td><td>—</td><td>版式来源：HTML + 全部 CSS（设计令牌在 <code>:root</code>）+ 3 个脚本占位块</td></tr>
+      <tr><td><code>tpl/404.html</code></td><td>182</td><td>—</td><td>404 页（今日新增），与主页共用同一份 <code>:root</code> 令牌</td></tr>
+      <tr><td><code>assemble.py</code> / <code>mkpreview.py</code></td><td>272 / 213</td><td>—</td><td>构建与联调页生成</td></tr>
+      <tr><td><code>functions/_TMapService/[[path]].js</code></td><td>81</td><td>—</td><td>地图代理（4 条上游路由，key 只存服务端环境变量）</td></tr>
+      <tr><td><code>_check/</code>（22 个脚本 + 90 张截图）</td><td>—</td><td>—</td><td>回归套件：18 项一键序列，含 9 个会打 <code>FACTS</code> 行的探针</td></tr>
+      <tr><td><code>refs/</code>（8 个 txt）</td><td>—</td><td>—</td><td>内联数据：城市表 3 份、地名别名、0.5° 高程网格 b64、3 份参考文档</td></tr>
+    </tbody>
+  </table>
+
+  <h4>数据流（一次单点查询）</h4>
+  <div class="flow">
+    <div class="n"><b>URL / 输入</b><code>readUrl()</code> _p5.js:658<br>或城市检索 → <code>setLocation</code></div>
+    <div class="arw">→</div>
+    <div class="n"><b>取数</b><code>jget</code> _p4.js:78<br>3 路并发（GFS / ECMWF / AQ）</div>
+    <div class="arw">→</div>
+    <div class="n"><b>评分</b>统计模型 + 光追模型<br><code>W_ENS = .30/.34/.36</code></div>
+    <div class="arw">→</div>
+    <div class="n"><b>渲染</b><code>_p5b.js</code> 结论卡<br>因素表 / 仪表盘</div>
+    <div class="arw">→</div>
+    <div class="n"><b>回写</b><code>syncUrl()</code> _p5.js:643<br>replaceState（不压历史）</div>
+  </div>
+  <p class="hint">
+    地图是<b>另一条独立链路</b>：57 个网格点一次取数 → IDW 值场 → 43,400 格分条带绘制 → 等值线/可信度纱/图钉各一层叠加，
+    全程在 <code>_p6.js</code> 内闭环，与单点链路只共享 <code>State.lat/lon</code> 与取数函数。
+  </p>
+
+  <h3>1.3 已实现的核心功能</h3>
+  <table>
+    <thead><tr><th>模块</th><th>能力</th><th>关键实现点</th></tr></thead>
+    <tbody>
+      <tr><td>单点预报</td><td>概率 / 质量分 / 等级 / 因素分解</td><td>三路模型融合；光追算法独立出分（<code>rayTraceColor</code>）</td></tr>
+      <tr><td>趋势</td><td>未来 <code>TREND_DAYS</code> 天逐日朝/晚霞</td><td>一次取 34 坐标 × 多日；<b>只缓存算好的 rows（≈1.9 KB），绝不存原始响应（≈5 MB）</b></td></tr>
+      <tr><td>地图</td><td>500 km 局部网格热力图 + 等值线 + 可信度纱 + 数据范围边界线 + 经纬网</td><td>等值线是<b>屏幕空间矢量</b>（放大不变粗）；纱为独立画布，绝不动色面像素</td></tr>
+      <tr><td>额度纪律</td><td>首屏只花 65 加权调用</td><td>地图取数<b>必须显式触发</b>；唯一放宽是"有缓存就自动画"（0 请求）</td></tr>
+      <tr><td>缓存</td><td>单点（原始响应，键含时段）/ 地图（跨地点总闸门 + 按日期 LRU）/ 趋势（rows）</td><td>三键族共用 <code>mapCacheSweep()</code>，但"是否豁免当前地点"三者<b>恰好相反</b>，都有注释写明理由</td></tr>
+      <tr><td>分享</td><td>URL 承载 lat/lon/date/period/name/region；导出结论卡 PNG</td><td><code>replaceState</code> 而非 <code>pushState</code>（避免后退键语义错乱）</td></tr>
+      <tr><td>偏好持久化</td><td>9 项显示偏好写入单键 <code>sunsetbot.pref.v1</code></td><td>白名单 + 先读后合并 + 坏值降级；<b>刻意不存位置与日期</b>（URL 已承载）</td></tr>
+      <tr><td>移动端</td><td>顶部条压成单行（43 px）；提示卡贴底通栏；4 条关闭路径</td><td><code>hideMapTip()</code> 是唯一收口处（否则残留 326×302 隐形热区扣住地图）</td></tr>
+      <tr><td>无障碍</td><td>可访问名 / 键盘 / 焦点可见 / 对比度</td><td><code>a11yprobe</code> 15 条断言实测（用 CDP 强制伪类，而非脚本 focus）</td></tr>
+    </tbody>
+  </table>
+
+  <h3>1.4 亮点（值得保住的东西）</h3>
+  <div class="grid2">
+    <div class="box good">
+      <h4>工程纪律远超同类个人项目</h4>
+      <ol>
+        <li><b>428 条具名断言</b>，24 项一键序列，且失败信号统一收口（<code>all.py</code> 的 <code>judge()</code>）——因为各探针"有的 exit 0 只打计数"，漏解析会把失败当成功。</li>
+        <li><b><code>docfacts</code> 让文档不许变谎话</b>：42 条可机读事实（源码行数、产物字节、常量值、探针条数）与 README/总结逐条比对，找不到声明就报 STALE 而不是静默通过。</li>
+        <li><b>语义变更用"第三方参考实现"做双重差分</b>（<code>zoomprobe</code> 的 <code>refThird</code>）：不拿改造前的实现当尺子。</li>
+        <li><b>硬约束有据可查</b>：<code>../.workbuddy/memory/硬约束详解.md</code> 52 条，每条写清"为什么这么定 + 实测数字"，不是拍脑袋。</li>
+      </ol>
+    </div>
+    <div class="box good">
+      <h4>架构选择干净，边界守得住</h4>
+      <ol>
+        <li><b>纯计算层与 DOM 层分离</b>：<code>_p2/_p3/_p5b</code> 里 <code>try</code> 为 0，靠 <code>nz()/isNum()</code> 兜底；异常集中在 <code>_p4/_p5/_p6</code>。</li>
+        <li><b>模板/产物彻底分离</b>：产物可随时删掉重建，模板是唯一版式来源。</li>
+        <li><b>key 永不进产物</b>：地图代理同源转发，未配置时返回 500 并写明原因，而不是透传上游 4xx 让人猜。</li>
+        <li><b>额度是显式设计目标</b>：<code>API_CALLS</code> 登记表让"首屏几次调用"成为可断言的量，而不是估算。</li>
+        <li><b>单文件约束被认真对待</b>：连 apple-touch-icon 的 PNG 都用 stdlib 手写编码，只为"换台机器也能构建"。</li>
+      </ol>
+    </div>
+  </div>
+
+  <h3>1.5 遗留问题</h3>
+  <div class="grid2">
+    <div class="box risk">
+      <h4>安全（最该先处理）</h4>
+      <ol>
+        <li><span class="tag t-ok">已修</span> <b>反射型 DOM XSS</b>：<code>_p5.js:669</code> 从 URL 读 <code>?name=</code>（截断 40 字符）→ <code>State.name</code> → <code>_p5b.js:111</code> 的模板串直接进 <code>innerHTML</code>。<code>&lt;img src=1 onerror=eval(location.hash)&gt;</code> 正好 39 字符，超长载荷可放 hash 里绕过截断。<b>一条分享链接即可触发。</b>
+        <br><span class="muted">→ S0 处置：输入侧 <code>safeLabel()</code> 白名单 + 输出侧 <code>esc()</code> 转义，5 个热点已替换，<code>xssprobe.js</code> 18 条断言守着。</span></li>
+        <li><span class="tag t-p2">P2</span> <b><code>innerHTML</code> 逐处转义只覆盖了热点，未铺满全项目</b>（审计当时 49 处；现为 <b>71 处</b>，随 i18n 与 F1–F5 增加）。目前只靠"数据来自内置城市表"兜底；但 <code>_p6.js:1367</code> 的 <code>provName</code> 来自<b>外部 GeoJSON</b>（DataV），上游一旦被污染就是存储型 XSS。
+        <br><span class="muted">→ S0 已提供 <code>esc()</code> / <code>safeLabel()</code> 并替换 5 处热点（<code>xssprobe.js</code> 18 条断言守着，含"5 个热点是否仍带 <code>esc(</code>"的源码级断言）；剩余各处分批替换仍待做。</span></li>
+        <li><span class="tag t-p1">P1</span> <b>无 CSP</b>。单文件页也能加 <code>&lt;meta http-equiv="Content-Security-Policy"&gt;</code>，可把可连域限制到 4 个已知域，即使将来出现未转义处也难外传。</li>
+        <li><span class="tag t-p1">P1</span> <b>地图代理无鉴权无限流</b>（<code>functions/_TMapService/[[path]].js</code>）：任何人可直接打 <code>/_TMapService/service/…</code>，消耗 Pages Functions 10 万/天共享池与你的腾讯 key 配额。上游主机是写死的（无 SSRF），但"刷配额"这条敞着。</li>
+        <li><span class="tag t-p2">P2</span> 第三方脚本 <code>map.qq.com/api/gljs</code> 拥有完整 DOM 权限，且无 SRI 校验（单文件站加 SRI 需内联哈希，可行但未做）。</li>
+      </ol>
+    </div>
+    <div class="box risk">
+      <h4>工程化与架构债</h4>
+      <ol>
+        <li><span class="tag t-ok">已修</span> <b>项目目录不是 git 仓库</b>，8 个手工快照目录（<code>_backup/before-batch1…第八批后</code>）曾是全部版本管理。
+        <br><span class="muted">→ S0 处置：<code>git init</code>（main / <code>core.autocrlf=false</code>）+ <code>.gitignore</code>（排除 25 MB 快照与 27 MB 探针产物），70 个文件入库。</span></li>
+        <li><span class="tag t-p1">P1</span> <b><code>_p6.js</code> 单体 3,800 行 / 115 函数</b>，占源码 38.8%，且内部分节只有一条 <code>/* ---- */</code> 分隔线级别的粗切分。</li>
+        <li><span class="tag t-p1">P1</span> <b>无 lint / 无格式化 / 无编辑器配置</b>；改名与重命名只能靠 grep，<code>function</code> 声明静默覆盖这类 bug 只有 <code>globals.js</code> 在守。</li>
+        <li><span class="tag t-p2">P2</span> <b>错误文案 4 处各写各的</b>（<code>_p4.js:110</code>、<code>_p5.js:408/789</code>、<code>_p6.js:3082</code>），429 的"日额度耗尽劝退"与"短时限流重试"两种相反处置分散在三条链路。</li>
+        <li><span class="tag t-p2">P2</span> <b>构建需手动两步</b>（assemble + mkpreview），无 watch、无产物变更摘要；踩过两次"改源码忘重跑 → 探针测的是旧代码"。</li>
+      </ol>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="box risk">
+      <h4>测试覆盖的缺口</h4>
+      <ol>
+        <li><span class="tag t-p1">P1</span> <code>navigator.geolocation</code>（<code>_p5.js:324</code>）<b>无任何探针覆盖</b>——定位是唯一一条"依赖浏览器能力"的入口，失败分支（拒绝授权/不支持）从没被测过。</li>
+        <li><span class="tag t-p2">P2</span> <b>分享卡导出只打桩</b>（<code>cdp.js</code> 里 stub <code>toBlob</code>），不校验图像内容：文案截断、配色错、尺寸错都不会红。</li>
+        <li><span class="tag t-p2">P2</span> <b>物理层的正确性靠 <code>harness.js</code> 的打印式断言</b>（"教程 319.23 vs 实测 319.27"），不在一键序列里，改了 <code>_p3.js</code> 不会自动红。</li>
+        <li><span class="tag t-p2">P2</span> <b><code>consistency.js</code>（单点 vs 地图口径核对）花真实额度、不进序列</b>，实际等于长期不跑。</li>
+        <li><span class="tag t-p2">P2</span> <code>perfprobe</code> 只测量不判成败，性能回归没有守门。</li>
+      </ol>
+    </div>
+    <div class="box risk">
+      <h4>性能与依赖</h4>
+      <ol>
+        <li><span class="tag t-p2">P2</span> <b>值场与栅格绘制全在主线程</b>：43,400 格 × 3 条带 + 等值线矢量 + 可信度纱，无 Web Worker / OffscreenCanvas。拖动与缩放靠 rAF 节流（<code>_p6.js:2666</code>）缓解，但首次绘制仍是一次长任务。</li>
+        <li><span class="tag t-p2">P2</span> <b>472 KB 单文件无法增量更新</b>：改一行文案也要整份重传（无 chunk 化可能，这是单文件约束的固有代价）。</li>
+        <li><span class="tag t-p2">P2</span> <b>气象源单一</b>：Open-Meteo 接口变更或限流即整站失效，无降级源（历史结论：无等量替代）。</li>
+        <li><span class="tag t-p3">P3</span> <b>合规边界</b>：免费层仅限非商业；公开运营需换付费层或自建（已在 <code>部署方案对比.md</code> 论证）。</li>
+        <li><span class="tag t-p3">P3</span> <b>无 i18n</b>：文案散落在 <code>_p5b</code> 与 <code>_p6</code> 的模板串里，未抽词典。</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- ==================================================================== -->
+  <h2 id="s2">② 下一步改进方案</h2>
+  <p class="lead">
+    按 <b>低风险快速改进 → 中期重构 → 长期规划</b> 三级呈现。每一行都给了涉及的具体文件与改动成本
+    （成本按"一个人、熟悉代码后"的净工作量估算）。
+  </p>
+
+  <div class="phase green">
+    <h3>第一级 · 低风险快速改进（1–5 天，建议本周做完）</h3>
+    <div class="sub">共同特征：不改架构、不动语义，改完立刻能靠现有 17 项序列验证没有回归。</div>
+  </div>
+  <table>
+    <thead><tr><th>#</th><th>改进项</th><th>涉及文件 / 模块</th><th>成本</th><th>预期收益</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="tag t-p0">P0</span></td>
+        <td><b>堵住 URL 反射 XSS</b>：对 <code>readUrl()</code> 读入的 <code>name/region</code> 做字符白名单清洗（只允许中日韩文字、字母、数字、空格与 ·-（）），而不是靠 40 字符截断兜底</td>
+        <td><span class="tag t-file">_p5.js:669-671</span></td>
+        <td>0.5 天</td>
+        <td>一条分享链接即可执行的 DOM XSS 被消除；改动只有两行，回归风险极低</td>
+      </tr>
+      <tr>
+        <td><span class="tag t-p0">P0</span></td>
+        <td><b>引入 <code>esc()</code> 并替换动态插值</b>：优先 5 处（<code>_p5b.js:111</code>、<code>_p5.js:349-351</code>、<code>_p6.js:1358/1367/3770</code>），其余 44 处按"是否含外部数据"分批跟进</td>
+        <td><span class="tag t-file">_p5.js</span> <span class="tag t-file">_p5b.js</span> <span class="tag t-file">_p6.js</span></td>
+        <td>1–1.5 天</td>
+        <td>把"靠数据来源可信兜底"变成"结构性不可能"；同时让 DataV GeoJSON 污染这条链断掉</td>
+      </tr>
+      <tr>
+        <td><span class="tag t-p0">P0</span></td>
+        <td><b>建 git 仓库</b>：<code>git init</code> + <code>.gitignore</code>（排除 <code>_backup/</code>、<code>_scratch/</code>、<code>_check/*.png</code>）+ 首次提交，把 <code>_backup/</code> 的 8 个快照按批次落成历史提交</td>
+        <td><span class="tag t-file">项目根</span></td>
+        <td>0.5 天</td>
+        <td>误删可恢复、改动可 diff、可 blame；这是后面所有重构的安全网（没有它就不该动 <code>_p6.js</code>）</td>
+      </tr>
+      <tr>
+        <td><span class="tag t-p1">P1</span></td>
+        <td><b>加 CSP meta</b>：<code>default-src 'none'; script-src 'self' 'unsafe-inline' https://map.qq.com; connect-src 'self' https://*.open-meteo.com https://geo.datav.aliyun.com https://*.map.qq.com; img-src 'self' data:; style-src 'unsafe-inline'</code>——先在本地联调页验证，再进模板</td>
+        <td><span class="tag t-file">tpl/template.html</span> <span class="tag t-file">tpl/404.html</span></td>
+        <td>1 天</td>
+        <td>纵深防御：即使将来出现未转义处，外传通道也被掐断；同时把"页面到底连了哪些域"写成可审计的声明</td>
+      </tr>
+      <tr>
+        <td><span class="tag t-p1">P1</span></td>
+        <td><b>代理加来源校验</b>：非 GET/HEAD 或 <code>Origin/Referer</code> 不在白名单时直接 403，并给 <code>/_TMapService</code> 加一层简单的按 IP 计数（KV 或内存）</td>
+        <td><span class="tag t-file">functions/_TMapService/[[path]].js</span></td>
+        <td>0.5 天</td>
+        <td>防止别人拿你的 Functions 配额与腾讯 key 配额刷量；10 万/天共享池被打满会连带影响你自己的地图</td>
+      </tr>
+      <tr>
+        <td><span class="tag t-p1">P1</span></td>
+        <td><b>补两条断言</b>：① 定位失败分支（拒绝授权 / 不支持 / 超时）→ 提示文案正确且不留"计算中"死状态；② 分享卡导出内容（在合成数据下解 PNG 头 + 采样像素校验标题色块）</td>
+        <td><span class="tag t-file">_check/cdp.js</span> 或新增 <code>shareprobe.js</code></td>
+        <td>1 天</td>
+        <td>把两个"只有人肉点过"的入口纳入自动化；顺带把"零控制台错误"的覆盖面做大</td>
+      </tr>
+      <tr>
+        <td><span class="tag t-p2">P2</span></td>
+        <td><b>构建脚本加 <code>--check</code> 与变更摘要</b>：跑完打印 <code>index.html</code> / <code>404.html</code> 的字节差与前一次构建的差异，避免"重定向到 /dev/null 让文档记下中间态"重演</td>
+        <td><span class="tag t-file">assemble.py</span></td>
+        <td>0.5 天</td>
+        <td>成本低、收益是防一类"静默"事故（本项目历史上已发生两次）</td>
+      </tr>
+      <tr>
+        <td><span class="tag t-p2">P2</span></td>
+        <td><b>把 <code>harness.js</code> 的物理断言搬进一键序列</b>：改成 <code>PASS/FAIL</code> 计数 + 退出码，命名成 <code>physprobe</code>（纯 Node，不起浏览器，约 1 s）</td>
+        <td><span class="tag t-file">_check/harness.js</span> <span class="tag t-file">_check/all.py</span></td>
+        <td>0.5 天</td>
+        <td>改 <code>_p3.js</code> 的物理常数不再靠人记得手动跑；套件只 +1 s</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="phase blue">
+    <h3>第二级 · 中期重构（1–3 周）</h3>
+    <div class="sub">共同特征：动结构不动行为。<b>前置条件是第 1 级的 git 仓库已就位</b>，且每步都要有对应探针守着。</div>
+  </div>
+  <table>
+    <thead><tr><th>#</th><th>改进项</th><th>涉及文件 / 模块</th><th>成本</th><th>预期收益</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="tag t-p1">P1</span></td>
+        <td><b><code>_p6.js</code> 按职责切成 4 个片段</b>：<code>_p6a</code> 几何与网格 / <code>_p6b</code> 值场与缓存 / <code>_p6c</code> 栅格与矢量绘制 / <code>_p6d</code> 交互与 UI，顺序并入 <code>assemble.py</code> 的 <code>PARTS</code></td>
+        <td><span class="tag t-file">_p6.js</span> <span class="tag t-file">assemble.py</span> <span class="tag t-file">_check/globals.js</span>（块划分写死在脚本头，必须同步）</td>
+        <td>3–5 天</td>
+        <td>3,782 行 → 4 个约 900 行的文件，定位成本显著下降；<b>纯机械拆分、不改变执行顺序与全局作用域，回归风险可控</b></td>
+      </tr>
+      <tr>
+        <td><span class="tag t-p1">P1</span></td>
+        <td><b>全局命名治理</b>：给地图侧函数统一加 <code>map</code> 前缀（单点侧已有 <code>ens</code> 前缀的先例），并把三个内联 script 的"可导出符号"列成白名单，由 <code>globals.js</code> 校验</td>
+        <td><span class="tag t-file">_p6*.js</span> <span class="tag t-file">_check/globals.js</span></td>
+        <td>2–3 天</td>
+        <td>把"新增全局函数前先 grep"这条人肉纪律变成机器可校验的约束</td>
+      </tr>
+      <tr>
+        <td><span class="tag t-p1">P1</span></td>
+        <td><b>错误处理收口</b>：定义 <code>fail(kind, err)</code>（kind = 网络 / 超时 / 429-日额度 / 429-短时 / 数据缺失 / 解析失败），统一产出"文案 + 是否可重试"，替换 4 处各写各的分支</td>
+        <td><span class="tag t-file">_p4.js:110</span> <span class="tag t-file">_p5.js:408/789</span> <span class="tag t-file">_p6.js:3082</span></td>
+        <td>2 天</td>
+        <td>429 两种相反处置、超时与网络失败不再可能写反；<code>timeoutprobe</code> 的 15 条断言可以扩成"每个 kind 都有对应文案"</td>
+      </tr>
+      <tr>
+        <td><span class="tag t-p2">P2</span></td>
+        <td><b>数据层抽象 <code>MeteoClient</code></b>：把 <code>_p4.js</code> 的 URL 拼装 / <code>jget</code> / 响应解析 / <code>API_CALLS</code> 登记收成一个对象，评分模型留在原处</td>
+        <td><span class="tag t-file">_p4.js</span></td>
+        <td>3 天</td>
+        <td>为"换数据源 / 加一层服务端缓存 / 加降级源"留出唯一接缝；现在这些逻辑与评分模型混在一起</td>
+      </tr>
+      <tr>
+        <td><span class="tag t-p2">P2</span></td>
+        <td><b><code>consistency.js</code> 合成数据化并进序列</b>：用 <code>Fetch.requestPaused</code> 回填合成响应，把"单点 vs 地图"口径核对从"花 236 额度、长期不跑"变成每次都能跑</td>
+        <td><span class="tag t-file">_check/consistency.js</span> <span class="tag t-file">_check/cdp.js</span>（复用其回填逻辑）</td>
+        <td>2–3 天</td>
+        <td>两类口径漂移（时区、变量集、插值）目前只有人肉核对；这是本项目最容易"静默算错"的一类 bug</td>
+      </tr>
+      <tr>
+        <td><span class="tag t-p2">P2</span></td>
+        <td><b>性能守门</b>：给 <code>perfprobe</code> 加阈值断言（首次绘制 &lt; X ms、拖动帧间隔 &lt; Y ms），并把"一次 <code>Runtime.evaluate</code> 只量一次绘制"这条纪律写进注释</td>
+        <td><span class="tag t-file">_check/perfprobe.js</span></td>
+        <td>1–2 天</td>
+        <td>性能从"有人测过"变成"回归会被拦住"；注意阈值要按实测留余量，别做成 flaky</td>
+      </tr>
+      <tr>
+        <td><span class="tag t-p2">P2</span></td>
+        <td><b>值场计算搬进 Web Worker</b>：用 Blob URL 内联 worker（保持单文件约束），主线程只负责栅格绘制与交互</td>
+        <td><span class="tag t-file">_p6b（拆分后的值场片段）</span></td>
+        <td>5–8 天</td>
+        <td>换地点/切日期时的长任务从主线程挪走，拖动不掉帧；<b>风险中等</b>——worker 内联 + 消息时序会引入新的竞态，需要配套断言</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="phase gray">
+    <h3>第三级 · 长期规划（1 个月以上 / 视外部条件）</h3>
+    <div class="sub">共同特征：改变项目形态或依赖外部条件，先做第 1、2 级再评估。</div>
+  </div>
+  <table>
+    <thead><tr><th>#</th><th>方向</th><th>涉及范围</th><th>成本</th><th>预期收益 / 触发条件</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="tag t-p2">P2</span></td>
+        <td><b>构建管线现代化</b>：保留 <code>assemble.py</code> 的语义与零依赖特性，外加 <code>--watch</code>、<code>--check</code>、<code>--diff</code>；语法检查可借用 Node 的 <code>new Function()</code> 或 <code>node --check</code>（仍不引入打包器）</td>
+        <td><span class="tag t-file">assemble.py</span> <span class="tag t-file">mkpreview.py</span></td>
+        <td>1 周</td>
+        <td>消除"忘记重跑构建"这一类已踩两次的事故；不破坏"换台机器也能构建"</td>
+      </tr>
+      <tr>
+        <td><span class="tag t-p2">P2</span></td>
+        <td><b>可观测性</b>：结构化 <code>console</code> 日志 + 可选的上报开关（默认关闭、不采集位置），配合探针"零控制台错误"</td>
+        <td><span class="tag t-file">_p5.js</span> <span class="tag t-file">_p6.js</span></td>
+        <td>3–5 天</td>
+        <td>现在线上出问题只能靠用户描述；<b>触发条件：站点开始有外部访客</b></td>
+      </tr>
+      <tr>
+        <td><span class="tag t-p3">P3</span></td>
+        <td><b>商业模式与合规</b>：公开运营前换 Open-Meteo Standard（$29/月）或自建实例；商业用途不可停留在免费层</td>
+        <td><span class="tag t-file">部署方案对比.md</span> 已有论证</td>
+        <td>外部成本</td>
+        <td>解除"仅限非商业"限制；<b>触发条件：任何商业化念头</b></td>
+      </tr>
+      <tr>
+        <td><span class="tag t-p3">P3</span></td>
+        <td><b>多语言</b>：<span class="tag t-ok">界面层已落地</span>把 <code>_p5b</code> / <code>_p6</code> 的模板串抽成 <code>i18n(中文原文)</code> 词典，三档中/英/繁</td>
+        <td><span class="tag t-file">_p5b.js</span> <span class="tag t-file">_p6.js</span> <span class="tag t-file">tpl/</span></td>
+        <td>1–2 周</td>
+        <td>霞光摄影是跨国爱好；<b>触发条件：出现非中文访客</b>。注意会与分享卡的画布绘制耦合</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <b>一条跨级的判断：</b>第 1 级第 3 项（git 仓库）应当<b>最先做</b>，它不是"工程化洁癖"——
+    后面 <code>_p6.js</code> 拆分、命名治理、错误处理收口都是大范围改动，没有版本管理就不该动。
+    同理，第 1 级的 XSS 与 CSP 属于"只有上线后才看得出代价"的那类问题，而它们的成本加起来不到两天。
+  </div>
+
+  <!-- ==================================================================== -->
+  <h2 id="s3">③ 新功能规划</h2>
+  <p class="lead">
+    按"贴合项目定位（摄影 / 观赏决策）"与"能复用既有能力"两个标准筛出 5 个方向。
+    每个都标了依赖条件与涉及模块——其中 3 个与额度纪律直接冲突，方案里都写明了处置方式。
+  </p>
+
+  <div class="feat">
+    <div class="feat-h"><h3>F1 · 离线可用（PWA 化）</h3>
+      <span class="tag t-p1">推荐优先</span><span class="tag t-phase">中期</span><span class="tag t-ok">已落地</span></div>
+    <p>把整份产物（472 KB）与已缓存的结果做成离线可用：山顶、海边、地铁这类"最需要看霞光预报"的场景恰恰最可能没信号。</p>
+    <dl>
+      <dt>用户价值</dt><dd>无网络时仍能打开页面、查看上次算过的结果与缓存的地图/趋势；二次打开近乎秒开。</dd>
+      <dt>实现思路</dt><dd><code>assemble.py</code> 增产物 <code>manifest.json</code>（图标用 data-URI 不可行，需生成第二个文件）+ <code>sw.js</code>；SW 采用 <b>stale-while-revalidate</b>，只缓存同源静态资源与 <code>404.html</code>，绝不缓存 API 响应（避免缓存过期气象数据）。离线时页面需能识别"无网"并明确提示"展示的是 X 时的缓存"。</dd>
+      <dt>依赖条件</dt><dd>HTTPS + 同源（静态托管均满足）。<b>与"单文件产物"约束冲突</b>：需接受"产物从 1 个变 3 个"——建议把 manifest/sw 作为<b>可选产物</b>，由环境变量 <code>PWA=1</code> 开关。</dd>
+      <dt>涉及模块</dt><dd><span class="tag t-file">assemble.py</span> <span class="tag t-file">tpl/</span> <span class="tag t-file">_p5.js（网络状态提示）</span> <span class="tag t-file">新增 404probe 扩展</span></dd>
+      <dt>成本 / 风险</dt><dd>3–5 天。主要风险是缓存失效导致用户看到旧版本——必须在 SW 里带构建版本号，且 <code>assemble.py</code> 注入。</dd>
+      <dt>实测（2026-10-17）</dt><dd>按"可选产物"落地：<code>PWA=1</code> 才多出 <code>manifest.json</code> / <code>sw.js</code> / <code>icon-192.png</code> / <code>icon-512.png</code>，<b>默认构建仍是 1 个文件</b>。缓存版本取<b>产物内容的 sha256 前 12 位</b>（不靠人改版本号常量）；SW <b>只认一份预缓存名单</b>，跨域与同源的地图代理一律不拦截 ⇒ 探针实测"气象请求发了 9 次、缓存里气象条目 <b>0</b> 条"。离线侧真浏览器验过：切 offline 后 reload <b>页面仍能打开</b>、显示离线提示条、取数失败给的是离线专属文案（不是"稍候 1 分钟重试"）。SW 注册<b>没有</b>新增内联 <code>&lt;script&gt;</code> 块（块数 4 是不变量）：地址由 <code>link[rel=manifest]</code> 推出。新增 <code>_check/pwaprobe.js</code>（<b>18 条断言</b>），序列 22 → <b>23 项</b>。</dd>
+    </dl>
+  </div>
+
+  <div class="feat">
+    <div class="feat-h"><h3>F2 · 多观测点横向对比</h3><span class="tag t-phase">中期</span><span class="tag t-ok">已落地</span></div>
+    <p>"今天去哪儿拍"比"某地今天好不好"更接近真实决策：一次加载 N 个收藏点，横向排序出当天最优。</p>
+    <dl>
+      <dt>用户价值</dt><dd>摄影者常有多个备选机位；逐个切换日期去查是现在的唯一办法，非常笨。</dd>
+      <dt>实现思路</dt><dd>新增 <code>State.spots</code>（localStorage 持久化，与现有偏好评级同一套"先读后合并 + 坏值降级"纪律）；复用 <code>_p4.js</code> 的多坐标取数能力（趋势已经是 34 坐标一次取），一次请求 N×1 坐标；结果复用 <code>_p5b</code> 的等级/配色，做成一张可排序的表。</dd>
+      <dt>依赖条件</dt><dd><b>直接冲击额度纪律</b>：N 个点就是 N×65 加权调用。处置必须沿用既有边界——<b>用户显式点击才取数，有缓存才自动展示</b>；默认 N≤5，并复用趋势缓存的 rows 结构复用同一批数据（趋势已按日算过分，可零额外请求直接复用！）。</dd>
+      <dt>涉及模块</dt><dd><span class="tag t-file">_p5.js（State / 持久化）</span> <span class="tag t-file">_p5b.js（新视图）</span> <span class="tag t-file">tpl/template.html（新卡片）</span> <span class="tag t-file">新增 spotprobe.js</span></dd>
+      <dt>成本 / 风险</dt><dd>5–8 天。若能与趋势缓存共用数据，成本可降到 3–4 天且零额外额度——<b>建议优先做这个耦合</b>。</dd>
+    </dl>
+  </div>
+
+  <div class="feat">
+    <div class="feat-h"><h3>F3 · "最佳窗口"日历视图</h3><span class="tag t-phase">中期</span><span class="tag t-ok">已落地</span></div>
+    <p>把趋势从"10 天两条曲线"升级成"未来两周哪几天值得去"，并用颜色块直接表达等级。</p>
+    <dl>
+      <dt>用户价值</dt><dd>出行/请假决策需要提前看；现在的曲线图要逐日读出数值再心算比较。</dd>
+      <dt>实现思路</dt><dd>趋势数据已在手（<code>State.trend.rows</code>），主要工作是<b>新视图而非新取数</b>：日历格 = 等级色块（复用 <code>ENS_CONF_BANDS</code> 与 <code>bandColor()</code>，不许新造配色）+ 朝/晚霞双行；叠加"该日是否已缓存"（<code>markCachedDates()</code> 已有类似标注）。</dd>
+      <dt>依赖条件</dt><dd>可预报范围限制（约今天−7 ~ 今天+10）由上游决定，延长需换付费源。日历格要能点击直接切到该日（复用 <code>setLocation</code> 之外的日期切换路径）。</dd>
+      <dt>涉及模块</dt><dd><span class="tag t-file">_p5b.js（新视图）</span> <span class="tag t-file">tpl/（卡片骨架与窄屏样式）</span> <span class="tag t-file">_check/cdp.js（加断言）</span></dd>
+      <dt>成本 / 风险</dt><dd>3–4 天，<b>零额外额度</b>，是 5 个方向里性价比最高的一个。</dd>
+    </dl>
+  </div>
+
+  <div class="feat">
+    <div class="feat-h"><h3>F4 · 实况回填与个性化校准</h3><span class="tag t-phase">长期</span><span class="tag t-ok">已落地</span></div>
+    <p>次日让用户一键标注"实际有没有霞 / 强度如何"，本地累积后给出该地区的<b>系统性偏差修正</b>。</p>
+    <dl>
+      <dt>用户价值</dt><dd>把"模型说 60%"变成"在你这个机位，模型说 60% 时实际约八成能看到"——这是从"预报"走向"可信"的关键一步，也是同类工具都没有的差异化能力。</dd>
+      <dt>实现思路</dt><dd>在评分管线末端留一个<b>纯展示层的校准钩子</b>（不污染 <code>_p3/_p4</code> 的物理与权重）：存 <code>{地区, 预测P/Q, 实际标注}</code> 于 localStorage，样本 ≥ N 时按分桶统计偏差并在结论卡加一行"本地校准"。<b>先只做本地、只展示、不回改模型。</b></dd>
+      <dt>依赖条件</dt><dd>需要隐私声明（数据不出设备）；需要足够的样本量才敢显示校准，前期只记录不展示。涉及 <code>docfacts</code> 风格的"样本量阈值"可机读常量。</dd>
+      <dt>涉及模块</dt><dd><span class="tag t-file">_p5.js（标注入口与存储）</span> <span class="tag t-file">_p5b.js（校准行）</span> <span class="tag t-file">新增 calibprobe.js</span></dd>
+      <dt>成本 / 风险</dt><dd>2 周（含隐私文案）。主要风险是<b>校准被误当成模型输出</b>——必须在 UI 上明确区分"模型原始值"与"本地校准值"，且可一键关闭。</dd>
+      <dt>实测（2026-10-17）</dt><dd>按原方案的<b>纯展示</b>边界落地：结论卡下方一块独立卡片（6 档「无法判断 / 没有霞 / 很淡 / 一般 / 很好 / 非常壮观」+ 进度行 + 隐私声明 + 关闭开关 + 清空按钮），<b>数据只进本机 localStorage</b>（<code>sunsetbot.calib.v1</code>，上限 200 条），页面里明写"不会上传到任何服务器"。四道闸门：① <b>不改模型输出</b> —— 探针用"标注前后模型指纹逐字段相同"（概率文本 + 大数 + 徽章 + 环 <code>stroke-dashoffset</code> + 每个模型数字 + 因素表行数，<b>136 字符</b>签名）断死；② <b>样本不够不给结论</b> —— 累计 <code>CALIB_MIN_N = 8</code> 且当前档 <code>CALIB_MIN_BUCKET = 3</code> 才出数字，之前只显示进度；③ <b>"没看到（无法判断）"不进统计</b>（分子分母都不进，否则"没出门看"会被算成预报失败）；④ <b>关掉 ≠ 删除</b>（开关只关入口与展示，已存标注一条不删；清空是另一个按钮 + 二次确认）。另两条：<b>未来时段不给标注</b>（入口只看既有的 <code>leadH</code>，不新增阈值）、<b>快照链接里不出现</b>（避免让接收者往自己机器写数据）。分桶口径按预测 P 每 <code>CALIB_BUCKET = 20</code> 个百分点一档、同地区判定 <code>CALIB_GRID_DEG = 0.5</code>°，"实际出现" = 标注 ≥「一般，能看」（<code>CALIB_HIT_MIN = 2</code>）；六个常量全部纳入 <code>docfacts</code> 机读核对。新增 <code>_check/calibprobe.js</code>（<b>25 条断言</b>，自带<b>结构独立的参考实现</b>做双重差分、全程 <b>0 条气象请求</b>），一键序列 23 → <b>24 项</b>。</dd>
+    </dl>
+  </div>
+
+  <div class="feat">
+    <div class="feat-h"><h3>F5 · 结果快照分享链接</h3><span class="tag t-phase">中期</span><span class="tag t-ok">已落地</span></div>
+    <p>把当前结论（概率/等级/主要因素/日期/地点）压缩进 URL，对方点开即可看到结果卡片，无需重新取数。</p>
+    <dl>
+      <dt>用户价值</dt><dd>现在分享链接只能传递"查询条件"，对方还得自己点一次计算（并消耗他自己的额度）；快照链接是<b>零额度、零等待</b>的。</dd>
+      <dt>实现思路</dt><dd>扩展 <code>syncUrl()</code>：加一个 <code>snap=</code> 参数承载压缩后的结论摘要（LZ-string 类算法或直接 base64 定长字段），<code>readUrl()</code> 识别到 <code>snap</code> 时走"直接渲染快照"分支，并明确标注"这是 X 时的计算结果"。</dd>
+      <dt>依赖条件</dt><dd><b>安全前置：必须先完成第 1 级的 <code>esc()</code> 与 URL 白名单清洗</b>——本功能等于把更多用户可控数据塞进 URL 再渲染进 DOM，不先堵住 XSS 就是主动扩大攻击面。另需处理"快照过期"提示。</dd>
+      <dt>涉及模块</dt><dd><span class="tag t-file">_p5.js:643-690</span> <span class="tag t-file">_p5b.js（快照渲染分支）</span> <span class="tag t-file">_check/cdp.js + 新增断言</span></dd>
+      <dt>成本 / 风险</dt><dd>4–6 天。URL 长度上限约 2000 字符需实测；<b>顺序上必须排在 F1–F3 之后</b>。</dd>
+      <dt>实测（2026-10-13）</dt><dd>快照串 <b>187 字符</b>、整条链接 <b>343 字符</b>（远低于 2000 的顾虑）；打开快照链接 <b>0 次气象请求</b>。安全侧按前置要求收口：链接里只存"键 + 数"，云型与因素名走白名单、展示时才过 <code>i18n()</code>，地名过 <code>safeLabel()</code>；<code>snapprobe</code> 用 <code>&lt;img src=1 onerror=…&gt;</code> 走真实渲染，结果只作为<b>纯文本</b>落地（0 个元素、0 个 on* 属性）。新增 <code>_check/snapprobe.js</code>（<b>24 条断言</b>），一键序列 21 → <b>22 项</b>。</dd>
+    </dl>
+  </div>
+
+  <div class="note">
+    <b>建议的取舍：</b>如果只做两个，选 <b>F3（日历视图，零额度、3–4 天）</b> 与 <b>F2（多观测点，复用趋势数据则零额外额度）</b>——
+    两者都直接服务"今天/最近去哪儿拍"这个真实决策，且都不新增取数。<b>F5 必须排在安全整改之后</b>，
+    <b>F1 会打破单文件约束</b>（这是本项目的核心属性，需你明确取舍），<b>F4 属于差异化长期投资</b>。
+  </div>
+
+  <!-- ==================================================================== -->
+  <h2 id="s4">④ 建议的执行顺序</h2>
+  <table>
+    <thead><tr><th>阶段</th><th>内容</th><th>前置</th><th>工期</th><th>完成判据</th></tr></thead>
+    <tbody>
+      <tr><td><b>S0</b></td><td>git 仓库 + .gitignore + 首次提交；URL 白名单清洗；<code>esc()</code> 替换 5 处热点</td><td>—</td><td>1–2 天</td><td>可 <code>git log</code> 回溯；构造 <code>?name=&lt;img onerror=…&gt;</code> 链接确认不再执行</td></tr>
+      <tr><td><b>S1</b></td><td>CSP meta（先在联调页验证）；代理来源校验；补定位与分享卡断言；<code>physprobe</code> 进序列</td><td>S0</td><td>3–4 天</td><td>17→19 项序列全绿；CSP 下地图与取数仍正常</td></tr>
+      <tr><td><b>S2</b></td><td><code>_p6.js</code> 四拆 + 命名前缀 + <code>globals.js</code> 同步；错误出口收口 <code>fail(kind)</code></td><td>S1</td><td>1–2 周</td><td>拆分后 <code>all.py</code> 全绿且 <code>index.html</code> 字节数变化 &lt;1%</td></tr>
+      <tr><td><b>S3</b></td><td>F3 日历视图 → F2 多观测点（与趋势缓存共用数据）</td><td>S2</td><td>1–2 周</td><td>新增功能各有 ≥8 条具名断言；额度账目不变（<code>cachesize</code> 报表对照）</td></tr>
+      <tr><td><b>S4</b></td><td>F5 快照链接；<code>MeteoClient</code> 抽象；性能守门；PWA 与否的决策</td><td>S3</td><td>2–4 周</td><td>按取舍结论推进</td></tr>
+    </tbody>
+  </table>
+
+  <h3>核对方式（本文数字怎么来的）</h3>
+  <ul class="hint">
+    <li>行数 / 字节：<code>wc -l</code> 与 <code>wc -c</code>（与 <code>_check/docfacts.py</code> 同一口径）。</li>
+    <li>函数与常量数：<code>grep -cE '^function '</code> / <code>'^const '</code>。</li>
+    <li><code>innerHTML</code> 71 处：<code>grep -c innerHTML _p2.js _p4.js _p5.js _p5b.js _p6.js</code>（2+1+28+9+31）；转义函数 <code>esc()</code> / <code>safeLabel()</code> 在 <code>_p2.js</code>（S0 已落地），CSP 仍无。</li>
+    <li>XSS 链路：<code>_p5.js:669</code> → <code>State.name</code> → <code>_p5.js:389</code> → <code>_p5b.js:111</code> 模板串（该模板串由 <code>innerHTML</code> 写入）。</li>
+    <li>探针断言数：读 <code>_check/.facts.json</code>（由 <code>all.py</code> 从各探针末行 <code>FACTS {...}</code> 汇总，含源码 sha1）。</li>
+    <li>额度账目与网格规模：README §5 与 <code>../.workbuddy/memory/硬约束详解.md</code>（均为实测值）。</li>
+    <li>一键序列 24 项全绿：<code>python _check/all.py --fast</code>（2026-10-17 实测，约 4 分 27 秒）。</li>
+  </ul>
+
+  <p class="muted" style="margin-top:26px">
+    生成于 2026-10-12 · 基于 <code>D:/wbfile/sunglow</code> 当次工作区快照 ·
+    本文为内部评估报告，<code>noindex</code>，不含任何凭据。
+  </p>
+
+</div>
+</body>
+</html>
