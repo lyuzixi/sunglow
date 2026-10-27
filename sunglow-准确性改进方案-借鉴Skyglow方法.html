@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sunglow 预测准确性改进方案 · Skyglow 方法迁移分析</title>
+<style>
+  :root{
+    --ink:#1d2330; --ink2:#4a5468; --muted:#7a8499; --faint:#a4adc0;
+    --line:#e6e9f0; --line2:#eef1f6; --bg:#f6f7fa; --card:#ffffff;
+    --accent:#d8552f; --accent-soft:#fdeee8; --accent-line:#f3c9b8;
+    --blue:#3d6ea8; --blue-soft:#eef4fb; --blue-line:#cfdeef;
+    --amber:#9a6b12; --amber-soft:#fdf6e6; --amber-line:#eedfae;
+    --green:#2e7d5b; --green-soft:#ecf6f1; --green-line:#c5e3d4;
+    --purple:#6b5aa8; --purple-soft:#f2f0fa; --purple-line:#d9d2ef;
+    --mono:"SF Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;}
+  .wrap{max-width:1140px;margin:0 auto;padding:0 28px}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  .cover{background:linear-gradient(160deg,#fff 0%,#fdf3ee 52%,#eef0f8 100%);
+    border-bottom:1px solid var(--line);padding:50px 0 38px}
+  .kicker{font-size:12px;letter-spacing:.2em;color:var(--accent);font-weight:700;text-transform:uppercase}
+  .cover h1{font-size:31px;line-height:1.32;margin:10px 0 8px}
+  .cover .sub{font-size:15px;color:var(--ink2);max-width:920px}
+  .badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .badge{font-size:12px;padding:3px 11px;border-radius:999px;border:1px solid var(--accent-line);
+    background:#fff;color:var(--accent);font-weight:600}
+  .badge.b2{border-color:var(--blue-line);color:var(--blue);background:var(--blue-soft)}
+  .badge.b3{border-color:var(--green-line);color:var(--green);background:var(--green-soft)}
+  .cover-meta{display:flex;flex-wrap:wrap;gap:10px 26px;margin-top:18px;font-size:12.5px;color:var(--muted)}
+  .cover-meta b{color:var(--ink2);font-weight:600}
+
+  .verdict{background:var(--card);border:1px solid var(--accent-line);border-left:4px solid var(--accent);
+    border-radius:0 12px 12px 0;padding:15px 21px;margin:24px 0 0;font-size:13.8px}
+  .verdict b{color:var(--accent)}
+
+  .layout{display:grid;grid-template-columns:230px minmax(0,1fr);gap:34px;padding:34px 0 60px}
+  nav.toc{position:sticky;top:24px;align-self:start;font-size:13px}
+  nav.toc .t{font-size:11px;letter-spacing:.18em;color:var(--faint);font-weight:700;margin-bottom:10px}
+  nav.toc a{display:block;color:var(--ink2);padding:5px 10px;border-radius:7px;line-height:1.5}
+  nav.toc a:hover{background:#fff;text-decoration:none;color:var(--accent)}
+  main{min-width:0}
+
+  section{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:28px 32px 24px;margin-bottom:24px}
+  section>h2{font-size:20px;margin:0 0 4px;display:flex;align-items:baseline;gap:10px}
+  section>h2 .no{font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:700}
+  .lead{color:var(--ink2);font-size:13.8px;margin:0 0 14px}
+  h3{font-size:15.5px;margin:24px 0 10px;display:flex;align-items:center;gap:8px}
+  h3::before{content:"";width:3px;height:15px;background:var(--accent);border-radius:2px;flex:none}
+  p{margin:8px 0}
+  ul,ol{margin:8px 0;padding-left:22px}
+  li{margin:4px 0}
+  code{font-family:var(--mono);font-size:.86em;background:#f1f3f8;border:1px solid var(--line);
+    border-radius:5px;padding:1px 5px;color:#8a3a1f}
+  pre{background:#f8f9fc;border:1px solid var(--line);border-radius:10px;padding:12px 15px;
+    overflow:auto;font-family:var(--mono);font-size:12px;line-height:1.6;color:#333c52;margin:10px 0}
+
+  table{width:100%;border-collapse:collapse;font-size:12.8px;margin:10px 0 14px}
+  th{background:#f4f6fa;text-align:left;font-weight:600;color:var(--ink2);
+    border-bottom:1.5px solid var(--line);padding:7px 9px;vertical-align:top}
+  td{border-bottom:1px solid var(--line2);padding:7px 9px;vertical-align:top}
+  tr:hover td{background:#fafbfd}
+  td.k{font-weight:600;white-space:nowrap}
+  .ev{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .fit{display:inline-block;font-size:10.5px;font-family:var(--mono);padding:1px 7px;border-radius:5px;white-space:nowrap}
+  .fit.a{background:var(--green-soft);color:var(--green);border:1px solid var(--green-line)}
+  .fit.b{background:var(--blue-soft);color:var(--blue);border:1px solid var(--blue-line)}
+  .fit.c{background:var(--amber-soft);color:var(--amber);border:1px solid var(--amber-line)}
+
+  .note{border-left:3px solid var(--blue-line);background:var(--blue-soft);
+    border-radius:0 9px 9px 0;padding:10px 15px;font-size:12.8px;margin:12px 0;color:#2c4a6b}
+  .note.asm{border-color:var(--amber-line);background:var(--amber-soft);color:#6d4d10}
+  .note.warn{border-color:var(--accent-line);background:var(--accent-soft);color:#7a3418}
+  .note b{display:block;font-size:11.5px;letter-spacing:.06em;margin-bottom:3px}
+  .note.ev b{color:var(--blue)}
+  .note.asm b{color:var(--amber)}
+  .note.warn b{color:var(--accent)}
+
+  .rec{border:1px solid var(--line);border-radius:12px;margin:16px 0;overflow:hidden}
+  .rec-head{padding:11px 17px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .rec.p0 .rec-head{background:var(--accent-soft);border-bottom:1px solid var(--accent-line)}
+  .rec.p1 .rec-head{background:var(--blue-soft);border-bottom:1px solid var(--blue-line)}
+  .rec.p2 .rec-head{background:var(--purple-soft);border-bottom:1px solid var(--purple-line)}
+  .prio{font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 9px;border-radius:6px;flex:none}
+  .rec.p0 .prio{background:var(--accent);color:#fff}
+  .rec.p1 .prio{background:var(--blue);color:#fff}
+  .rec.p2 .prio{background:var(--purple);color:#fff}
+  .rec-head h4{margin:0;font-size:14.5px}
+  .rec-body{padding:13px 17px;font-size:13px}
+  .rec-body dt{font-weight:600;font-size:12.5px;color:var(--ink2);margin-top:9px}
+  .rec-body dd{margin:2px 0 0;font-size:12.8px}
+  .rec-body dl{margin:0}
+  .kv{display:inline-block;background:#f1f3f8;border:1px solid var(--line);border-radius:5px;
+    padding:0 6px;font-family:var(--mono);font-size:11px;color:var(--ink2);margin-right:4px}
+
+  footer{color:var(--faint);font-size:12px;text-align:center;padding:24px 0 40px}
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="wrap">
+    <div class="kicker">METHOD TRANSFER ANALYSIS · 面向 sunglow 准确性提升</div>
+    <h1>sunglow 预测准确性改进方案<br>——Skyglow 可迁移方法系统分析</h1>
+    <p class="sub">按<b>数据预处理、特征工程、模型结构与超参数、训练与验证策略、后处理与误差分析</b>五个维度，逐项盘点 Skyglow 中经实证的方法，分析其对 sunglow 预测任务的适配方式，并给出按优先级排序的改进建议、预期收益与验证指标。</p>
+    <div class="badges">
+      <span class="badge">P0 先建度量，再谈改进</span>
+      <span class="badge b2">标定层并联，不动主口径</span>
+      <span class="badge b3">浏览器可推理 · 权重即常量</span>
+      <span class="badge b2">缓存版本号 + 探针期望同步演进</span>
+    </div>
+    <div class="verdict">
+      <b>核心主张：</b>sunglow 当前模型是「物理量 + 手工隶属函数 + 固定权重」，结构透明但<b>无自证能力</b>（仓库内未见实测标签回测）。Skyglow 最值得迁移的不是某个公式，而是一整套「<b>可标定、可验证、可归因</b>」的工程方法：用 1109 条实测标签做岭回归标定（AUC 0.80 vs 参考 0.76）、按日期分组交叉验证、分位阈值、误差案例归档。迁移的总策略是<b>「并联而非替换」</b>——保留手工模型为参照口径（守住 probe:consist 与「算法V1唯一权威」硬约束），把标定层作为第二条独立意见接入 sunglow 已有的 refGap 式分歧展示框架。
+    </div>
+    <div class="cover-meta">
+      <span><b>方法来源</b> Skyglow/core/*.py、tools/*.py、data/validation.json（已全量阅读）</span>
+      <span><b>适配对象</b> sunglow V1口径（_p*.js）与 v2 src/core（现行主线）</span>
+      <span><b>约束依据</b> sunglow README §5 已知边界、架构文档 §8/§10、硬约束详解</span>
+      <span><b>日期</b> 2026-10-25</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap layout">
+  <nav class="toc">
+    <div class="t">目录</div>
+    <a href="#s0">0 · 目标与硬约束</a>
+    <a href="#s1">1 · Skyglow 五维方法盘点</a>
+    <a href="#s2">2 · 适配性分析</a>
+    <a href="#s3">3 · 优先级改进建议</a>
+    <a href="#s4">4 · 验证指标体系</a>
+    <a href="#s5">5 · 落地路径</a>
+    <a href="#s6">6 · 明确不做清单</a>
+    <a href="#s7">7 · 证据边界与假设</a>
+  </nav>
+
+  <main>
+
+  <!-- ================= 0 ================= -->
+  <section id="s0">
+    <h2><span class="no">0</span>目标与硬约束</h2>
+    <p class="lead">先明确「提升准确性」在 sunglow 的语境里意味着什么，以及哪些仓库自设的约束决定了改进只能以特定形态发生。</p>
+
+    <h3>0.1 目标分解</h3>
+    <table>
+      <tr><th style="width:150px">目标层</th><th>含义</th><th style="width:210px">对应指标（§4 定义）</th></tr>
+      <tr><td class="k">概率校准</td><td>报 70% 的事件，实际应有约 70% 出现（当前 logistic(6.5(S−0.62)) 的 (6.5, 0.62) 为手工设定，无标签拟合）</td><td>Brier、ECE、可靠性分箱</td></tr>
+      <tr><td class="k">排序判别</td><td>「哪天/哪点更值得去」的排序正确性</td><td>AUC、Spearman、±1 档命中</td></tr>
+      <tr><td class="k">等级贴合</td><td>优/良/一般/差四档与真实分布对齐</td><td>完全命中率、混淆矩阵</td></tr>
+      <tr><td class="k">可信度诚实</td><td>不确定的时候敢说「不确定」</td><td>置信度分档 vs 实际偏差（F4 闭环）</td></tr>
+    </table>
+
+    <h3>0.2 sunglow 的四条硬约束（改进方案的前提）</h3>
+    <table>
+      <tr><th style="width:160px">约束</th><th>内容与出处</th><th>对改进的形态约束</th></tr>
+      <tr><td class="k">口径冻结</td><td>「算法V1唯一权威」：W_ENS/TRANSECT/mixedIndex/QUALITY_BANDS 等常量单一来源；v2/v3 为逐语义移植；probe:consist 活守卫 <span class="ev">架构文档 §8.6 · v2/src/core/scoring.ts 文件头「禁止调整」</span></td><td>任何改变 P/Q 数值的改动，必须走「V1 _p*.js 与 v2 src/core 双落 + 探针期望更新」；不能只改一侧</td></tr>
+      <tr><td class="k">浏览器推理</td><td>全部计算在前端完成；无 numpy/无服务端 <span class="ev">README §1</span></td><td>标定后的模型必须可纯 JS/TS 前向（矩阵乘法+sigmoid 可行；Skyglow 的 nn.py 50 行已证明同构可移植）</td></tr>
+      <tr><td class="k">缓存版本纪律</td><td>「权重/阈值一改旧缓存就错」——用键内版本号兜住 <span class="ev">README §5 趋势缓存段</span></td><td>模型参数变更必须同步递增 POINT/MAP/TREND 缓存前缀，旧条目自然作废</td></tr>
+      <tr><td class="k">额度访客侧</td><td>取数按访客出口 IP 计；429 双分类文案已内置 <span class="ev">v2/src/core/mapload.ts:57-67</span></td><td>改进不得增加请求量；评测集构建只能在离线工具侧进行</td></tr>
+    </table>
+
+    <div class="note warn"><b>总策略</b>所有建议按「<b>并联第二意见 → 验证占优 → 再谈切换</b>」推进：第一阶段任何新模型都只作并列展示（sunglow 已有 refmodel 旁证与 refGap 分歧展示的产品先例，v2/src/core/refmodel.ts、mapdata.ts:94-111），主口径数值不动；只有当并联版本在 §4 指标上稳定占优，才启动「双落切换」流程。这把「打破口径冻结」的风险降到最低。</div>
+  </section>
+
+  <!-- ================= 1 ================= -->
+  <section id="s1">
+    <h2><span class="no">1</span>Skyglow 五维方法盘点</h2>
+    <p class="lead">以下方法均来自对 Skyglow 源码的逐行阅读；「有效性证据」列区分「Skyglow 实测/自述数字」与「结构性设计（无数字证据）」。</p>
+
+    <h3>1.1 数据预处理</h3>
+    <table>
+      <tr><th style="width:210px">方法</th><th>Skyglow 实现</th><th style="width:250px">有效性证据</th></tr>
+      <tr><td class="k">事件时刻线性插值 + 边界钳位</td><td>逐时序列插值到事件本地时刻；越界取端点、遇 None 取邻点 <span class="ev">core/meteo.py:269-282</span></td><td>结构性设计；保证 25 点 × 多变量在任意分钟级事件时刻有确定值</td></tr>
+      <tr><td class="k">「三门齐才判可用」闸门</td><td>某源三层云量在事件时刻任一缺失即整源判不可用，显式报错不静默替换 <span class="ev">core/meteo.py:285-293 · core/service.py:325-338</span></td><td>结构性设计；杜绝「缺一项→整源失真」的隐性错误</td></tr>
+      <tr><td class="k">缺测补位 + 来源记账</td><td>只补模型真正读取的 vis/rh/precip；补位来源写入 <code>aux_from</code> 字段 <span class="ev">core/service.py:132-158</span></td><td>结构性设计；缺测可追溯、可审计</td></tr>
+      <tr><td class="k">AOD 独立请求、失败可降级</td><td>CAMS AOD 与主数据分离请求，失败则 aod=None 并扣置信度 0.08 <span class="ev">core/meteo.py:234-241 · core/service.py:26-27</span></td><td>结构性设计</td></tr>
+      <tr><td class="k">变量裁剪（11→7）</td><td>只取模型读取的 7 个变量，额度成本降 36% <span class="ev">core/meteo.py:54-59</span></td><td>实测：README 声明变量数 11→7、成本 −36%</td></tr>
+      <tr><td class="k">时区以响应偏移为准</td><td><code>utc_offset_seconds</code> 决定当地钟，事件时间按城市墙钟对齐 <span class="ev">core/meteo.py:243-246</span></td><td>结构性设计</td></tr>
+      <tr><td class="k">限流三件套</td><td>令牌桶（430 点/分钟）+ 429 熔断 10 分钟（磁盘持久化）+ 指数退避 <span class="ev">core/meteo.py:65-128,164-192</span></td><td>实测：单次查询 88 s → 2.7 s（README §配额熔断）</td></tr>
+      <tr><td class="k">三层缓存 TTL 按「资料还能变多少」</td><td>过去永久/今天 60 min/明天 3 h/之后 6 h <span class="ev">core/store.py:38-47</span></td><td>结构性设计</td></tr>
+    </table>
+
+    <h3>1.2 特征工程</h3>
+    <table>
+      <tr><th style="width:210px">方法</th><th>Skyglow 实现</th><th style="width:250px">有效性证据</th></tr>
+      <tr><td class="k">物理子评分分解</td><td>canvas（云幕）/light（受光）/horizon（光路）/purity（通透）+ aod/precip，各自有闭式表达式 <span class="ev">core/model.py:97-171</span></td><td>结构性设计；每个子评分可独立解释与展示</td></tr>
+      <tr><td class="k">地影软门</td><td>云底低于受光极限时 canvas 按 sigmoid 平滑归零，而非硬截断 <span class="ev">core/model.py:111-112</span></td><td>结构性设计</td></tr>
+      <tr><td class="k">上游环带 25 点加权</td><td>120/250/380 km × 8 方位；权重 cos²(Δaz/2)（±80° 内）× e^(−d/260) <span class="ev">core/meteo.py:61-62,296-320</span></td><td>实测：裁剪到 1 点最差偏差 42.3pp（README §免费额度）；结论「环带不可裁剪」</td></tr>
+      <tr><td class="k">离散度特征 spread</td><td>上游中/高云量的样本标准差，用于置信度扣减 <span class="ev">core/meteo.py:343-351 · core/service.py:17-18,24-25</span></td><td>结构性设计</td></tr>
+      <tr><td class="k">logit 空间线性组合</td><td>子评分取 logit/log 后再进回归（canvas、canvas_high×1.6、log light、horizon、purity、aod、降水指示） <span class="ev">core/model.py:174-184</span></td><td>结构性设计；使线性输出天然落在概率域</td></tr>
+      <tr><td class="k">低云云底由 BLH 估计</td><td>blh/1000 钳位 0.45–2.2 km，替代缺测的云底高度 <span class="ev">core/model.py:79-82</span></td><td>结构性设计</td></tr>
+      <tr><td class="k">NN 特征 = 原始量 + 子评分</td><td>8 个原始气象量 + 7 个物理子评分共 15 维 <span class="ev">core/service.py:84-90 · tools/train_nn.py:18-20</span></td><td>结构性设计；给数据驱动路保留物理归纳偏置</td></tr>
+    </table>
+
+    <h3>1.3 模型结构与超参数</h3>
+    <table>
+      <tr><th style="width:210px">方法</th><th>Skyglow 实现</th><th style="width:250px">有效性证据</th></tr>
+      <tr><td class="k">岭回归标定层</td><td>7 个 logit 特征 z 标准化后 Ridge（α=1.2）→ 强度潜变量 <span class="ev">core/model.py:187-192 · tools/calibrate.py:67-78</span></td><td>实测：CV AUC 0.802 / 时间切分 0.797 / Brier 0.118–0.167（data/validation.json）</td></tr>
+      <tr><td class="k">一维 logistic 概率头</td><td>P=sigmoid(a·(idx−b))，(a,b) 牛顿法拟合 <span class="ev">core/model.py:195-196 · tools/calibrate.py:88-115</span></td><td>结构性设计；把潜变量映射到概率的最小自由度</td></tr>
+      <tr><td class="k">分位阈值定档</td><td>六档阈值按标签累计频率分位点确定，并强制单调 <span class="ev">tools/calibrate.py:217-226</span></td><td>结构性设计；等级与标签分布自动对齐</td></tr>
+      <tr><td class="k">物理帽（先验封顶）</td><td>无云 P≤8；主云量 &lt;12% P≤22 <span class="ev">core/model.py:199-202</span></td><td>结构性设计；防止回归在物理不可能区给出高概率</td></tr>
+      <tr><td class="k">MLP 15-8-4-1</td><td>tanh 隐层、He 初始化、全批量 Adam（lr 0.02、L2 1e-2、801 epoch）、时间序 15% holdout 早停、logit 钳 ±30 <span class="ev">core/nn.py:29-42 · tools/train_nn.py:77-124</span></td><td>实测：测试 AUC 0.794 / Brier 0.174；训练 AUC 0.881 → <b>过拟合，只作旁证</b>（README §交叉分析）</td></tr>
+      <tr><td class="k">默认参数兜底</td><td>DEFAULT_MODEL 常量保证 model.json 缺失时仍可运行 <span class="ev">core/model.py:36-48,68-76</span></td><td>结构性设计</td></tr>
+    </table>
+
+    <h3>1.4 训练与验证策略</h3>
+    <table>
+      <tr><th style="width:210px">方法</th><th>Skyglow 实现</th><th style="width:250px">有效性证据</th></tr>
+      <tr><td class="k">时间切分（禁随机划分）</td><td>train ≤2023-06-30、test &gt;2023-06-30 <span class="ev">tools/calibrate.py:235-236</span></td><td>结构性设计；防同日信息泄漏</td></tr>
+      <tr><td class="k">按日期分组五折 CV</td><td>日期打乱后 i%5 分折，同一天的样本永不跨折 <span class="ev">tools/calibrate.py:263-278</span></td><td>结构性设计</td></tr>
+      <tr><td class="k">指标组</td><td>AUC、Brier、±1 档、完全命中、TSS（阈值扫描取最优）、Spearman、混淆矩阵、可靠性分箱 <span class="ev">tools/calibrate.py:118-198,280-286</span></td><td>结构性设计</td></tr>
+      <tr><td class="k">基准对照</td><td>同测试集上与 sunsetbot 同期预报逐指标对比 <span class="ev">tools/calibrate.py:321-328 · data/validation.json benchmark 段</span></td><td>实测：AUC 0.797 vs 0.761</td></tr>
+      <tr><td class="k">特征集消融</td><td>A–F 六组特征 × 三档 α 全网格实验 <span class="ev">tools/experiment.py:36-95</span></td><td>结构性设计</td></tr>
+      <tr><td class="k">额度削减的精度代价量化</td><td>用磁盘上的真实缓存响应重算「删变量/砍环带」的影响，纯离线 <span class="ev">tools/measure_accuracy.py</span></td><td>实测：39 份响应、1056 组合（README §免费额度）</td></tr>
+      <tr><td class="k">取数窗口审计</td><td>打桩 + 插值计数，验证「多取的那一天是否真被读取」 <span class="ev">tools/audit_window.py</span></td><td>结构性设计；七日条从 9 天缩到 8 天的依据</td></tr>
+    </table>
+
+    <h3>1.5 后处理与误差分析</h3>
+    <table>
+      <tr><th style="width:210px">方法</th><th>Skyglow 实现</th><th style="width:250px">有效性证据</th></tr>
+      <tr><td class="k">等级与概率解耦</td><td>档位由潜变量阈值定，「会不会烧」与「烧多旺」分开回答 <span class="ev">core/model.py:199-208</span></td><td>结构性设计</td></tr>
+      <tr><td class="k">时间曲线 shaping</td><td>逐分钟概率 × 对比度函数（太阳近地平线才可读）→ 可观赏度；最佳窗口取峰值 45% 最长连续段（≥6 min） <span class="ev">core/model.py:246-306</span></td><td>结构性设计</td></tr>
+      <tr><td class="k">置信度多维衰减</td><td>按时效（0.86−0.058×lead，ERA5 0.90）、四源离散度、AOD 可得性扣减；直连降级封顶 0.74 <span class="ev">core/service.py:14-28,237-239</span></td><td>结构性设计</td></tr>
+      <tr><td class="k">规则化解释与风险</td><td>_reasons（阈值分支生成判断依据）+ _risks（临界区间提示「翻车方式」） <span class="ev">core/service.py:31-81</span></td><td>结构性设计</td></tr>
+      <tr><td class="k">误差案例自动归档</td><td>validation.json 内置 hits/misses/false_alarms 案例清单 + 实际/预测分布对比 <span class="ev">tools/calibrate.py:330-346 · data/validation.json</span></td><td>结构性设计</td></tr>
+      <tr><td class="k">已知局限显式记账</td><td>README 明示：等级判别弱（83% 样本为「基本不烧」）、秋季分布漂移（训练 13.3% vs 测试 24.3%）、部署模型含测试期样本 <span class="ev">README §验证结果/§已知局限</span></td><td>自述数字；防止指标被乐观解读</td></tr>
+    </table>
+  </section>
+
+  <!-- ================= 2 ================= -->
+  <section id="s2">
+    <h2><span class="no">2</span>适配性分析：方法 × sunglow 预测任务</h2>
+    <p class="lead">sunglow 已有大量与 Skyglow 同构的中间量（9 因子、样带分析、火三角几何、refmodel 旁证），迁移成本比想象低——多数建议是「接上已有管道」而非「新建管道」。</p>
+    <table>
+      <tr><th style="width:180px">Skyglow 方法</th><th>sunglow 侧落点（已存在）</th><th>适配方式</th><th style="width:120px">适配度</th></tr>
+      <tr><td class="k">一维 logistic 标定</td><td>S=wgeo(9 因子) 与 P=100·logistic(6.5(S−0.62)) <span class="ev">v2/src/core/scoring.ts:194-202</span></td><td>把 (6.5, 0.62) 换成标签拟合的 (a,b)；公式结构不变，改两个数</td><td><span class="fit a">高 · 两周内</span></td></tr>
+      <tr><td class="k">岭回归标定层</td><td>FacCtx 已备齐 18 个原始量（cover/base/hEff/d/xMax/lowBlock/aod/vis/rh/dP/windComp/cape/precip…） <span class="ev">v2/src/core/factors.ts:22-37</span></td><td>新增 calib.ts：原始量 → z 标准化 → Ridge → 潜变量 → logistic；权重以 JSON 常量内联（同 Skyglow model.json 模式）</td><td><span class="fit a">高 · 3–5 周</span></td></tr>
+      <tr><td class="k">分位阈值定档</td><td>QUALITY_BANDS 四档固定 80/65/45 <span class="ev">v2/src/core/scoring.ts:327-332</span></td><td>阈值改为标签分位点；因影响产品可见等级，列入双落切换阶段</td><td><span class="fit b">中 · 需走双落</span></td></tr>
+      <tr><td class="k">spread 离散度 → 置信度</td><td>已有三路 dvI/spread 但只做集合内参考 <span class="ev">v2/src/core/forecast.ts:359-365</span></td><td>增加「上游云量空间离散度」维度，与 dvI 并列喂 ensConfOf</td><td><span class="fit a">高 · 1–2 周</span></td></tr>
+      <tr><td class="k">缺测显式化 + 重归一化</td><td>refmodel 已实践（缺项不给常数、按已给项重归一化） <span class="ev">v2/src/core/refmodel.ts:108-116</span></td><td>把同一纪律推广到主口径 wgeo：null 因子不兜底、缺测扣置信度</td><td><span class="fit a">高 · 1 周</span></td></tr>
+      <tr><td class="k">时间切分 + 日期分组 CV</td><td>_check 体系只测行为不测精度</td><td>tools/ 新增离线评测脚本（Skyglow calibrate.py 的同构移植）</td><td><span class="fit a">高 · 2–3 周</span></td></tr>
+      <tr><td class="k">MLP 旁证</td><td>TS 代码库，无 NN</td><td>离线 numpy 训练 → 权重 JSON → TS 前向 50 行；作为第四意见接入现有分歧展示</td><td><span class="fit c">中 · 依赖标签</span></td></tr>
+      <tr><td class="k">误差案例归档 + 漂移监控</td><td>F4 本地校准已是产品化误差反馈 <span class="ev">v2/src/core/calib.ts:123-143</span></td><td>把 F4 的 obs−pred 统计升级为分箱可靠性视图；新增案例清单页</td><td><span class="fit b">中 · 3–4 周</span></td></tr>
+      <tr><td class="k">上游环带侧向加密</td><td>TRANSECT 17 点单线 <span class="ev">v2/src/core/mapdata.ts:42-44</span></td><td>事件时刻改用「样带 + 两侧 ±30°/±60° 各 3 点」；只增前端算力不增请求（需评估地图 121 点的叠加成本）</td><td><span class="fit c">低优先</span></td></tr>
+      <tr><td class="k">GRIB2 直连 / ERA5 档案</td><td>浏览器物理不可达</td><td><b>不适配</b>——这是 Skyglow 服务端专属能力，列入不做清单</td><td><span class="fit c">不适配</span></td></tr>
+    </table>
+
+    <div class="note ev"><b>关键发现</b>sunglow 的 FacCtx（factors.ts:22-37）已经在计算期产出 18 个原始物理量，refmodel.ts 也已示范「缺项重归一化」——意味着岭回归所需的特征矩阵<b>无需新增任何取数或重算</b>，把 FacCtx 原值导出即可得到训练/推理特征。这是整套迁移中成本最低、杠杆最高的一处。</div>
+  </section>
+
+  <!-- ================= 3 ================= -->
+  <section id="s3">
+    <h2><span class="no">3</span>按优先级排序的改进建议</h2>
+    <p class="lead">优先级判定标准：① 是否为后续一切改进的前提；② 对硬约束的冲击面；③ 收益/工作量比。每条含做法、预期收益、验证指标与风险对冲。</p>
+
+    <div class="rec p0">
+      <div class="rec-head"><span class="prio">P0-1</span><h4>建立评测集与指标基线（一切改进的前提）</h4></div>
+      <div class="rec-body"><dl>
+        <dt>做法</dt><dd>在 v2/tools/ 新增离线脚本三件套（Skyglow 同构移植，均为纯 stdlib/TS，不碰线上）：① 抓 sunsetbot.top 上海站再分析标签（移植 <code>tools/fetch_reanalysis.py</code>，10 天窗口自适应）；② 抓同期 17 样带点 ERA5 历史场（移植 <code>tools/fetch_grid.py</code>，注意 sunglow 只用 Forecast 端点，历史场需走 Archive——这会新增一个数据域，需在报告中注明）；③ 用 sunglow 自己的 forecast/scoreStat/scoreRay 对每个 (日期, 事件) 重算特征与输出，构建 (特征, 标签) 表。<b>先出基线报告再动手改模型</b>：现有手工模型在同一评测集上的 AUC/Brier/±1 档就是所有后续改进的对照组。</dd>
+        <dt>预期收益</dt><dd>把「准确性」从主观变为可度量；后续每条建议都有 A/B 判据。Skyglow 在同源标签集上做到 CV AUC 0.802 / Brier 0.118（五折）、时间切分 AUC 0.797 / Brier 0.167（data/validation.json）——这是同任务的可达性参照，不构成对 sunglow 的承诺。</dd>
+        <dt>验证指标</dt><dd>评测集规模（目标 ≥1000 条标签 × 2 事件）；基线指标六件套（AUC/Brier/±1/完全命中/TSS/可靠性）成文入库。</dd>
+        <dt>风险与对冲</dt><dd>标签单站（上海）→ 报告中显式标注适用范围，跨气候区结论不外推；Archive 端点取数一次性离线完成，不增加线上请求。</dd>
+      </dl></div>
+    </div>
+
+    <div class="rec p0">
+      <div class="rec-head"><span class="prio">P0-2</span><h4>一维概率标定：把 (6.5, 0.62) 换成标签拟合的 (a, b)</h4></div>
+      <div class="rec-body"><dl>
+        <dt>做法</dt><dd>保持 S=wgeo(9 因子) 与整个评分结构逐字不变，仅把 <code>P=100·logistic(6.5·(S−0.62))</code> 的两个常数改为在 P0-1 评测集上用牛顿法拟合（移植 <code>tools/calibrate.py:88-115</code> 的 fit_logistic_1d，约 30 行）。因 P 的数值会变，需同步：① V1 _p4.js 与 v2 scoring.ts <b>双落</b>；② 递增 POINT/TREND 缓存前缀（v2 已有该纪律）；③ 更新 probe:consist 与相关探针期望值。<b>若暂不动主口径</b>：可先以「标定值 vs 手工值」并列展示一周，用 F4 本地校准的 obs−pred 偏差做产品内验证。</dd>
+        <dt>预期收益</dt><dd>概率校准（Brier/ECE）显著改善——这是全部建议中<b>改动最小（两个常数）、收益最直接</b>的一条。参照：Skyglow 的 (prob_a, prob_b)=(2.66, 1.38) 即由同法拟合；一维 Platt 标定在概率校准上的改善是稳健结论（此为方法学通识，非本项目实测，标注为假设 A2）。</dd>
+        <dt>验证指标</dt><dd>Brier（目标 ≤ 基线 −10%）；ECE（十分位）；可靠性曲线斜率（目标接近 1）；AUC 应持平（标定不改排序）。</dd>
+        <dt>风险与对冲</dt><dd>标签分布漂移（Skyglow 自述：训练期基率 13.3% vs 测试期 24.3% 导致秋季偏保守）→ 按季节分箱检查可靠性曲线，漂移可见时在 UI 注明；双落流程漏一侧 → probe:consist 兜底。</dd>
+      </dl></div>
+    </div>
+
+    <div class="rec p1">
+      <div class="rec-head"><span class="prio">P1-1</span><h4>岭回归标定层：并联的「第二条独立意见」</h4></div>
+      <div class="rec-body"><dl>
+        <dt>做法</dt><dd>新增 <code>core/calib.ts</code>：输入 = FacCtx 原始量（cover/base/hEff/d/xMax/lowBlock/aod/vis/rh/dP/windComp/cape/precip，约 12–14 维，缺失保留 null），logit/log 变换（移植 Skyglow _raw_features 思路）→ z 标准化 → Ridge（α 网格 0.3/1.2/3.0）→ 潜变量 → 一维 logistic → P_calib。权重以 JSON 常量内联（Skyglow model.json 模式，单文件构建已支持内联）。<b>并联接入</b>：与物理核并列显示、差值驱动色面降饱和——sunglow 已有完全相同的产品机制（refmodel + finalizeRefGap 的 z 分数形态分歧，v2/src/core/mapdata.ts:94-111），新层只扩展该框架，不新增 UI 概念。</dd>
+        <dt>预期收益</dt><dd>排序与等级判别提升（AUC/±1 档）。Skyglow 在同源标签上 AUC 0.80（参考预报 0.761）、±1 档 81.6%（五折）——同任务参照上限；预期 sunglow 获得方向性改善但幅度需实测（假设 A2）。</dd>
+        <dt>验证指标</dt><dd>AUC（并联路 vs 主口径，非劣效 → 优效两级判定）；±1 档命中；与主口径的 refGap 分布（分歧不应系统性单边，否则说明尺度未对齐）。</dd>
+        <dt>风险与对冲</dt><dd>过拟合（样本仅千级）→ Ridge + 日期分组 CV + 消融（P1-3）；特征泄漏（把 spread/dvI 等「事后量」当特征）→ 特征清单评审，只取事件时刻可测量；口径争议 → 并联期不动任何既有数字。</dd>
+      </dl></div>
+    </div>
+
+    <div class="rec p1">
+      <div class="rec-head"><span class="prio">P1-2</span><h4>特征工程三件套：离散度入置信度、logit 空间组合、缺测显式化</h4></div>
+      <div class="rec-body"><dl>
+        <dt>做法</dt><dd>① <b>spread 入置信度</b>：在样带各点计算中/高云量标准差（Skyglow core/meteo.py:343-351），与三路 dvI 并列喂 ensConfOf——回答「这一片云本身匀不匀」，与「三模型吵不吵」是两个独立的不确定源；② <b>logit 空间组合</b>：wgeo 在 [0,1] 空间做几何平均，概率输出域不对称，改用 logit 后加权线性组合（Skyglow core/model.py:174-192），使组合结果天然落在概率域；③ <b>缺测显式化</b>：主口径 wgeo 目前对 null 因子静默跳过（等于「按已给项重归一化」，已接近正确），补上两件事——缺测项在因素表标注「未参与计算」（refmodel 已有 missing 列表可复用）、AOD/vis 缺测时置信度降档（Skyglow core/service.py:26-27 同法）。</dd>
+        <dt>预期收益</dt><dd>置信度与真实偏差的相关性增强（F4 闭环可验证）；组合函数换域后 P 的校准性改善（与 P0-2 叠加）；缺测不再被「静默平均」掩盖。</dd>
+        <dt>验证指标</dt><dd>置信度分档（高/中/低）与实际 obs−pred 偏差的单调性；换域前后 Brier/可靠性对比；缺测场景的 UI 覆盖率。</dd>
+        <dt>风险与对冲</dt><dd>② 改变 S 的数值 → 与 P0-2 合并为一次双落，避免两次动口径；三项都先用探针断言「非缺测路径数值不变」再放开缺测路径。</dd>
+      </dl></div>
+    </div>
+
+    <div class="rec p1">
+      <div class="rec-head"><span class="prio">P1-3</span><h4>训练与验证纪律：时间切分、日期分组 CV、消融实验</h4></div>
+      <div class="rec-body"><dl>
+        <dt>做法</dt><dd>把 P0-1 评测集用对：① 一律时间切分（禁随机划分）；② 五折 CV <b>按日期分组</b>（同一天样本不跨折，防云量自相关泄漏）；③ 指标六件套 + TSS 阈值扫描 + 可靠性分箱；④ 特征集消融（A–F 模式，移植 tools/experiment.py）；⑤ 与 sunsetbot 同期预报基准对照。全部离线跑，产出与 Skyglow validation.json 同构的报告文件，可被现有 docfacts 式纪律守护。</dd>
+        <dt>预期收益</dt><dd>防止「自欺式指标」（训练集内评估）；特征取舍有据（消融）；给出可持续追踪的精度基线。</dd>
+        <dt>验证指标</dt><dd>评测流程可一键复跑；报告含 train/val/test/CV 四组数字；任何模型变更必须附新的消融结论。</dd>
+        <dt>风险与对冲</dt><dd>无。</dd>
+      </dl></div>
+    </div>
+
+    <div class="rec p2">
+      <div class="rec-head"><span class="prio">P2-1</span><h4>MLP 旁证（数据驱动第四意见）</h4></div>
+      <div class="rec-body"><dl>
+        <dt>做法</dt><dd>离线 numpy 训练（移植 tools/train_nn.py：15-8-4-1、tanh、He 初始化、全批量 Adam、L2、早停）；推理用 TS 前向约 50 行（Skyglow core/nn.py 已证明同构）；权重 JSON 内联。接入点同 P1-1：并列展示 + 分歧度量。<b>前提：P0-1 完成且标签 ≥1000 条</b>。</dd>
+        <dt>预期收益</dt><dd>与光追/统计/标定层方法学独立的第四条意见，分歧本身即风险信号。参照：Skyglow MLP 测试 AUC 0.794（与其物理模型 0.797 接近），但训练 AUC 0.881 → <b>其自述结论是「只作交叉参考」</b>；sunglow 若标签量相当，结论大概率相同（假设 A2）。</dd>
+        <dt>验证指标</dt><dd>测试 AUC/Brier（与 P1-1 并联比较）；四路分歧极差分布；训练/测试 AUC 间隙（过拟合哨兵，&gt;0.05 触发降级为仅展示）。</dd>
+        <dt>风险与对冲</dt><dd>过拟合 → 早停 + 早停哨兵；浏览器体积 → 权重瘦身（Skyglow make_single.py 只内联 version/features/mean/std/W/B）；不作任何加权合成，永不打分。</dd>
+      </dl></div>
+    </div>
+
+    <div class="rec p2">
+      <div class="rec-head"><span class="prio">P2-2</span><h4>阈值分位重标 + 误差案例归档 + 分布漂移监控</h4></div>
+      <div class="rec-body"><dl>
+        <dt>做法</dt><dd>① QUALITY_BANDS 的 80/65/45 改按标签分位点确定（Skyglow tools/calibrate.py:217-226），使四档人数比贴合真实分布；② 建「误差案例」自动清单（命中/漏报/空报各 Top-N，Skyglow validation.json cases 段同构），进回测页；③ 漂移监控：按月份/季节分箱报告基率与预测均值之差（Skyglow 发现的「秋季偏保守」正是此机制抓到：训练期 13.3% vs 测试期 24.3%）。</dd>
+        <dt>预期收益</dt><dd>四档分布对齐（完全命中率提升）；漏报/空报有据可查而非凭印象；季节漂移在产品内可见。</dd>
+        <dt>验证指标</dt><dd>分档人数比 vs 标签分布（卡方/最大偏差）；漏报率、空报率按月曲线；回测页案例数与探针覆盖。</dd>
+        <dt>风险与对冲</dt><dd>① 改变产品可见等级 → 列入双落切换阶段，切换前并联对比 ≥2 周。</dd>
+      </dl></div>
+    </div>
+
+    <div class="rec p2">
+      <div class="rec-head"><span class="prio">P2-3</span><h4>上游采样侧向加密（不改请求数的前提下）</h4></div>
+      <div class="rec-body"><dl>
+        <dt>做法</dt><dd>sunglow 样带是沿太阳方位的 17 点单线（0–400 km）；Skyglow 用 25 点环带（3 环 × 8 方位）覆盖整个上游扇区，其实测依据是「仅中心点最差偏差 42.3pp」。适配方案：保持 17 点请求不变（额度纪律），在<b>已取回的格点数据上</b>做「样带 + 两侧 ±30°/±60° 短射线」的加权聚合近似；地图场景则利用 121 点网格天然具备侧向覆盖（可验证是否需要增强）。</dd>
+        <dt>预期收益</dt><dd>horizon/block 类因子（光路上游）分辨率提升，直接命中「太阳方向上游低云」这一最坏误差源。</dd>
+        <dt>验证指标</dt><dd>P1-1 消融中「上游聚合方式」单独成组；用 P0-1 评测集比较 17 点单线 vs 加密聚合的 AUC/±1 档。</dd>
+        <dt>风险与对冲</dt><dd>只改聚合不改取数 → 不影响额度；数值变化并入 P0-2/P1-2 的同一次双落。</dd>
+      </dl></div>
+    </div>
+  </section>
+
+  <!-- ================= 4 ================= -->
+  <section id="s4">
+    <h2><span class="no">4</span>验证指标体系</h2>
+    <p class="lead">所有建议共用同一套指标定义（与 Skyglow calibrate.py 口径对齐，便于横向参照）；「目标值」列中标注参照来源。</p>
+    <table>
+      <tr><th style="width:110px">指标</th><th>定义</th><th>回答的问题</th><th style="width:200px">目标值 / 参照</th></tr>
+      <tr><td class="k">AUC</td><td>「是否成霞」二分类（等级≥1）的排序能力</td><td>排序对不对</td><td>≥ 基线 + 0.02；同任务参照 0.80（Skyglow CV）/ 0.761（sunsetbot 同期）</td></tr>
+      <tr><td class="k">Brier</td><td>概率的均方误差</td><td>概率准不准</td><td>≤ 基线 −10%；参照 0.118（CV）/0.167（时间切分）</td></tr>
+      <tr><td class="k">ECE</td><td>十分位分箱 |预测−实测| 加权</td><td>校准弯不弯</td><td>≤0.05（方法学通识目标，标注为假设 A2）</td></tr>
+      <tr><td class="k">±1 档命中</td><td>等级预测与实测差 ≤1 的比例</td><td>等级贴不贴</td><td>≥ 基线 + 3pp；参照 81.6%（CV）</td></tr>
+      <tr><td class="k">完全命中</td><td>等级完全一致比例（注意多数类效应）</td><td>同上</td><td>参照 76.1%（CV）</td></tr>
+      <tr><td class="k">TSS（最优阈值）</td><td>阈值扫描取 TPR−FPR 最大</td><td>极端事件判别</td><td>报告值即可，参照 0.244（Skyglow）/0.523（sunsetbot，口径不可直接排名）</td></tr>
+      <tr><td class="k">可靠性分箱</td><td>预测概率十分位 vs 实际频率</td><td>哪段虚哪段保守</td><td>曲线斜率 ≈1、各箱偏差 &lt;10pp</td></tr>
+      <tr><td class="k">F4 闭环偏差</td><td>本地校准 obs−pred 按分箱统计（产品内真实反馈）</td><td>用户侧准不准</td><td>偏差绝对值中位 &lt;15pp（假设 A2， sunglow 现无历史值）</td></tr>
+      <tr><td class="k">分歧健康度</td><td>并联路与主口径 refGap 的分布</td><td>第二意见是否独立有效</td><td>无系统性单边；分歧与实际误差正相关</td></tr>
+    </table>
+
+    <h3>4.1 标签来源两条路</h3>
+    <table>
+      <tr><th style="width:150px">路径</th><th>做法</th><th>优劣</th></tr>
+      <tr><td class="k">A. sunsetbot 再分析（主）</td><td>离线抓取上海站 2022-06～2023-12 人工定级（Skyglow 已验证可得 1109 条）</td><td>与 Skyglow 同源可比；但单站、单气候区、历史模式场与现今业务场有代差</td></tr>
+      <tr><td class="k">B. F4 本地标注（辅/未来）</td><td>sunglow 产品内已有点评入库（P/Q/6 档标注，v2/src/core/calib.ts）</td><td>真实用户、当期模式场；但存本机不出设备，集中利用需显式 opt-in 同步通道（隐私设计单独立项，标注为假设 A3）</td></tr>
+    </table>
+  </section>
+
+  <!-- ================= 5 ================= -->
+  <section id="s5">
+    <h2><span class="no">5</span>落地路径（三阶段，与硬约束兼容）</h2>
+    <table>
+      <tr><th style="width:90px">阶段</th><th>内容</th><th style="width:230px">对口径/探针/缓存的影响</th></tr>
+      <tr><td class="k">第一阶段<br>（2–3 周）</td><td>P0-1 评测集 + 基线报告；P0-2 标定常数拟合（先离线验证，不落线上）；P1-3 验证纪律成文</td><td>零线上影响；全部在 tools/ 离线侧；产出「基线报告」作为后续对照锚</td></tr>
+      <tr><td class="k">第二阶段<br>（3–5 周）</td><td>P1-1 标定层 + P1-2 三件套 + P2-3 聚合加密，全部以「并联第二意见」形态上线；refGap 框架扩展</td><td>主口径数值不变 → 现有探针全绿；新增探针覆盖并联路（数值稳定性、缺测路径、权重内联一致性）；缓存键不变（并联结果不落旧缓存族）</td></tr>
+      <tr><td class="k">第三阶段<br>（择期）</td><td>并联占优后启动双落切换（P0-2 的 (a,b)、P1-2 的换域、P2-2 的阈值）；P2-1 MLP 视标签量启动</td><td>必须双落（V1 + v2）+ 递增三套缓存前缀 + 更新 probe:consist 期望与 docfacts 事实行；切换前后并联对比 ≥2 周</td></tr>
+    </table>
+
+    <div class="note warn"><b>流程红线</b>① 任何阶段不得只改 v2 不改V1（或反之）——probe:consist 与「算法V1唯一权威」会直接抓到；② 模型参数/阈值一变，POINT/MAP/TREND 三个缓存前缀必须同步递增（README §5 明示的纪律）；③ 探针改期望值必须附本次评测报告编号，docfacts 的 STALE 机制即为防「悄悄改」而设。</div>
+  </section>
+
+  <!-- ================= 6 ================= -->
+  <section id="s6">
+    <h2><span class="no">6</span>明确不做清单（含理由）</h2>
+    <ul>
+      <li><b>不做 ECMWF/GFS/ICON 官方档案 GRIB2 直连</b>：浏览器物理不可达（eccodes 是 C 库），属 Skyglow 服务端专属能力。</li>
+      <li><b>不做 ERA5 历史回溯前端化</b>：同上；sunglow 的日期窗 today−7～+10 是形态选择而非缺陷，历史复盘需求由 Skyglow 承担。</li>
+      <li><b>不引入第五个概率源或把总云量拆三层</b>：sunglow 与 Skyglow 在这点上结论一致——辅助源只有总云量，硬拆等于编造模型最依赖的量。</li>
+      <li><b>不做「多源任一达标即报警」的并集策略</b>：sunglow README 已论证其系统性抬高空报率，对拍摄决策有害。</li>
+      <li><b>不在浏览器端训练任何模型</b>：训练一律离线工具侧；前端只做前向推理。</li>
+      <li><b>不替换手工模型为纯数据驱动模型</b>：物理可解释性是 sunglow 的既定产品属性（因素表 13 项逐项解读），标定层是「重新加权」而非「换掉物理核」——与 Skyglow 模块 docstring 的自我定位一致。</li>
+      <li><b>不为改进增加任何线上请求量</b>：全部特征来自已取回数据；额度纪律优先于精度提升。</li>
+    </ul>
+  </section>
+
+  <!-- ================= 7 ================= -->
+  <section id="s7">
+    <h2><span class="no">7</span>证据边界与假设</h2>
+    <table>
+      <tr><th style="width:90px">编号</th><th>内容</th></tr>
+      <tr><td class="k">A1</td><td>「sunglow 无实测标签回测」为仓库内检索结论（README/架构文档/评分模块文件头均无 AUC/Brier 类指标），不排除存在于未逐行读取的文件中。</td></tr>
+      <tr><td class="k">A2</td><td>所有「预期收益」中的目标值分两类：<b>Skyglow 实测数字</b>（已标注出处，仅作同任务可达性参照，不构成对 sunglow 的承诺）与<b>方法学通识预期</b>（如 Platt 标定改善校准、ECE≤0.05），后者未经本项目验证。</td></tr>
+      <tr><td class="k">A3</td><td>F4 标注集中利用需用户 opt-in 同步通道，涉及隐私设计，本报告仅作方向记录，未做方案设计。</td></tr>
+      <tr><td class="k">A4</td><td>P0-1 中「sunglow 历史场需走 Archive 端点」为推断：sunglow 现仅调用 Forecast 端点（grep 证实无 archive-api），而 ERA5 再分析在 Open-Meteo 侧由 Archive 提供；该取数为一次性离线行为，不影响线上额度纪律。</td></tr>
+      <tr><td class="k">A5</td><td>工作量估计（周）为基于两侧代码同构度的工程判断，非实测。</td></tr>
+      <tr><td class="k">A6</td><td>本报告未运行任何代码；所有公式、常量、阈值均取自两侧源码逐行阅读；sunglow v3 未逐行核对，建议以 v2 为主线落地时无需考虑 v3 差异（v3 为独立隔离工程）。</td></tr>
+    </table>
+  </section>
+
+  <footer>sunglow 预测准确性改进方案 · Skyglow 方法迁移分析 · 基于 2026-10-25 两侧源码实证阅读生成</footer>
+
+  </main>
+</div>
+</body>
+</html>
