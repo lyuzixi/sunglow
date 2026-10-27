@@ -1,6 +1,6 @@
 /* =========================================================================
    GLOWCAST v2 · 评分模型
-   口径来源：原版 _p4.js —— buildEnv / scoreStat / scoreRay / 等级 / 可信度。
+   口径来源：V1 _p4.js —— buildEnv / scoreStat / scoreRay / 等级 / 可信度。
    阈值、权重、隶属函数逐点对齐，禁止调整。
    ========================================================================= */
 import {
@@ -25,6 +25,8 @@ export interface Env {
   ws: number | null; wd: number | null; gust: number | null;
   fz: number | null; blh: number | null;
   precip: number | null; cape: number | null; sw: number | null;
+  /** 小时降水概率（%）—— 只有参考模型（refmodel）用，主口径不读它 */
+  pp?: number | null;
   aod?: number | null;
   missing: string[];
   [k: string]: unknown;
@@ -55,6 +57,7 @@ export function buildEnv(
     fz: g("freezing_level_height"), blh: g("boundary_layer_height"),
     precip: g("precipitation", true), cape: g("cape", true),
     sw: g("shortwave_radiation", true),
+    pp: g("precipitation_probability", true),
     missing
   };
   if (isNum(env.T) && !isNum(env.Td)) {
@@ -109,6 +112,30 @@ export function primaryDeckOf(env: Env) {
   return primaryDeck(env);
 }
 
+/* ---------- 光路遮挡因子（0–1，1=完全通透；越小越挡光） ----------
+   报告 §2.3 的「光源段」判据：本地云幕要被低角度阳光点亮，太阳来向上游
+   不能有低云（对中/高云幕）与中云（对高云幕）挡着。
+   抽成独立函数是为了让**地图的「遮挡层」与评分的 block 因子同源**——
+   两处各写一遍迟早会漂移，而它们必须说的是同一件事。 */
+export function blockFactor(
+  level: number,
+  upstreamLowMax: number | null | undefined,
+  upstreamMidMax: number | null | undefined
+): number {
+  let block = 1;
+  if (level > 0) {
+    const lw = isNum(upstreamLowMax) ? (upstreamLowMax as number) : null;
+    if (isNum(lw))
+      block *= trap(lw, [[0, 1], [25, 0.95], [45, 0.72], [65, 0.4], [85, 0.18], [100, 0.1]]) ?? 1;
+  }
+  if (level > 1) {
+    const md = isNum(upstreamMidMax) ? (upstreamMidMax as number) : null;
+    if (isNum(md))
+      block *= trap(md, [[0, 1], [30, 0.94], [55, 0.78], [80, 0.48], [95, 0.26]]) ?? 1;
+  }
+  return block;
+}
+
 export function scoreStat(
   env: Env,
   tr: {
@@ -155,18 +182,12 @@ export function scoreStat(
     if (isNum(env.precip) && env.precip > 1) stab *= 0.82;
   }
   f.stab = stab;
-  let block = 1;
-  if (primary.level > 0) {
-    const lw = isNum(tr.upstreamLowMax) ? tr.upstreamLowMax : env.cLow;
-    if (isNum(lw))
-      block *= trap(lw, [[0, 1], [25, 0.95], [45, 0.72], [65, 0.4], [85, 0.18], [100, 0.1]]) ?? 1;
-  }
-  if (primary.level > 1) {
-    const md = isNum(tr.upstreamMidMax) ? tr.upstreamMidMax : env.cMid;
-    if (isNum(md))
-      block *= trap(md, [[0, 1], [30, 0.94], [55, 0.78], [80, 0.48], [95, 0.26]]) ?? 1;
-  }
-  f.block = block;
+  /* 遮挡：有样带上游就用上游，没有就退回本地该层云量（与V1 `?? env.cLow` 同义） */
+  f.block = blockFactor(
+    primary.level,
+    isNum(tr.upstreamLowMax) ? tr.upstreamLowMax : env.cLow,
+    isNum(tr.upstreamMidMax) ? tr.upstreamMidMax : env.cMid
+  );
 
   const missF: string[] = [];
   for (const k in W_STAT) if (f[k] == null) missF.push(k);
@@ -352,7 +373,7 @@ export function ensConfOf(dv: number | null | undefined): EnsBand {
 
 export const W_ENS = { gfs: 0.3, ec: 0.34, rt: 0.36 };
 
-/** 综合指数 I = 0.55P + 0.45Q（0–100）—— 与原版 _p4.js mixedIndex 逐字一致，
+/** 综合指数 I = 0.55P + 0.45Q（0–100）—— 与V1 _p4.js mixedIndex 逐字一致，
  *  也是地图「分歧」维度 divergeOf 的同一口径。 */
 export function mixedIndex(P: number, Q: number): number {
   return clamp(0.55 * P + 0.45 * Q, 0, 100);
