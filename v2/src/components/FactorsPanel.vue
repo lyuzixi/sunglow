@@ -2,113 +2,18 @@
 import { computed } from "vue";
 import { state } from "../state";
 import { t } from "../core/i18n";
-import { isNum } from "../core/math";
-import { uAlt, uDist, uSpeed } from "../core/units";
+import { facDisplayRows } from "../core/factors";
 
 const res = computed(() => state.result);
 
-/* 12 项因素（键与原版 SNAP_FACTORS 完全一致，快照侧同源） */
-interface FacDef {
-  key: string;
-  name: string;
-  fmt: (v: number) => string;
-  desc: (v: number, r: NonNullable<typeof res.value>) => string;
-}
-const DEFS: FacDef[] = [
-  {
-    key: "cover", name: "云量类型与覆盖度",
-    fmt: (v) => Math.round(v) + "%",
-    desc: (v, r) => {
-      const deck = ["低云", "中云", "高云"][r.sRT.primary.level];
-      const head = t("{type}属{deck}，云底约 {base} km。", {
-        type: r.sRT.primary.type, deck: t(deck),
-        base: r.sRT.primary.base.toFixed(2)
-      });
-      const tail = v < 20
-        ? t("云量偏少，可能没有足够云体承接霞光。")
-        : v > 90 ? t("云量接近全覆盖，阳光难以穿透，易形成闷烧或无霞。")
-          : t("云量处于理想区间，云块之间既能透光又能承接低角度阳光。");
-      return head + tail;
-    }
-  },
-  {
-    key: "base", name: "云底高度",
-    fmt: (v) => uAlt(v * 1000),
-    desc: (v) => v >= 2 ? t("云底够高，光程长、色彩层次丰富。") : t("云底偏低，霞光可能被遮挡或不持久。")
-  },
-  {
-    key: "heq", name: "光学等效地表高度",
-    fmt: (v) => uDist(v, 2),
-    desc: () => t("气溶胶消光层的等效厚度，会压低有效云底。")
-  },
-  {
-    key: "heff", name: "等效云底高度",
-    fmt: (v) => uDist(v, 2),
-    desc: () => t("扣除气溶胶等效地表高度后的光路起算高度。")
-  },
-  {
-    key: "dedge", name: "云边界距离",
-    fmt: (v) => uDist(v),
-    desc: (v, r) => t("霞光深入距离上限约 {x} km，几何{ok}。", {
-      x: r.sRT.geom.xMax.toFixed(0),
-      ok: r.sRT.geom.ok ? t("成立") : t("不成立")
-    })
-  },
-  {
-    key: "block", name: "光路上游低层云遮挡",
-    fmt: (v) => Math.round(v) + "%",
-    desc: () => t("低层云会挡住打向主云盘的低角度阳光。")
-  },
-  {
-    key: "aod", name: "气溶胶光学厚度 AOD",
-    fmt: (v) => v.toFixed(2),
-    desc: (v) => v > 0.3 ? t("气溶胶偏多，色彩饱和度下降（污烧风险）。") : t("气溶胶适中，有利于形成鲜艳霞光。")
-  },
-  {
-    key: "vis", name: "能见度",
-    fmt: (v) => (v / 1000).toFixed(1) + " km",
-    desc: () => t("能见度决定你能不能看清那片云。")
-  },
-  {
-    key: "rh", name: "2m 相对湿度",
-    fmt: (v) => Math.round(v) + "%",
-    desc: () => t("湿度影响近地层气溶胶吸湿增长与通透度。")
-  },
-  {
-    key: "stab", name: "气压稳定性",
-    fmt: (v) => "|ΔP/Δt| = " + v.toFixed(2) + " hPa/h",
-    desc: () => t("气压变化平缓时云场更稳定，预报可信度更高。")
-  },
-  {
-    key: "wind", name: "云边界风速分量",
-    fmt: (v) => uSpeed(v),
-    desc: () => t("沿日落方位的风速分量，影响云边界移动与持续时间。")
-  },
-  {
-    key: "cape", name: "对流活动",
-    fmt: (v) => "CAPE " + Math.round(v) + " J/kg",
-    desc: (v) => v > 1500 ? t("对流有效位能偏高，可能出现局地对流云遮挡。") : t("对流活动弱，云场以系统性云为主。")
-  }
-];
-
+/* 13 项因素（键与 SNAP_KEYS 同源；数值/判定/长文案口径唯一来源是 core/factors.ts） */
 const rows = computed(() => {
   const r = res.value;
-  if (!r) return [];
-  return DEFS.map((d) => {
-    const row = r.factorRows.find((x) => x[0] === d.key);
-    const v = row ? row[1] : NaN;
-    const s = row ? row[2] : 0.5;
-    return {
-      key: d.key,
-      name: t(d.name),
-      val: isNum(v) ? d.fmt(v) : "—",
-      score: isNum(s) ? s : 0.5,
-      desc: isNum(v) ? d.desc(v, r) : t("本项数据缺失。")
-    };
-  });
+  return r ? facDisplayRows(r) : [];
 });
 
-function tone(s: number): string {
+function tone(s: number | null): string {
+  if (s == null) return "var(--tx-3)";
   if (s >= 0.7) return "var(--q-good)";
   if (s >= 0.4) return "var(--q-mid)";
   return "var(--q-bad)";
@@ -120,19 +25,22 @@ function tone(s: number): string {
     <div class="wrap">
       <div class="section-head">
         <h2>{{ t("影响因素") }}</h2>
-        <div class="sub">{{ t("12 项判据") }} · {{ t("算法说明") }}</div>
+        <div class="sub">{{ t("13 项判据") }} · {{ t("算法说明") }}</div>
       </div>
 
       <div class="grid grid-2" v-if="rows.length">
-        <div v-for="f in rows" :key="f.key" class="glass fac-card">
+        <div v-for="f in rows" :key="f.key" class="glass fac-card" :data-fkey="f.key">
           <div class="fac-top">
             <b>{{ f.name }}</b>
-            <span class="fac-score" :style="{ color: tone(f.score) }">
-              {{ Math.round(f.score * 100) }}
+            <span class="fac-right">
+              <em class="fj" :class="f.judgeCls">{{ f.judge }}</em>
+              <span class="fac-score" :style="{ color: tone(f.score) }">
+                {{ f.score != null ? Math.round(f.score * 100) : "—" }}
+              </span>
             </span>
           </div>
           <div class="fac-val">{{ f.val }}</div>
-          <div class="bar"><i :style="{ width: f.score * 100 + '%' }" /></div>
+          <div class="bar"><i :style="{ width: (f.score != null ? f.score * 100 : 0) + '%' }" /></div>
           <p>{{ f.desc }}</p>
         </div>
       </div>
@@ -151,14 +59,35 @@ function tone(s: number): string {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
+  gap: 10px;
   margin-bottom: 6px;
 }
 .fac-top b { font-size: var(--fs-body); }
+.fac-right {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-shrink: 0;
+}
 .fac-score {
   font-family: var(--font-display);
   font-size: 1.35rem;
   font-weight: 600;
 }
+/* 判定 pill：有利 / 中性 / 不利 / 数据缺失（颜色随分档，深浅主题都可读） */
+.fj {
+  font-style: normal;
+  font-size: var(--fs-tiny);
+  line-height: 1.6;
+  padding: 1px 9px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+.j-ok { color: var(--q-good); }
+.j-mid { color: var(--q-mid); }
+.j-bad { color: var(--q-bad); }
+.j-miss { color: var(--tx-3); }
 .fac-val {
   color: var(--tx-2);
   font-size: var(--fs-small);
