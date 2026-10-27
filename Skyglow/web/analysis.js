@@ -327,4 +327,13 @@
     for (let d = 0; d <= 450; d += 150) ctx.fillText(d + " km", X(d), h - 6);
     ctx.textAlign = "left";
     ctx.fillStyle = "rgba(255,255,255,.4)";
-    ctx.font = "9px -apple-system, san
+    ctx.font = "9px -apple-system, sans-serif";
+    ctx.fillText("中高云", ml + 4, mt + 2);
+    ctx.fillStyle = "rgba(255,190,120,.9)";
+    ctx.fillRect(ml + 40, mt - 4, 12, 3);
+    ctx.fillStyle = "rgba(120,160,210,.9)";
+    ctx.fillRect(ml + 92, mt - 4, 12, 2);
+    ctx.fillStyle = "rgba(255,255,255,.4)";
+    ctx.fillText("低云", ml + 108, mt + 2);
+  }
+})();
