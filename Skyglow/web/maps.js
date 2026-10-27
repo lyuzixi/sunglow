@@ -530,4 +530,16 @@
     const id = e.target && e.target.id;
     if (id === 'genNational') {
       const key = state.meta ? `${state.meta.date}|${state.meta.mode}` : null;
-      if (state.natShown && sta
+      if (state.natShown && state.nat && state.natKey === key) setVis('nat', false);
+      else ensureNational();
+    }
+    if (id === 'genLocal') {
+      const m = state.meta;
+      const key = m ? `${m.date}|${m.mode}|${m.lat.toFixed(3)}|${m.lon.toFixed(3)}` : null;
+      if (state.locShown && state.loc && state.locKey === key) setVis('loc', false);
+      else ensureLocal();
+    }
+  });
+  bindHover('#mapNational', '#tipNational', () => state.natPts, () => state.natFit);
+  bindHover('#mapLocal', '#tipLocal', () => state.locPts, () => state.locProj);
+})();
