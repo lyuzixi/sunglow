@@ -36,10 +36,17 @@ desktop.ini
 *.swp
 *~
 
+# ---- 工作日志（2026-10-27 停止入库：公开仓库不放工作过程日志）----
+.workbuddy/
+
 # ---- v2 / v3 工程（Vite）----
 node_modules/
 */node_modules/
 *.tsbuildinfo
+
+# ---- Python 字节码（2026-10-27 同步前发现误入库，可由源码重新生成）----
+__pycache__/
+*.pyc
 
 # ---- 可重跑的截图 / 日志 / 构建中间产物（2026-10-27 同步前清理）----
 # 会话残留与构建中间产物：重新构建即重建，不入库。
@@ -56,3 +63,4 @@ Skyglow/data/cache/
 # ERA5 历史格点场：tools/fetch_grid.py 随时可重下（README 标注「回测用 · 可选」），
 # 22 个 .gz 约 4.6 MB，属"能重新生成"的典型，不入库。
 Skyglow/data/era5/
+
