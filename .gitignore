@@ -1,1 +1,65 @@
-#霞光预报 gitignore probe
+# 霞光预报 · 版本管理忽略清单
+#
+# 原则：**只忽略"能重新生成"和"体积大且与源码无关"的东西**。
+# V1/index.html / V1/404.html 是 V1 的交付物（GitHub 上给访客用的就是它们），
+# 它们由 assemble.py 生成，但**不忽略** —— 否则 V1 就不是一个可用的静态站了。
+#
+# 2026-10-25 仓库重整：原版工程整体迁入 V1/（V2 为主线，v3/ 与 Skyglow/ 不动）。
+# 注意：带内部斜杠的模式锚定本文件所在目录（仓库根），所以 _check/ 相关规则
+# 必须写成 V1/_check/ 前缀才能继续命中；_scratch/ 无内部斜杠，任意深度生效。
+
+# ---- 手工快照目录 ----
+# 在 git 接管版本管理之前，回滚靠的是这些目录（before-batch1 … 第八批后）。
+# 有了 git 之后它们完成使命，25 MB 不入库；历史里仍然留着当时的目录名与时间。
+_backup/
+_scratch/
+
+# ---- 构建/联调产物 ----
+# preview.html 由 mkpreview.py 生成（用 SDK 桩替换腾讯地图脚本），随时可重跑。
+V1/_check/preview.html
+
+# ---- 探针跑批输出与截图 ----
+# 9 个 txt/log 是历次跑批的 stdout 留档；90 张 png 是审计截图。
+# 两者都能重跑，且合计 27 MB —— 属于典型的"不该进版本库"的东西。
+V1/_check/*.txt
+V1/_check/*.log
+V1/_check/*.png
+# 404probe 截图用的 404 页副本（每次跑批重写）
+V1/_check/404shot.html
+# 探针事实行（由 all.py 增量写入，含探针源码 sha1；docfacts 每次重新核对）
+V1/_check/.facts.json
+
+# ---- 系统/编辑器 ----
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+
+# ---- 工作日志（2026-10-27 停止入库：公开仓库不放工作过程日志）----
+.workbuddy/
+
+# ---- v2 / v3 工程（Vite）----
+node_modules/
+*/node_modules/
+*.tsbuildinfo
+
+# ---- Python 字节码（2026-10-27 同步前发现误入库，可由源码重新生成）----
+__pycache__/
+*.pyc
+
+# ---- 可重跑的截图 / 日志 / 构建中间产物（2026-10-27 同步前清理）----
+# 会话残留与构建中间产物：重新构建即重建，不入库。
+debug.log
+v2/_del_test.txt
+v2/_dist-standalone_stale/
+v2/dist-standalone/
+# 截图与跑批中间件：v2/.mockups 里的 html / cjs 是源码，.shots 与 .build 是跑出来的。
+v2/.shots/
+v2/.mockups/.shots/
+v2/.mockups/.build/
+# Skyglow 运行期缓存：页面打开时按需重建，体量大且天天变。
+Skyglow/data/cache/
+# ERA5 历史格点场：tools/fetch_grid.py 随时可重下（README 标注「回测用 · 可选」），
+# 22 个 .gz 约 4.6 MB，属"能重新生成"的典型，不入库。
+Skyglow/data/era5/
