@@ -161,7 +161,7 @@ const pill = ev(PILL);
 ok("宽屏徽标是胶囊 .meta-pill 且可见", !!pill && pill.vis === true, JSON.stringify(pill));
 ok("胶囊文案 = 城市 · 日期 · 朝/晚霞",
   !!pill && /^.+ · \d{4}-\d{2}-\d{2} · (朝霞|晚霞)$/.test(pill.txt), pill && pill.txt);
-ok("胶囊紧跟四按钮右侧（间距 10–18px）", !!pill && pill.gapLeft >= 10 && pill.gapLeft <= 18, JSON.stringify(pill && pill.gapLeft));
+ok("胶囊紧跟五按钮右侧（间距 10–18px）", !!pill && pill.gapLeft >= 10 && pill.gapLeft <= 18, JSON.stringify(pill && pill.gapLeft));
 ok("胶囊在顶栏里垂直居中", !!pill && Math.abs(pill.cy - pill.barCy) <= 2, JSON.stringify(pill && [pill.cy, pill.barCy]));
 ok("胶囊高 26–34px（不撑高单行顶栏）", !!pill && pill.h >= 26 && pill.h <= 34, JSON.stringify(pill && pill.h));
 ok("胶囊是圆角胶囊（999）", !!pill && pill.rad >= 100, JSON.stringify(pill && pill.rad));
@@ -226,10 +226,20 @@ eq("7 个锚点都能落到真实 section",
   NAV_IDS.map(() => true));
 
 const icons861 = ev(SAMPLE_ICONS);
-eq("顶栏图标共 4 个（设置+语言+主题+教程）", icons861.length, 4);
-eq("图标尺寸统一 34×34", icons861.map((i) => [i.w, i.h]), [[34, 34], [34, 34], [34, 34], [34, 34]]);
+eq("顶栏图标共 5 个（设置+语言+主题+教程+版本）", icons861.length, 5);
+eq("图标尺寸统一 34×34", icons861.map((i) => [i.w, i.h]), [[34, 34], [34, 34], [34, 34], [34, 34], [34, 34]]);
 eq("图标圆角统一", [...new Set(icons861.map((i) => i.r))].length, 1);
 ok("设置按钮走的是 .icon-btn", String(icons861[0].cls).includes("icon-btn"), String(icons861[0].cls));
+
+/* 版本菜单（2026-10-27）：两条真链接，顺序 V1 → Skyglow，根位置写法 */
+ev(`document.querySelector('.top-actions .ver-btn').click()`);
+wait(250);
+ok("版本按钮能打开菜单", ev(`!!document.querySelector('.ver-pop')`) === true);
+eq("版本菜单两条 = V1 / Skyglow（根位置）",
+  ev(`[...document.querySelectorAll('.ver-pop a')].map(a=>[
+    a.textContent.replace(/\\s+/g,'').replace('↗',''), a.getAttribute('href')])`),
+  [["V1", "V1/index.html"], ["Skyglow", "Skyglow/index.html"]]);
+ev(`document.querySelector('.top-actions .ver-btn').click()`);
 
 ok("设置面板能打开", ev(OPEN_SETTINGS) === true);
 wait(200);
@@ -322,7 +332,7 @@ ok("390px 品牌名单行（藏 GLOWCAST 副标，不被挤成两行）", ev(`((
     && getComputedStyle(nm.querySelector('em')).display === 'none';})()`) === true);
 ok("390px 顶栏自身不横向溢出", ev(`(()=>{const i=document.querySelector('.topbar-in');
   return i.scrollWidth - i.clientWidth <= 0 && document.querySelector('.topbar').getBoundingClientRect().right <= 390;})()`) === true);
-/* .icon-btn 仍是 4 个 DOM（教程那个 display:none，量到 0×0），只看实际渲染的三个 */
+/* .icon-btn 仍是 5 个 DOM（教程与版本在 mini 档 display:none，量到 0×0），只看实际渲染的三个 */
 eq("mini 态图标收到 32×32（给 360/375 机型让出余量）",
   ev(SAMPLE_ICONS).filter((i) => i.w > 0).map((i) => [i.w, i.h]),
   [[32, 32], [32, 32], [32, 32]]);
@@ -339,6 +349,10 @@ ok("抽屉顶部补出状态行（城市 · 日期 · 朝/晚霞）",
 ok("状态行在「目录」标题之上且不出界",
   !!mdStatus && mdStatus.top < mdStatus.pre && mdStatus.l >= 0 && mdStatus.r <= 390,
   JSON.stringify(mdStatus && [mdStatus.top, mdStatus.pre, mdStatus.l, mdStatus.r]));
+ok("抽屉有「其他版本」组，V1 / Skyglow 两条真链接",
+  ev(`(()=>{const h=[...document.querySelectorAll('.mdrawer .md-group h4')].some(x=>x.textContent.trim()==='其他版本');
+    return h && !!document.querySelector('.mdrawer a[href="V1/index.html"]')
+      && !!document.querySelector('.mdrawer a[href="Skyglow/index.html"]');})()`) === true);
 ev(`document.querySelector('.mdrawer-mask')?.click()`);
 wait(320);
 

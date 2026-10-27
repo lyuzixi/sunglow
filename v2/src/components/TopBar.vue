@@ -41,6 +41,9 @@ const DETAIL_NAV: { id: string; label: string; fold: string }[] = [
 const settingsOpen = ref(false);
 const langOpen = ref(false);
 const themeOpen = ref(false);
+/* 版本菜单（2026-10-27）：桌面顶栏右侧，条目只写版本名（V1 / Skyglow），
+   手机极简档隐藏按钮，入口交给目录抽屉的「其他版本」组。 */
+const verOpen = ref(false);
 const rootEl = ref<HTMLElement | null>(null);
 
 /* ---- 移动端目录抽屉（≤860px 替代导航） ---- */
@@ -131,12 +134,13 @@ function scheduleRefit() {
   });
 }
 
-/* 顶栏同一时刻只开一个浮层：抽屉 / 设置 / 语言 / 主题 互斥 */
-function closeOverlays(keep?: "settings" | "lang" | "theme" | "drawer") {
+/* 顶栏同一时刻只开一个浮层：抽屉 / 设置 / 语言 / 主题 / 版本 互斥 */
+function closeOverlays(keep?: "settings" | "lang" | "theme" | "drawer" | "ver") {
   if (keep !== "settings") settingsOpen.value = false;
   if (keep !== "lang") langOpen.value = false;
   if (keep !== "theme") themeOpen.value = false;
   if (keep !== "drawer") drawerOpen.value = false;
+  if (keep !== "ver") verOpen.value = false;
 }
 function toggleSettings() {
   const next = !settingsOpen.value;
@@ -153,6 +157,11 @@ function toggleTheme() {
   const next = !themeOpen.value;
   closeOverlays("theme");
   themeOpen.value = next;
+}
+function toggleVer() {
+  const next = !verOpen.value;
+  closeOverlays("ver");
+  verOpen.value = next;
 }
 function toggleDrawer() {
   const next = !drawerOpen.value;
@@ -239,6 +248,11 @@ watch(
   () => state.lang + state.city.name + state.dateStr + (state.period === "am"),
   () => nextTick(scheduleRefit)
 );
+/* 收紧/极简档隐藏版本按钮：若菜单正开着被档位切走，顺手收起，
+   避免回到宽屏时弹层自己冒出来 */
+watch(mode, (m) => {
+  if (m === "tight" || m === "mini") verOpen.value = false;
+});
 
 function onKeydown(e: KeyboardEvent) {
   if (e.key !== "Escape") return;
@@ -400,7 +414,31 @@ const themeIcon = () =>
           </svg>
         </a>
 
-        <!-- 徽标：幽灵胶囊，跟在四按钮右侧（mode-mini 下整块隐藏） -->
+        <!-- 版本切换（2026-10-27）：桌面右侧下拉，两条按**根位置**写（与页脚同口径，
+             publish-root 禁止根产物出现 ../ 跨目录链接）。收紧档与手机极简档隐藏
+             （收紧档的宽度预算放不下第五个按钮），入口交给页脚与目录抽屉「其他版本」组。 -->
+        <div class="ver-wrap" style="position: relative">
+          <button
+            class="icon-btn ver-btn"
+            :aria-label="t('版本')"
+            :title="t('版本')"
+            :aria-expanded="verOpen"
+            @click.stop="toggleVer"
+          >
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3 3 8l9 5 9-5-9-5z" />
+              <path d="m3 12 9 5 9-5" />
+              <path d="m3 16 9 5 9-5" />
+            </svg>
+          </button>
+          <div v-if="verOpen" class="menu-pop ver-pop" role="menu" :aria-label="t('其他版本')">
+            <a role="menuitem" href="V1/index.html"><span>V1</span><i class="arw">↗</i></a>
+            <a role="menuitem" href="Skyglow/index.html"><span>Skyglow</span><i class="arw">↗</i></a>
+          </div>
+        </div>
+
+        <!-- 徽标：幽灵胶囊，跟在五个按钮右侧（mode-mini 下整块隐藏） -->
         <span class="meta-pill" :title="metaTitle" :aria-label="metaTitle">
           <template v-for="(p, i) in metaParts" :key="i">
             <i v-if="i" class="dot">·</i><span>{{ p }}</span>
@@ -460,6 +498,14 @@ const themeIcon = () =>
     <div class="md-group">
       <h4>{{ t("指南") }}</h4>
       <a class="ext" href="./tutorial.html"><span>{{ t("使用教程") }}</span><i class="arw">↗</i></a>
+    </div>
+
+    <!-- 其他版本（2026-10-27）：与桌面下拉同口径，只写版本名；
+         真链接、根位置（publish-root 禁止 ../），点它直接离开首页。 -->
+    <div class="md-group">
+      <h4>{{ t("其他版本") }}</h4>
+      <a class="ext" href="V1/index.html"><span>V1</span><i class="arw">↗</i></a>
+      <a class="ext" href="Skyglow/index.html"><span>Skyglow</span><i class="arw">↗</i></a>
     </div>
   </aside>
 </template>

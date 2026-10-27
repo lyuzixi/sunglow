@@ -28,8 +28,42 @@
       <a href="#method">方法</a>
     </nav>
     <div class="top-meta" id="topMeta">ERA5 · CAMS · Open-Meteo</div>
+    <!-- 手机目录入口（2026-10-27）：≤980px 顶栏导航隐藏，改由汉堡 + 左侧抽屉承担；
+         桌面不显示此按钮，导航仍是原来的四项。 -->
+    <button class="mnav-btn" id="mnavBtn" type="button" aria-label="目录" aria-controls="mnav" aria-expanded="false">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
   </div>
 </header>
+
+<!-- 手机目录抽屉：分组顺序 = 页面顺序，条目与锚点一一对应。
+     Python 服务页（web/index.html）不加载本段与 toc.js，手机端仍保持原样。 -->
+<div class="mnav-mask" id="mnavMask"></div>
+<aside class="mnav" id="mnav" role="dialog" aria-modal="true" aria-label="目录" tabindex="-1">
+  <div class="mnav-status" id="mnavStatus">—</div>
+  <div class="mnav-label">目录</div>
+  <div class="mnav-group">
+    <h4>主结果</h4>
+    <a href="#forecast"><span>预报</span></a>
+    <a href="#compare"><span>四源对照</span></a>
+    <a href="#hourly"><span>分时演变</span></a>
+    <a href="#factorpanel"><span>成霞因子</span></a>
+    <a href="#geometry"><span>方位与几何</span></a>
+    <a href="#week"><span>未来七日</span></a>
+    <a href="#maps"><span>晚霞地图</span></a>
+    <a href="#validation"><span>回测验证</span></a>
+  </div>
+  <div class="mnav-group">
+    <h4>技术细节</h4>
+    <a href="#method"><span>预测逻辑</span></a>
+    <a href="#cache"><span>本地缓存</span></a>
+  </div>
+  <div class="mnav-group">
+    <h4>其他版本</h4>
+    <a class="ext" href="../V1/index.html"><span>V1</span><i class="arw">↗</i></a>
+    <a class="ext" href="../index.html"><span>V2</span><i class="arw">↗</i></a>
+  </div>
+</aside>
 
 <main class="wrap">
 
@@ -149,7 +183,7 @@
     <div class="src-note" id="srcNote">上游云量沿用 Open-Meteo 采样；AOD 来自 CAMS，四个源共用。</div>
   </section>
 
-  <section class="card chart-card">
+  <section class="card chart-card" id="hourly">
     <div class="card-head">
       <h2>分时演变</h2>
       <div class="src-switch" id="srcTimeline"></div>
@@ -164,7 +198,7 @@
     <div class="chart-foot" id="chartFoot">横轴为相对日落/日出时刻的分钟数。</div>
   </section>
 
-  <section class="grid-2">
+  <section class="grid-2" id="factorpanel">
     <div class="card">
       <div class="card-head"><h2>成霞因子</h2><span class="hint">四源对照 · 0–100，越高越有利</span></div>
       <div class="factors" id="factors"></div>
@@ -414,7 +448,7 @@
         <p class="fine">除上述之外，概率评分、光谱配色、地图与七日趋势均与 Python 版使用同一套算法与参数。</p>
       </div>
 
-      <div class="card prose">
+      <div class="card prose" id="cache">
         <h3>本地缓存</h3>
         <p class="fine" id="cacheSummary">统计中…</p>
         <table class="src">

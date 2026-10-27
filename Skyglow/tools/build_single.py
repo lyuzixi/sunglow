@@ -24,7 +24,7 @@ CORE = [
     "util", "solar", "spectrum", "model", "nn", "meteo", "weatherapi",
     "hints", "geocode", "store", "glowmap", "service",
 ]
-UI = ["maps", "analysis", "app"]
+UI = ["maps", "analysis", "app", "toc"]
 DATA = [os.path.join(HERE, "js", "data", "params.js")]
 VALIDATION = os.path.join(HERE, "data", "validation.json")
 NN_METRICS = os.path.join(HERE, "data", "nn_metrics.json")

@@ -129,6 +129,8 @@ const HANT: Dict = {
   "预报准据": "預報準據",
   "算法说明": "算法說明",
   "目录": "目錄",
+  "版本": "版本",
+  "其他版本": "其他版本",
   "关闭": "關閉",
   "打开菜单": "打開選單"
 };
@@ -246,6 +248,8 @@ const EN: Dict = {
   "预报准据": "Forecast Basis",
   "算法说明": "Methodology",
   "目录": "Contents",
+  "版本": "Versions",
+  "其他版本": "Other versions",
   "关闭": "Close",
   "打开菜单": "Open menu"
 };

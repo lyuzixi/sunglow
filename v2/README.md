@@ -63,7 +63,7 @@ npm run build              # 单文件产物 + publish-root 自动发布 7 个�
 > 为什么不直接双击源码入口 `v2/app.html`：Vite 默认产物是 ES module 多文件，
 > 浏览器从 `file://` 加载 module 脚本会被 CORS 拦截。单文件版把脚本内联进 HTML 才绕开这条限制。
 > 根 `index.html` 由 `npm run build` 生成并自动发布，**不要手改**；`v2/index.html` 是构建中间产物
->（本地预览用；页脚「切换到V1 / 切换到Skyglow」两条链接都按根位置写（`V1/index.html`、`Skyglow/index.html`），故只在根副本中正确）。
+>（本地预览用；页脚、顶栏「版本」菜单与目录抽屉「其他版本」组里的 V1 / Skyglow 链接都按根位置写（`V1/index.html`、`Skyglow/index.html`），故只在根副本中正确）。
 
 ## 使用教程（四档三语）
 

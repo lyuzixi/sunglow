@@ -509,6 +509,10 @@ input, select {
 .topbar.mode-mini .hamburger { display: inline-flex; }
 .topbar.mode-mini .meta-pill { display: none; }
 .topbar.mode-mini .tut-btn { display: none; }
+/* 版本入口：收紧档宽度预算放不下第五个按钮，极简档让位给抽屉 ——
+   两档都隐藏整个 wrapper（连 gap 一起收掉，否则空壳仍占 6px）。 */
+.topbar.mode-tight .ver-wrap,
+.topbar.mode-mini .ver-wrap { display: none; }
 .topbar.mode-mini .brand .name em { display: none; }
 /* mini 再让 2px/3px 出来：360 与 375 机型的容器只有 310/325，中文需 321 ——
    不收这一档，iPhone SE 会横向溢出。视觉上看不出差别。 */
@@ -703,22 +707,27 @@ input, select {
   z-index: 300;
   animation: rise 0.18s var(--ease-out);
 }
-.menu-pop button {
+.menu-pop button,
+.menu-pop a {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   width: 100%;
   padding: 8px 12px;
   border-radius: var(--r-sm);
   font-size: var(--fs-small);
   color: var(--tx-2);
   text-align: left;
+  text-decoration: none;
 }
-.menu-pop button:hover { background: var(--bg-glass-2); color: var(--tx-1); }
+.menu-pop button:hover,
+.menu-pop a:hover { background: var(--bg-glass-2); color: var(--tx-1); }
 .menu-pop button[aria-pressed="true"] {
   color: var(--tx-1);
   background: var(--bg-glass-2);
 }
+.menu-pop a .arw { font-style: normal; font-size: 12px; opacity: 0.85; }
 
 /* ---- 表格 ---- */
 table.data {
