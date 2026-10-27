@@ -400,4 +400,17 @@ def point(source_id, lat, lon, t_utc):
     if fn is None:
         raise DirectUnavailable("未知数据源 %s" % source_id)
     key = os.path.join(CACHE, "%s_%s_%.2f_%.2f_%s.json"
-                       % (source_id, t_utc.strftime("%Y%m%d%H"), lat,
+                       % (source_id, t_utc.strftime("%Y%m%d%H"), lat, lon, ""))
+    try:
+        if os.path.exists(key) and time.time() - os.path.getmtime(key) < 1800:
+            with open(key, encoding="utf-8") as f:
+                return json.load(f)
+    except (OSError, ValueError):
+        pass
+    res = fn(lat, lon, t_utc)
+    try:
+        with open(key, "w", encoding="utf-8") as f:
+            json.dump(res, f)
+    except OSError:
+        pass
+    return res
