@@ -1,10 +1,11 @@
 /* =========================================================================
    GLOWCAST v2 · 数据层（Open-Meteo 直连 + 本地 mock）
-   口径来源：原版 _p4.js API 参数与 jget 重试语义。
+   口径来源：V1 _p4.js API 参数与 jget 重试语义。
    地图代理占位符 __TMAP_SERVICE_HOST__ 保留（部署时由构建注入）。
    ========================================================================= */
 import { API_FORECAST, API_AQ, API_TZ, type SeriesReader } from "./scoring";
 import { isNum, clamp } from "./math";
+import { wallIsoToReal, estimateOffsetSec } from "./tz";
 
 /** 地图代理占位符 —— 产物不得含密钥；部署时替换 */
 export const TMAP_SERVICE_HOST = "__TMAP_SERVICE_HOST__";
@@ -55,7 +56,8 @@ function buildAqUrl(lat: number, lon: number, days: number): string {
   return API_AQ + "?" + p.toString();
 }
 
-async function jget(url: string, tries = 3, timeoutMs = 6000): Promise<unknown> {
+/* 重试次数与 mapload.ts 的 jget 保持同一口径：429 不重试，其它最多再补 1 次 */
+async function jget(url: string, tries = 2, timeoutMs = 6000): Promise<unknown> {
   for (let k = 0; k < tries; k++) {
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), timeoutMs);
@@ -82,27 +84,24 @@ async function jget(url: string, tries = 3, timeoutMs = 6000): Promise<unknown> 
 function parseHourly(
   j: unknown, key: string
 ): { hourly: Record<string, Array<number | null>>; times: number[]; tzOffsetSec: number } {
+  void key;
   const d = j as {
     hourly?: Record<string, unknown>;
     utc_offset_seconds?: number;
   };
   const hh = d.hourly || {};
+  const tzOffsetSec = isNum(d.utc_offset_seconds) ? d.utc_offset_seconds : 0;
   const timeArr = (hh.time || []) as string[];
-  const times = timeArr.map((s) => Date.parse(s + (String(s).length <= 16 ? ":00Z" : "")));
-  // Open-Meteo returns local ISO without Z when timezone=auto; parse as local wall -> approx
-  const times2 = timeArr.map((s) => {
-    const iso = String(s);
-    return Date.parse(iso.length === 16 ? iso + ":00" : iso);
-  });
-  const useTimes = times2.some(isNum) ? times2 : times;
+  /* timezone=auto 下 time 列是城市当地墙钟 —— 用响应自己的偏移折回真实时间戳 */
+  const times = timeArr.map((s) => wallIsoToReal(String(s), tzOffsetSec));
   const hourly: Record<string, Array<number | null>> = {};
   for (const v of HOURLY_VARS.concat(AQ_VARS)) {
     const arr = hh[v];
     hourly[v] = Array.isArray(arr)
       ? (arr as unknown[]).map((x) => (isNum(x) ? x : null))
-      : useTimes.map(() => null);
+      : times.map(() => null);
   }
-  return { hourly, times: useTimes, tzOffsetSec: isNum(d.utc_offset_seconds) ? d.utc_offset_seconds : 0 };
+  return { hourly, times, tzOffsetSec };
 }
 
 export function makeReader(
@@ -190,7 +189,10 @@ function mulberry32(seed: number) {
 
 export function makeMockBundle(lat: number, lon: number, days = 7): ForecastBundle {
   const rnd = mulberry32(Math.round(lat * 1000) ^ Math.round(lon * 1000));
-  const start = Date.now() - 12 * 3600000;
+  /* 对齐到城市当地整点，日变化相位才落在当地 14 时（mock 也要跟城市时区走） */
+  const off = estimateOffsetSec(lat, lon);
+  const start =
+    Math.floor((Date.now() - 12 * 3600000 + off * 1000) / 3600000) * 3600000 - off * 1000;
   const n = days * 24;
   const times: number[] = [];
   const hourly: Record<string, Array<number | null>> = {};
@@ -198,7 +200,7 @@ export function makeMockBundle(lat: number, lon: number, days = 7): ForecastBund
   for (let i = 0; i < n; i++) {
     const ms = start + i * 3600000;
     times.push(ms);
-    const hourOfDay = ((ms / 3600000) % 24 + 24) % 24;
+    const hourOfDay = ((((ms + off * 1000) / 3600000) % 24) + 24) % 24;
     const diurnal = Math.sin(((hourOfDay - 14) / 24) * Math.PI * 2);
     const cl = clamp(30 + 45 * rnd() + 25 * diurnal, 0, 100);
     hourly["temperature_2m"].push(12 + 10 * diurnal + 4 * rnd());
@@ -226,7 +228,7 @@ export function makeMockBundle(lat: number, lon: number, days = 7): ForecastBund
   }
   return {
     hourly, times,
-    timezone: "auto", tzOffsetSec: 28800, source: "mock"
+    timezone: "", tzOffsetSec: off, source: "mock"
   };
 }
 

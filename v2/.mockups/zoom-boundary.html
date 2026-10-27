@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>观测场最小缩放对照板 · 2026-10-22</title>
+<style>
+  :root{
+    --paper:#fbfaf7; --card:#fff; --ink:#23201c; --tx2:#5d574f; --tx3:#8d857a;
+    --line:#e5e0d7; --hair:#efeae1; --accent:#c2410c; --good:#15803d; --bad:#b91c1c;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto;padding:48px 28px 80px}
+  .kicker{font:600 11.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--tx3)}
+  h1{margin:14px 0 10px;font-size:30px;line-height:1.25;letter-spacing:-.01em}
+  .lede{margin:0;max-width:74ch;color:var(--tx2);font-size:15px}
+  .lede b{color:var(--ink)}
+  .rule{height:1px;background:var(--line);margin:32px 0}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .card.pick{border-color:#d8c8b6;box-shadow:0 1px 0 #efeae1}
+  .hd{display:flex;align-items:baseline;gap:10px;padding:16px 18px 12px;border-bottom:1px solid var(--hair)}
+  .tag{font:600 11px/1 var(--mono);letter-spacing:.08em;padding:5px 8px;border-radius:999px;
+    border:1px solid var(--line);color:var(--tx2);background:#faf8f4;white-space:nowrap}
+  .tag.now{background:#f4f1ec;color:var(--tx3)}
+  .tag.pick{background:#fdf3ec;border-color:#e8cdb8;color:var(--accent)}
+  .tag.alt{background:#f2f6f3;border-color:#cfe0d4;color:var(--good)}
+  .hd h2{margin:0;font-size:16px;font-weight:650;letter-spacing:-.005em}
+  .body{padding:0}
+  .body img{display:block;width:100%;height:auto;border-bottom:1px solid var(--hair)}
+  .note{padding:13px 18px 15px;color:var(--tx2);font-size:13.5px}
+  .note p{margin:0 0 8px}
+  .note p:last-child{margin:0}
+  .metrics{display:flex;flex-wrap:wrap;gap:6px 18px;padding:11px 18px;border-top:1px solid var(--hair);
+    font:12.5px/1.5 var(--mono);color:var(--tx3);background:#fcfbf8}
+  .metrics b{color:var(--ink);font-weight:600}
+  .verdict{margin-top:34px;border:1px solid var(--line);border-radius:10px;background:var(--card);padding:22px 24px}
+  .verdict h3{margin:0 0 12px;font-size:15px}
+  .verdict ol{margin:0;padding-left:20px;color:var(--tx2);font-size:14px}
+  .verdict li{margin:7px 0}
+  .verdict b{color:var(--ink)}
+  .fix{margin-top:18px;padding:12px 14px;border-left:3px solid var(--accent);background:#fdf6f1;
+    font-size:13.5px;color:#6b4230;border-radius:0 6px 6px 0}
+  .fix b{color:var(--accent)}
+  footer{margin-top:26px;font:12px/1.7 var(--mono);color:var(--tx3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kicker">Glowcast v2 · 多语言地名 · 决策板</div>
+  <h1>街区级地名怎么处理</h1>
+  <p class="lede">
+    同一个城市（广州）、同一份构建产物、同样一张观测场，只改「底图文字开关」与「允许放大到多近」。
+    问题的本质不是底图不够好 —— 默认视野（实测跨度 <b>1063&nbsp;km</b>）下我们的自绘地名完全够用；
+    真正无字可读的只有<b>放大到街区级（zoom ≥ 12，跨度 &lt; 16&nbsp;km）</b>那一层，而那一层的字只有腾讯的、且只有中文。
+  </p>
+  <div class="rule"></div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="hd"><span class="tag now">现状</span><h2>自绘 + 关底图文字</h2></div>
+      <div class="body"><img src=".shots/zoom15-en.png" alt="现状：英文模式 zoom15 无任何文字"></div>
+      <div class="note">
+        <p>街道网格清清楚楚，<b>一个字都没有</b>。用户放到街区级会彻底失去方位参照 —— 这是「关闭底图文字」的直接代价。</p>
+      </div>
+      <div class="metrics"><span>zoom <b>15</b></span><span>跨度 <b>2 km</b></span><span>自绘落笔 <b>1</b></span><span>底图文字 <b>0</b></span></div>
+    </div>
+
+    <div class="card pick">
+      <div class="hd"><span class="tag pick">案 A</span><h2>锁最小缩放（≈250 km）</h2></div>
+      <div class="body"><img src=".shots/cmp-A-en-z8.png" alt="案 A：英文 zoom8 自绘地名"></div>
+      <div class="note">
+        <p>把最小缩放钉在 zoom 8（跨度 266 km）—— 街区级这一层<b>压根不存在</b>，自绘地名就够用了，而且读起来比底图自带地名更干净。</p>
+        <p>产品语义上也站得住：57 个网格点最密也隔 20–30 km，街区级本来没有任何霞光数据可看。</p>
+      </div>
+      <div class="metrics"><span>zoom <b>8</b></span><span>跨度 <b>266 km</b></span><span>自绘落笔 <b>13 / 16</b></span><span>底图文字 <b>0</b></span></div>
+    </div>
+
+    <div class="card">
+      <div class="hd"><span class="tag alt">案 A · 繁体参照</span><h2>同一档，繁体自绘</h2></div>
+      <div class="body"><img src=".shots/cmp-A-hant-z8.png" alt="繁体 zoom8 自绘地名"></div>
+      <div class="note">
+        <p>繁體模式同一档：廣州市 / 香港 / 澳門 / 深圳市 / 珠海市 / 佛山市 … 落笔 15 条。这条<b>无论换不换图源</b>都得由我们自绘（高德国内底图只有简/英，没有繁体）。</p>
+      </div>
+      <div class="metrics"><span>zoom <b>8</b></span><span>跨度 <b>266 km</b></span><span>自绘落笔 <b>14 / 16</b></span><span>底图文字 <b>0</b></span></div>
+    </div>
+
+    <div class="card">
+      <div class="hd"><span class="tag alt">案 C·1</span><h2>不锁缩放，两层都开</h2></div>
+      <div class="body"><img src=".shots/cmp-C1-en-z15-both.png" alt="案 C1：底图中文文字 + 自绘英文叠字"></div>
+      <div class="note">
+        <p>街区级有字了，但出现<b>叠字</b>：底图写「广州」、我们写「Guangzhou」，右下角还压在罗盘控件下面。城市名依旧是中文，等于没解决原问题。</p>
+      </div>
+      <div class="metrics"><span>zoom <b>15</b></span><span>跨度 <b>2 km</b></span><span>自绘落笔 <b>0（被控件压掉）</b></span><span>底图文字 <b>中文，满屏</b></span></div>
+    </div>
+
+    <div class="card pick">
+      <div class="hd"><span class="tag pick">案 C·2</span><h2>按缩放自动切换</h2></div>
+      <div class="body"><img src=".shots/cmp-C2-en-z15-auto.png" alt="案 C2：街区级自动关自绘、开底图文字"></div>
+      <div class="note">
+        <p>跨度 &gt; 120 km 时走现状（自绘英文/繁体）；一旦缩进街区级，<b>自动关掉自绘、打开底图文字</b>，图面立刻有字，且没有叠字。</p>
+        <p>代价只有一个：这一层的字是中文。但这条路<b>任何合规图源都填不满</b>——高德的英文底图要商务工单，繁体它更没有。</p>
+      </div>
+      <div class="metrics"><span>zoom <b>15</b></span><span>跨度 <b>2 km</b></span><span>自绘落笔 <b>0（自动关）</b></span><span>底图文字 <b>中文，满屏</b></span></div>
+    </div>
+
+    <div class="card">
+      <div class="hd"><span class="tag">案 B</span><h2>换高德 + 英文底图权限</h2></div>
+      <div class="body" style="padding:18px">
+        <p style="margin:0 0 10px;color:var(--tx2);font-size:13.5px">没有截图 —— 因为拍摄前提就不成立：</p>
+        <p style="margin:0 0 8px;color:var(--tx2);font-size:13.5px">高德多语言是「高级地图能力」，官方要求<b>提交商务工单申请</b>，不是控制台勾选；海外地图同样默认不加载、需工单开通。国内只支持简/英，<b>没有繁体</b>。本机也无 key 可验。</p>
+        <p style="margin:0;color:var(--tx2);font-size:13.5px">换来的是「街区级英文街名」这一层唯一真实收益，代价是重写 7 个 SDK 触点（`LngLat` 先经后纬、事件名全换、`setBaseMap` → `setFeatures`）+ 探针 20 条地图断言重写。</p>
+      </div>
+      <div class="metrics"><span>街区级 <b>英文 ✅</b></span><span>繁体 <b>仍自绘</b></span><span>审批 <b>工单</b></span><span>成本 <b>重写接入层</b></span></div>
+    </div>
+  </div>
+
+  <div class="verdict">
+    <h3>三个判据</h3>
+    <ol>
+      <li><b>默认视野不受影响</b>：A 与 C2 在 1000&nbsp;km 档都和现在一模一样，改动只在「允许放多近」这一件事上。</li>
+      <li><b>A 最纯，C2 最自由</b>：A 直接把街区级砍掉，图面永远干净；C2 保留放大能力，只在深处换成中文。两者都不换源、不申请、零新增费用。</li>
+      <li><b>B 是唯一能拿到英文街名的路，也是唯一要花钱和等审批的路</b>，而且繁体它救不了 —— 繁体自绘层无论如何都得留着。</li>
+    </ol>
+    <div class="fix">
+      <b>这条缺陷已修（2026-10-22）</b>：控件挪到右下角之后，右下角的自绘地名会被罗盘压掉一截（原截图右侧「…nwei」、「Guangzh…」）。
+      现在把 SDK 控件的实际占位（缩放钮 / 罗盘 / 比例尺 / 腾讯 logo 与审图号）量成<b>避让区</b>：文字先试右侧、撞控件就翻左侧、两边都不行才丢弃，圆点本身落在控件底下的干脆不画 —— 宁可少一条，也不出半截字。
+      探针新增 3 条断言守它（避让区已量到、英文不压控件、繁体不压控件）。
+    </div>
+  </div>
+
+  <footer>
+    截图：1280×900 · 广州市 23.1291,113.2644 · 2026-10-22 · 晚霞 · 简体/英文/繁体各一<br>
+    数值全部来自运行时实测（__gcLabels / __gcMap.getZoom），非估算。
+  </footer>
+</div>
+</body>
+</html>

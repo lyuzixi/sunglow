@@ -4,13 +4,19 @@ import HeroSection from "../components/HeroSection.vue";
 import ConclusionCard from "../components/ConclusionCard.vue";
 import TrendSection from "../components/TrendSection.vue";
 import MapView from "../components/MapView.vue";
+import ComparePanel from "../components/ComparePanel.vue";
 import FactorsPanel from "../components/FactorsPanel.vue";
 import CalibPanel from "../components/CalibPanel.vue";
-import { state, hasSavedCity } from "../state";
+import RayDetail from "../components/RayDetail.vue";
+import NotesCard from "../components/NotesCard.vue";
+import { state, hasSavedCity, reanchorToday } from "../state";
 import { nearestCity, cityByName, CITIES } from "../core/city";
 import { runForecast } from "../core/forecast";
+import { cityTz, todayInTz } from "../core/tz";
 import { snapEncode, snapDecode, type SnapInput, type SnapData } from "../core/snap";
+import { SNAP_FAC_NAME, snapFacFmt, judgmentOf } from "../core/factors";
 import { t } from "../core/i18n";
+import { pointName } from "../core/citylang";
 import { armReveal } from "../composables/useReveal";
 import { applyUrlState, syncUrl, baseQuery, readUrl } from "../core/urlstate";
 
@@ -19,14 +25,15 @@ const snapMsg = ref("");
 const copied = ref(false);
 const snapView = ref<SnapData | null>(null);
 
-async function run() {
+async function run(force = false) {
   state.loading = true;
   state.error = "";
   try {
     const r = await runForecast({
       city: state.city,
       dateStr: state.dateStr,
-      period: state.period
+      period: state.period,
+      force
     });
     if (!r.ok) {
       state.error = r.error;
@@ -56,6 +63,7 @@ function refreshSnap() {
     lon: r.city.lon,
     name: r.city.name,
     region: r.city.region,
+    offsetS: r.tz.offsetSec,
     P: r.P,
     Q: r.Q,
     consist: r.consist,
@@ -112,6 +120,14 @@ watch(
   }
 );
 
+/* 换城市：日期若还停在「上一座城市的今天」，就跟到新城市的今天 */
+watch(
+  () => state.city,
+  (n, o) => {
+    if (n && o && n.name !== o.name) reanchorToday(o);
+  }
+);
+
 /* ---------- 默认城市：用户当前定位；不可用则广州市 ---------- */
 function geoOnce(timeout = 3500): Promise<{ lat: number; lon: number } | null> {
   return new Promise((resolve) => {
@@ -135,8 +151,18 @@ function geoOnce(timeout = 3500): Promise<{ lat: number; lon: number } | null> {
 async function resolveCity(): Promise<void> {
   const u = readUrl();
   if (u.lat != null && u.lon != null) {
+    /* URL 里只带 name / lat / lon，**省区没进 URL** —— 早前直接拼对象，分享链接打开后
+       城市名后面就少了「· 广东省」。坐标能对上城市库就用库里的条目（省区与规范名一起回来），
+       对不上（地图点选/任意坐标）就按最近城市补省区。 */
+    const hit = cityByName(u.name || "");
+    if (hit && Math.abs(hit.lat - u.lat) < 0.01 && Math.abs(hit.lon - u.lon) < 0.01) {
+      state.city = hit;
+      return;
+    }
+    const near = nearestCity(u.lat, u.lon, CITIES);
     state.city = {
-      name: u.name || "我的位置", lat: u.lat, lon: u.lon, region: ""
+      name: u.name || "我的位置", lat: u.lat, lon: u.lon,
+      region: near && near.distKm <= 200 ? near.city.region : ""
     };
     return;
   }
@@ -153,6 +179,14 @@ async function resolveCity(): Promise<void> {
 
 onMounted(async () => {
   await resolveCity();
+  /* 默认日期按**城市当地**的今天（不是浏览器今天）：北京时间 10-21 时，
+     纽约此刻可能还是 10-20，用本机日期会默认「明天」。URL 明确给了 date 就不动。 */
+  const u = readUrl();
+  if (!u.date) {
+    const t0 = todayInTz(cityTz(state.city.lat, state.city.lon));
+    state.dateStr = t0;
+    state.mapDateS = t0;
+  }
   if (!tryLoadSnap()) run();
   armReveal();
 });
@@ -170,13 +204,13 @@ onMounted(async () => {
     </div>
   </div>
 
-  <!-- 快照结果卡：与原版 renderSnap 同信息集，打开快照不重新取数 -->
+  <!-- 快照结果卡：与V1 renderSnap 同信息集，打开快照不重新取数 -->
   <section v-if="snapView" class="section" style="padding-top: 8px">
     <div class="wrap">
       <div class="glass snap-card">
         <div class="pill">{{ t("快照模式") }} · SNAP_VER=1</div>
         <h2 style="margin: 12px 0 6px">
-          {{ snapView.name }} {{ snapView.date }}
+          {{ pointName(snapView.name, state.lang) }} {{ snapView.date }}
           {{ snapView.period === "am" ? t("朝霞") : t("晚霞") }}
         </h2>
         <p class="snap-sub">
@@ -205,9 +239,10 @@ onMounted(async () => {
         </div>
         <div v-if="snapView.factors.length" class="snap-fac">
           <div v-for="f in snapView.factors" :key="f.k" class="sf">
-            <span>{{ f.k }}</span>
-            <b>{{ f.v }}</b>
-            <i :style="{ width: f.s * 100 + '%' }" />
+            <span>{{ t(SNAP_FAC_NAME[f.k] || f.k) }}</span>
+            <b>{{ snapFacFmt(f.k, f.v) }}</b>
+            <em class="fj" :class="judgmentOf(f.s).cls">{{ t(judgmentOf(f.s).key) }}</em>
+            <i :style="{ width: (f.s != null ? f.s * 100 : 0) + '%' }" />
           </div>
         </div>
         <button class="btn btn-primary" style="margin-top: 16px" @click="snapView = null; run()">
@@ -218,11 +253,14 @@ onMounted(async () => {
   </section>
 
   <template v-else>
-    <ConclusionCard class="reveal" />
+    <ConclusionCard class="reveal" @refetch="run(true)" />
     <TrendSection class="reveal" />
     <MapView class="reveal" />
+    <ComparePanel class="reveal" />
     <FactorsPanel class="reveal" />
     <CalibPanel class="reveal" />
+    <RayDetail class="reveal" />
+    <NotesCard class="reveal" />
   </template>
 
   <section class="section" style="padding-top: 0">
@@ -231,7 +269,7 @@ onMounted(async () => {
         <div>
           <h3 style="margin: 0 0 6px">{{ t("分享快照") }}</h3>
           <p style="margin: 0; color: var(--tx-2); font-size: var(--fs-small)">
-            {{ t("生成的链接与原版互通（SNAP_VER=1），对方无需重新取数即可查看。") }}
+            {{ t("生成的链接与V1互通（SNAP_VER=1），对方无需重新取数即可查看。") }}
           </p>
         </div>
         <button class="btn btn-primary" :disabled="!snapUrl" @click="copySnap">
@@ -266,7 +304,7 @@ onMounted(async () => {
 }
 .sf {
   display: grid;
-  grid-template-columns: 120px 1fr 90px;
+  grid-template-columns: 150px 1fr auto 90px;
   gap: 10px;
   align-items: center;
   font-size: var(--fs-small);
@@ -276,5 +314,29 @@ onMounted(async () => {
   height: 5px;
   border-radius: 3px;
   background: var(--spectrum);
+}
+/* 判定 pill（与因素面板同款） */
+.fj {
+  font-style: normal;
+  font-size: var(--fs-tiny);
+  line-height: 1.6;
+  padding: 1px 9px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+.j-ok { color: var(--q-good); }
+.j-mid { color: var(--q-mid); }
+.j-bad { color: var(--q-bad); }
+.j-miss { color: var(--tx-3); }
+@media (max-width: 640px) {
+  .sf {
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "name judge" "val bar";
+  }
+  .sf span { grid-area: name; }
+  .sf b { grid-area: val; }
+  .sf .fj { grid-area: judge; justify-self: end; }
+  .sf i { grid-area: bar; }
 }
 </style>

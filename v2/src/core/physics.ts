@@ -1,12 +1,13 @@
 /* =========================================================================
    GLOWCAST v2 · 物理模型
-   口径来源：原版 _p3.js —— 气溶胶垂直分布 / 光学等效地表高度 / 光路消光积分 /
+   口径来源：V1 _p3.js —— 气溶胶垂直分布 / 光学等效地表高度 / 光路消光积分 /
    CIE 色度 / 云层与几何。函数体逐语义移植。
    ========================================================================= */
 import {
   RE, DEG, RAD, RAY_OD550_V, H_RAY, ANGSTROM, K_TH,
   clamp, clamp01, lerp, isNum, nz
 } from "./math";
+import { t } from "./i18n";
 
 /* ---- 气溶胶消光系数标高 ---- */
 export function aerosolScaleHeight(blhM: number | null | undefined): number {
@@ -173,6 +174,26 @@ function deckTypeName(level: number, h: number, cover: number): string {
   }
   if (level === 1) return h < 4.2 ? "高积云" : "高层云";
   return cover >= 70 ? "卷层云" : "卷云";
+}
+
+/**
+ * 云型长格式：卷云（低云 0% / 中云 0% / 高云 48%）
+ * 与V1 deckTxt 同式（_p5b.js renderHero）；covers 顺序＝低/中/高。
+ * 缺 covers 时只回云型名（旧地图缓存兜底），缺 type 回「—」。
+ */
+export function typeDetail(
+  type: string,
+  covers: ArrayLike<number | null> | null | undefined
+): string {
+  if (!type) return "—";
+  if (!covers || covers.length < 3) return t(type);
+  const txt = ["低云", "中云", "高云"]
+    .map((nm, i) => {
+      const v = Number(covers[i]);
+      return t(nm) + " " + (covers[i] == null || !isFinite(v) ? "—" : Math.round(v)) + "%";
+    })
+    .join(" / ");
+  return t(type) + "（" + txt + "）";
 }
 
 export interface EnvLike {

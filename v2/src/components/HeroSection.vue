@@ -3,6 +3,8 @@ import { computed, ref, onMounted } from "vue";
 import { state } from "../state";
 import { t } from "../core/i18n";
 import { searchCity, type City } from "../core/city";
+import { cityName, cityWithRegion, regionName } from "../core/citylang";
+import DatePicker from "./DatePicker.vue";
 
 const q = ref("");
 const suggestions = ref<City[]>([]);
@@ -77,7 +79,7 @@ onMounted(() => {
               :placeholder="t('搜索城市')"
               @input="onInput"
               @focus="onInput"
-              aria-label="搜索城市"
+              :aria-label="t('搜索城市')"
             />
             <button class="mini" @click="useGeo" :title="t('使用我的位置')" :aria-label="t('使用我的位置')">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
@@ -88,18 +90,18 @@ onMounted(() => {
             </button>
             <div v-if="showSug" class="sug glass">
               <button v-for="c in suggestions" :key="c.name" @click="pick(c)">
-                <b>{{ c.name }}</b>
-                <span>{{ c.region }}</span>
+                <b>{{ cityName(c.name, state.lang) }}</b>
+                <span>{{ regionName(c.region, state.lang) }}</span>
               </button>
             </div>
           </div>
 
           <div class="field" style="min-width: 150px">
             <span aria-hidden="true">▤</span>
-            <input type="date" v-model="state.dateStr" aria-label="日期" />
+            <DatePicker v-model="state.dateStr" :aria-label="t('日期')" />
           </div>
 
-          <div class="seg" role="group" aria-label="时段">
+          <div class="seg" role="group" :aria-label="t('时段')">
             <button
               :class="{ on: state.period === 'am' }"
               :aria-pressed="state.period === 'am'"
@@ -122,7 +124,7 @@ onMounted(() => {
         </div>
 
         <div class="hero-city">
-          {{ state.city.name }} · {{ state.city.region }}
+          {{ cityWithRegion(state.city.name, state.city.region, state.lang) }}
           <span v-if="res">· {{ res.dateStr }} {{ res.period === "am" ? t("朝霞") : t("晚霞") }}</span>
           <span v-if="res && res.src === 'mock'" class="pill" style="margin-left: 8px">MOCK</span>
         </div>
