@@ -2,7 +2,7 @@
    GLOWCAST v2 · 预报编排
    把「取数 → 样带 → 三套算法 → 综合」串成一次可渲染的结果。
    模型口径：GFS/EC 走统计判据模型（scoreStat，参数微扰制造分歧），
-   光追走纯物理模型（scoreRay）。权重 W_ENS 与原版一致。
+   光追走纯物理模型（scoreRay）。权重 W_ENS 与V1一致。
    ========================================================================= */
 import { clamp, isNum, nz, destPoint, haversineKm, ymd, wgeo } from "./math";
 import { sunEvents, sunAltRate, solarPosition, type SunEvents } from "./astro";
@@ -11,6 +11,7 @@ import {
   W_ENS, type Env, type StatResult, type RayResult, type EnsBand, type SeriesReader
 } from "./scoring";
 import { analyseTransect, type TransectPt } from "./physics";
+import { facRowsOf, type FacRow } from "./factors";
 import {
   fetchForecastBundle, makeMockBundle, makeReader, pressureTrend, alongComponent,
   withBudget
@@ -20,6 +21,9 @@ import { MAP_TZ } from "./mapdata";
 import { makeSeries, mergeSeries, type Series } from "./series";
 import { primaryDeckOf } from "./scoring";
 import type { City } from "./city";
+import {
+  cityTz, rememberTz, wallIsoToReal, tzAt, type TzInfo
+} from "./tz";
 
 export interface ModelRow {
   id: "gfs" | "ec" | "rt";
@@ -33,6 +37,8 @@ export interface ForecastResult {
   dateStr: string;
   period: "am" | "pm";
   city: City;
+  /** 该结果所属城市时区 —— 页面上所有时刻都按它显示 */
+  tz: TzInfo;
   evName: string;
   evMs: number;
   evAz: number;
@@ -52,7 +58,7 @@ export interface ForecastResult {
   spread: number | null;
   spreadQ: number | null;
   conf: EnsBand;
-  factorRows: Array<[string, number, number]>;
+  factorRows: FacRow[];
   src: "live" | "mock" | "cache";
 }
 export interface ForecastFail { ok: false; error: string }
@@ -86,9 +92,9 @@ async function fetchTransect(
   const arr = Array.isArray(j) ? j : [j];
   return arr.map((item, i) => {
     const hh = (item as { hourly?: Record<string, unknown> }).hourly || {};
-    const times = ((hh.time || []) as string[]).map((s) =>
-      Date.parse(String(s).length === 16 ? s + ":00" : s)
-    );
+    const offRaw = (item as { utc_offset_seconds?: number }).utc_offset_seconds;
+    const off = isNum(offRaw) ? offRaw : 0;
+    const times = ((hh.time || []) as string[]).map((s) => wallIsoToReal(String(s), off));
     const hourly: Record<string, Array<number | null>> = {};
     for (const v of vars.split(",")) {
       const a = hh[v];
@@ -98,7 +104,7 @@ async function fetchTransect(
     }
     return {
       lat: pts[i].lat, lon: pts[i].lon,
-      reader: makeReader({ hourly, times, timezone: "auto", tzOffsetSec: 0, source: "live" })
+      reader: makeReader({ hourly, times, timezone: "", tzOffsetSec: off, source: "live" })
     };
   });
 }
@@ -130,10 +136,12 @@ function mockTransect(
 /* =========================================================================
    单点取数缓存（B1 口径）：日期 + 时段 + 坐标（0.1°，约 11 km）
    —— 页面每次打开都会跑一次单点预报，没有这层缓存就等于每次开页都重取
-   17 个样带点 × 3 路（≈50+ 加权调用）。TTL 3 小时，LRU 上限 12 条。
+   17 个样带点 × 3 路（51 次加权调用）。TTL 6 小时，LRU 上限 12 条。
    ========================================================================= */
-const POINT_CACHE_PREFIX = "glowcast.v2.point.v1.";
-const POINT_CACHE_TTL = 3 * 3600000;
+/* v2：时间轴改为「城市墙钟 → 真实时间戳」，旧缓存里的时刻是错位的，一律作废 */
+const POINT_CACHE_PREFIX = "glowcast.v2.point.v2.";
+/* 6 小时：GFS/EC 本身 6 小时一轮，3 小时的 TTL 等于有一半时间在重复取同一份数据 */
+const POINT_CACHE_TTL = 6 * 3600000;
 const POINT_CACHE_MAX = 12;
 
 function pointKeyOf(lat: number, lon: number, dateStr: string, period: string): string {
@@ -153,7 +161,28 @@ export function pointCacheGet(
     if (typeof o.P !== "number" || typeof o.Q !== "number") return null;
     if (!Array.isArray(o.models) || !o.models.length) return null;
     if (o.dateStr !== dateStr || o.period !== period) return null;
+    /* 时区字段缺失 = 跨版本的旧结构，时刻不可信；偏移不是 15 分钟整数倍的
+       是算坏的脏缓存，同样作废 */
+    const z = o.tz as TzInfo | undefined;
+    if (!z || typeof z.offsetSec !== "number") return null;
+    if (Math.abs(z.offsetSec) > 14 * 3600 || z.offsetSec % 900 !== 0) return null;
     return o;
+  } catch {
+    return null;
+  }
+}
+
+/** 缓存条目的年龄（毫秒）；没有可用条目返回 null。用于「缓存 · N 分钟前」提示。 */
+export function pointCacheAge(
+  lat: number, lon: number, dateStr: string, period: "am" | "pm"
+): number | null {
+  try {
+    const s = localStorage.getItem(pointKeyOf(lat, lon, dateStr, period));
+    if (!s) return null;
+    const j = JSON.parse(s);
+    if (!j || !isNum(j.ts)) return null;
+    const age = Date.now() - j.ts;
+    return age < 0 || age > POINT_CACHE_TTL ? null : age;
   } catch {
     return null;
   }
@@ -211,18 +240,22 @@ export async function runForecast(opts: {
     if (hit) return { ...hit, src: "cache" };
   }
   const [Y, M, D] = dateStr.split("-").map(Number);
+  /* 日期键（UTC 域，只用来算日序与缓存键）与太阳事件锚点（城市当地零点）分开：
+     锚点必须落在城市当地的 0 点，sunEvents 的 24 小时搜索窗才一定包含当地正午。 */
   const dayMs = Date.UTC(Y, M - 1, D);
+  const tz0 = cityTz(city.lat, city.lon);
+  const dayAnchor = dayMs - tz0.offsetSec * 1000;
   let src: "live" | "mock" = "live";
 
-  const events = sunEvents(dayMs, city.lat, city.lon);
+  const events = sunEvents(dayAnchor, city.lat, city.lon);
   const evMs =
-    (period === "am" ? events.riseMs : events.setMs) ?? dayMs + 12 * 3600000;
+    (period === "am" ? events.riseMs : events.setMs) ?? dayAnchor + 12 * 3600000;
   const evName = period === "am" ? "日出" : "日落";
   const evAz = solarPosition(evMs, city.lat, city.lon).azimuth;
   const omega = sunAltRate(evMs, city.lat, city.lon);
   const leadH = (evMs - Date.now()) / 3600000;
 
-  /* ---- 取数：沿样带 17 点 ×（GFS / EC / AQ）—— 与原版单点口径同构 ---- */
+  /* ---- 取数：沿样带 17 点 ×（GFS / EC / AQ）—— 与V1单点口径同构 ---- */
   const transectPts = TRANSECT.map((d) => {
     const p = d === 0 ? { lat: city.lat, lon: city.lon } : destPoint(city.lat, city.lon, evAz, d);
     return { lat: p.lat, lon: p.lon, d };
@@ -232,6 +265,7 @@ export async function runForecast(opts: {
   let sG: (Series | null)[] = ptsLL.map(() => null);
   let sE: (Series | null)[] | null = null;
   let sA: (Series | null)[] | null = null;
+  let tz: TzInfo = tz0;
   try {
     if (opts.useMock) throw new Error("mock");
     sG = await withBudget(
@@ -249,6 +283,13 @@ export async function runForecast(opts: {
     sG = ptsLL.map(() => rd as unknown as Series);
     sE = null;
     sA = null;
+    tz = { iana: null, offsetSec: bundle.tzOffsetSec, est: true };
+  }
+  /* 接口回来的时区是权威值：校准并记住（同一坐标下次开页就不用再估） */
+  const tzLive = sG.find((x): x is Series => !!x)?.tz;
+  if (src === "live" && tzLive && !tzLive.est) {
+    tz = tzAt(tzLive, evMs);
+    rememberTz(city.lat, city.lon, tz.iana, tz.offsetSec);
   }
   const sM: (Series | null)[] = sG.map((g, i) => mergeSeries(g, sE ? sE[i] : null));
 
@@ -289,7 +330,9 @@ export async function runForecast(opts: {
 
   const lv = (o: { primary: { key: string } }) =>
     o.primary.key as "cLow" | "cMid" | "cHigh";
-  const sRT = scoreRay(envM, analyseTransect(trM, lv(primaryDeckOf(envM))), ctx);
+  /* aM 是合并样带的分析结果：block 因素的原始值（上游低云最大量）要从这里拿 */
+  const aM = analyseTransect(trM, lv(primaryDeckOf(envM)));
+  const sRT = scoreRay(envM, aM, ctx);
   const sGv = scoreStat(envG, analyseTransect(trG, lv(primaryDeckOf(envG))), ctx);
   const sEv = envE
     ? scoreStat(envE, analyseTransect(trE, lv(primaryDeckOf(envE))), ctx)
@@ -303,7 +346,7 @@ export async function runForecast(opts: {
     ] as ModelRow[]
   ).filter((r) => isNum(r.P));
 
-  /* 综合＝非空子集按 W_ENS 的加权几何平均（与原版 once() 一致） */
+  /* 综合＝非空子集按 W_ENS 的加权几何平均（与V1 once() 一致） */
   const parts: Array<[number, number]> = [[sGv.P, W_ENS.gfs]];
   if (sEv) parts.push([sEv.P, W_ENS.ec]);
   parts.push([sRT.P, W_ENS.rt]);
@@ -321,29 +364,36 @@ export async function runForecast(opts: {
   const dvFinal = validN >= 2 ? dvI : null;
   const conf = ensConfOf(dvFinal);
 
-  /* 一致性＝100 − ΔI×1.9（原版同式）：斜率 1.9 是口径的一部分，缺了会把分歧大幅低估 */
+  /* 一致性＝100 − ΔI×1.9（V1同式）：斜率 1.9 是口径的一部分，缺了会把分歧大幅低估 */
   const consist = clamp(100 - (dvFinal ?? 0) * 1.9, 0, 100);
 
-  /* 因素行（键, 原始值, 得分）—— 供快照与因素面板 */
-  const primary = sRT.primary;
-  const factorRows: Array<[string, number, number]> = [
-    ["cover", primary.cover, nz(sRT.coverF, 0)],
-    ["base", primary.base, nz(sGv.f.base, 0)],
-    ["heq", sRT.Heq, 0.5],
-    ["heff", sRT.hEff, 0.5],
-    ["dedge", nz(sRT.d, 0), nz(sRT.geomF, 0)],
-    ["block", nz(sGv.f.block, 1) * 100, nz(sGv.f.block, 1)],
-    ["aod", nz(sRT.aodUp, 0), nz(sRT.aeroF, 0)],
-    ["vis", nz(envM.vis, 0), nz(sGv.f.vis, 0)],
-    ["rh", nz(envM.RH, 0), nz(sGv.f.hum, 0)],
-    ["stab", nz(dP, 0), nz(sGv.f.stab, 0)],
-    ["wind", nz(v, 0), 0.5],
-    ["cape", nz(envM.cape, 0), 0.5]
-  ];
+  /* 因素行（键, 原始值, 展示得分）—— 供快照与因素面板。
+     原始值一律保留 null（缺数就是缺数，不许压成 0 —— 否则面板会把「无边界」
+     画成 0 km）。展示曲线与富文本值的口径唯一来源是 core/factors.ts。 */
+  const factorRows: FacRow[] = facRowsOf({
+    type: sRT.primary.type, level: sRT.primary.level,
+    base: sRT.primary.base, cover: sRT.primary.cover,
+    Heq: isNum(sRT.Heq) ? sRT.Heq : null,
+    Hs: isNum(sRT.Hs) ? sRT.Hs : null,
+    hEff: isNum(sRT.hEff) ? sRT.hEff : null,
+    d: isNum(sRT.d) ? sRT.d : null,
+    xMax: isNum(sRT.geom.xMax) ? sRT.geom.xMax : null,
+    geomOk: !!sRT.geom.ok,
+    lowBlock: isNum(aM.upstreamLowMax) ? aM.upstreamLowMax
+      : isNum(envM.cLow) ? envM.cLow : null,
+    aod: isNum(sRT.aodUp) ? sRT.aodUp : null,
+    vis: isNum(envM.vis) ? envM.vis : null,
+    rh: isNum(envM.RH) ? envM.RH : null,
+    dP: isNum(dP) ? dP : null,
+    windComp: isNum(v) ? v : null,
+    cape: isNum(envM.cape) ? envM.cape : null,
+    precip: isNum(envM.precip) ? envM.precip : null,
+    consist, dvI: dvFinal, spread, spreadQ
+  });
 
   const out: ForecastResult = {
     ok: true,
-    dateStr, period, city,
+    dateStr, period, city, tz,
     evName, evMs, evAz, events,
     leadH, omega,
     envM, sRT, sG: sGv, sE: sEv,
