@@ -53,3 +53,6 @@ v2/.mockups/.shots/
 v2/.mockups/.build/
 # Skyglow 运行期缓存：页面打开时按需重建，体量大且天天变。
 Skyglow/data/cache/
+# ERA5 历史格点场：tools/fetch_grid.py 随时可重下（README 标注「回测用 · 可选」），
+# 22 个 .gz 约 4.6 MB，属"能重新生成"的典型，不入库。
+Skyglow/data/era5/
