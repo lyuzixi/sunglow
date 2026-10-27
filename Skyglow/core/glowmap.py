@@ -293,4 +293,10 @@ def local(lat, lon, d, mode, nat=None):
     payload = {
         "scope": "local", "date": d.isoformat(), "mode": mode,
         "bbox": [lon0, lat0, lon0 + 2 * half, lat0 + 2 * half],
-        "step": step, "nx": nx, "ny": ny, "center": [lat
+        "step": step, "nx": nx, "ny": ny, "center": [lat, lon],
+        "sources": res, "failed": _missing(res), "sources_meta": _meta(),
+        "source": "Open-Meteo forecast" if use_forecast else "ERA5 archive",
+        "generated_at": datetime.now().isoformat(timespec="seconds"), "cached": False,
+    }
+    _save(key, payload)
+    return payload

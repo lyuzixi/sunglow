@@ -139,4 +139,11 @@ def main():
         })
     path = os.path.join(DATA, "backtest_features.csv")
     with open(path, "w", newline="", encoding="utf-8-sig") as fp:
-        wr = csv.DictWriter(fp, fieldnames=list(out[0]
+        wr = csv.DictWriter(fp, fieldnames=list(out[0].keys()))
+        wr.writeheader()
+        wr.writerows(out)
+    print("rows", len(out), "->", path)
+
+
+if __name__ == "__main__":
+    main()

@@ -311,4 +311,20 @@
    "tss": 0.0,
    "precision": 0.0,
    "recall": 0.0,
-   "mean_pred
+   "mean_pred": 0.1334,
+   "obs_rate": 0.2321
+  },
+  "test": {
+   "n": 366,
+   "auc": 0.7941,
+   "brier": 0.1735,
+   "accuracy": 0.7568,
+   "tss": 0.0,
+   "precision": 0.0,
+   "recall": 0.0,
+   "mean_pred": 0.1074,
+   "obs_rate": 0.2432
+  }
+ },
+ "trained_on": "sunsetbot 再分析全量 2022-06-24..2023-12-30（1109 条）"
+}

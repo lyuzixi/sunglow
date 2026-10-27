@@ -27,4 +27,7 @@ python server.py %SKYGLOW_PORT%
 goto :done
 
 :usepy
-py -3 server.py
+py -3 server.py %SKYGLOW_PORT%
+
+:done
+pause

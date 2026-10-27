@@ -120,4 +120,8 @@ def clear(kind=None):
         if kind and not fn.startswith(kind + "__"):
             continue
         try:
-        
+            os.unlink(os.path.join(DIR, fn))
+            removed += 1
+        except OSError:
+            pass
+    return removed

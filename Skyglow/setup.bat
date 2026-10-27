@@ -67,4 +67,6 @@ exit /b 1
 :verifyfail
 echo.
 echo [!] Packages installed but the import check failed.
-echo     Check the messages abo
+echo     Check the messages above, then run run.bat and look at the startup banner.
+pause
+exit /b 1
