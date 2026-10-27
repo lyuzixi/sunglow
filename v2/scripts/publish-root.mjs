@@ -3,7 +3,7 @@
    链在 build 之后自动跑：vite build && emit-single.mjs && publish-root.mjs
 
    背景（2026-10-26 拍板）：V2 是项目主线，交付物落到仓库根——根 index.html
-   即线上站点，V1/、v3/、Skyglow/ 退为同级归档。源码工程留在 v2/（构建需要
+   即线上站点，V1/、Skyglow/ 退为同级归档。源码工程留在 v2/（构建需要
    manifest.webmanifest / icon-192.png 等输入在场），根目录是发布副本。
 
    做法：7 个交付文件从 v2/ 拷贝到仓库根，逐文件 sha256 校验；
@@ -30,10 +30,10 @@ const FILES = [
   "icon-512.png",
 ];
 
-/* 根副本位于仓库根，同级目录（V1/、v3/、Skyglow/）都不该出现 ../ 前缀链接；
+/* 根副本位于仓库根，同级目录（V1/、Skyglow/）都不该出现 ../ 前缀链接；
    页脚「切换到V1」在源码里就写 V1/index.html（2026-10-26 拍板：源码直接改），
    所以根产物里任何 ../ 跨目录链接都视为回归。 */
-const BAD_PATTERNS = ["../V1/", "../v2/", "../v3/", "../Skyglow/"];
+const BAD_PATTERNS = ["../V1/", "../v2/", "../Skyglow/"];
 
 const sha256 = (p) => crypto.createHash("sha256").update(fs.readFileSync(p)).digest("hex");
 

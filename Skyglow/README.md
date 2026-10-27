@@ -1,4 +1,7 @@
 # 霞光 Skyglow · 火烧云概率预报（发布版）
+
+> 本文是 [霞光预报 sunglow](../README.md) 的其中一版：Skyglow 发布版。
+
 <img width="987" height="194" alt="屏幕截图 2026-10-18 134237" src="https://github.com/user-attachments/assets/43e81c60-444a-4a05-bae7-1ee1a71f65ed" />
 
 > 本目录为**脱敏发布版**：不含任何 API Key、令牌、私钥或账户标识。

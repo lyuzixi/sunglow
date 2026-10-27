@@ -289,7 +289,7 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
     </nav>
     <div class="sidefoot">
       依据：仓库当前工作区源码逐行核对（2026-10-26）<br>
-      覆盖：V1 / v2 / Skyglow；v3 不在范围内
+      覆盖：V1 / v2 / Skyglow
     </div>
   </aside>
 
@@ -297,12 +297,12 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
   <div class="wrap">
 
   <header class="hero">
-    <span class="kicker">CODE WIKI · 生成于 2026-10-26</span>
+    <span class="kicker">CODE WIKI · 生成于 2026-10-26 · 修订于 2026-10-27</span>
     <h1>霞光预报 <span class="g">sunglow</span><br>工程代码地图</h1>
     <p class="lede">
       一个「预测朝霞 / 晚霞（火烧云）出现概率与观赏质量」的气象可视化产品家族。
-      仓库里并存<b>四套互相隔离的工程</b>：V1（单文件拼装，算法权威）、v2（Vue 主线，交付落仓库根）、
-      v3（追光航志，本文不展开）与 Skyglow（Python 服务端定量版）。
+      仓库里并存<b>三套互相隔离的工程</b>：V1（单文件拼装，算法权威）、v2（Vue 主线，交付落仓库根）
+      与 Skyglow（Python 服务端定量版）。
       本文档把三套主工程的<b>架构、模块职责、关键类与函数、依赖关系、运行方式</b>整理成一张可检索的地图，
       并在末尾给出对该项目的理解与可执行的改进清单。
     </p>
@@ -392,7 +392,7 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
 
       <div class="callout">
         <span class="tt">覆盖边界</span>
-        本文只写 V1、v2、Skyglow 三套工程；<code>v3/</code>（追光航志）按约定不展开，仅在格局对照表中一行带过。
+        本文写 V1、v2、Skyglow 三套工程。
         仓库内既有的两份方案文档（<span class="ref">项目架构与技术实现方案.md</span>、<span class="ref">Skyglow-项目架构与技术实现方案.md</span>）
         是本文的重要交叉来源，本文在其基础上补齐了 Skyglow 的 core/tools 细节与三套工程的运行方式，并加入了我自己的判读与改进清单。
       </div>
@@ -424,7 +424,7 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
         </table>
       </div>
 
-      <h3 id="four-projects">2.2 四套工程格局（一图看懂）</h3>
+      <h3 id="three-projects">2.2 三套工程格局（一图看懂）</h3>
       <div class="table-wrap">
         <table>
           <thead><tr><th>工程</th><th>形态</th><th>构建链</th><th>交付产物</th><th>定位</th></tr></thead>
@@ -444,13 +444,6 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
               <td><strong>项目主线</strong>：视觉重做，算法口径与 V1 逐点对齐</td>
             </tr>
             <tr>
-              <td><b>v3</b> <span class="ref">v3/</span></td>
-              <td>Vue 3 + Vite（独立工程）</td>
-              <td>Vite 双轨（多文件 + standalone）</td>
-              <td><code>dist/</code> + <code>standalone.html</code></td>
-              <td>「追光航志」指挥台版，画布航图不接地图 SDK（本文不展开）</td>
-            </tr>
-            <tr>
               <td><b>Skyglow</b> <span class="ref">Skyglow/</span></td>
               <td>Python 标准库 HTTP 服务 + 原生 JS/Canvas 前端（无构建）</td>
               <td>无（解释器直接跑）</td>
@@ -463,10 +456,10 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
 
       <div class="callout warm">
         <span class="tt">隔离是怎么做到的</span>
-        四套前端靠 <b>localStorage 键命名空间</b>互不读写：V1 用 <code>sunsetbot.*</code>，
-        v2 用 <code>glowcast.v2.*</code>，v3 用 <code>glowcast.v3.*</code>；
+        前端靠 <b>localStorage 键命名空间</b>互不读写：V1 用 <code>sunsetbot.*</code>，
+        v2 用 <code>glowcast.v2.*</code>；
         Skyglow 的状态在服务端 <code>data/</code> 目录（文件缓存），前端只持有会话内的 state。
-        这条纪律的直接好处：同一浏览器里同时开着四套，任何一套的偏好、缓存、校准都不会串味。
+        这条纪律的直接好处：同一浏览器里同时开着三套，任何一套的偏好、缓存、校准都不会串味。
       </div>
 
       <h3 id="timeline">2.3 演进时间线（据仓库文档与产物时间戳）</h3>
@@ -977,9 +970,9 @@ PWA=1 SITE_BASE=sunglow python assemble.py  <span class="c"># 可选 PWA 四件�
           <tbody>
             <tr><td><span class="badge b-p1">P1</span></td><td>单文件全局作用域：7 个片段互相依赖顶层符号，靠 4 块不变量与 globals 探针兜底</td><td><span class="ref">V1/assemble.py:63</span> · <span class="ref">V1/_check/globals.js</span></td><td>新增全局名可能静默覆盖；重构自由度低</td></tr>
             <tr><td><span class="badge b-p1">P1</span></td><td><code>_p6.js</code> 近 4000 行同时承载地图渲染、地图缓存、单点缓存三个职责</td><td><span class="ref">V1/_p6.js:1492-1607</span> · <span class="ref">V1/_p6.js:3094</span></td><td>改地图容易误伤缓存；阅读成本高</td></tr>
-            <tr><td><span class="badge b-p1">P1</span></td><td>V1 已封存但仍是算法权威，v2 靠冻结副本手工 diff，缺自动门禁</td><td><span class="ref">v2/vendor/src-verbatim/</span></td><td>V1 改动不会自动传导到 v2/v3；口径漂移只能靠人发现</td></tr>
+            <tr><td><span class="badge b-p1">P1</span></td><td>V1 已封存但仍是算法权威，v2 靠冻结副本手工 diff，缺自动门禁</td><td><span class="ref">v2/vendor/src-verbatim/</span></td><td>V1 改动不会自动传导到 v2；口径漂移只能靠人发现</td></tr>
             <tr><td><span class="badge b-p2">P2</span></td><td>文档行数/大小与当前源码有漂移（既有总览写 _p6 4066 行，实测 3958 行）</td><td><span class="ref">项目架构与技术实现方案.md</span></td><td>docfacts 可覆盖常量，但不覆盖所有叙述性数字</td></tr>
-            <tr><td><span class="badge b-p2">P2</span></td><td>纯静态部署时地图完全不可用，用户看到的是一段说明</td><td><span class="ref">V1/README.md §2.1</span></td><td>产品体验分裂；缓解方式是代理或改用 v2/v3 画布地图</td></tr>
+            <tr><td><span class="badge b-p2">P2</span></td><td>纯静态部署时地图完全不可用，用户看到的是一段说明</td><td><span class="ref">V1/README.md §2.1</span></td><td>产品体验分裂；缓解方式是代理或改用 v2 的地图实现</td></tr>
             <tr><td><span class="badge b-p2">P2</span></td><td>回归套件依赖固定 Node 路径与浏览器/CDP，CI 化成本高</td><td><span class="ref">V1/_check/all.py:48</span></td><td>本地可跑，但缺一条无人值守的流水线</td></tr>
           </tbody>
         </table>
@@ -1778,8 +1771,8 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
         <li>
           <b>口径单一权威 + 命名空间隔离。</b>
           <code>W_ENS / W_STAT / TRANSECT / mixedIndex / QUALITY_BANDS</code> 只有一份真值；
-          v2 用 <code>vendor/src-verbatim</code> 冻结 V1 七脚本作为 diff 基线；三套前端各占一个 localStorage 命名空间。
-          这让「四套工程并行」没有立刻烂成四个互不相干的玩具。
+          v2 用 <code>vendor/src-verbatim</code> 冻结 V1 七脚本作为 diff 基线；两套前端各占一个 localStorage 命名空间。
+          这让「三套工程并行」没有立刻烂成三个互不相干的玩具。
         </li>
         <li>
           <b>降级路径也要可解释。</b>
@@ -1827,7 +1820,7 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
         <li><b>单文件 vs 可安装 PWA。</b>物理上互斥，只能靠 <code>PWA=1</code> 的选项共存；但两套形态意味着两条测试路径（<code>pwaprobe</code> 已经在守，成本真实存在）。</li>
         <li><b>前端两套 vs 服务端一套的模型语义。</b>四档 vs 六档、分歧度 vs lead-time 置信度，用户在不同入口看到的「强度」并不等价。短期无害，长期会变成品牌级困惑。</li>
         <li><b>额度纪律 vs 体验。</b>「每次都显式触发」是省额度，但用户的第一印象常常是「怎么没自动出结果」。目前用缓存命中来缓冲，边界上有优化空间。</li>
-        <li><b>手工移植 vs 自动等价性。</b>v2/v3 的算法正确性建立在「当时对齐过」上，而不是「每次构建都验证」。这是当前体系里最大的隐性风险。</li>
+        <li><b>手工移植 vs 自动等价性。</b>v2 的算法正确性建立在「当时对齐过」上，而不是「每次构建都验证」。这是当前体系里最大的隐性风险。</li>
       </ol>
 
       <h3 id="first-week">10.6 如果由我接手：第一周会做的五件事</h3>
@@ -1876,7 +1869,7 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
             <tr><td class="n">R13</td><td><span class="badge b-p2">P2</span></td><td>Skyglow 单文件版与模块化版并行演化，无同步机制</td><td><span class="ref">Skyglow/tools/make_single.py</span></td><td>标记为构建产物 + 校验；见 I11</td></tr>
             <tr><td class="n">R14</td><td><span class="badge b-p2">P2</span></td><td>v2 <code>mapdata.ts</code> 注释写「v8 存储族」而前缀是 v9；<code>api.ts</code> 导出未被使用的代理常量</td><td><span class="ref">v2/src/core/mapdata.ts:5</span> · <span class="ref">v2/src/core/api.ts:11</span></td><td>顺手清理，避免下次升级踩到</td></tr>
             <tr><td class="n">R15</td><td><span class="badge b-p2">P2</span></td><td>既有总览文档的源码行数/体积与当前不一致（如 <code>_p6.js</code> 4066 vs 实测 3958）</td><td><span class="ref">项目架构与技术实现方案.md</span></td><td>把叙述性数字纳入 docfacts 或改为引用事实库</td></tr>
-            <tr><td class="n">R16</td><td><span class="badge b-p2">P2</span></td><td>V1 纯静态部署时地图不可用，与 v2/v3 体验分裂</td><td><span class="ref">V1/README.md §2.1</span></td><td>在存档页显式引导到 v2；或补一个无 SDK 的降级地图</td></tr>
+            <tr><td class="n">R16</td><td><span class="badge b-p2">P2</span></td><td>V1 纯静态部署时地图不可用，与 v2 体验分裂</td><td><span class="ref">V1/README.md §2.1</span></td><td>在存档页显式引导到 v2；或补一个无 SDK 的降级地图</td></tr>
             <tr><td class="n">R17</td><td><span class="badge b-p2">P2</span></td><td>V1 回归套件需要浏览器/CDP 与固定 Node 路径，难以无人值守</td><td><span class="ref">V1/_check/all.py:48</span></td><td>容器化运行环境；先记录「重活探针」清单</td></tr>
             <tr><td class="n">R18</td><td><span class="badge b-p2">P2</span></td><td>单文件产物 800 KB 级，首屏解析成本随内联数据增长</td><td><span class="ref">v2/src/core/citydata.ts</span> · <span class="ref">i18n-extra.ts</span></td><td>压缩内联数据（城市表可裁剪）；量测首屏 TTI 后再决定</td></tr>
           </tbody>
@@ -2042,7 +2035,7 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
       </ol>
     </div>
     <p style="margin-top:18px">
-      霞光预报 sunglow · Code Wiki · 生成于 2026-10-26 · 覆盖 V1 / v2 / Skyglow（v3 未展开）<br>
+      霞光预报 sunglow · Code Wiki · 生成于 2026-10-26 · 修订于 2026-10-27 · 覆盖 V1 / v2 / Skyglow<br>
       本文档为单文件自包含 HTML，无外部依赖；行号与数字对应生成时刻的工作区快照，源码变动后请以 <span class="ref">文件:行号</span> 复核。
     </p>
   </footer>
