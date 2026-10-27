@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { state, savePrefs, FOLD_KEYS } from "../state";
+import { state, savePrefs } from "../state";
 import { t } from "../core/i18n";
 import { cacheReport, clearCache, fmtBytes } from "../core/cache";
 import { ref as vueRef, onMounted as vueMounted } from "vue";
 
-const open = ref(false);
+/* 开合由顶栏统一管（顶栏同一时刻只开一个浮层），这里只声明状态 */
+const open = defineModel<boolean>({ default: false });
+const emit = defineEmits<{ toggle: [] }>();
 const cache = vueRef(cacheReport());
 const cleared = vueRef("");
 function refreshCache() { cache.value = cacheReport(); }
@@ -16,35 +17,8 @@ function doClear(kind: "point" | "map" | "trend" | "all") {
 }
 vueMounted(refreshCache);
 
-/* 地图显示开关（云纹/经纬网/直标/采样点）已移到观测场面板，不再进全局设置 */
-const BOOL_SHOWN = ["calibOff"] as const;
-
-const BOOL_LABEL: Record<string, string> = {
-  numLabels: "数值直标",
-  showPts: "采样点",
-  showTx: "云纹层",
-  showGrid: "经纬网",
-  hour12: "12 小时制",
-  calibOff: "关闭校准记录"
-};
-const FOLD_LABEL: Record<string, string> = {
-  rayFold: "收起光追详情",
-  notesFold: "收起附注",
-  heroFold: "收起结论卡",
-  trendFold: "收起趋势",
-  legendFold: "收起图例"
-};
-
-function toggle(k: string) {
-  (state as unknown as Record<string, boolean>)[k] =
-    !(state as unknown as Record<string, boolean>)[k];
-  if (k === "calibOff") state.calibOn = !state.calibOff;
-  savePrefs();
-}
-function toggleFold(k: string) {
-  state.folds[k] = !state.folds[k];
-  savePrefs();
-}
+/* 地图显示开关（云纹/经纬网/直标/采样点）在观测场面板；「关闭校准记录」开关已删，
+   校准的开关唯一入口在实况校准卡（setCalibOn，切换即写偏好）。 */
 function setHour12(on: boolean) {
   state.hour12 = on;
   savePrefs();
@@ -57,8 +31,12 @@ function setUnits(u: "metric" | "imperial") {
 
 <template>
   <div class="settings">
-    <button class="btn btn-ghost ico" @click="open = !open" :aria-expanded="open" :aria-label="t('设置')" :title="t('设置')">
-      ⚙
+    <button class="icon-btn" @click.stop="emit('toggle')" :aria-expanded="open" :aria-label="t('设置')" :title="t('设置')">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3" />
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+      </svg>
     </button>
     <div v-if="open" class="panel glass">
       <div class="grp">
@@ -84,30 +62,6 @@ function setUnits(u: "metric" | "imperial") {
       </div>
 
       <div class="grp">
-        <div class="grp-h">{{ t("显示") }}</div>
-        <label v-for="k in BOOL_SHOWN" :key="k" class="row">
-          <input
-            type="checkbox"
-            :checked="(state as any)[k]"
-            @change="toggle(k)"
-          />
-          <span>{{ t(BOOL_LABEL[k] || k) }}</span>
-        </label>
-      </div>
-
-      <div class="grp">
-        <div class="grp-h">{{ t("折叠默认") }}</div>
-        <label v-for="k in FOLD_KEYS" :key="k" class="row">
-          <input
-            type="checkbox"
-            :checked="!!state.folds[k]"
-            @change="toggleFold(k)"
-          />
-          <span>{{ t(FOLD_LABEL[k] || k) }}</span>
-        </label>
-      </div>
-
-      <div class="grp">
         <div class="grp-h">{{ t("取数缓存") }}</div>
         <div class="cstat">
           <span>{{ t("单点预报") }} {{ cache.point.n }}</span>
@@ -120,11 +74,11 @@ function setUnits(u: "metric" | "imperial") {
           <button class="btn btn-ghost sm" @click="refreshCache()">{{ t("刷新统计") }}</button>
         </div>
         <p v-if="cleared" class="ok">{{ cleared }}</p>
-        <p class="note">{{ t("缓存按「日期+时段+坐标」分键，单点 3 小时、地图/趋势 3 小时有效；清除后下次计算会重新取数。") }}</p>
+        <p class="note">{{ t("缓存按「日期+时段+坐标」分键，单点/地图/趋势均 6 小时有效；清除后下次计算会重新取数。") }}</p>
       </div>
 
       <p class="note">
-        {{ t("偏好存 glowcast.v2.pref，与原版 sunsetbot.pref.v1 相互独立。位置、日期与地图时段不持久化。") }}
+        {{ t("偏好存 glowcast.v2.pref，与V1 sunsetbot.pref.v1 相互独立。位置、日期与地图时段不持久化。") }}
       </p>
     </div>
   </div>
@@ -147,7 +101,6 @@ function setUnits(u: "metric" | "imperial") {
   color: var(--tx-3);
   letter-spacing: 0.02em;
 }
-.ico { padding: 6px 10px; line-height: 1; }
 .settings {
   position: relative;
 }
@@ -160,6 +113,32 @@ function setUnits(u: "metric" | "imperial") {
   z-index: 200;
   max-height: 70vh;
   overflow: auto;
+}
+/* ≤860px（导航切抽屉的同一断点）：设置按钮右侧只剩两个图标，面板再按 320px
+   往左展开会顶穿视口左边界。这里把定位上下文从按钮换成整条顶栏，
+   面板贴视口左右各 12px、在 420px 处封顶，纵向高度按顶栏实际高度扣减。 */
+@media (max-width: 860px) {
+  .settings { position: static; }
+  .panel {
+    left: 12px;
+    right: 12px;
+    top: calc(100% + 8px);
+    width: auto;
+    max-width: 420px;
+    margin-left: auto;
+    max-height: calc(100vh - 108px);
+    max-height: calc(100dvh - 108px);
+    z-index: 260;
+  }
+  /* 面板挂在 .topbar 里，顶栏自身的 backdrop-filter 形成 backdrop root，
+     子元素的磨砂取样不到顶栏之外的页面内容 —— 半透明玻璃底会把英雄区大字
+     透上来。手机端面板面积大、正压在正文上，这里换成实色卡片底 + 高光渐变。 */
+  .panel,
+  .panel.glass {
+    background: linear-gradient(180deg, var(--glass-sheen), transparent 46%) var(--bg-card-solid);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 }
 .grp {
   margin-bottom: 14px;

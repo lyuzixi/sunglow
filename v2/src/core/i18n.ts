@@ -1,7 +1,7 @@
 /* =========================================================================
    GLOWCAST v2 · 三语词典（简 / 繁 / 英）
    键 = 简体中文原文。词条只写繁/英两份；简体直接返回键本身。
-   与原版 _pi18n.js 独立（v2 界面文案更精简，不搬运原版全量词典）。
+   与V1 _pi18n.js 独立（v2 界面文案更精简，不搬运V1全量词典）。
    ========================================================================= */
 
 export type Lang = "zh" | "hant" | "en";
@@ -91,8 +91,9 @@ const HANT: Dict = {
   "开启校准": "開啟校準",
   "设置": "設置",
   "关于": "關於",
-  "原版": "原版",
-  "切换到原版": "切換到原版",
+  "V1": "V1",
+  "切换到V1": "切換到V1",
+  "切换到Skyglow": "切換到Skyglow",
   "预报": "預報",
   "数据源": "數據源",
   "非商业用途": "非商業用途",
@@ -207,8 +208,9 @@ const EN: Dict = {
   "开启校准": "Enable Calibration",
   "设置": "Settings",
   "关于": "About",
-  "原版": "Classic Edition",
-  "切换到原版": "Switch to Classic",
+  "V1": "V1",
+  "切换到V1": "Switch to V1",
+  "切换到Skyglow": "Switch to Skyglow",
   "预报": "Forecast",
   "数据源": "Data Source",
   "非商业用途": "Non-commercial use",
@@ -274,6 +276,14 @@ export function t(key: string, vars?: Record<string, string | number>): string {
     }
   }
   return s;
+}
+
+/** 缓存年龄文案：「刚刚 / N 分钟 / N 小时」。地图、趋势、结论卡三处共用同一口径。 */
+export function ageText(ms: number): string {
+  const m = Math.floor(ms / 60000);
+  if (m < 1) return t("刚刚");
+  if (m < 60) return t("{n} 分钟", { n: m });
+  return t("{n} 小时", { n: Math.floor(m / 60) });
 }
 
 /** 从浏览器语言探测 */
