@@ -1,9 +1,10 @@
 /* =========================================================================
    GLOWCAST v2 · 城市检索
-   口径来源：原版 _p2.js searchCity 语义。城市库全量来自 refs/（citydata.ts，
-   与原版同源：363 地级市 + 地图采样点 + 全球主要城市 + 拉丁别名）。
+   口径来源：V1 _p2.js searchCity 语义。城市库全量来自 refs/（citydata.ts，
+   与V1同源：363 地级市 + 地图采样点 + 全球主要城市 + 拉丁别名）。
    ========================================================================= */
 import { haversineKm, isNum } from "./math";
+import { searchAliases } from "./citylang";
 import {
   CN_CITIES_RAW, MAP_CITIES_RAW, GLOBAL_CITIES_RAW, GL_ALIAS_RAW
 } from "./citydata";
@@ -71,8 +72,36 @@ interface CityIdx { i: number; key: string; c: City }
 const CITY_INDEX: CityIdx[] = CITIES.map((c, i) => {
   const short = c.name.replace(/(市|特别行政区|自治区|自治州|地区)$/, "");
   const al = ((ALIAS[c.name] || "") + " " + (GL_ALIAS[c.name] || "")).toLowerCase();
-  return { i, key: (c.name + " " + short + " " + al + " " + c.region).toLowerCase(), c };
+  /* 英文名与繁体名也进索引：输入 guangzhou / 廣州 都能命中（原先只认简体与拼音别名）。
+     省区同理，方便「广东」这类按省检索。 */
+  const xl = searchAliases(c.name).concat(searchAliases(c.region)).join(" ").toLowerCase();
+  return {
+    i,
+    key: (c.name + " " + short + " " + al + " " + xl + " " + c.region).toLowerCase(),
+    c
+  };
 });
+
+/* ---------------- 城市分级（地图自绘地名的缩放分级口径） ----------------
+   0 = 省会 / 直辖市 / 港澳台（远看只画这些，约 30 个）
+   1 = 地级市（中景补上，共 363 个）
+   2 = 其余：地图采样点、海外城市（近景全量）
+   分级只看名字，不看坐标 —— 名字即身份，改城市库时不用同步维护坐标。 */
+export const PROV_CAPITALS = new Set<string>([
+  "北京市", "天津市", "石家庄市", "太原市", "呼和浩特市", "沈阳市", "长春市",
+  "哈尔滨市", "上海市", "南京市", "杭州市", "合肥市", "福州市", "南昌市",
+  "济南市", "郑州市", "武汉市", "长沙市", "广州市", "南宁市", "海口市",
+  "重庆市", "成都市", "贵阳市", "昆明市", "拉萨市", "西安市", "兰州市",
+  "西宁市", "银川市", "乌鲁木齐市", "香港", "澳门", "台北"
+]);
+
+const PREFECTURES = new Set<string>(CN_CITIES.map((c) => c.name));
+
+export function cityTier(name: string): 0 | 1 | 2 {
+  if (PROV_CAPITALS.has(name)) return 0;
+  return PREFECTURES.has(name) ? 1 : 2;
+}
+
 
 export function searchCity(q: string, limit = 30): City[] {
   const s = q.trim().toLowerCase();

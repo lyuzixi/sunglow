@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { state } from "../state";
+import { state, setCalibOn } from "../state";
 import { t } from "../core/i18n";
 import {
   calibRead, calibSave, calibSet, calibFind, calibStats, calibCanAnnotate,
@@ -59,7 +59,8 @@ function clearAll() {
             :class="{ on: state.calibOn }"
             role="switch"
             :aria-checked="state.calibOn"
-            @click="state.calibOn = !state.calibOn"
+            :aria-label="state.calibOn ? t('开启校准') : t('关闭校准')"
+            @click="setCalibOn(!state.calibOn)"
           >
             <i />
           </button>
