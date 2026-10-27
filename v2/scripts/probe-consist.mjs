@@ -1,5 +1,5 @@
 /* =========================================================================
-   probe-consist.mjs —— 一致性口径对拍（原版 vs v2）
+   probe-consist.mjs —— 一致性口径对拍（V1 vs v2）
    做法：**不重写公式**，而是从源码里把表达式原样抽出来 eval，再在同一个输入网格上比。
    这样任何一边改了口径，脚本立刻报差异（相当于一条活的口径守卫）。
    用法：node scripts/probe-consist.mjs
@@ -8,7 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const root = path.resolve(import.meta.dirname, "..");      // v2/
-const origDir = path.resolve(root, "..");                   // 仓库根（原版）
+const origDir = path.resolve(root, "..", "V1");         // V1/（2026-10-25 由仓库根迁入）
 const ORIG = path.join(origDir, "_p5.js");                   // 结论合成（consist 在这）
 const ORIG_BANDS = path.join(origDir, "_p4.js");             // ENS_CONF_BANDS
 const V2 = path.join(root, "src/core/forecast.ts");
@@ -29,7 +29,7 @@ function grab(file, re, label) {
 
 /* ---------- 1. consist 表达式 ---------- */
 const oM = grab(ORIG, /const consist = (clamp\(100 - [^;]*\));/,
-  "原版 consist");
+  "V1 consist");
 const vM = grab(V2, /const consist = (clamp\(100 - [^;]*\));/,
   "v2 consist");
 
@@ -37,7 +37,7 @@ const origFn = new Function("dvI", "clamp", "nz", "return " + oM[1] + ";");
 const v2Fn = new Function("dvFinal", "clamp", "nz", "return " + vM[1] + ";");
 
 /* ---------- 2. 可信度分档阈值 ---------- */
-const oBand = grab(ORIG_BANDS, /const ENS_CONF_BANDS = \[([\s\S]*?)\n\];/, "原版 ENS_CONF_BANDS")[1];
+const oBand = grab(ORIG_BANDS, /const ENS_CONF_BANDS = \[([\s\S]*?)\n\];/, "V1 ENS_CONF_BANDS")[1];
 const vBand = grab(V2_BANDS, /export const ENS_CONF_BANDS: EnsBand\[\] = \[([\s\S]*?)\n\];/,
   "v2 ENS_CONF_BANDS")[1];
 const maxes = (txt) => [...txt.matchAll(/max:\s*([\d.]+|Infinity)/g)].map((m) => m[1]);
@@ -55,7 +55,7 @@ for (const dv of GRID) {
   rows.push({ dv, a, b, d });
 }
 
-console.log("ΔI  原版一致性   v2一致性   误差");
+console.log("ΔI  V1一致性   v2一致性   误差");
 for (const r of rows) {
   console.log(
     String(r.dv).padStart(5),
@@ -67,9 +67,9 @@ for (const r of rows) {
 }
 
 const bandsOk = JSON.stringify(oMax) === JSON.stringify(vMax);
-console.log("\n可信度分档阈值：原版 " + JSON.stringify(oMax) + " / v2 " + JSON.stringify(vMax) +
+console.log("\n可信度分档阈值：V1 " + JSON.stringify(oMax) + " / v2 " + JSON.stringify(vMax) +
   (bandsOk ? "  ✓ 一致" : "  ← 不一致"));
-console.log("consist 表达式：\n  原版 " + oM[1] + "\n  v2   " + vM[1]);
+console.log("consist 表达式：\n  V1 " + oM[1] + "\n  v2   " + vM[1]);
 
 if (bad || !bandsOk) {
   console.log("\n✗ 对拍失败：" + bad + " 个采样点不一致；分档阈值" + (bandsOk ? "一致" : "不一致"));

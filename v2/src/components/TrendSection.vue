@@ -1,16 +1,26 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
 import { state } from "../state";
-import { t } from "../core/i18n";
+import { t, ageText } from "../core/i18n";
 import { rampColor } from "../core/ramp";
 import { loadTrend, type TrendRow } from "../core/trend";
+import FoldNote from "./FoldNote.vue";
 
 const rows = ref<TrendRow[]>([]);
 const loading = ref(false);
 const error = ref("");
 const token = ref(0);
+/* 来源：cache = 吃缓存（带年龄小字 + 重取入口）/ live = 刚取 */
+const srcKind = ref<"" | "cache" | "live">("");
+const cacheAgeMs = ref<number | null>(null);
 
-async function go(force = false) {
+/**
+ * 三档语义，别混：
+ *   auto  —— 只看缓存，绝不取数（挂载 / 换地点）
+ *   click —— 缓存优先，未命中才取数（点「加载趋势」）
+ *   force —— 绕开缓存强制重取（点「重新取数」）
+ */
+async function go(mode: "auto" | "click" | "force" = "auto") {
   const seq = ++token.value;
   const still = () => seq === token.value;
   loading.value = true;
@@ -19,18 +29,30 @@ async function go(force = false) {
     lat: state.city.lat,
     lon: state.city.lon,
     dateStr: state.dateStr,
-    cacheOnly: !force,
+    cacheOnly: mode === "auto",
+    force: mode === "force",
     onProgress: () => { /* 进度文案轻量，暂不占位 */ },
     stillCurrent: still
   });
   if (!still()) return;
   loading.value = false;
-  if (res.ok && res.rows) rows.value = res.rows;
-  else if (res.message) error.value = res.message;
+  if (res.ok && res.rows) {
+    rows.value = res.rows;
+    srcKind.value = res.fromCache ? "cache" : "live";
+    cacheAgeMs.value = res.fromCache ? res.ageMs ?? null : null;
+    error.value = "";
+  } else if (res.message) {
+    error.value = res.message;
+  }
 }
 
-onMounted(() => go(false));
-watch(() => state.city.name, () => go(false));
+onMounted(() => go("auto"));
+watch(() => state.city.name, () => {
+  rows.value = [];
+  srcKind.value = "";
+  cacheAgeMs.value = null;
+  go("auto");
+});
 
 /* 按天聚合（每天 朝/晚 两行） */
 const byDay = computed(() => {
@@ -51,9 +73,17 @@ const byDay = computed(() => {
         <h2>{{ t("十日趋势") }}</h2>
         <div class="sub">
           {{ rows.length ? rows.length + " " + t("条实算结果") : t("暂无数据") }}
-          <button class="btn btn-ghost sm" style="margin-left: 10px" :disabled="loading" @click="go(true)">
+          <button class="btn btn-ghost sm" style="margin-left: 10px" :disabled="loading" @click="go('click')">
             {{ loading ? t("取数中…") : rows.length ? t("重新加载趋势") : t("加载趋势") }}
           </button>
+          <span v-if="srcKind && !loading" class="fresh">
+            <span class="fresh-t">
+              {{ srcKind === "cache" ? t("缓存 · {age}前", { age: ageText(cacheAgeMs ?? 0) }) : t("刚刚取数") }}
+            </span>
+            <button v-if="srcKind === 'cache'" class="linkbtn" :disabled="loading" @click="go('force')">
+              {{ t("重新取数") }}
+            </button>
+          </span>
         </div>
       </div>
 
@@ -88,12 +118,18 @@ const byDay = computed(() => {
           </div>
         </div>
         <div v-else-if="!loading && !error" class="hint">
-          {{ t("趋势需要一次性取 34 个坐标 × 10 天数据（额度较重），点击「加载趋势」显式触发。") }}
+          {{ t("趋势需要一次性取 34 个坐标 × 10 天数据（约 102 次加权调用），点击「加载趋势」显式触发。") }}
         </div>
         <div class="trend-key">
           <span><i class="k1" />{{ t("出现概率") }}</span>
           <span><i class="k2" />{{ t("观赏质量分（右列）") }}</span>
         </div>
+
+        <FoldNote fold-key="trendFold" title="说明 · 趋势为什么要手动加载">
+          <p>{{ t("趋势一次要取 34 个样带点（朝、晚各 17 点）× 10 天，约 102 次加权调用（34 坐标 × 3 路），额度消耗明显高于单点预报。") }}</p>
+          <p>{{ t("所以它不随页面自动触发，需要点「加载趋势」；结果同样缓存 6 小时，重复查看不会再取数。") }}</p>
+          <p>{{ t("每行左侧是出现概率，右侧小字是观赏质量分，朝霞与晚霞分开算，互不参与对方的综合。") }}</p>
+        </FoldNote>
       </div>
     </div>
   </section>
@@ -167,4 +203,24 @@ const byDay = computed(() => {
   padding: 8px 0 14px;
 }
 .sm { padding: 3px 10px; font-size: var(--fs-tiny); }
+/* 缓存来源小字 + 「重新取数」文字入口（与地图/结论卡同一套） */
+.fresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 10px;
+  font-size: var(--fs-tiny);
+  color: var(--tx-3);
+  white-space: nowrap;
+}
+.linkbtn {
+  font-size: var(--fs-tiny);
+  color: var(--acc-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 2px 4px;
+  border-radius: var(--r-sm);
+}
+.linkbtn:hover { color: var(--acc-1); }
+.linkbtn:disabled { opacity: 0.5; }
 </style>

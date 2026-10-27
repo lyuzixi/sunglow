@@ -1,6 +1,6 @@
 /* =========================================================================
    GLOWCAST v2 · 天文计算
-   口径来源：原版 _p2.js solarPosition/solarNoonMs/sunEvents，_p3.js sunAltRate。
+   口径来源：V1 _p2.js solarPosition/solarNoonMs/sunEvents，_p3.js sunAltRate。
    NOAA 低精度算法（~0.01°）—— 数值逐语义移植，禁止"顺手优化"。
    ========================================================================= */
 import { DEG, RAD, clamp } from "./math";
@@ -112,4 +112,30 @@ export function sunAltRate(ms: number, lat: number, lon: number): number {
   const a1 = solarPosition(ms - 6 * 60000, lat, lon).altitude;
   const a2 = solarPosition(ms + 6 * 60000, lat, lon).altitude;
   return Math.abs((a2 - a1) / 12) || 0.2;
+}
+
+/**
+ * 当日朝/晚霞事件方位角（度，正北 0、顺时针）。
+ * 口径与V1 _p6.js azimEventOf 同源：零取数纯天文，极昼/极夜用正午+12h 兜底。
+ */
+export function eventAzimuth(
+  dateS: string, per: "am" | "pm", lat: number, lon: number
+): number | null {
+  try {
+    const [Y, M, D] = String(dateS).split("-").map(Number);
+    if (![Y, M, D].every((x) => isFinite(x) && x > 0)) return null;
+    const ev = sunEvents(Date.UTC(Y, M - 1, D), lat, lon);
+    const ms0 = per === "am" ? ev.riseMs : ev.setMs;
+    const ms = ms0 == null ? ev.noonMs + 12 * 3600000 : ms0;
+    const az = solarPosition(ms, lat, lon).azimuth;
+    return isFinite(az) ? ((az % 360) + 360) % 360 : null;
+  } catch {
+    return null;
+  }
+}
+
+/** 8 方位词（词典键）。与V1 dirWordOf 同式：45° 一档、四舍五入。 */
+export const DIR_WORDS = ["北", "东北", "东", "东南", "南", "西南", "西", "西北"];
+export function dirWordOf(brg: number): string {
+  return DIR_WORDS[Math.round((((brg % 360) + 360) % 360) / 45) % 8];
 }

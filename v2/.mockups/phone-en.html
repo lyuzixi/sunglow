@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>英文手机档：品牌名四种处理</title>
+<style>
+  :root {
+    --bg: #f4f6fa; --card: #ffffff; --line: #e3e8f0; --tx1: #17233a; --tx2: #3d4a63; --tx3: #7d8aa3;
+    --ok: #2b7a5b; --bad: #c2603a;
+    --font: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 34px 40px 44px; background: var(--bg); color: var(--tx1);
+    font-family: var(--font); -webkit-font-smoothing: antialiased; }
+  h1 { margin: 0 0 6px; font-size: 20px; letter-spacing: -0.01em; }
+  header p { margin: 0 0 20px; font-size: 13px; color: var(--tx3); line-height: 1.75; max-width: 1120px; }
+  header p b { color: var(--tx2); }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .cell { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px 16px 14px;
+    display: flex; flex-direction: column; gap: 10px; }
+  .chead { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+  .num { width: 21px; height: 21px; flex: 0 0 21px; border-radius: 50%; background: var(--tx1); color: #fff;
+    font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
+  .cname { font-size: 14.5px; font-weight: 600; }
+  .tag { font-size: 11.5px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line);
+    color: var(--tx3); font-variant-numeric: tabular-nums; }
+  .tag.good { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 30%, var(--line));
+    background: color-mix(in srgb, var(--ok) 7%, #fff); }
+  .tag.warn { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 30%, var(--line));
+    background: color-mix(in srgb, var(--bad) 7%, #fff); }
+
+  .shot { border: 1px solid var(--line); border-radius: 9px; overflow: hidden; background: #fff; }
+  .shot img { display: block; width: 100%; }
+  ul { margin: 0; padding-left: 16px; font-size: 12.5px; line-height: 1.8; color: var(--tx2); }
+  ul b { color: var(--tx1); }
+  .minus b { color: var(--bad); }
+
+  footer { margin-top: 20px; padding: 15px 17px; background: #fff; border: 1px solid var(--line);
+    border-radius: 12px; font-size: 12.5px; line-height: 1.85; color: var(--tx2); }
+  footer b { color: var(--tx1); }
+  code { font-family: ui-monospace, Consolas, monospace; font-size: 11.5px; background: #f0f3f8;
+    padding: 1px 5px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>英文手机（390px）：品牌名四种处理</h1>
+  <p>中文 390 在「无胶囊 + 藏副标」下需 321px、容器 340px，<b>余 19px 本来就够</b>；
+     只有英文差 25px（<code>Glow Forecast</code> 122px vs <code>霞光预报</code> 65px）。所以这四种只在英文窄屏生效，中文与桌面完全不受影响。</p>
+</header>
+
+<div class="grid">
+  <div class="cell">
+    <div class="chead">
+      <span class="num">1</span><span class="cname">教程按钮搬进抽屉</span>
+      <span class="tag good">需 323 / 容 340 · 余 17</span>
+    </div>
+    <div class="shot"><img src=".shots/en-E-tutorial.png" alt="教程进抽屉" /></div>
+    <ul>
+      <li><b>优点</b>：按钮尺寸不变（34px 触摸目标），品牌名完整，余 17px 最健康。</li>
+      <li><b>优点</b>：教程是四按钮里点得最少的；抽屉里加一条「使用教程」符合目录语义。</li>
+      <li class="minus"><b>代价</b>：教程入口从一键变两键；需要在抽屉底部新增一条。</li>
+    </ul>
+  </div>
+
+  <div class="cell">
+    <div class="chead">
+      <span class="num">2</span><span class="cname">品牌名允许折行</span>
+      <span class="tag warn">需 318 / 容 340 · 余 22 · 品牌 2 行</span>
+    </div>
+    <div class="shot"><img src=".shots/en-D-wrap.png" alt="品牌折行" /></div>
+    <ul>
+      <li><b>优点</b>：不缩字、不藏任何按钮，品牌名一个字不少。</li>
+      <li class="minus"><b>代价</b>：<code>Glow</code> / <code>Forecast</code> 分成两行，正是你这次说的「不整齐」那种味道（虽然栏高仍是 57px）。</li>
+      <li class="minus"><b>代价</b>：logo 与两行文字并排，第一行文字会比 logo 顶高。</li>
+    </ul>
+  </div>
+
+  <div class="cell">
+    <div class="chead">
+      <span class="num">3</span><span class="cname">四按钮缩到 30px</span>
+      <span class="tag warn">需 333 / 容 340 · 余 7</span>
+    </div>
+    <div class="shot"><img src=".shots/en-A-tighten.png" alt="缩按钮" /></div>
+    <ul>
+      <li><b>优点</b>：品牌名与四个入口全保留，只是变小。</li>
+      <li class="minus"><b>代价</b>：余量只有 7px，字体或缩放一变就破；触摸目标 34→30px 低于推荐值。</li>
+    </ul>
+  </div>
+
+  <div class="cell">
+    <div class="chead">
+      <span class="num">4</span><span class="cname">英文手机只留 logo</span>
+      <span class="tag good">需 246 / 容 340 · 余 94</span>
+    </div>
+    <div class="shot"><img src=".shots/en-B-logoonly.png" alt="只留 logo" /></div>
+    <ul>
+      <li><b>优点</b>：余量最宽裕（94px），以后再改英文文案也不会爆。</li>
+      <li class="minus"><b>代价</b>：英文用户在任何时刻都看不到站名，只能靠 hero 里的大标题辨认。</li>
+    </ul>
+  </div>
+</div>
+
+<footer>
+  <b>还有一条被排除的</b>：把英文品牌名改成 <code>Glowcast</code>（需 327、余 13）—— 顶栏写 Glowcast、hero 大标题写 Glow Forecast，
+  同一屏出现两个拼法，像笔误，所以没放进选项。<br />
+  <b>共同点</b>：四种都只在「英文 + 窄屏」生效；中文手机不需要任何额外处理（余 19px）。落地时它挂在 <code>mode-mini</code> 这一档，
+  与中文共用同一套 57px 单行顶栏，<code>scroll-margin</code> / 高亮判定线 / 抽屉 top 全部跟着 <code>--topbar-h</code> 自动走。
+</footer>
+</body>
+</html>

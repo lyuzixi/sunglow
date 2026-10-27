@@ -1,16 +1,17 @@
 /* =========================================================================
-   GLOWCAST v2 · 地图取数编排（口径与原版 _p6.js loadMapData 一致）
+   GLOWCAST v2 · 地图取数编排（口径与V1 _p6.js loadMapData 一致）
    显式触发 / 缓存快路径 / cacheOnly 绝不取数 / 顺序请求组间留白 /
    429 两类分级文案 / 请求令牌收敛界面副作用。
    ========================================================================= */
 import { clamp, isNum, sleep } from "./math";
 import { makeSeries, mergeSeries, type Series } from "./series";
 import {
-  MAP_TZ, TRANSECT, buildPointMeta, scoreGridPoint,
+  MAP_TZ, TRANSECT, buildPointMeta, scoreGridPoint, finalizeRefGap,
   mapCacheGet, mapCachePut,
   type GridPt, type MapDateBox, type MapPeriodBox, type MapPoint, type PointMeta
 } from "./mapdata";
 import { API_AQ } from "./scoring";
+import { cityTz, rememberTz } from "./tz";
 import { t } from "./i18n";
 
 export const MODEL_NAME = { gfs: "gfs_seamless", ec: "ecmwf_ifs025" };
@@ -22,16 +23,28 @@ export const F_MAP_VARS = [
 
 const JGET_TIMEOUT_MS = 12000;
 
+/* 重试策略（2026-10 额度审计后收紧）
+   旧行为：无论什么错都重试 3 次。429 被限流时这么打，等于把请求量再放大 3 倍
+   —— 这正是「额度掉得比预期快」最隐蔽的一处来源；超时也照样连打 12s × 3。
+   新行为：
+   · 429 —— 不重试。服务端已明确拒绝，限流期间再打只会更糟。
+   · 有 retry-after 的错误 —— 按服务端建议等，但超过 3s 就直接报错交上层。
+   · 超时 / 网络错误 / 5xx —— 最多再补 1 次。
+   最坏请求数：普通错误 2 次（旧 3 次），限流 1 次（旧 3 次）。 */
+const JGET_RETRY_MAX = 1;
+const RETRY_AFTER_CAP_MS = 3000;
+
 export class MapFetchError extends Error {
   friendly?: string;
   fatal?: boolean;
   status?: number;
   timeout?: boolean;
+  retryAfter?: number;
 }
 
-async function jget(url: string, tries = 3): Promise<unknown> {
+async function jget(url: string): Promise<unknown> {
   let lastErr: MapFetchError | null = null;
-  for (let i = 0; i < tries; i++) {
+  for (let i = 0; i <= JGET_RETRY_MAX; i++) {
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), JGET_TIMEOUT_MS);
     try {
@@ -40,10 +53,7 @@ async function jget(url: string, tries = 3): Promise<unknown> {
       const err = new MapFetchError("HTTP " + r.status);
       err.status = r.status;
       const ra = parseInt(r.headers.get("retry-after") || "", 10);
-      if (isNum(ra)) {
-        const e2 = err as Error & { retryAfter?: number };
-        e2.retryAfter = clamp(ra, 1, 20) * 1000;
-      }
+      if (isNum(ra)) err.retryAfter = clamp(ra, 1, 20) * 1000;
       if (r.status === 429) {
         let body = "";
         try { body = await r.text(); } catch { /* ignore */ }
@@ -67,7 +77,14 @@ async function jget(url: string, tries = 3): Promise<unknown> {
         lastErr = err;
       }
       if (lastErr && lastErr.fatal) throw lastErr;
-      if (i < tries - 1) await sleep(400 * (i + 1));
+      /* 429 一律重试 —— 这里绝不能写反：限流时重复请求只会加长封禁 */
+      if (lastErr && lastErr.status === 429) throw lastErr;
+      if (i < JGET_RETRY_MAX) {
+        /* 服务端给了 retry-after 就听它的；等太久（>3s）不如直接报错让用户重试 */
+        const wait = lastErr?.retryAfter ?? 400 * (i + 1);
+        if (wait > RETRY_AFTER_CAP_MS) throw lastErr;
+        await sleep(wait);
+      }
     } finally {
       clearTimeout(timer);
     }
@@ -126,7 +143,7 @@ export async function apiAQBatched(
 void API_AQ;
 
 /* =========================================================================
-   loadMapData：一次完整取数（57 点 × GFS/EC/AQ）→ am/pm 两时段点集
+   loadMapData：一次完整取数（121 点 × GFS/EC/AQ）→ am/pm 两时段点集
    ========================================================================= */
 export interface LoadMapOpts {
   lat: number; lon: number;
@@ -160,13 +177,17 @@ export async function loadMapData(
   load(t("正在取模式数据（周边 {n} 个网格点，朝/晚霞共用）…", { n: pts.length }));
   try {
     const [Y, M, D] = dateS.split("-").map(Number);
-    const dayMs = Date.UTC(Y, M - 1, D);
+    /* 太阳事件锚在城市当地零点（不是 UTC 零点），24 小时搜索窗才一定含当地正午 */
+    const dayMs = Date.UTC(Y, M - 1, D) - cityTz(lat, lon).offsetSec * 1000;
     const meta: PointMeta[] = buildPointMeta(dayMs, pts);
     const cityPts = pts.map((c) => ({ lat: c.lat, lon: c.lon }));
 
     load(t("正在取 GFS 模式数据…"));
     const sG = await apiForecastBatched(MODEL_NAME.gfs, cityPts, dateS, dateS, MAP_TZ, F_MAP_VARS);
     if (!stillCurrent()) return { ok: false, reason: "stale" };
+    /* 接口回的时区是权威值，记住它 */
+    const tzLive = sG.find((x): x is Series => !!x)?.tz;
+    if (tzLive && !tzLive.est) rememberTz(lat, lon, tzLive.iana, tzLive.offsetSec);
     await sleep(300);
     if (!stillCurrent()) return { ok: false, reason: "stale" };
 
@@ -202,6 +223,9 @@ export async function loadMapData(
       if (am) box.am.pts.push(am);
     });
     if (!stillCurrent()) return { ok: false, reason: "stale" };
+    /* 分歧度要按「同一时段的全图分布」标准化后才成立，只能全部点算完再填 */
+    finalizeRefGap(box.am.pts);
+    finalizeRefGap(box.pm.pts);
 
     mapCachePut(dateS, lat, lon, box, stillCurrent);
     return { ok: true, box, fromCache: false };

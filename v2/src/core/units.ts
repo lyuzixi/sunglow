@@ -1,8 +1,9 @@
 /* =========================================================================
    GLOWCAST v2 · 单位换算（公制 / 英制）
-   口径对齐原版 uDist/uAlt/uSpeed/uTemp：只影响显示，不影响任何计算。
+   口径对齐V1 uDist/uAlt/uSpeed/uTemp：只影响显示，不影响任何计算。
    ========================================================================= */
 import { state } from "../state";
+import { fmtClock, type TzInfo } from "./tz";
 
 export const isImperial = (): boolean => state.units === "imperial";
 
@@ -38,9 +39,12 @@ export function uTemp(c: number | null | undefined): string {
   return c.toFixed(1) + " °C";
 }
 
-/** 时间：hour12 开关 */
-export function uClock(ms: number | null | undefined): string {
+/** 时间：hour12 开关。传 tz 就是「所选城市的墙钟」，不传退回浏览器本地时区 */
+export function uClock(
+  ms: number | null | undefined, tz?: TzInfo | null
+): string {
   if (ms == null || !isFinite(ms)) return "—";
+  if (tz) return fmtClock(ms, tz, state.hour12);
   const d = new Date(ms);
   if (state.hour12) {
     const h = d.getHours() % 12 || 12;

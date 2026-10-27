@@ -1,5 +1,5 @@
 /* =========================================================================
-   GLOWCAST v2 · URL 状态同步（口径对齐原版 syncUrl/readUrl/baseQuery）
+   GLOWCAST v2 · URL 状态同步（口径对齐V1 syncUrl/readUrl/baseQuery）
    快照 snap= 与查询状态共存；只存内部键值，解码前限长逐字段校验。
    ========================================================================= */
 import { state, savePrefs } from "../state";

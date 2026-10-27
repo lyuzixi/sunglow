@@ -1,76 +1,80 @@
-/* 霞光预报 · Service Worker
-   **由 assemble.py 生成，勿手改**（改了会被下一次构建覆盖）。
-   缓存版本 f269bb650cb6 —— 它是**产物内容的 sha256 前 12 位**，不是手写的版本号。
+/* =========================================================================
+   霞光预报 v2 · Service Worker（正式版，取代此前的一次性退役 shim）
+   目标：可安装 + 断网可开 + 秒开；**不碰气象响应**（额度与新鲜度都不许缓存）。
+   策略：
+     · 导航请求（HTML）：网络优先，失败回落缓存 —— 保证更新能及时生效
+     · 静态资源（图标/manifest）：stale-while-revalidate
+     · 一切跨域请求（open-meteo、map.qq.com）：直接放行，不进缓存
+   版本号变更即在 activate 里清掉旧缓存。
+   ========================================================================= */
+const VERSION = "glowcast-v2-pwa-3";
+const CORE = [
+  "./",
+  "./index.html",
+  "./tutorial.html",
+  "./404.html",
+  "./manifest.webmanifest",
+  "./icon-192.png",
+  "./icon-512.png"
+];
 
-   只做一件事：让"打开页面"这件事不再依赖网络。
-   刻意不做的事：**不缓存任何气象响应**。过期预报比没有预报更危险 ——
-   用户在山顶、海边拿着昨天的数据当今天的看，而页面上根本看不出那是旧的。
-   所以这里只认下面这份预缓存名单（同源静态资源 + 404 页），名单之外的请求
-   一律不拦截：跨域（气象接口 / 腾讯地图 SDK 与瓦片 / 省界 GeoJSON）连看都不看，
-   同源但不在名单里的（自建部署时地图代理 /_TMapService 就在同源下）同样不碰。
+self.addEventListener("install", (e) => {
+  e.waitUntil((async () => {
+    const cache = await caches.open(VERSION);
+    /* 逐个 add，单个失败不拖垮整体安装 */
+    await Promise.all(CORE.map((u) => cache.add(u).catch(() => {})));
+    await self.skipWaiting();
+  })());
+});
 
-   策略是 **stale-while-revalidate**：先用缓存应答（秒开），再在后台回源更新，
-   于是"下次打开"是新版本，而"这次打开"不用等。
-*/
-'use strict';
-var CACHE = 'sunglow-f269bb650cb6';
-/* 相对地址：SW 挂在站点根下，随 scope 一起解析 —— 子路径部署也成立。 */
-var PRECACHE = ['./', './index.html', './404.html', './manifest.json',
-                './icon-192.png', './icon-512.png'];
+self.addEventListener("activate", (e) => {
+  e.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(
+      keys.filter((k) => k !== VERSION && k.startsWith("glowcast")).map((k) => caches.delete(k))
+    );
+    await self.clients.claim();
+  })());
+});
 
-function abs(p) { return new URL(p, self.location.href).href; }
-function isListed(href) {
-  for (var i = 0; i < PRECACHE.length; i++) { if (abs(PRECACHE[i]) === href) return true; }
-  return false;
+function isSameOrigin(url) {
+  try { return new URL(url).origin === self.location.origin; } catch { return false; }
 }
 
-self.addEventListener('install', function (e) {
-  e.waitUntil(
-    caches.open(CACHE)
-      .then(function (c) { return c.addAll(PRECACHE); })
-      .then(function () { return self.skipWaiting(); })
-  );
-});
+self.addEventListener("fetch", (e) => {
+  const req = e.request;
+  if (req.method !== "GET") return;
+  if (!isSameOrigin(req.url)) return;                    // 气象接口/地图瓦片：不拦
+  const url = new URL(req.url);
+  if (url.pathname.endsWith("/sw.js")) return;
 
-self.addEventListener('activate', function (e) {
-  e.waitUntil(
-    caches.keys().then(function (ks) {
-      return Promise.all(ks.map(function (k) { return k === CACHE ? null : caches.delete(k); }));
-    }).then(function () { return self.clients.claim(); })
-  );
-});
+  /* 导航：网络优先，断网回落缓存里的 index.html（hash 路由，任意 hash 都算首页） */
+  if (req.mode === "navigate") {
+    e.respondWith((async () => {
+      try {
+        const fresh = await fetch(req);
+        const cache = await caches.open(VERSION);
+        cache.put("./index.html", fresh.clone()).catch(() => {});
+        return fresh;
+      } catch {
+        const cache = await caches.open(VERSION);
+        return (await cache.match("./index.html")) ||
+          (await cache.match("./")) ||
+          new Response("<h1>离线</h1><p>还没有缓存到首屏，请连网打开一次。</p>",
+            { headers: { "Content-Type": "text/html; charset=utf-8" } });
+      }
+    })());
+    return;
+  }
 
-self.addEventListener('fetch', function (e) {
-  var req = e.request;
-  if (req.method !== 'GET') return;
-  var u = new URL(req.url);
-  /* 跨域一律放行（见文件头：气象 / 地图 / 省界都不碰） */
-  if (u.origin !== self.location.origin) return;
-  /* 同源但不在名单里 —— 例如自建部署时的地图代理，同样放行 */
-  if (!isListed(u.href)) return;
-
-  e.respondWith((function () {
-    var cache = caches.open(CACHE);
-    /* 后台回源更新。失败（离线）就当没发生 —— 缓存那份照样能用。 */
-    var net = cache.then(function (c) {
-      return fetch(req).then(function (r) {
-        if (r && r.ok) c.put(req, r.clone());
-        return r;
-      });
-    }).catch(function () { return null; });
-
-    return cache.then(function (c) { return c.match(req); }).then(function (hit) {
-      if (hit) return hit;                       /* 先给缓存：秒开 */
-      return net.then(function (r) {
-        if (r) return r;
-        /* 离线且这份没缓存过：导航请求回落到缓存的 404 页 —— 它本来就是
-           为"取不到"准备的，而且同样自包含、能在任意路径下独立打开。 */
-        if (req.mode === 'navigate') {
-          return cache.then(function (c) { return c.match(abs('./404.html')); })
-                      .then(function (nf) { return nf || new Response('', { status: 503 }); });
-        }
-        return new Response('', { status: 503 });
-      });
-    });
+  /* 静态：先给缓存，同时后台更新 */
+  e.respondWith((async () => {
+    const cache = await caches.open(VERSION);
+    const hit = await cache.match(req);
+    const net = fetch(req).then((res) => {
+      if (res && res.ok) cache.put(req, res.clone()).catch(() => {});
+      return res;
+    }).catch(() => null);
+    return hit || (await net) || new Response("", { status: 504 });
   })());
 });

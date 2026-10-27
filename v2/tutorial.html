@@ -5,1443 +5,998 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark light">
 <title>使用教程 · 霞光预报 GLOWCAST</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff4d82'/%3E%3Cstop offset='.5' stop-color='%23ff9c3f'/%3E%3Cstop offset='1' stop-color='%232ed5e8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='url(%23g)' stroke-width='3' stroke-dasharray='52 18'/%3E%3C/svg%3E">
+<meta name="description" content="霞光预报 GLOWCAST（朝霞 / 晚霞火烧云概率与质量预报）使用教程：四档合一 —— 概览、用户版、开发者版、创作者版。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff4d82'/%3E%3Cstop offset='.5' stop-color='%23ff9c3f'/%3E%3Cstop offset='1' stop-color='%232ed5e8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='url(%23g)' stroke-width='3'/%3E%3Ccircle cx='16' cy='16' r='5' fill='url(%23g)'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#070b14">
+<meta name="theme-color" content="#f5f7fb">
 <script>
-/* 首帧前定主题，避免闪白 */
+/* 主题引导：与主页同一份偏好（glowcast.v2.pref），在 CSS 之前定 data-theme，防刷新闪白 */
 (function () {
   try {
-    var t = "auto";
-    var raw = localStorage.getItem("glowcast.v2.pref");
-    if (raw) {
-      var j = JSON.parse(raw);
-      if (j && (j.theme === "auto" || j.theme === "light" || j.theme === "dark")) t = j.theme;
-    }
-    var d = t === "auto"
-      ? (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
-      : t;
-    document.documentElement.setAttribute("data-theme", d);
-    document.documentElement.setAttribute("data-theme-mode", t);
-  } catch (e) {
-    document.documentElement.setAttribute("data-theme", "dark");
-    document.documentElement.setAttribute("data-theme-mode", "auto");
-  }
+    var j = JSON.parse(localStorage.getItem("glowcast.v2.pref") || "null");
+    var t = (j && typeof j === "object" && !Array.isArray(j)) ? j.theme : null;
+    var k = (t === "light" || t === "dark") ? t : "auto";
+    var dark = k === "dark" || (k === "auto" && window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches);
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme-pref", k);
+  } catch (e) { /* 隐私模式：留默认深色 */ }
 })();
 </script>
 <style>
-/* ============================================================
-   GLOWCAST v2 · 教程页 · 大气光谱观测站 / 晨光实验室
-   自包含单文件：CSS / JS 全部内联，零外部请求
-   ============================================================ */
+:root{
+  --spectrum-1:#ff4d82; --spectrum-2:#ff9c3f; --spectrum-3:#2ed5e8;
+  --spectrum:linear-gradient(90deg,var(--spectrum-1),var(--spectrum-2),var(--spectrum-3));
+  --font:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:48px;
+  --r-sm:8px; --r-md:14px; --r-lg:22px; --r-full:999px; --maxw:880px;
+}
+html[data-theme="dark"]{
+  --bg:#070b14; --bg-deep:#04070e; --elev:#0b1220; --card:rgba(15,23,42,.62);
+  --glass:rgba(130,160,220,.06); --line:rgba(130,160,220,.14); --line2:rgba(130,160,220,.09);
+  --tx:#e8eefc; --tx2:#aab6d0; --tx3:#7c8aa8; --acc2:#8fd8f0; --accbg:rgba(46,213,232,.10);
+  --accbd:rgba(46,213,232,.32); --codebg:rgba(130,160,220,.07);
+}
+html[data-theme="light"]{
+  --bg:#f5f7fb; --bg-deep:#eef1f8; --elev:#ffffff; --card:rgba(255,255,255,.86);
+  --glass:rgba(20,40,90,.03); --line:#e3e8f2; --line2:#edf1f8;
+  --tx:#17203a; --tx2:#4a5670; --tx3:#8a94ab; --acc2:#0e8fa8; --accbg:rgba(14,143,168,.08);
+  --accbd:rgba(14,143,168,.28); --codebg:rgba(20,40,90,.045);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:var(--font);
+  font-size:15px;line-height:1.75;overflow-x:hidden}
+a{color:var(--acc2);text-decoration:none}
+a:hover{text-decoration:underline}
+::selection{background:rgba(255,77,130,.28)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
-:root {
-  /* 光谱（主题无关） */
-  --spectrum-1: #ff4d82;
-  --spectrum-2: #ff9c3f;
-  --spectrum-3: #2ed5e8;
-  --spectrum: linear-gradient(90deg, var(--spectrum-1), var(--spectrum-2), var(--spectrum-3));
-  --spectrum-soft: linear-gradient(90deg, rgba(255, 77, 130, .14), rgba(255, 156, 63, .14), rgba(46, 213, 232, .14));
+/* ---------- 吸顶：顶栏 + 分档条（实测高度写 --toph） ---------- */
+.top{position:sticky;top:0;z-index:50;background:var(--bg);
+  border-bottom:1px solid var(--line2)}
+@supports ((backdrop-filter:blur(14px)) or (-webkit-backdrop-filter:blur(14px))){
+  .top{background:color-mix(in srgb,var(--bg) 86%,transparent);
+    -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+}
+.top-in{max-width:var(--maxw);margin:0 auto;display:flex;align-items:center;gap:10px;
+  padding:10px 20px}
+.back{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--tx2);
+  padding:5px 11px;border:1px solid var(--line);border-radius:var(--r-full);white-space:nowrap}
+.back:hover{color:var(--tx);border-color:var(--tx3);text-decoration:none}
+.logo{width:15px;height:15px;border-radius:50%;flex:none;
+  background:conic-gradient(from 210deg,var(--spectrum-1),var(--spectrum-2),var(--spectrum-3),var(--spectrum-1));
+  box-shadow:0 0 0 3px var(--glass)}
+.brand{font-size:13px;font-weight:600;letter-spacing:.4px;color:var(--tx2);white-space:nowrap}
+.spacer{flex:1}
+.dwrap{position:relative}
+.tbtn{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:30px;
+  padding:0 9px;border:1px solid var(--line);border-radius:var(--r-full);background:transparent;
+  color:var(--tx2);font-family:var(--font);font-size:12.5px;cursor:pointer}
+.tbtn:hover{color:var(--tx);border-color:var(--tx3)}
+.tbtn .ico{font-size:13px;line-height:1}
+.tmenu{position:absolute;right:0;top:36px;min-width:132px;background:var(--elev);
+  border:1px solid var(--line);border-radius:var(--r-md);padding:6px;
+  box-shadow:0 14px 40px rgba(0,0,0,.28);z-index:60}
+.tmenu[hidden]{display:none}
+.tmenu .cap{font-size:10.5px;color:var(--tx3);letter-spacing:.5px;padding:4px 10px 6px}
+.tmenu button{display:flex;width:100%;align-items:center;gap:8px;border:0;background:transparent;
+  color:var(--tx2);font-family:var(--font);font-size:13px;padding:7px 10px;border-radius:var(--r-sm);
+  cursor:pointer;text-align:left}
+.tmenu button:hover{background:var(--glass);color:var(--tx)}
+.tmenu button[aria-pressed="true"]{color:var(--tx);font-weight:600}
+.tabs{max-width:var(--maxw);margin:0 auto;padding:0 20px 10px}
+.tabs-in{display:flex;gap:4px;overflow-x:auto;min-width:0;scrollbar-width:none}
+.tabs-in::-webkit-scrollbar{display:none}
+.tab{flex:none;border:1px solid transparent;background:transparent;color:var(--tx2);
+  font-family:var(--font);font-size:13px;padding:6px 14px;border-radius:var(--r-full);cursor:pointer}
+.tab:hover{color:var(--tx)}
+.tab.on{color:var(--tx);border-color:var(--accbd);background:var(--accbg);font-weight:600}
 
-  --font: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
-
-  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
-  --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 72px;
-  --r-sm: 8px; --r-md: 14px; --r-lg: 22px; --r-full: 999px;
-
-  --maxw: 880px;
-}
-
-/* ---------- 深色 · 光谱观测站 ---------- */
-[data-theme="dark"] {
-  --bg-base: #070b14;
-  --bg-deep: #04070e;
-  --bg-elev: #0b1220;
-  --bg-card: rgba(15, 23, 42, 0.62);
-  --bg-glass: rgba(130, 160, 220, 0.06);
-  --bg-glass-2: rgba(130, 160, 220, 0.10);
-  --stroke: rgba(148, 178, 232, 0.14);
-  --stroke-2: rgba(148, 178, 232, 0.26);
-  --tx-1: #e9eefb;
-  --tx-2: #a0b1cd;
-  --tx-3: #5c6c8c;
-  --acc-1: var(--spectrum-1);
-  --acc-2: var(--spectrum-2);
-  --acc-3: var(--spectrum-3);
-  --glow-text: 0 0 24px rgba(255, 120, 160, 0.45), 0 0 64px rgba(46, 213, 232, 0.22);
-  --card-sh: 0 18px 48px rgba(2, 6, 16, 0.55);
-  --q-good: #5fce97;
-  --q-mid: #e2b45e;
-  --q-bad: #f2796a;
-  --q-info: #7ab8ff;
-  --code-bg: rgba(130, 160, 220, 0.08);
-  --thead-bg: rgba(130, 160, 220, 0.07);
-  --zebra: rgba(130, 160, 220, 0.045);
-  --brand-glass: rgba(7, 11, 20, 0.72);
-}
-
-/* ---------- 浅色 · 晨光实验室 ---------- */
-[data-theme="light"] {
-  --bg-base: #f2f5fb;
-  --bg-deep: #e8edf7;
-  --bg-elev: #ffffff;
-  --bg-card: rgba(255, 255, 255, 0.72);
-  --bg-glass: rgba(255, 255, 255, 0.55);
-  --bg-glass-2: rgba(255, 255, 255, 0.78);
-  --stroke: rgba(40, 60, 100, 0.10);
-  --stroke-2: rgba(40, 60, 100, 0.20);
-  --tx-1: #111a2c;
-  --tx-2: #46556f;
-  --tx-3: #8693ab;
-  --acc-1: #e02d62;
-  --acc-2: #e07a1c;
-  --acc-3: #0f9fbf;
-  --glow-text: none;
-  --card-sh: 0 12px 32px rgba(20, 40, 80, 0.10);
-  --q-good: #1c8a55;
-  --q-mid: #c07a10;
-  --q-bad: #c0392b;
-  --q-info: #2266bb;
-  --code-bg: rgba(40, 60, 100, 0.06);
-  --thead-bg: rgba(40, 60, 100, 0.05);
-  --zebra: rgba(40, 60, 100, 0.028);
-  --brand-glass: rgba(242, 245, 251, 0.78);
-}
-
-/* ---------- 基础 ---------- */
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body {
-  margin: 0;
-  font-family: var(--font);
-  font-size: 15px;
-  line-height: 1.85;
-  color: var(--tx-2);
-  background: var(--bg-base);
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-}
-[data-theme="dark"] body {
-  background-image:
-    radial-gradient(1100px 520px at 82% -8%, rgba(46, 213, 232, 0.075), transparent 62%),
-    radial-gradient(900px 480px at 8% -6%, rgba(255, 77, 130, 0.06), transparent 60%);
-  background-attachment: fixed;
-}
-[data-theme="light"] body {
-  background-image:
-    radial-gradient(1000px 480px at 84% -10%, rgba(46, 213, 232, 0.10), transparent 62%),
-    radial-gradient(860px 430px at 6% -8%, rgba(255, 77, 130, 0.075), transparent 60%);
-  background-attachment: fixed;
-}
-h1, h2, h3, h4 {
-  color: var(--tx-1);
-  letter-spacing: -0.02em;
-  line-height: 1.35;
-  margin: 0 0 var(--sp-3);
-  font-weight: 700;
-}
-p { margin: 0 0 var(--sp-4); }
-a { color: var(--acc-3); text-decoration: none; }
-a:hover { text-decoration: underline; text-underline-offset: 3px; }
-strong { color: var(--tx-1); font-weight: 650; }
-code {
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.86em;
-  background: var(--code-bg);
-  border: 1px solid var(--stroke);
-  border-radius: 6px;
-  padding: 0.08em 0.42em;
-  color: var(--tx-1);
-}
-hr {
-  border: 0;
-  border-top: 1px solid var(--stroke);
-  margin: var(--sp-6) 0;
-}
-
-/* ---------- 品牌条 ---------- */
-.brand {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: 12px clamp(16px, 4vw, 36px);
-  background: var(--brand-glass);
-  -webkit-backdrop-filter: blur(18px) saturate(1.3);
-  backdrop-filter: blur(18px) saturate(1.3);
-  border-bottom: 1px solid var(--stroke);
-}
-.brand-logo {
-  width: 38px;
-  height: 38px;
-  flex: 0 0 auto;
-  filter: drop-shadow(0 0 12px rgba(255, 120, 160, 0.35));
-}
-.brand-text { display: flex; flex-direction: column; min-width: 0; }
-.brand-name {
-  font-size: 1.02rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--tx-1);
-  line-height: 1.3;
-  white-space: nowrap;
-}
-.brand-sub {
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
-  color: var(--tx-3);
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-.brand-actions {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-}
-.btn-ghost {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 7px 13px;
-  border-radius: var(--r-full);
-  border: 1px solid var(--stroke-2);
-  background: var(--bg-glass);
-  color: var(--tx-2);
-  font-size: 0.82rem;
-  font-family: inherit;
-  line-height: 1.4;
-  cursor: pointer;
-  transition: border-color .18s ease, color .18s ease, background .18s ease;
-  white-space: nowrap;
-}
-.btn-ghost:hover {
-  color: var(--tx-1);
-  border-color: var(--acc-3);
-  background: var(--bg-glass-2);
-  text-decoration: none;
-}
-.btn-ghost svg { width: 15px; height: 15px; flex: 0 0 auto; }
-.theme-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--spectrum);
-  box-shadow: 0 0 8px rgba(46, 213, 232, 0.6);
-}
-
-/* ---------- 粘性目录 ---------- */
-.toc {
-  position: sticky;
-  top: 63px;
-  z-index: 40;
-  background: var(--brand-glass);
-  -webkit-backdrop-filter: blur(18px) saturate(1.25);
-  backdrop-filter: blur(18px) saturate(1.25);
-  border-bottom: 1px solid var(--stroke);
-}
-.toc-inner {
-  max-width: calc(var(--maxw) + 120px);
-  margin: 0 auto;
-  padding: 0 clamp(16px, 4vw, 36px);
-  display: flex;
-  gap: 2px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.toc-inner::-webkit-scrollbar { display: none; }
-.toc a {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  padding: 11px 12px 10px;
-  font-size: 0.82rem;
-  color: var(--tx-3);
-  border-bottom: 2px solid transparent;
-  white-space: nowrap;
-  transition: color .18s ease, border-color .18s ease;
-}
-.toc a:hover { color: var(--tx-1); text-decoration: none; }
-.toc a.active {
-  color: var(--tx-1);
-  border-bottom-color: var(--acc-2);
-}
-.toc-idx {
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.7rem;
-  letter-spacing: 0.06em;
-  color: var(--tx-3);
-}
-.toc a.active .toc-idx { color: var(--acc-2); }
-
-/* ---------- 主容器 ---------- */
-.wrap {
-  max-width: var(--maxw);
-  margin: 0 auto;
-  padding: 0 clamp(16px, 4vw, 28px) var(--sp-8);
-}
-
-/* ---------- Hero ---------- */
-.hero {
-  padding: clamp(40px, 8vw, 84px) 0 clamp(28px, 5vw, 48px);
-  border-bottom: 1px solid var(--stroke);
-}
-.hero-kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.72rem;
-  letter-spacing: 0.18em;
-  color: var(--tx-3);
-  text-transform: uppercase;
-  margin-bottom: var(--sp-4);
-}
-.hero-kicker::before {
-  content: "";
-  width: 26px; height: 2px;
-  border-radius: 2px;
-  background: var(--spectrum);
-}
-.hero h1 {
-  font-size: clamp(1.9rem, 5.4vw, 3.15rem);
-  margin-bottom: var(--sp-4);
-}
-.hero h1 .grad {
-  background: var(--spectrum);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: none;
-}
-[data-theme="dark"] .hero h1 .grad { filter: drop-shadow(0 0 22px rgba(255, 110, 150, 0.28)); }
-.hero-lead {
-  font-size: clamp(1rem, 2.1vw, 1.13rem);
-  color: var(--tx-2);
-  max-width: 46em;
-  margin-bottom: var(--sp-5);
-}
-.hero-chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 6px 13px;
-  border-radius: var(--r-full);
-  border: 1px solid var(--stroke);
-  background: var(--bg-glass);
-  font-size: 0.79rem;
-  color: var(--tx-2);
-}
-.chip .k {
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.74rem;
-  letter-spacing: 0.04em;
-}
-
-/* ---------- 章节 ---------- */
-.chapter {
-  padding: clamp(34px, 5.5vw, 56px) 0 0;
-  scroll-margin-top: 118px;
-}
-.ch-head {
-  display: flex;
-  align-items: baseline;
-  gap: var(--sp-4);
-  padding-bottom: var(--sp-3);
-  border-bottom: 1px solid var(--stroke-2);
-  margin-bottom: var(--sp-5);
-}
-.ch-num {
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: clamp(1.35rem, 3vw, 1.72rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  background: var(--spectrum);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  flex: 0 0 auto;
-}
-.ch-head h2 {
-  font-size: clamp(1.28rem, 2.8vw, 1.62rem);
-  margin: 0;
-}
-.ch-head .ch-en {
-  margin-left: auto;
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--tx-3);
-  white-space: nowrap;
-}
-.chapter h3 {
-  font-size: 1.04rem;
-  margin: var(--sp-6) 0 var(--sp-3);
-}
-.chapter h3:first-of-type { margin-top: 0; }
-
-/* ---------- 列表 / 卡片 ---------- */
-.plain-list { margin: 0 0 var(--sp-4); padding-left: 1.25em; }
-.plain-list li { margin-bottom: 7px; }
-.plain-list li::marker { color: var(--acc-2); }
-
-.card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(228px, 1fr));
-  gap: var(--sp-3);
-  margin: var(--sp-4) 0 var(--sp-5);
-}
-.card {
-  border: 1px solid var(--stroke);
-  border-radius: var(--r-md);
-  background: var(--bg-card);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  padding: var(--sp-4) var(--sp-4) 13px;
-  box-shadow: var(--card-sh);
-}
-.card h4 {
-  font-size: 0.94rem;
-  margin: 0 0 6px;
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-.card .tag {
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
-  color: var(--acc-3);
-  border: 1px solid var(--stroke-2);
-  border-radius: var(--r-full);
-  padding: 1px 8px;
-  text-transform: uppercase;
-}
-.card p {
-  font-size: 0.865rem;
-  line-height: 1.75;
-  margin: 0;
-  color: var(--tx-2);
-}
-
-/* 术语卡 */
-.term-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: var(--sp-3);
-  margin: var(--sp-4) 0 var(--sp-5);
-}
-.term {
-  border: 1px solid var(--stroke);
-  border-left: 2px solid var(--acc-2);
-  border-radius: var(--r-md);
-  background: var(--bg-card);
-  padding: var(--sp-4);
-}
-.term .t-zh { font-size: 0.98rem; font-weight: 700; color: var(--tx-1); letter-spacing: -0.02em; }
-.term .t-en {
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
-  color: var(--tx-3);
-  margin: 2px 0 8px;
-}
-.term p { font-size: 0.855rem; line-height: 1.75; margin: 0; }
-
-/* ---------- 表格 ---------- */
-.tbl-wrap {
-  overflow-x: auto;
-  margin: var(--sp-4) 0 var(--sp-5);
-  border: 1px solid var(--stroke);
-  border-radius: var(--r-md);
-  background: var(--bg-card);
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.87rem;
-  min-width: 520px;
-}
-caption {
-  caption-side: top;
-  text-align: left;
-  padding: 12px 16px 4px;
-  font-size: 0.78rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--tx-3);
-}
-th, td {
-  padding: 10px 16px;
-  text-align: left;
-  border-bottom: 1px solid var(--stroke);
-  vertical-align: top;
-}
-thead th {
-  background: var(--thead-bg);
-  color: var(--tx-3);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-tbody tr:last-child td { border-bottom: 0; }
-tbody tr:nth-child(even) td { background: var(--zebra); }
-td.num, th.num {
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.84rem;
-  color: var(--tx-1);
-  white-space: nowrap;
-}
-.pill {
-  display: inline-block;
-  padding: 1px 9px;
-  border-radius: var(--r-full);
-  font-size: 0.76rem;
-  line-height: 1.7;
-  border: 1px solid var(--stroke-2);
-  background: var(--bg-glass);
-  white-space: nowrap;
-}
-.pill-good { color: var(--q-good); border-color: var(--q-good); }
-.pill-mid  { color: var(--q-mid);  border-color: var(--q-mid); }
-.pill-bad  { color: var(--q-bad);  border-color: var(--q-bad); }
-.pill-info { color: var(--q-info); border-color: var(--q-info); }
-
-/* ---------- 公式 / 提示 ---------- */
-.formula {
-  margin: var(--sp-4) 0 var(--sp-5);
-  padding: var(--sp-4) var(--sp-5);
-  border: 1px solid var(--stroke);
-  border-radius: var(--r-md);
-  background: var(--bg-glass);
-  position: relative;
-  overflow: hidden;
-}
-.formula::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
-  background: var(--spectrum);
-}
-.formula .f-line {
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.95rem;
-  color: var(--tx-1);
-  letter-spacing: 0.01em;
-}
-.formula .f-note {
-  margin: 8px 0 0;
-  font-size: 0.82rem;
-  color: var(--tx-3);
-}
-.callout {
-  margin: var(--sp-4) 0 var(--sp-5);
-  padding: var(--sp-4) var(--sp-5);
-  border-radius: var(--r-md);
-  border: 1px solid var(--stroke-2);
-  background: var(--bg-glass-2);
-  font-size: 0.885rem;
-}
-.callout .c-title {
-  display: block;
-  font-size: 0.76rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--acc-2);
-  margin-bottom: 6px;
-  font-weight: 600;
-}
-.callout p:last-child { margin-bottom: 0; }
-
-/* 模块读法列表 */
-.read-list { counter-reset: rd; margin: var(--sp-4) 0 var(--sp-5); padding: 0; list-style: none; }
-.read-list > li {
-  counter-increment: rd;
-  position: relative;
-  padding: 13px 0 13px 46px;
-  border-bottom: 1px solid var(--stroke);
-}
-.read-list > li:last-child { border-bottom: 0; }
-.read-list > li::before {
-  content: counter(rd, decimal-leading-zero);
-  position: absolute;
-  left: 0; top: 15px;
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.76rem;
-  letter-spacing: 0.05em;
-  color: var(--acc-2);
-  border: 1px solid var(--stroke-2);
-  border-radius: var(--r-sm);
-  padding: 1px 7px;
-}
-.read-list .r-name {
-  color: var(--tx-1);
-  font-weight: 650;
-  letter-spacing: -0.02em;
-  margin-right: 8px;
-}
-.read-list p { margin: 4px 0 0; font-size: 0.885rem; }
-
-/* 问答 */
-.qa {
-  border: 1px solid var(--stroke);
-  border-radius: var(--r-md);
-  background: var(--bg-card);
-  padding: var(--sp-4) var(--sp-5);
-  margin-bottom: var(--sp-3);
-}
-.qa .q {
-  display: flex;
-  gap: 10px;
-  color: var(--tx-1);
-  font-weight: 650;
-  letter-spacing: -0.02em;
-  margin-bottom: 8px;
-}
-.qa .q .qm {
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.78rem;
-  color: var(--acc-1);
-  flex: 0 0 auto;
-  padding-top: 3px;
-}
-.qa .a { margin: 0; font-size: 0.895rem; }
-.qa .a + .a { margin-top: 8px; }
-
-/* ---------- 页脚 ---------- */
-.foot {
-  border-top: 1px solid var(--stroke-2);
-  background: var(--bg-deep);
-  padding: clamp(28px, 5vw, 44px) clamp(16px, 4vw, 36px);
-}
-.foot-inner {
-  max-width: calc(var(--maxw) + 120px);
-  margin: 0 auto;
-}
-.foot-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: var(--sp-3);
-}
-.foot-brand .brand-logo { width: 26px; height: 26px; filter: none; }
-.foot-brand .n { font-size: 0.92rem; font-weight: 700; color: var(--tx-1); letter-spacing: -0.02em; }
-.foot p {
-  font-size: 0.815rem;
-  color: var(--tx-3);
-  max-width: 62em;
-  margin-bottom: 10px;
-}
-.foot .fine {
-  margin-top: var(--sp-4);
-  padding-top: var(--sp-3);
-  border-top: 1px solid var(--stroke);
-  font-size: 0.76rem;
-  color: var(--tx-3);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 18px;
-}
-.foot a { color: var(--tx-2); }
-
-/* ---------- 移动端 ---------- */
-@media (max-width: 640px) {
-  body { font-size: 14.5px; }
-  .brand { padding: 10px 14px; top: 0; }
-  .brand-sub { display: none; }
-  .brand-logo { width: 32px; height: 32px; }
-  .brand-name { font-size: 0.95rem; }
-  .btn-ghost .btn-label { display: none; }
-  .btn-ghost { padding: 8px 10px; }
-  .toc { top: 55px; }
-  .toc-inner { padding: 0 14px; }
-  .toc a { padding: 10px 10px 9px; font-size: 0.79rem; }
-  .wrap { padding: 0 16px var(--sp-7); }
-  .ch-head { gap: var(--sp-3); }
-  .ch-head .ch-en { display: none; }
-  .tbl-wrap { margin-left: -4px; margin-right: -4px; border-radius: var(--r-sm); }
-  .read-list > li { padding-left: 40px; }
-  .foot { padding: 26px 16px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
+/* ---------- 版面 ---------- */
+.wrap{max-width:var(--maxw);margin:0 auto;padding:26px 20px 10px}
+.view[hidden]{display:none}
+.sec,.view>section{scroll-margin-top:calc(var(--toph,74px) + 18px)}
+.hero{padding:34px 0 8px}
+.hero h1{font-size:clamp(1.8rem,4.4vw,2.5rem);line-height:1.25;margin:12px 0 12px;letter-spacing:-.01em}
+.pill{display:inline-block;font-size:11.5px;letter-spacing:.6px;color:var(--acc2);
+  border:1px solid var(--accbd);background:var(--accbg);border-radius:var(--r-full);padding:3px 12px}
+.lead{font-size:15.5px;color:var(--tx2);max-width:760px;margin:0}
+.lead b{color:var(--tx)}
+h2{font-size:19px;margin:0 0 10px;letter-spacing:-.01em}
+h2 .no{font-family:var(--mono);font-size:12px;color:var(--tx3);margin-right:8px;font-weight:400}
+.sec{padding:26px 0 6px;border-top:1px solid var(--line2)}
+.sec:first-of-type{border-top:0}
+.sec p{margin:0 0 10px;color:var(--tx2);max-width:790px}
+.sec p b,.sec li b{color:var(--tx)}
+.hl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0 4px}
+.hl .c{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:16px 16px 13px}
+.hl .c.wide{grid-column:1 / -1}
+.hl h3{margin:0 0 5px;font-size:14.5px}
+.hl h3 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:8px;
+  background:var(--spectrum);vertical-align:1px}
+.hl p{margin:0;font-size:13.5px;color:var(--tx2);line-height:1.7}
+.steps{counter-reset:s;list-style:none;padding:0;margin:14px 0 4px;max-width:790px}
+.steps>li{position:relative;padding:0 0 14px 38px;color:var(--tx2)}
+.steps>li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:1px;
+  width:24px;height:24px;border-radius:50%;display:grid;place-items:center;
+  font-family:var(--mono);font-size:12px;background:var(--accbg);color:var(--acc2);
+  border:1px solid var(--accbd)}
+.steps>li b{color:var(--tx)}
+.panels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0 6px}
+.panel{display:flex;flex-direction:column;gap:5px;background:var(--card);
+  border:1px solid var(--line);border-radius:var(--r-md);padding:18px 16px 14px;
+  color:inherit;transition:border-color .16s}
+.panel:hover{border-color:var(--tx3);text-decoration:none}
+.panel .k{font-size:10.5px;color:var(--tx3);letter-spacing:.5px}
+.panel h3{font-size:16px;font-weight:600;margin:0;color:var(--tx)}
+.panel p{font-size:13px;color:var(--tx2);margin:0;line-height:1.65}
+.panel .go{margin-top:auto;padding-top:10px;font-size:13px;color:var(--acc2);font-weight:600}
+.terms{margin:14px 0 6px;display:grid;grid-template-columns:200px 1fr;max-width:790px}
+.terms>div{display:contents}
+.terms dt{padding:10px 0;border-top:1px solid var(--line2);font-size:14px;font-weight:600;color:var(--tx)}
+.terms dd{padding:10px 0;border-top:1px solid var(--line2);margin:0;font-size:13.5px;color:var(--tx2)}
+.code{font-family:var(--mono);font-size:12.5px;background:var(--codebg);border:1px solid var(--line2);
+  border-radius:var(--r-sm);padding:11px 14px;margin:10px 0;overflow-x:auto;color:var(--tx2);
+  white-space:pre}
+.code b{color:var(--tx);font-weight:600}
+.note{background:var(--glass);border:1px solid var(--line);border-left:3px solid var(--acc2);
+  border-radius:var(--r-sm);padding:12px 16px;margin:14px 0 4px;font-size:13.5px;color:var(--tx2);max-width:790px}
+.note b{color:var(--tx)}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:12px 0 4px}
+.kv .c{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:13px 15px}
+.kv .n{font-family:var(--mono);font-size:16px;font-weight:600;color:var(--tx)}
+.kv .d{font-size:12.5px;color:var(--tx2);margin-top:2px}
+footer{border-top:1px solid var(--line2);margin-top:44px}
+.foot{max-width:var(--maxw);margin:0 auto;padding:22px 20px 40px;display:flex;flex-wrap:wrap;
+  gap:8px 18px;align-items:center;font-size:12.5px;color:var(--tx3)}
+.foot .spacer{flex:1}
+@media (max-width:720px){
+  .hl{grid-template-columns:1fr}
+  .panels{grid-template-columns:1fr}
+  .terms{grid-template-columns:1fr}
+  .terms dd{border-top:0;padding-top:0}
+  .brand{display:none}
 }
 </style>
 </head>
 <body>
-
-<!-- ================= 品牌条 ================= -->
-<header class="brand">
-  <svg class="brand-logo" viewBox="0 0 48 48" aria-hidden="true">
-    <defs>
-      <linearGradient id="specRing" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="#ff4d82"/>
-        <stop offset="0.5" stop-color="#ff9c3f"/>
-        <stop offset="1" stop-color="#2ed5e8"/>
-      </linearGradient>
-    </defs>
-    <circle cx="24" cy="24" r="18" fill="none" stroke="url(#specRing)" stroke-width="3.2" stroke-linecap="round" stroke-dasharray="84 29"/>
-    <circle cx="24" cy="24" r="9.5" fill="none" stroke="url(#specRing)" stroke-width="1.6" opacity="0.72" stroke-dasharray="42 18"/>
-    <circle cx="24" cy="24" r="3.2" fill="url(#specRing)"/>
-  </svg>
-  <div class="brand-text">
-    <div class="brand-name">霞光预报 GLOWCAST</div>
-    <div class="brand-sub">Atmospheric Spectrum Observatory · v2</div>
+<header class="top">
+  <div class="top-in">
+    <a class="back" href="./index.html"><span aria-hidden="true">←</span>&nbsp;<span data-i18n="回主页">回主页</span></a>
+    <div class="logo" aria-hidden="true"></div>
+    <span class="brand">GLOWCAST · <span data-i18n="使用教程">使用教程</span></span>
+    <div class="spacer"></div>
+    <div class="dwrap">
+      <button type="button" id="langBtn" class="tbtn" aria-haspopup="true" aria-expanded="false" title="语言">中</button>
+      <div class="tmenu" id="langMenu" hidden>
+        <div class="cap" data-i18n="语言">语言</div>
+        <div id="langSeg" role="group" aria-label="语言" data-i18n-aria="语言"></div>
+      </div>
+    </div>
+    <div class="dwrap">
+      <button type="button" id="themeBtn" class="tbtn" aria-haspopup="true" aria-expanded="false" title="主题"><span class="ico" aria-hidden="true">◐</span></button>
+      <div class="tmenu" id="themeMenu" hidden>
+        <div class="cap" data-i18n="主题">主题</div>
+        <div id="themeSeg" role="group" aria-label="主题" data-i18n-aria="主题"></div>
+      </div>
+    </div>
   </div>
-  <div class="brand-actions">
-    <button class="btn-ghost" id="themeBtn" type="button" aria-label="切换主题">
-      <span class="theme-dot" aria-hidden="true"></span>
-      <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="4.2"/>
-        <path d="M12 2.8v2.2M12 19v2.2M2.8 12h2.2M19 12h2.2M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6"/>
-      </svg>
-      <span class="btn-label" id="themeLabel">跟随系统</span>
-    </button>
-    <a class="btn-ghost" href="../index.html#/">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/>
-      </svg>
-      <span class="btn-label">返回 GLOWCAST</span>
-    </a>
+  <div class="tabs">
+    <div class="tabs-in" id="tabs" role="group" aria-label="教程分档" data-i18n-aria="教程分档">
+      <button type="button" class="tab on" data-view="overview" aria-pressed="true" data-i18n="概览">概览</button>
+      <button type="button" class="tab" data-view="users" aria-pressed="false" data-i18n="用户版">用户版</button>
+      <button type="button" class="tab" data-view="dev" aria-pressed="false" data-i18n="开发者版">开发者版</button>
+      <button type="button" class="tab" data-view="creator" aria-pressed="false" data-i18n="创作者版">创作者版</button>
+    </div>
   </div>
 </header>
 
-<!-- ================= 粘性目录 ================= -->
-<nav class="toc" aria-label="章节目录">
-  <div class="toc-inner" id="tocInner">
-    <a href="#ch1"><span class="toc-idx">01</span>一分钟看懂</a>
-    <a href="#ch2"><span class="toc-idx">02</span>霞光物理</a>
-    <a href="#ch3"><span class="toc-idx">03</span>三套算法</a>
-    <a href="#ch4"><span class="toc-idx">04</span>界面读法</a>
-    <a href="#ch5"><span class="toc-idx">05</span>观测场地图</a>
-    <a href="#ch6"><span class="toc-idx">06</span>参数阈值</a>
-    <a href="#ch7"><span class="toc-idx">07</span>术语速查</a>
-    <a href="#ch8"><span class="toc-idx">08</span>部署说明</a>
-    <a href="#ch9"><span class="toc-idx">09</span>常见问题</a>
-  </div>
-</nav>
-
 <main class="wrap">
+<!-- ==================== 概览 ==================== -->
+<section class="view" id="overview">
+  <div class="hero">
+    <span class="pill">GLOWCAST · <span data-i18n="使用教程">使用教程</span></span>
+    <h1 data-i18n="读懂朝霞与晚霞的预报">读懂朝霞与晚霞的预报</h1>
+    <p class="lead" data-i18n-html="ov.lead">霞光预报 GLOWCAST 是一个<b>单文件 Web 应用</b>：输入地点与日期，预测朝霞 / 晚霞（火烧云）出现的概率与观赏质量，并在周边 80 km 采样网格上画出霞光分布。这份教程分四档，按身份取用。</p>
+  </div>
 
-  <!-- ================= Hero ================= -->
-  <section class="hero">
-    <div class="hero-kicker">使用教程</div>
-    <h1>把天空的<span class="grad">光谱</span>，读成一次值得的等待</h1>
-    <p class="hero-lead">
-      GLOWCAST 把大气光学与数值模式翻译成两件事：<strong>会不会有霞</strong>与<strong>好不好看</strong>。
-      本页是完整使用教程——从霞光的物理成因，到三套算法如何合成结论，再到界面每个模块怎么读、地图怎么看、阈值是多少、如何自行部署。
-      单文件离线可读，深浅双主题。
-    </p>
-    <div class="hero-chips">
-      <span class="chip"><span class="k">9</span> 章节</span>
-      <span class="chip"><span class="k">I = 0.55P + 0.45Q</span> 综合指数</span>
-      <span class="chip"><span class="k">W_ENS</span> gfs .30 / ec .34 / rt .36</span>
-      <span class="chip"><span class="k">500 km</span> 观测场半径</span>
-    </div>
-  </section>
+  <div class="hl">
+    <div class="c"><h3><span class="dot" aria-hidden="true"></span><span data-i18n="三模型综合">三模型综合</span></h3><p data-i18n="GFS 与 ECMWF 两路统计判据加一路光追物理模型，各自打分后按权重几何平均合成；三路分歧度直接换算成可信度。">GFS 与 ECMWF 两路统计判据加一路光追物理模型，各自打分后按权重几何平均合成；三路分歧度直接换算成可信度。</p></div>
+    <div class="c"><h3><span class="dot" aria-hidden="true"></span><span data-i18n="光谱观测场">光谱观测场</span></h3><p data-i18n="以查询点为中心的 121 点网格，全光谱色阶铺色，可切换出现概率 / 观赏质量 / 云量 / 可信度四个维度。">以查询点为中心的 121 点网格，全光谱色阶铺色，可切换出现概率 / 观赏质量 / 云量 / 可信度四个维度。</p></div>
+    <div class="c"><h3><span class="dot" aria-hidden="true"></span><span data-i18n="十日趋势">十日趋势</span></h3><p data-i18n="一次取数画十天曲线，朝 / 晚分开看；算好的结果落盘缓存，重开页命中零请求。">一次取数画十天曲线，朝 / 晚分开看；算好的结果落盘缓存，重开页命中零请求。</p></div>
+    <div class="c"><h3><span class="dot" aria-hidden="true"></span><span data-i18n="多观测点对比">多观测点对比</span></h3><p data-i18n="最多 4 个机位一次取数横向排序，直接回答「今晚去哪儿拍」。">最多 4 个机位一次取数横向排序，直接回答「今晚去哪儿拍」。</p></div>
+    <div class="c wide"><h3><span class="dot" aria-hidden="true"></span><span data-i18n="快照互通">快照互通</span></h3><p data-i18n="结论编码进 URL，对方打开即见快照、零额度零请求；快照格式与 V1 完全互通——两边生成的链接互相能解。">结论编码进 URL，对方打开即见快照、零额度零请求；快照格式与 V1 完全互通——两边生成的链接互相能解。</p></div>
+  </div>
 
-  <!-- ================= 01 ================= -->
-  <section class="chapter" id="ch1">
-    <div class="ch-head">
-      <span class="ch-num">01</span>
-      <h2>一分钟看懂 GLOWCAST</h2>
-      <span class="ch-en">Overview</span>
-    </div>
-    <p>
-      查一次预报，系统会返回三个核心数字：出现概率 <strong>P</strong>（0–100，这次霞光事件会不会发生）、
-      观赏质量 <strong>Q</strong>（0–100，发生了的话有多好看）、以及综合指数 <strong>I</strong>（0–100，两者加权）。
-      此外还有<strong>可信度</strong>（三套算法彼此差多少）与<strong>质量等级</strong>（优 / 良 / 一般 / 差）两个派生标签。
-    </p>
-    <div class="formula">
-      <div class="f-line">I = 0.55 × P + 0.45 × Q</div>
-      <p class="f-note">混合指数：出现概率权重略高——先谈「有没有」，再谈「美不美」。I 与 P、Q 均为 0–100。</p>
-    </div>
-    <div class="card-grid">
-      <div class="card">
-        <h4>结论卡 <span class="tag">P · Q · I</span></h4>
-        <p>首屏最醒目的三个数字与一句话结论，回答「今晚值不值得出门」。</p>
-      </div>
-      <div class="card">
-        <h4>天色带 <span class="tag">Sky Band</span></h4>
-        <p>沿时间轴铺开的天空色彩序列，一眼看出最佳窗口落在哪几分钟。</p>
-      </div>
-      <div class="card">
-        <h4>七日趋势 <span class="tag">Trend</span></h4>
-        <p>未来七天 I 的走势与峰值日，用来挑日子、安排出行。</p>
-      </div>
-      <div class="card">
-        <h4>观测场 <span class="tag">Field</span></h4>
-        <p>周边 500 km 的霞光分布色面，回答「今天去哪儿拍」。</p>
-      </div>
-    </div>
-    <div class="callout">
-      <span class="c-title">怎么用这份教程</span>
-      <p>
-        只想知道「看不看得到」：读第 01、04、09 章即可。
-        想理解数字怎么来的：补第 02、03、06 章。
-        要做二次开发或自部署：直接看第 05、08 章。
-      </p>
-    </div>
-  </section>
-
-  <!-- ================= 02 ================= -->
-  <section class="chapter" id="ch2">
-    <div class="ch-head">
-      <span class="ch-num">02</span>
-      <h2>霞光物理原理</h2>
-      <span class="ch-en">Physics</span>
-    </div>
-    <p>
-      霞不是「太阳染红了天」，而是一条光学链条的末端产物：阳光穿过多厚的大气、以什么角度进来、
-      最后被什么东西接住。链条上任何一环出问题，霞都会变淡、变脏，或者干脆消失。
-    </p>
-
-    <h3>02.1 瑞利散射</h3>
-    <p>
-      大气分子对光的散射强度与波长的四次方成反比（σ ∝ λ⁻⁴）。蓝紫光被散射得远比红橙光剧烈，
-      所以正午的天是蓝的——那是被散射到你眼睛里的短波光。
-      当阳光斜射、光程拉长时，蓝绿光在途中被反复散射掉队，剩下以红橙为主的长波光穿透过来，
-      这就是日出日落天边发红的底层原因。550 nm 整层瑞利光学厚度约 <code>0.0975</code>，标高约 <code>8 km</code>。
-    </p>
-
-    <h3>02.2 光程</h3>
-    <p>
-      光程指阳光从大气顶到达观察者所经过的路径长度。太阳越高，光程越短，色彩越接近白色；
-      太阳贴近地平线甚至落到地平线以下时，光程是天顶方向的数十倍，消光累积到只剩深红与暗橙。
-      系统沿光路做消光积分（瑞利 + 气溶胶），得到到达本地的光谱，再换算为色度——
-      这是「天色带」逐时刻颜色的物理来源。
-    </p>
-
-    <h3>02.3 掠地光</h3>
-    <p>
-      日落后那几分钟，直射阳光已经打不到地面，但仍能以极低的角度掠过地表与云底边界，
-      从侧下方擦着地平线射向高空。这段掠地路径穿过整层大气与近地层气溶胶，光谱被滤得最红，
-      往往是一场晚霞最浓烈的时刻。判断「掠地光还能不能打到这层云」正是光追模型的核心计算之一。
-    </p>
-
-    <h3>02.4 云底承接</h3>
-    <p>
-      红光需要一面「幕布」才能被看见，这面幕布就是云。理想的霞：
-      西边（或东边）有中高云的云底、本地上空通透、云底高度恰在掠地光可达的高度带内。
-      云太低会被地影吞掉、太高够不着红光、本地云太厚则直接遮死。
-      系统会沿剖面分析云层分布（<code>analyseTransect</code>），估计上游云边界距离与主云盘层，
-      用来判断「光打不打得上、打上哪一层」。
-    </p>
-
-    <h3>02.5 污烧</h3>
-    <p>
-      气溶胶很少时，瑞利散射占主导，阳光颜色纯净饱和，是「水晶天」；气溶胶大量存在时属「污烧」——
-      散射让天空背景整体变亮变白，低角度霞光的层次与细节被灰霾吞掉，画面发灰发脏。
-      系统把漫射光的等效光程比例设为 <code>0.30</code>（远小于直射光，故漫射光谱更「白」），
-      并以最大冲淡系数 <code>0.62</code> 描述污烧对色彩饱和度的削减。
-      换句话说：<strong>不是气溶胶越多霞越红</strong>，中间存在一个最佳区间。
-    </p>
-
-    <div class="callout">
-      <span class="c-title">一条链条</span>
-      <p>
-        瑞利散射定「红从哪来」 → 光程定「红到多红」 → 掠地光定「红从哪个角度来」
-        → 云底承接定「红映在哪块幕布上」 → 污烧定「红被冲淡多少」。算法部分就是把这条链定量化的。
-      </p>
-    </div>
-  </section>
-
-  <!-- ================= 03 ================= -->
-  <section class="chapter" id="ch3">
-    <div class="ch-head">
-      <span class="ch-num">03</span>
-      <h2>三套算法与综合指数</h2>
-      <span class="ch-en">Algorithms</span>
-    </div>
-    <p>
-      结论不是单一模型给出的，而是三套算法各算各的，再按权重合成。这样做有两个好处：
-      统计模型在模式气候态上稳健，物理模型在极端个例上更有解释力；
-      三者之间的分歧本身就是可信度信号。
-    </p>
-
-    <div class="card-grid">
-      <div class="card">
-        <h4>GFS 统计判据 <span class="tag">scoreStat</span></h4>
-        <p>
-          基于 GFS 模式输出的环境场（云量分层、能见度、湿度、气溶胶、冻结层 / 边界层高度、
-          风场与气压变化等）计算多因子评分，权重见 W_STAT：云量 0.20、云型 0.16、云底 0.12、
-          几何 0.16、气溶胶 0.12、能见度 0.08、湿度 0.05、稳定度 0.06、遮挡 0.05。
-        </p>
-      </div>
-      <div class="card">
-        <h4>ECMWF 统计判据 <span class="tag">scoreStat</span></h4>
-        <p>
-          与 GFS 同一套判据、换用 ECMWF 模式场输入，并对参数做微扰以制造分歧，
-          模拟集合预报里「同一套公式在不同模式气候下的离散」，用来看结论对模式选择有多敏感。
-        </p>
-      </div>
-      <div class="card">
-        <h4>光追物理 <span class="tag">scoreRay</span></h4>
-        <p>
-          纯物理路径：对太阳高度角与方位做几何推演，沿光路积分瑞利与气溶胶消光，
-          计算云底 / 地表被照亮的光谱与色度，输出「如果霞出现，它长什么样」的概率与质量。
-          物理路径对掠地光、污烧的刻画最直接。
-        </p>
-      </div>
-    </div>
-
-    <h3>03.1 权重与合成</h3>
-    <div class="tbl-wrap">
-      <table>
-        <caption>W_ENS · 集成权重</caption>
-        <thead>
-          <tr><th>成员</th><th>类型</th><th class="num">权重</th><th>说明</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><code>gfs</code></td><td>统计判据</td><td class="num">0.30</td>
-            <td>GFS 环境场，稳健、覆盖面广</td>
-          </tr>
-          <tr>
-            <td><code>ec</code></td><td>统计判据</td><td class="num">0.34</td>
-            <td>ECMWF 环境场，中纬度技巧略优</td>
-          </tr>
-          <tr>
-            <td><code>rt</code></td><td>光追物理</td><td class="num">0.36</td>
-            <td>路径追踪，个例解释力最强</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="formula">
-      <div class="f-line">P = wgeo(P_gfs, P_ec, P_rt)　　Q = wgeo(Q_gfs, Q_ec, Q_rt)　　I = 0.55P + 0.45Q</div>
-      <p class="f-note">
-        综合 P / Q 取各非空成员的<strong>加权几何平均</strong>（wgeo），而非算术平均——
-        几何平均对「某个成员给出极低值」更敏感，任一成员强烈看衰都会把综合值拉下来，
-        符合霞光预报「一票否决」的物理直觉。成员缺失时按剩余成员重新归一权重。
-      </p>
-    </div>
-
-    <h3>03.2 可信度从哪来</h3>
-    <p>
-      可信度不来自任何单一模型的自信程度，而来自<strong>三套算法综合指数的相互差异</strong>。
-      三者结论接近 → 高可信；三者各说各话 → 低可信。差异度以 ΔI 度量，分档阈值见第 06 章。
-      这意味着可信度低的时候，<strong>不一定是「不会有霞」</strong>，而是「现在的数据撑不起一个确定结论」，
-      建议临近时刻再看实况。
-    </p>
-  </section>
-
-  <!-- ================= 04 ================= -->
-  <section class="chapter" id="ch4">
-    <div class="ch-head">
-      <span class="ch-num">04</span>
-      <h2>界面读法</h2>
-      <span class="ch-en">Interface</span>
-    </div>
-    <p>主界面由七个模块组成，自上而下即为推荐的阅读顺序。</p>
-    <ol class="read-list">
-      <li>
-        <span class="r-name">结论卡</span>
-        <p>
-          并排展示 P / Q / I 三个大数字与一句话结论，附质量等级徽标（优 / 良 / 一般 / 差）。
-          概率数字与结论标题带光谱辉光，是整页唯一的高亮处——辉光纪律：辉光只给概率数字与结论标题。
-        </p>
-      </li>
-      <li>
-        <span class="r-name">天色带</span>
-        <p>
-          沿日出 / 日落前后的时间轴铺开的天空色彩序列。色带的每一段都来自光追模型在该时刻的光谱换算，
-          段间过渡即为「窗口」：哪几分钟最红、哪几分钟开始衰减，扫一眼就有结论。
-        </p>
-      </li>
-      <li>
-        <span class="r-name">七日趋势</span>
-        <p>
-          未来七天 I 的走势曲线与峰值标记，用于挑日子。点击某一天即切换当日全量结果，
-          与主视图共用同一套计算口径。
-        </p>
-      </li>
-      <li>
-        <span class="r-name">观测场</span>
-        <p>
-          周边霞光分布地图，回答「今天去哪儿拍」。图层、维度、缓存等细节见第 05 章。
-        </p>
-      </li>
-      <li>
-        <span class="r-name">模式对比</span>
-        <p>
-          并列展示 GFS / ECMWF / 光追三套结论的 P、Q、I，以及与综合值的偏离。
-          分歧大的因子在这里会「跳出来」，是判断可信度最直观的依据。
-        </p>
-      </li>
-      <li>
-        <span class="r-name">影响因素</span>
-        <p>
-          各因子条形分解（云量、云型、云底、几何、气溶胶、能见度、湿度、稳定度、遮挡），
-          标出当前是哪一项在拉高或压低结论。看到「气溶胶」霸榜，多半就是污烧。
-        </p>
-      </li>
-      <li>
-        <span class="r-name">实况校准</span>
-        <p>
-          用你的真实观测反馈修正本地偏差。只展示、不回改模型；样本不足不给结论。
-          门槛见第 06 章（CALIB_MIN_N / CALIB_MIN_BUCKET）。
-        </p>
-      </li>
+  <section class="sec" id="ov-start">
+    <h2><span class="no">01</span><span data-i18n="快速开始">快速开始</span></h2>
+    <ol class="steps">
+      <li><b data-i18n="选地点">选地点</b>：<span data-i18n="搜索城市名，或直接输入「纬度,经度」。">搜索城市名，或直接输入「纬度,经度」。</span></li>
+      <li><b data-i18n="选日期与时段">选日期与时段</b>：<span data-i18n="日期可回看 7 天、前瞻 10 天；朝霞与晚霞分开计算。">日期可回看 7 天、前瞻 10 天；朝霞与晚霞分开计算。</span></li>
+      <li><b data-i18n="读结论">读结论</b>：<span data-i18n="概率 + 质量分 + 等级 + 可信度；往下拉是十日趋势、观测场与多观测点对比。">概率 + 质量分 + 等级 + 可信度；往下拉是十日趋势、观测场与多观测点对比。</span></li>
     </ol>
-    <div class="callout">
-      <span class="c-title">辉光纪律</span>
-      <p>
-        深色主题下你会注意到：只有概率数字与结论标题在发光，其余部分靠玻璃拟态面板与发丝线分层。
-        这是刻意的视觉约束——辉光指向「你真正要读的那个数」。
-      </p>
+  </section>
+
+  <section class="sec" id="ov-family">
+    <h2><span class="no">02</span><span data-i18n="版本家族">版本家族</span></h2>
+    <p data-i18n="霞光预报家族四套并存、互相隔离：V1（仓库根目录的原版，单文件 assemble 构建链，算法权威）、GLOWCAST v2（本教程所属，项目主线）、v3「追光航志」（画布航图决策版）、Skyglow（Python 服务端版）。页脚「切换到V1」随时回到原版。">霞光预报家族四套并存、互相隔离：V1（仓库根目录的原版，单文件 assemble 构建链，算法权威）、GLOWCAST v2（本教程所属，项目主线）、v3「追光航志」（画布航图决策版）、Skyglow（Python 服务端版）。页脚「切换到V1」随时回到原版。</p>
+  </section>
+
+  <section class="sec" id="ov-pick">
+    <h2><span class="no">03</span><span data-i18n="按身份取用">按身份取用</span></h2>
+    <div class="panels">
+      <a class="panel" href="#users">
+        <span class="k" data-i18n="FOR USERS">FOR USERS</span>
+        <h3 data-i18n="用户版">用户版</h3>
+        <p data-i18n="从查预报到读结论，每个功能怎么用、数字怎么看。">从查预报到读结论，每个功能怎么用、数字怎么看。</p>
+        <span class="go" data-i18n="进入 →">进入 →</span>
+      </a>
+      <a class="panel" href="#dev">
+        <span class="k" data-i18n="FOR DEVELOPERS">FOR DEVELOPERS</span>
+        <h3 data-i18n="开发者版">开发者版</h3>
+        <p data-i18n="构建链、源码结构、算法口径、探针与部署。">构建链、源码结构、算法口径、探针与部署。</p>
+        <span class="go" data-i18n="进入 →">进入 →</span>
+      </a>
+      <a class="panel" href="#creator">
+        <span class="k" data-i18n="FOR CREATORS">FOR CREATORS</span>
+        <h3 data-i18n="创作者版">创作者版</h3>
+        <p data-i18n="用预报数据规划拍摄、导出分享卡与快照链接。">用预报数据规划拍摄、导出分享卡与快照链接。</p>
+        <span class="go" data-i18n="进入 →">进入 →</span>
+      </a>
+    </div>
+  </section>
+</section>
+
+<!-- ==================== 用户版 ==================== -->
+<section class="view" id="users" hidden>
+  <div class="hero">
+    <span class="pill" data-i18n="用户版">用户版</span>
+    <h1 data-i18n="十分钟看懂这份霞光预报">十分钟看懂这份霞光预报</h1>
+    <p class="lead" data-i18n="每个功能怎么用、每个数字怎么读。不需要任何气象背景。">每个功能怎么用、每个数字怎么读。不需要任何气象背景。</p>
+  </div>
+
+  <section class="sec" id="u-forecast">
+    <h2><span class="no">01</span><span data-i18n="查一次预报">查一次预报</span></h2>
+    <p data-i18n="顶部搜索框输入城市名，或直接给「纬度,经度」；日期选择器可切到过去 7 天内的任意一天与未来 10 天；朝霞 / 晚霞在结论卡上方切换。">顶部搜索框输入城市名，或直接给「纬度,经度」；日期选择器可切到过去 7 天内的任意一天与未来 10 天；朝霞 / 晚霞在结论卡上方切换。</p>
+    <p data-i18n="位置与日期不写进偏好——每次打开都是新的开始；想带走当前结果，用分享链接。">位置与日期不写进偏好——每次打开都是新的开始；想带走当前结果，用分享链接。</p>
+  </section>
+
+  <section class="sec" id="u-read">
+    <h2><span class="no">02</span><span data-i18n="读懂结论卡">读懂结论卡</span></h2>
+    <p data-i18n="出现概率＝今晚「有没有霞」；观赏质量＝「好不好看」（0–100 分，优 ≥80、良 ≥65、一般 ≥45）。两个维度独立：概率高可能质量平平（闷烧），概率低也可能一旦出现极惊艳。">出现概率＝今晚「有没有霞」；观赏质量＝「好不好看」（0–100 分，优 ≥80、良 ≥65、一般 ≥45）。两个维度独立：概率高可能质量平平（闷烧），概率低也可能一旦出现极惊艳。</p>
+    <p data-i18n="卡内天色带标出日出 / 日落与民用 / 航海 / 天文昏影终四道线，「此刻」游标告诉你正处在哪个阶段；晚霞的黄金窗口通常在日落后 10–25 分钟，朝霞则要赶在天亮之前到位。">卡内天色带标出日出 / 日落与民用 / 航海 / 天文昏影终四道线，「此刻」游标告诉你正处在哪个阶段；晚霞的黄金窗口通常在日落后 10–25 分钟，朝霞则要赶在天亮之前到位。</p>
+    <p data-i18n="三张模型卡（GFS / ECMWF / 光追）可逐张对照：结论越一致，可信度徽标越稳；分歧大时，宁可当「可能有」对待。">三张模型卡（GFS / ECMWF / 光追）可逐张对照：结论越一致，可信度徽标越稳；分歧大时，宁可当「可能有」对待。</p>
+  </section>
+
+  <section class="sec" id="u-trend">
+    <h2><span class="no">03</span><span data-i18n="十日趋势">十日趋势</span></h2>
+    <p data-i18n="点「加载趋势」显式取数（约 102 次加权调用，34 个坐标 × 10 天一次拉完），之后朝 / 晚两条概率曲线加质量分柱状列。算好的结果落盘缓存 6 小时，重开页命中直接画出，零请求。">点「加载趋势」显式取数（约 102 次加权调用，34 个坐标 × 10 天一次拉完），之后朝 / 晚两条概率曲线加质量分柱状列。算好的结果落盘缓存 6 小时，重开页命中直接画出，零请求。</p>
+  </section>
+
+  <section class="sec" id="u-map">
+    <h2><span class="no">04</span><span data-i18n="观测场地图">观测场地图</span></h2>
+    <p data-i18n="以当前地点为中心的 121 点采样网格（80 km 间距），四种着色维度：出现概率 / 观赏质量 / 云量 / 可信度。色阶是全光谱形态——颜色即数值，没有凸包硬边界，边缘自然淡出。">以当前地点为中心的 121 点采样网格（80 km 间距），四种着色维度：出现概率 / 观赏质量 / 云量 / 可信度。色阶是全光谱形态——颜色即数值，没有凸包硬边界，边缘自然淡出。</p>
+    <p data-i18n="取数纪律：只有显式点「加载周边地图」才发起请求（约 171 次加权调用）；这个日期已有缓存时会自动画出来。选点有两种方式——直接点格点，或搜城市名；任意点都能一键「加入对比」。">取数纪律：只有显式点「加载周边地图」才发起请求（约 171 次加权调用）；这个日期已有缓存时会自动画出来。选点有两种方式——直接点格点，或搜城市名；任意点都能一键「加入对比」。</p>
+  </section>
+
+  <section class="sec" id="u-cmp">
+    <h2><span class="no">05</span><span data-i18n="多观测点对比">多观测点对比</span></h2>
+    <p data-i18n="最多 4 个点。从地图格点加入的免额度（读已取数的场）；搜索加入的每个点约 51 次加权调用，缓存 6 小时。一次取数后按质量分横向排序——「今晚去哪儿拍」就此有答案。">最多 4 个点。从地图格点加入的免额度（读已取数的场）；搜索加入的每个点约 51 次加权调用，缓存 6 小时。一次取数后按质量分横向排序——「今晚去哪儿拍」就此有答案。</p>
+  </section>
+
+  <section class="sec" id="u-share">
+    <h2><span class="no">06</span><span data-i18n="保存图片与快照链接">保存图片与快照链接</span></h2>
+    <p data-i18n="结论卡的「保存图片」导出 PNG 结论卡（纯 canvas 绘制，配色跟随当前主题）；「复制链接」把当前结果编码进 URL（base64url，SNAP_VER=1），对方打开即见快照，不消耗任何接口额度。格式与 V1 互通——V1 生成的快照这里能解，反之亦然。">结论卡的「保存图片」导出 PNG 结论卡（纯 canvas 绘制，配色跟随当前主题）；「复制链接」把当前结果编码进 URL（base64url，SNAP_VER=1），对方打开即见快照，不消耗任何接口额度。格式与 V1 互通——V1 生成的快照这里能解，反之亦然。</p>
+  </section>
+
+  <section class="sec" id="u-calib">
+    <h2><span class="no">07</span><span data-i18n="实况校准">实况校准</span></h2>
+    <p data-i18n="看完霞回来标注「看到了 / 没看到 / 无法判断」。本机在你的区域加同档概率下累计样本，≥8 条且本档 ≥3 条时展示观测偏差。校准只在本机展示，绝不回改预报模型；关掉标注开关不会删除已有样本。">看完霞回来标注「看到了 / 没看到 / 无法判断」。本机在你的区域加同档概率下累计样本，≥8 条且本档 ≥3 条时展示观测偏差。校准只在本机展示，绝不回改预报模型；关掉标注开关不会删除已有样本。</p>
+  </section>
+
+  <section class="sec" id="u-pref">
+    <h2><span class="no">08</span><span data-i18n="偏好与外观">偏好与外观</span></h2>
+    <p data-i18n="设置面板里：主题（大气光谱观测站·深色 / 晨光实验室·浅色 / 跟随系统）、语言（简体 / 繁體 / English）、单位（公制 km·m·℃ / 英制 mi·ft·℉）、时间格式（12 / 24 小时制）。偏好写本机 localStorage，与本教程页共享同一份。">设置面板里：主题（大气光谱观测站·深色 / 晨光实验室·浅色 / 跟随系统）、语言（简体 / 繁體 / English）、单位（公制 km·m·℃ / 英制 mi·ft·℉）、时间格式（12 / 24 小时制）。偏好写本机 localStorage，与本教程页共享同一份。</p>
+  </section>
+
+  <section class="sec" id="u-quota">
+    <h2><span class="no">09</span><span data-i18n="缓存、额度与离线">缓存、额度与离线</span></h2>
+    <p data-i18n="所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度，遇到 429 时限流不自动重试。网络不可用（预算 9 秒）会回落到确定性 mock，界面左上角标注 MOCK——别把 mock 当预报。装了 PWA 的话，断网也能看已缓存的结果。">所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度，遇到 429 时限流不自动重试。网络不可用（预算 9 秒）会回落到确定性 mock，界面左上角标注 MOCK——别把 mock 当预报。装了 PWA 的话，断网也能看已缓存的结果。</p>
+  </section>
+
+  <section class="sec" id="u-terms">
+    <h2><span class="no">10</span><span data-i18n="术语速查">术语速查</span></h2>
+    <div class="terms">
+      <div><dt data-i18n="AOD">AOD</dt><dd data-i18n="气溶胶光学厚度，衡量大气浑浊度（0.1 清澈 → 1+ 重霾）。">气溶胶光学厚度，衡量大气浑浊度（0.1 清澈 → 1+ 重霾）。</dd></div>
+      <div><dt data-i18n="云底高度">云底高度</dt><dd data-i18n="承接霞光的云层底面高度，3–6 km 的中高云最出片。">承接霞光的云层底面高度，3–6 km 的中高云最出片。</dd></div>
+      <div><dt data-i18n="光学等效地表高度">光学等效地表高度</dt><dd data-i18n="气溶胶层「吃掉」光程的等效厚度，会降低有效云底。">气溶胶层「吃掉」光程的等效厚度，会降低有效云底。</dd></div>
+      <div><dt data-i18n="光追">光追</dt><dd data-i18n="沿地球曲率的抛物线光路做逐波长消光积分，输出真实色彩。">沿地球曲率的抛物线光路做逐波长消光积分，输出真实色彩。</dd></div>
+      <div><dt data-i18n="可信度">可信度</dt><dd data-i18n="三路模型综合指数的极差分档：&lt;18 高、&lt;35 中、≥35 低。">三路模型综合指数的极差分档：&lt;18 高、&lt;35 中、≥35 低。</dd></div>
+      <div><dt data-i18n="mock">mock</dt><dd data-i18n="网络不可用时的确定性演示数据，界面有 MOCK 标注。">网络不可用时的确定性演示数据，界面有 MOCK 标注。</dd></div>
+    </div>
+  </section>
+</section>
+
+<!-- ==================== 开发者版 ==================== -->
+<section class="view" id="dev" hidden>
+  <div class="hero">
+    <span class="pill" data-i18n="开发者版">开发者版</span>
+    <h1 data-i18n="构建、口径与质量门">构建、口径与质量门</h1>
+    <p class="lead" data-i18n="从一条构建命令到三套算法的口径细节，读懂 GLOWCAST v2 的全部机制。">从一条构建命令到三套算法的口径细节，读懂 GLOWCAST v2 的全部机制。</p>
+  </div>
+
+  <section class="sec" id="d-build">
+    <h2><span class="no">01</span><span data-i18n="形态与构建链">形态与构建链</span></h2>
+    <p data-i18n="源码在 v2/，交付物是一个自包含单文件。一条命令跑完构建与发布：">源码在 v2/，交付物是一个自包含单文件。一条命令跑完构建与发布：</p>
+    <div class="code" data-i18n="cd v2 &amp;&amp; npm run build">cd v2 &amp;&amp; npm run build</div>
+    <p data-i18n="三段接力：vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 7 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。">三段接力：vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 7 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。</p>
+    <div class="kv">
+      <div class="c"><div class="n">vite build</div><div class="d" data-i18n="多文件 → app.html 全内联">多文件 → app.html 全内联</div></div>
+      <div class="c"><div class="n">emit-single</div><div class="d" data-i18n="稳定文件名 + 零外链校验">稳定文件名 + 零外链校验</div></div>
+      <div class="c"><div class="n">publish-root</div><div class="d" data-i18n="7 个交付文件落仓库根">7 个交付文件落仓库根</div></div>
     </div>
   </section>
 
-  <!-- ================= 05 ================= -->
-  <section class="chapter" id="ch5">
-    <div class="ch-head">
-      <span class="ch-num">05</span>
-      <h2>观测场地图</h2>
-      <span class="ch-en">Observation Field</span>
-    </div>
-    <p>
-      观测场以当前地点为中心做局部网格采样，逐点评分后插值成色面，叠上云量淡纹。
-      它不是卫星云图，而是<strong>评分结果的地理分布</strong>——色面颜色直接对应 I 值。
-    </p>
-
-    <h3>05.1 网格与取值</h3>
-    <div class="tbl-wrap">
-      <table>
-        <caption>观测场参数</caption>
-        <thead>
-          <tr><th>参数</th><th class="num">取值</th><th>说明</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>半径 <code>MAP_RADIUS_KM</code></td><td class="num">500 km</td><td>以查询点为中心的可视范围</td></tr>
-          <tr><td>格距 <code>MAP_GRID_KM</code></td><td class="num">120 km</td><td>采样步长，成品为 57 点局部网格</td></tr>
-          <tr><td>可信距离 <code>FIELD_REACH_KM</code></td><td class="num">120 km</td><td>IDW 插值的最远可信距离，超出即衰减</td></tr>
-          <tr><td>维度 <code>mix / p / q / dv</code></td><td class="num">4 种</td><td>综合指数 / 概率 / 质量 / 分歧度（可信度反向）</td></tr>
-          <tr><td>模型 <code>ens / gfs / ec / rt</code></td><td class="num">4 种</td><td>综合集成 / GFS / ECMWF / 光追，可切换单看某一成员</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p>
-      四个维度可分别着色：<code>mix</code> 是默认综合视图；<code>p</code> 只看「有没有」；
-      <code>q</code> 只看「美不美」；<code>dv</code> 看三套算法的分歧——分歧高的区域说明当地结论不稳。
-      模型开关则允许沿 <code>ens → gfs → ec → rt</code> 逐一切换，快速定位是哪个成员在拖后腿。
-    </p>
-
-    <h3>05.2 图层与云纹</h3>
-    <p>
-      图层序固定为：经纬网 → 色面 → 云纹 → 等值线。其中<strong>云纹</strong>表示云量遮挡：
-      由低云量与中云量 ×0.85 合成（0–100），按四档绘制：
-      <code>txBandOf(v) = min(3, floor(v / 25))</code>，即 0–24 / 25–49 / 50–74 / 75–100 四档，
-      alpha 平涂，档界即边界；晴档（0 档）不画任何纹理，保持色面干净。
-    </p>
-
-    <h3>05.3 缓存与触发</h3>
-    <ul class="plain-list">
-      <li><strong>缓存</strong>：结果写入 <code>localStorage</code>，键前缀 <code>glowcast.v2.map.v6.</code>，TTL 3 小时，LRU 保留最近 6 条（当前地点豁免淘汰）。</li>
-      <li><strong>键族清理</strong>：升版本时自动清掉旧版本残留键，避免串版本污染。</li>
-      <li><strong>显式触发</strong>：地图不自动取数，只在用户切换维度 / 模型 / 地点等操作时显式触发；
-        命中缓存走快路径；<code>cacheOnly</code> 模式下绝不发网络请求（离线可用）。</li>
-      <li><strong>取数</strong>：多点批量采样走单请求多坐标（Open-Meteo 逗号多点），超过 30 点分批，批间留白，避免触发限流。</li>
-    </ul>
+  <section class="sec" id="d-src">
+    <h2><span class="no">02</span><span data-i18n="源码结构">源码结构</span></h2>
+    <p data-i18n="src/core 的 TS 模块按职责分层：取数与编排（api / forecast / trend / mapload）、算法（scoring / physics / astro / refmodel / skyband / verdict）、地图（mapdata / maprender / ramp / popover）、状态与协议（state / snap / urlstate / cache / calib）、展示辅助（i18n / city / citylang / cityname / units / tz / series / sharecard / compare / math）。">src/core 的 TS 模块按职责分层：取数与编排（api / forecast / trend / mapload）、算法（scoring / physics / astro / refmodel / skyband / verdict）、地图（mapdata / maprender / ramp / popover）、状态与协议（state / snap / urlstate / cache / calib）、展示辅助（i18n / city / citylang / cityname / units / tz / series / sharecard / compare / math）。</p>
+    <p data-i18n="vendor/src-verbatim/ 是 V1 七脚本的冻结副本：不参与构建、不加载，只作口径 diff 基线。V1 算法若演进，先 diff 该目录再同步 src/core。">vendor/src-verbatim/ 是 V1 七脚本的冻结副本：不参与构建、不加载，只作口径 diff 基线。V1 算法若演进，先 diff 该目录再同步 src/core。</p>
   </section>
 
-  <!-- ================= 06 ================= -->
-  <section class="chapter" id="ch6">
-    <div class="ch-head">
-      <span class="ch-num">06</span>
-      <h2>参数阈值表</h2>
-      <span class="ch-en">Thresholds</span>
-    </div>
-    <p>以下阈值与评分模型内部实现逐点对齐，可直接作为口径引用。</p>
-
-    <h3>06.1 质量等级 QUALITY_BANDS</h3>
-    <div class="tbl-wrap">
-      <table>
-        <caption>质量等级分档（作用于 Q 与 I）</caption>
-        <thead>
-          <tr><th>等级</th><th class="num">阈值</th><th class="num">区间</th><th>读法</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><span class="pill pill-good">优</span></td><td class="num">≥ 80</td><td class="num">80–100</td><td>值得专程出门，天空条件齐备</td></tr>
-          <tr><td><span class="pill pill-good">良</span></td><td class="num">≥ 65</td><td class="num">65–79</td><td>值得顺路一看，多数要素在线</td></tr>
-          <tr><td><span class="pill pill-mid">一般</span></td><td class="num">≥ 45</td><td class="num">45–64</td><td>有看点但不惊艳，降低预期</td></tr>
-          <tr><td><span class="pill pill-bad">差</span></td><td class="num">&lt; 45</td><td class="num">0–44</td><td>大概率平淡，不必强求</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h3>06.2 可信度分档</h3>
-    <div class="tbl-wrap">
-      <table>
-        <caption>可信度（由三套算法的 ΔI 分歧度判定）</caption>
-        <thead>
-          <tr><th>档位</th><th class="num">ΔI</th><th>提示语</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><span class="pill pill-good">高</span></td><td class="num">&lt; 18</td>
-            <td>三套算法结论接近，可信度较高，可直接据此安排</td>
-          </tr>
-          <tr>
-            <td><span class="pill pill-mid">中</span></td><td class="num">&lt; 35</td>
-            <td>存在一定分歧，在可接受范围内，建议结合临近云图复核</td>
-          </tr>
-          <tr>
-            <td><span class="pill pill-bad">低</span></td><td class="num">≥ 35</td>
-            <td>分歧显著，结论仅供参与，以实况为准</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h3>06.3 校准门槛</h3>
-    <div class="tbl-wrap">
-      <table>
-        <caption>实况校准 · 样本门槛</caption>
-        <thead>
-          <tr><th>常量</th><th class="num">取值</th><th>含义</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><code>CALIB_MIN_N</code></td><td class="num">8</td><td>该组至少 8 条实况样本，才给出校准结论</td></tr>
-          <tr><td><code>CALIB_MIN_BUCKET</code></td><td class="num">3</td><td>每个分桶至少 3 条样本，桶内统计才有效</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="callout">
-      <span class="c-title">校准的两条纪律</span>
-      <p>
-        ① 只展示、不回改模型——校准结果是给人看的偏差提示，不反向修改评分算法；
-        ② 样本不够不给结论——宁可空白，也不用三条数据编一个趋势。
-      </p>
-    </div>
+  <section class="sec" id="d-algo">
+    <h2><span class="no">03</span><span data-i18n="算法口径">算法口径</span></h2>
+    <p data-i18n="统计判据路（GFS / ECMWF）：云量、云型、云底高度、气溶胶等要素加权打分（因素面板列全 13 项判据，末项为模式一致性）→ P；光追路：沿地球曲率的抛物线光路做逐波长消光积分，用 CIE 1931 色度函数算出真实色彩 → Q。两路先合成 mixedIndex，再三路集合：">统计判据路（GFS / ECMWF）：云量、云型、云底高度、气溶胶等要素加权打分（因素面板列全 13 项判据，末项为模式一致性）→ P；光追路：沿地球曲率的抛物线光路做逐波长消光积分，用 CIE 1931 色度函数算出真实色彩 → Q。两路先合成 mixedIndex，再三路集合：</p>
+    <div class="code" data-i18n="mixedIndex = 0.55·P + 0.45·Q
+W_ENS = GFS 0.30 / ECMWF 0.34 / 光追 0.36（几何平均）
+可信度 = 三路极差分档：&lt;18 高、&lt;35 中、≥35 低">mixedIndex = 0.55·P + 0.45·Q
+W_ENS = GFS 0.30 / ECMWF 0.34 / 光追 0.36（几何平均）
+可信度 = 三路极差分档：&lt;18 高、&lt;35 中、≥35 低</div>
+    <p data-i18n="一切口径与 V1 逐点对齐；任何改变 P/Q 数值的改动必须双落（V1 _p*.js 与 v2 src/core 同步改），并由探针守着。">一切口径与 V1 逐点对齐；任何改变 P/Q 数值的改动必须双落（V1 _p*.js 与 v2 src/core 同步改），并由探针守着。</p>
   </section>
 
-  <!-- ================= 07 ================= -->
-  <section class="chapter" id="ch7">
-    <div class="ch-head">
-      <span class="ch-num">07</span>
-      <h2>术语速查表</h2>
-      <span class="ch-en">Glossary</span>
-    </div>
-    <div class="term-grid">
-      <div class="term">
-        <div class="t-zh">AOD</div>
-        <div class="t-en">Aerosol Optical Depth</div>
-        <p>气溶胶光学厚度，衡量整层大气中气溶胶对光的消光程度。值低则瑞利散射主导、颜色纯净；值高则进入「污烧」区间，霞光细节被灰霾冲淡。</p>
-      </div>
-      <div class="term">
-        <div class="t-zh">云底高度</div>
-        <div class="t-en">Cloud Base Height</div>
-        <p>主云层底部的高度。它决定这层云能否接住掠地红光：太低进地影，太高够不着，只有落在高度带内的云底才是理想的承接面。</p>
-      </div>
-      <div class="term">
-        <div class="t-zh">光学等效地表高度</div>
-        <div class="t-en">Optical Equivalent Ground Height</div>
-        <p>把近地层气溶胶的消光折算成一个等效抬升面：光像从这个高度「射出」一样。用于修正掠地光程计算，是污烧建模的关键中间量。</p>
-      </div>
-      <div class="term">
-        <div class="t-zh">光追</div>
-        <div class="t-en">Ray Tracing</div>
-        <p>沿阳光实际路径逐段积分散射与消光，还原到达云底 / 地表的光谱与色度。GLOWCAST 中的第三套算法（rt）即基于此，权重 0.36。</p>
-      </div>
-      <div class="term">
-        <div class="t-zh">可信度</div>
-        <div class="t-en">Confidence</div>
-        <p>三套算法综合指数的相互差异（ΔI）的分档：小于 18 为高，小于 35 为中，其余为低。反映「结论有多稳」，而不是「霞有多好」。</p>
-      </div>
-      <div class="term">
-        <div class="t-zh">混合指数 I</div>
-        <div class="t-en">Mixed Index</div>
-        <p>综合指数，I = 0.55P + 0.45Q，取值 0–100。P 是出现概率、Q 是观赏质量；I 是界面主结论与七日趋势共用的排序依据。</p>
-      </div>
-    </div>
-    <div class="tbl-wrap">
-      <table>
-        <caption>常见缩写对照</caption>
-        <thead>
-          <tr><th>写法</th><th>全称</th><th>出现在</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><code>P</code></td><td>Probability · 出现概率</td><td>结论卡 / 模式对比 / 维度 p</td></tr>
-          <tr><td><code>Q</code></td><td>Quality · 观赏质量</td><td>结论卡 / 模式对比 / 维度 q</td></tr>
-          <tr><td><code>I</code></td><td>Mixed Index · 混合指数</td><td>结论卡 / 七日趋势 / 维度 mix</td></tr>
-          <tr><td><code>dv</code></td><td>Divergence · 分歧度</td><td>观测场维度切换</td></tr>
-          <tr><td><code>ens</code></td><td>Ensemble · 集成</td><td>观测场模型切换</td></tr>
-          <tr><td><code>wgeo</code></td><td>Weighted Geometric Mean</td><td>P / Q 的综合方式</td></tr>
-        </tbody>
-      </table>
-    </div>
+  <section class="sec" id="d-v1">
+    <h2><span class="no">04</span><span data-i18n="与 V1 的关系">与 V1 的关系</span></h2>
+    <p data-i18n="算法权威在 V1（仓库根 V1/ 目录）。probe:consist 不重写公式，而是从两边源码把同一表达式原样抽出来 eval，在 16 个采样网格上对拍——任何一边改了口径，脚本立刻报差异，相当于一条活的口径守卫。">算法权威在 V1（仓库根 V1/ 目录）。probe:consist 不重写公式，而是从两边源码把同一表达式原样抽出来 eval，在 16 个采样网格上对拍——任何一边改了口径，脚本立刻报差异，相当于一条活的口径守卫。</p>
+    <p data-i18n="两侧状态完全隔离：localStorage 键 sunsetbot.*（V1）vs glowcast.v2.*（v2）；快照 SNAP_VER=1 双向互通，任一侧生成的 ?snap= 链接对方可解。">两侧状态完全隔离：localStorage 键 sunsetbot.*（V1）vs glowcast.v2.*（v2）；快照 SNAP_VER=1 双向互通，任一侧生成的 ?snap= 链接对方可解。</p>
   </section>
 
-  <!-- ================= 08 ================= -->
-  <section class="chapter" id="ch8">
-    <div class="ch-head">
-      <span class="ch-num">08</span>
-      <h2>部署说明</h2>
-      <span class="ch-en">Deployment</span>
+  <section class="sec" id="d-render">
+    <h2><span class="no">05</span><span data-i18n="观测场渲染">观测场渲染</span></h2>
+    <div class="kv">
+      <div class="c"><div class="n">121 点 / 80 km</div><div class="d" data-i18n="采样网格规模与间距">采样网格规模与间距</div></div>
+      <div class="c"><div class="n">Shepard</div><div class="d" data-i18n="自适应核，R=第 9 近邻×1.06">自适应核，R=第 9 近邻×1.06</div></div>
+      <div class="c"><div class="n">SPECTRUM_RAMP</div><div class="d" data-i18n="11 锚点全光谱，低值不归零">11 锚点全光谱，低值不归零</div></div>
+      <div class="c"><div class="n">fadeOf 60→320</div><div class="d" data-i18n="km 距离淡出，无凸包硬裁切">km 距离淡出，无凸包硬裁切</div></div>
     </div>
-
-    <h3>08.1 GH Pages 子路径</h3>
-    <p>
-      构建配置使用相对 base（<code>base: "./"</code>），产物可直接部署到 GitHub Pages 的<strong>子路径</strong>
-      （例如 <code>https://用户名.github.io/仓库名/</code>）而无需改代码。
-      资源引用全部走相对路径，仓库改名、迁移到自定义域名都不影响加载。
-      404 兜底页按 GH Pages 惯例提供（SPA 刷新深链时回退到入口）。
-    </p>
-
-    <h3>08.2 TMAP_SERVICE_HOST 注入</h3>
-    <p>
-      地图服务地址不在代码中写死，而是以占位符形式保留，部署时由构建流程注入
-      <code>TMAP_SERVICE_HOST</code>（把占位符替换为你的服务域名）。
-      这样做的目的：源码可以公开，代理地址与额度可以私有。
-      未注入时地图功能降级为不可用，其余模块（结论卡、趋势、模式对比等）不受影响。
-    </p>
-
-    <h3>08.3 PWA</h3>
-    <p>
-      可选启用 PWA：清单文件描述应用名、主题色与图标，Service Worker 缓存壳资源与最近结果，
-      支持「添加到主屏幕」与断网回看。观测场地图本身已有 <code>localStorage</code> 缓存 +
-      <code>cacheOnly</code> 离线路径，断网时仍可读上次结果。
-    </p>
-
-    <h3>08.4 数据源与合规</h3>
-    <div class="tbl-wrap">
-      <table>
-        <caption>数据源约定</caption>
-        <thead>
-          <tr><th>项目</th><th>约定</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>气象 / 空气质量数据</td><td>Open-Meteo，<strong>非商业用途</strong>免费，商业使用请自行确认授权</td></tr>
-          <tr><td>额度口径</td><td>免费层按<strong>出口 IP</strong>计：每日 10,000 次 / 每小时 5,000 次，非按账号</td></tr>
-          <tr><td>多点批量</td><td>逗号多点单请求，&gt; 30 点分批，批间留白，避免触顶</td></tr>
-          <tr><td>缓存</td><td>结果本地缓存 3 小时（地图）/ 就近复用，减少重复取数</td></tr>
-          <tr><td>署名</td><td>界面与页脚保留数据源声明，二次分发请同样保留</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <p data-i18n="场重建用自适应核 Shepard（R＝第 9 近邻×1.06，过点但不长平台）；色面铺到视口外、靠距离淡出收边；显示平滑把因子场的二值台阶摊成坡（只进栅格，卡片与探针仍是原始值）。三层分工：色面（场）、遮挡层（occ）、可信度（只降饱和）——后两者默认关。">场重建用自适应核 Shepard（R＝第 9 近邻×1.06，过点但不长平台）；色面铺到视口外、靠距离淡出收边；显示平滑把因子场的二值台阶摊成坡（只进栅格，卡片与探针仍是原始值）。三层分工：色面（场）、遮挡层（occ）、可信度（只降饱和）——后两者默认关。</p>
   </section>
 
-  <!-- ================= 09 ================= -->
-  <section class="chapter" id="ch9">
-    <div class="ch-head">
-      <span class="ch-num">09</span>
-      <h2>常见问题</h2>
-      <span class="ch-en">FAQ</span>
+  <section class="sec" id="d-quota">
+    <h2><span class="no">06</span><span data-i18n="时区与取数账目">时区与取数账目</span></h2>
+    <p data-i18n="一切时间按城市当地钟（API_TZ=auto，序列存真实 epoch，偏移量先取整再算）。取数账目与纪律：">一切时间按城市当地钟（API_TZ=auto，序列存真实 epoch，偏移量先取整再算）。取数账目与纪律：</p>
+    <div class="kv">
+      <div class="c"><div class="n">≈51</div><div class="d" data-i18n="单点预报加权调用">单点预报加权调用</div></div>
+      <div class="c"><div class="n">≈171</div><div class="d" data-i18n="观测场全量">观测场全量</div></div>
+      <div class="c"><div class="n">≈102</div><div class="d" data-i18n="十日趋势一次拉完">十日趋势一次拉完</div></div>
+      <div class="c"><div class="n">6 h</div><div class="d" data-i18n="缓存 TTL，键=日期+时段+坐标">缓存 TTL，键=日期+时段+坐标</div></div>
     </div>
-
-    <div class="qa">
-      <div class="q"><span class="qm">Q1</span>为什么结论说「有霞」，实际却看不到？</div>
-      <p class="a">
-        按顺序排查四件事：① <strong>方向</strong>——晚霞看西边，朝霞看东边，你所在的位置是否真能看到那一侧地平线；
-        ② <strong>本地云</strong>——本地上空有厚云就直接被遮死，观测场色面只代表区域评分，不代表你头顶；
-        ③ <strong>云底承接</strong>——西边天际若毫无云层，红光没有幕布，只剩一条窄窄的红边；
-        ④ <strong>污烧</strong>——气溶胶爆表时细节被灰霾吞掉，评分为「良」但观感发灰。
-        另外可信度「低」时，结论本身就不稳，请以实况为准。
-      </p>
-    </div>
-
-    <div class="qa">
-      <div class="q"><span class="qm">Q2</span>提示「今日气象数据额度已用尽」怎么办？</div>
-      <p class="a">
-        Open-Meteo 免费层按<strong>出口 IP</strong>计（每日 10,000 次 / 每小时 5,000 次），不是按账号。
-        若你在公司、学校、代理等共享网络下，很可能是同一出口 IP 的其他使用者消耗掉的。
-        额度次日重置后即可恢复；也可切换到手机热点等独立出口网络。本地缓存的结果在额度用尽期间仍可回看。
-      </p>
-    </div>
-
-    <div class="qa">
-      <div class="q"><span class="qm">Q3</span>结果快照链接是什么？能保存多久？</div>
-      <p class="a">
-        快照链接把当前地点、日期与全部结论编码进 URL，分享给别人即可复现同一屏结果，
-        对方无需重新计算。链接不含任何个人信息，长期有效；
-        但预报数据本身是历史快照，随时间推移与新版算法上线，重新打开的「复算」结果可能与快照不同——
-        以快照中冻结的数字为准。
-      </p>
-    </div>
-
-    <div class="qa">
-      <div class="q"><span class="qm">Q4</span>实况校准的数据存在哪里？会被上传吗？</div>
-      <p class="a">
-        只存在你本机浏览器的 <code>localStorage</code>，不上传、不跨设备同步。
-        换浏览器或清空站点数据即丢失。校准遵循两条纪律：只展示、不回改模型；
-        样本不足不给结论（组内 <code>CALIB_MIN_N = 8</code>、桶内 <code>CALIB_MIN_BUCKET = 3</code>）。
-        刚开始记录时面板是空的，这是正常设计而非 bug。
-      </p>
-    </div>
-
-    <div class="qa">
-      <div class="q"><span class="qm">Q5</span>为什么概率很高但质量分一般？</div>
-      <p class="a">
-        P 与 Q 回答的是两个问题。概率高说明「霞大概率出现」（光学链条走通了），
-        质量分低说明「出现了也不够好看」——常见原因：中高云结构平淡、缺乏层次、
-        轻度污烧压饱和度、或掠地窗口过短。反之亦然：质量潜力高但概率低，说明「好看的前提条件在，但未必凑齐」。
-      </p>
-    </div>
-
-    <div class="qa">
-      <div class="q"><span class="qm">Q6</span>支持朝霞吗？和晚霞是同一套算法吗？</div>
-      <p class="a">
-        同一套。区别仅在几何输入：朝霞用日出前后的太阳高度角与东侧剖面，晚霞用日落前后与西侧剖面。
-        经验上晚霞的气溶胶条件更复杂（一天的累积排放），朝霞常更通透但窗口更短，两者在天色带上的表现差异会很直观。
-      </p>
-    </div>
+    <p data-i18n="取数只许显式触发，「缓存命中自动绘制」是唯一例外；429 双分类（日额度耗尽劝退 / 短时限流退避），不无脑重试。">取数只许显式触发，「缓存命中自动绘制」是唯一例外；429 双分类（日额度耗尽劝退 / 短时限流退避），不无脑重试。</p>
   </section>
 
+  <section class="sec" id="d-snap">
+    <h2><span class="no">07</span><span data-i18n="快照与 URL 协议">快照与 URL 协议</span></h2>
+    <p data-i18n="?snap= 后接 base64url 编码的结论快照（SNAP_VER=1），零气象请求还原整张结论卡；语言进 URL（?lang=zh/hant/en），主题不进——分享链接即对方能看懂的版本。">?snap= 后接 base64url 编码的结论快照（SNAP_VER=1），零气象请求还原整张结论卡；语言进 URL（?lang=zh/hant/en），主题不进——分享链接即对方能看懂的版本。</p>
+  </section>
+
+  <section class="sec" id="d-probe">
+    <h2><span class="no">08</span><span data-i18n="质量门：探针与纪律">质量门：探针与纪律</span></h2>
+    <div class="code" data-i18n="npm run typecheck      # tsc --noEmit
+npm run build          # 构建 + 发布校验（缺文件/残留哈希即失败）
+npm run probe:ui       # agent-browser 驱动，约 280 条断言
+npm run probe:tz       # 时区口径 28 条
+npm run probe:consist  # V1↔v2 口径对拍 16 采样点">npm run typecheck      # tsc --noEmit
+npm run build          # 构建 + 发布校验（缺文件/残留哈希即失败）
+npm run probe:ui       # agent-browser 驱动，约 280 条断言
+npm run probe:tz       # 时区口径 28 条
+npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
+    <p data-i18n="全仓 LF 行尾；改产物必须重跑构建；探针跑的是构建产物，不是源码——忘重建等于测旧代码。">全仓 LF 行尾；改产物必须重跑构建；探针跑的是构建产物，不是源码——忘重建等于测旧代码。</p>
+  </section>
+
+  <section class="sec" id="d-deploy">
+    <h2><span class="no">09</span><span data-i18n="部署">部署</span></h2>
+    <p data-i18n="交付物在仓库根（publish-root 每次构建自动刷新）。GitHub Pages 项目页开在子路径，单文件形态 base 为相对路径，任意静态托管都能开。">交付物在仓库根（publish-root 每次构建自动刷新）。GitHub Pages 项目页开在子路径，单文件形态 base 为相对路径，任意静态托管都能开。</p>
+    <p data-i18n="地图代理占位符 __TMAP_SERVICE_HOST__ 由构建期环境变量 VITE_TMAP_SERVICE_HOST 注入，产物不含任何密钥；未注入时回落占位符——地图不可用，但查询 / 趋势 / 分享卡全可用。PWA 注册靠 link[rel=manifest] 存在性判断，SW 绝不缓存气象响应，缓存名随产物内容哈希自动作废。">地图代理占位符 __TMAP_SERVICE_HOST__ 由构建期环境变量 VITE_TMAP_SERVICE_HOST 注入，产物不含任何密钥；未注入时回落占位符——地图不可用，但查询 / 趋势 / 分享卡全可用。PWA 注册靠 link[rel=manifest] 存在性判断，SW 绝不缓存气象响应，缓存名随产物内容哈希自动作废。</p>
+  </section>
+</section>
+
+<!-- ==================== 创作者版 ==================== -->
+<section class="view" id="creator" hidden>
+  <div class="hero">
+    <span class="pill" data-i18n="创作者版">创作者版</span>
+    <h1 data-i18n="用预报数据规划一次拍摄">用预报数据规划一次拍摄</h1>
+    <p class="lead" data-i18n="从选日子到出图，把霞光预报变成你的拍摄计划表。">从选日子到出图，把霞光预报变成你的拍摄计划表。</p>
+  </div>
+
+  <section class="sec" id="c-plan">
+    <h2><span class="no">01</span><span data-i18n="三步挑一个拍摄夜">三步挑一个拍摄夜</span></h2>
+    <ol class="steps">
+      <li><b data-i18n="十日趋势挑日子">十日趋势挑日子</b>：<span data-i18n="概率与质量双高的那天值得专程出门；只看概率会赶上「有霞但不好看」。">概率与质量双高的那天值得专程出门；只看概率会赶上「有霞但不好看」。</span></li>
+      <li><b data-i18n="结论卡卡时间">结论卡卡时间</b>：<span data-i18n="天色带四道线里找你的窗口——晚霞黄金 10–25 分钟，朝霞赶在天亮前；「此刻」游标告诉你还剩多少准备时间。">天色带四道线里找你的窗口——晚霞黄金 10–25 分钟，朝霞赶在天亮前；「此刻」游标告诉你还剩多少准备时间。</span></li>
+      <li><b data-i18n="观测场挑点位">观测场挑点位</b>：<span data-i18n="切到质量维度找颜色最亮的格子，切云量维度绕开灰的——点位选对，等于提前一小时到位。">切到质量维度找颜色最亮的格子，切云量维度绕开灰的——点位选对，等于提前一小时到位。</span></li>
+    </ol>
+  </section>
+
+  <section class="sec" id="c-card">
+    <h2><span class="no">02</span><span data-i18n="结论卡导出">结论卡导出</span></h2>
+    <p data-i18n="结论卡的「保存图片」一键导出 PNG：概率大字、天色带、三模型结论都在一张图上，纯 canvas 绘制、配色跟随当前主题。深色 Spectrum 卡适合直接发社交平台；浅色晨光卡适合打印或贴进拍摄计划表。">结论卡的「保存图片」一键导出 PNG：概率大字、天色带、三模型结论都在一张图上，纯 canvas 绘制、配色跟随当前主题。深色 Spectrum 卡适合直接发社交平台；浅色晨光卡适合打印或贴进拍摄计划表。</p>
+  </section>
+
+  <section class="sec" id="c-snap">
+    <h2><span class="no">03</span><span data-i18n="快照链接做内容">快照链接做内容</span></h2>
+    <p data-i18n="「复制链接」得到的 URL 自带完整结论：对方打开零额度、零等待，语言跟着链接走。V1 用户也能解你的快照——跨版本内容可以互相引用，老读者不会丢。">「复制链接」得到的 URL 自带完整结论：对方打开零额度、零等待，语言跟着链接走。V1 用户也能解你的快照——跨版本内容可以互相引用，老读者不会丢。</p>
+  </section>
+
+  <section class="sec" id="c-theme">
+    <h2><span class="no">04</span><span data-i18n="主题与截图">主题与截图</span></h2>
+    <p data-i18n="两套主题都是为出片调的：大气光谱观测站（深空蓝黑加光谱渐变）适合夜景氛围长图；晨光实验室（浅色）适合白天阅读与归档。截图前把时间格式切到你习惯的那档（12 / 24 小时制），时间戳更齐。">两套主题都是为出片调的：大气光谱观测站（深空蓝黑加光谱渐变）适合夜景氛围长图；晨光实验室（浅色）适合白天阅读与归档。截图前把时间格式切到你习惯的那档（12 / 24 小时制），时间戳更齐。</p>
+  </section>
+
+  <section class="sec" id="c-calib">
+    <h2><span class="no">05</span><span data-i18n="实况校准的反哺">实况校准的反哺</span></h2>
+    <p data-i18n="每次拍完回来标注「看到了 / 没看到 / 无法判断」。本机样本攒够后（≥8 条），你会看到自己所在区域的观测偏差——那是你的个人命中率，比通用概率更懂你的机位。数据只存本机，换浏览器不跟着走。">每次拍完回来标注「看到了 / 没看到 / 无法判断」。本机样本攒够后（≥8 条），你会看到自己所在区域的观测偏差——那是你的个人命中率，比通用概率更懂你的机位。数据只存本机，换浏览器不跟着走。</p>
+  </section>
+
+  <section class="sec" id="c-etq">
+    <h2><span class="no">06</span><span data-i18n="额度礼节与离线">额度礼节与离线</span></h2>
+    <p data-i18n="别用脚本刷接口——免费层按访客 IP 计额，刷爆了大家都没得看。出门前把常用城市看一遍，断网时已缓存的结果照样能开；PWA 装上之后，山里也有底气。">别用脚本刷接口——免费层按访客 IP 计额，刷爆了大家都没得看。出门前把常用城市看一遍，断网时已缓存的结果照样能开；PWA 装上之后，山里也有底气。</p>
+  </section>
+</section>
 </main>
 
-<!-- ================= 页脚 ================= -->
-<footer class="foot">
-  <div class="foot-inner">
-    <div class="foot-brand">
-      <svg class="brand-logo" viewBox="0 0 48 48" aria-hidden="true">
-        <defs>
-          <linearGradient id="specRingFoot" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#ff4d82"/>
-            <stop offset="0.5" stop-color="#ff9c3f"/>
-            <stop offset="1" stop-color="#2ed5e8"/>
-          </linearGradient>
-        </defs>
-        <circle cx="24" cy="24" r="18" fill="none" stroke="url(#specRingFoot)" stroke-width="3.2" stroke-linecap="round" stroke-dasharray="84 29"/>
-        <circle cx="24" cy="24" r="9.5" fill="none" stroke="url(#specRingFoot)" stroke-width="1.6" opacity="0.72" stroke-dasharray="42 18"/>
-        <circle cx="24" cy="24" r="3.2" fill="url(#specRingFoot)"/>
-      </svg>
-      <span class="n">霞光预报 GLOWCAST · 使用教程</span>
-    </div>
-    <p>
-      数据源声明：气象与空气质量数据来自 <strong>Open-Meteo</strong>，其免费层仅限<strong>非商业用途</strong>；
-      商业场景请自行取得授权或改用自建数据源。地图观测场为本地计算结果的可视化，底图与图层均在客户端生成。
-    </p>
-    <p>
-      本页为自包含单文件教程：CSS 与脚本全部内联，不含任何外部资源请求，可离线阅读与分发。
-      界面中的辉光只用于概率数字与结论标题，配色遵循「大气光谱观测站 / 晨光实验室」双主题。
-    </p>
-    <div class="fine">
-      <span>GLOWCAST v2 · Tutorial</span>
-      <a href="../index.html#/">返回应用</a>
-      <span>主题跟随系统，可在右上角手动切换</span>
-    </div>
+<footer>
+  <div class="foot">
+    <span data-i18n="数据源 Open-Meteo（免费层，非商业用途）· 地图底图腾讯位置服务">数据源 Open-Meteo（免费层，非商业用途）· 地图底图腾讯位置服务</span>
+    <span class="spacer"></span>
+    <a href="./index.html" data-i18n="← 回主页">← 回主页</a>
   </div>
 </footer>
 
 <script>
 (function () {
   "use strict";
-
   var PREF_KEY = "glowcast.v2.pref";
-  var MODES = ["auto", "light", "dark"];
-  var LABEL = { auto: "跟随系统", light: "晨光实验室", dark: "光谱观测站" };
+  var LANGS = [
+    { k: "zh", name: "中文", short: "中", tag: "zh-CN" },
+    { k: "hant", name: "繁體", short: "繁", tag: "zh-Hant-TW" },
+    { k: "en", name: "English", short: "EN", tag: "en" }
+  ];
+  var HANT = {
+    "回主页": "回主頁",
+    "使用教程": "使用教程",
+    "语言": "語言",
+    "主题": "主題",
+    "教程分档": "教程分檔",
+    "概览": "概覽",
+    "用户版": "用戶版",
+    "开发者版": "開發者版",
+    "创作者版": "創作者版",
+    "跟随系统": "跟隨系統",
+    "浅色": "淺色",
+    "深色": "深色",
+    "doc.title": "使用教程 · 霞光預報 GLOWCAST",
+    "doc.desc": "霞光預報 GLOWCAST（朝霞 / 晚霞火燒雲概率與質量預報）使用教程：四檔合一 —— 概覽、用戶版、開發者版、創作者版。",
+    "ov.lead": "霞光預報 GLOWCAST 是一個<b>單檔案 Web 應用</b>：輸入地點與日期，預測朝霞 / 晚霞（火燒雲）出現的概率與觀賞質量，並在周邊 80 km 取樣網格上畫出霞光分布。這份教程分四檔，按身份取用。",
+    "读懂朝霞与晚霞的预报": "讀懂朝霞與晚霞的預報",
+    "三模型综合": "三模型綜合",
+    "GFS 与 ECMWF 两路统计判据加一路光追物理模型，各自打分后按权重几何平均合成；三路分歧度直接换算成可信度。": "GFS 與 ECMWF 兩路統計判據加一路光追物理模型，各自打分後按權重幾何平均合成；三路分歧度直接換算成可信度。",
+    "光谱观测场": "光譜觀測場",
+    "以查询点为中心的 121 点网格，全光谱色阶铺色，可切换出现概率 / 观赏质量 / 云量 / 可信度四个维度。": "以查詢點為中心的 121 點網格，全光譜色階鋪色，可切換出現概率 / 觀賞質量 / 雲量 / 可信度四個維度。",
+    "十日趋势": "十日趨勢",
+    "一次取数画十天曲线，朝 / 晚分开看；算好的结果落盘缓存，重开页命中零请求。": "一次取數畫十天曲線，朝 / 晚分開看；算好的結果落盤快取，重開頁命中零請求。",
+    "多观测点对比": "多觀測點對比",
+    "最多 4 个机位一次取数横向排序，直接回答「今晚去哪儿拍」。": "最多 4 個機位一次取數橫向排序，直接回答「今晚去哪兒拍」。",
+    "快照互通": "快照互通",
+    "结论编码进 URL，对方打开即见快照、零额度零请求；快照格式与 V1 完全互通——两边生成的链接互相能解。": "結論編碼進 URL，對方打開即見快照、零額度零請求；快照格式與 V1 完全互通——兩邊生成的連結互相能解。",
+    "快速开始": "快速開始",
+    "选地点": "選地點",
+    "搜索城市名，或直接输入「纬度,经度」。": "搜尋城市名，或直接輸入「緯度,經度」。",
+    "选日期与时段": "選日期與時段",
+    "日期可回看 7 天、前瞻 10 天；朝霞与晚霞分开计算。": "日期可回看 7 天、前瞻 10 天；朝霞與晚霞分開計算。",
+    "读结论": "讀結論",
+    "概率 + 质量分 + 等级 + 可信度；往下拉是十日趋势、观测场与多观测点对比。": "概率 + 質量分 + 等級 + 可信度；往下拉是十日趨勢、觀測場與多觀測點對比。",
+    "版本家族": "版本家族",
+    "霞光预报家族四套并存、互相隔离：V1（仓库根目录的原版，单文件 assemble 构建链，算法权威）、GLOWCAST v2（本教程所属，项目主线）、v3「追光航志」（画布航图决策版）、Skyglow（Python 服务端版）。页脚「切换到V1」随时回到原版。": "霞光預報家族四套並存、互相隔離：V1（倉庫根目錄的原版，單檔案 assemble 建構鏈，算法權威）、GLOWCAST v2（本教程所屬，專案主線）、v3「追光航誌」（畫布航圖決策版）、Skyglow（Python 服務端版）。頁腳「切換到V1」隨時回到原版。",
+    "按身份取用": "按身份取用",
+    "从查预报到读结论，每个功能怎么用、数字怎么看。": "從查預報到讀結論，每個功能怎麼用、數字怎麼看。",
+    "进入 →": "進入 →",
+    "构建链、源码结构、算法口径、探针与部署。": "建構鏈、源碼結構、算法口徑、探針與部署。",
+    "用预报数据规划拍摄、导出分享卡与快照链接。": "用預報數據規劃拍攝、匯出分享卡與快照連結。",
+    "十分钟看懂这份霞光预报": "十分鐘看懂這份霞光預報",
+    "每个功能怎么用、每个数字怎么读。不需要任何气象背景。": "每個功能怎麼用、每個數字怎麼讀。不需要任何氣象背景。",
+    "查一次预报": "查一次預報",
+    "顶部搜索框输入城市名，或直接给「纬度,经度」；日期选择器可切到过去 7 天内的任意一天与未来 10 天；朝霞 / 晚霞在结论卡上方切换。": "頂部搜尋框輸入城市名，或直接給「緯度,經度」；日期選擇器可切到過去 7 天內的任意一天與未來 10 天；朝霞 / 晚霞在結論卡上方切換。",
+    "位置与日期不写进偏好——每次打开都是新的开始；想带走当前结果，用分享链接。": "位置與日期不寫進偏好——每次打開都是新的開始；想帶走當前結果，用分享連結。",
+    "读懂结论卡": "讀懂結論卡",
+    "出现概率＝今晚「有没有霞」；观赏质量＝「好不好看」（0–100 分，优 ≥80、良 ≥65、一般 ≥45）。两个维度独立：概率高可能质量平平（闷烧），概率低也可能一旦出现极惊艳。": "出現概率＝今晚「有沒有霞」；觀賞質量＝「好不好看」（0–100 分，優 ≥80、良 ≥65、一般 ≥45）。兩個維度獨立：概率高可能質量平平（悶燒），概率低也可能一旦出現極驚豔。",
+    "卡内天色带标出日出 / 日落与民用 / 航海 / 天文昏影终四道线，「此刻」游标告诉你正处在哪个阶段；晚霞的黄金窗口通常在日落后 10–25 分钟，朝霞则要赶在天亮之前到位。": "卡內天色帶標出日出 / 日落與民用 / 航海 / 天文昏影終四道線，「此刻」游標告訴你正處在哪個階段；晚霞的黃金窗口通常在日落後 10–25 分鐘，朝霞則要趕在天亮之前到位。",
+    "三张模型卡（GFS / ECMWF / 光追）可逐张对照：结论越一致，可信度徽标越稳；分歧大时，宁可当「可能有」对待。": "三張模型卡（GFS / ECMWF / 光追）可逐張對照：結論越一致，可信度徽章越穩；分歧大時，寧可當「可能有」對待。",
+    "点「加载趋势」显式取数（约 102 次加权调用，34 个坐标 × 10 天一次拉完），之后朝 / 晚两条概率曲线加质量分柱状列。算好的结果落盘缓存 6 小时，重开页命中直接画出，零请求。": "點「載入趨勢」顯式取數（約 102 次加權呼叫，34 個座標 × 10 天一次拉完），之後朝 / 晚兩條概率曲線加質量分柱狀列。算好的結果落盤快取 6 小時，重開頁命中直接畫出，零請求。",
+    "观测场地图": "觀測場地圖",
+    "以当前地点为中心的 121 点采样网格（80 km 间距），四种着色维度：出现概率 / 观赏质量 / 云量 / 可信度。色阶是全光谱形态——颜色即数值，没有凸包硬边界，边缘自然淡出。": "以當前地點為中心的 121 點取樣網格（80 km 間距），四種著色維度：出現概率 / 觀賞質量 / 雲量 / 可信度。色階是全光譜形態——顏色即數值，沒有凸包硬邊界，邊緣自然淡出。",
+    "取数纪律：只有显式点「加载周边地图」才发起请求（约 171 次加权调用）；这个日期已有缓存时会自动画出来。选点有两种方式——直接点格点，或搜城市名；任意点都能一键「加入对比」。": "取數紀律：只有顯式點「載入周邊地圖」才發起請求（約 171 次加權呼叫）；這個日期已有快取時會自動畫出來。選點有兩種方式——直接點格點，或搜城市名；任意點都能一鍵「加入對比」。",
+    "最多 4 个点。从地图格点加入的免额度（读已取数的场）；搜索加入的每个点约 51 次加权调用，缓存 6 小时。一次取数后按质量分横向排序——「今晚去哪儿拍」就此有答案。": "最多 4 個點。從地圖格點加入的免額度（讀已取數的場）；搜尋加入的每個點約 51 次加權呼叫，快取 6 小時。一次取數後按質量分橫向排序——「今晚去哪兒拍」就此有答案。",
+    "保存图片与快照链接": "儲存圖片與快照連結",
+    "结论卡的「保存图片」导出 PNG 结论卡（纯 canvas 绘制，配色跟随当前主题）；「复制链接」把当前结果编码进 URL（base64url，SNAP_VER=1），对方打开即见快照，不消耗任何接口额度。格式与 V1 互通——V1 生成的快照这里能解，反之亦然。": "結論卡的「儲存圖片」匯出 PNG 結論卡（純 canvas 繪製，配色跟隨當前主題）；「複製連結」把當前結果編碼進 URL（base64url，SNAP_VER=1），對方打開即見快照，不消耗任何介面額度。格式與 V1 互通——V1 生成的快照這裡能解，反之亦然。",
+    "实况校准": "實況校準",
+    "看完霞回来标注「看到了 / 没看到 / 无法判断」。本机在你的区域加同档概率下累计样本，≥8 条且本档 ≥3 条时展示观测偏差。校准只在本机展示，绝不回改预报模型；关掉标注开关不会删除已有样本。": "看完霞回來標註「看到了 / 沒看到 / 無法判斷」。本機在你的區域加同檔概率下累積樣本，≥8 條且本檔 ≥3 條時展示觀測偏差。校準只在本機展示，絕不回改預報模型；關掉標註開關不會刪除已有樣本。",
+    "偏好与外观": "偏好與外觀",
+    "设置面板里：主题（大气光谱观测站·深色 / 晨光实验室·浅色 / 跟随系统）、语言（简体 / 繁體 / English）、单位（公制 km·m·℃ / 英制 mi·ft·℉）、时间格式（12 / 24 小时制）。偏好写本机 localStorage，与本教程页共享同一份。": "設置面板裡：主題（大氣光譜觀測站·深色 / 晨光實驗室·淺色 / 跟隨系統）、語言（簡體 / 繁體 / English）、單位（公制 km·m·℃ / 英制 mi·ft·℉）、時間格式（12 / 24 小時制）。偏好寫本機 localStorage，與本教程頁共享同一份。",
+    "缓存、额度与离线": "快取、額度與離線",
+    "所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度，遇到 429 时限流不自动重试。网络不可用（预算 9 秒）会回落到确定性 mock，界面左上角标注 MOCK——别把 mock 当预报。装了 PWA 的话，断网也能看已缓存的结果。": "所有結果按「日期 + 時段 + 座標」分鍵快取 6 小時，設置裡可看條數、一鍵清除。數據源 Open-Meteo 免費層按訪客 IP 計額度，遇到 429 時限流不自動重試。網路不可用（預算 9 秒）會回落到確定性 mock，介面左上角標註 MOCK——別把 mock 當預報。裝了 PWA 的話，斷網也能看已快取的結果。",
+    "术语速查": "術語速查",
+    "气溶胶光学厚度，衡量大气浑浊度（0.1 清澈 → 1+ 重霾）。": "氣溶膠光學厚度，衡量大氣渾濁度（0.1 清澈 → 1+ 重霾）。",
+    "云底高度": "雲底高度",
+    "承接霞光的云层底面高度，3–6 km 的中高云最出片。": "承接霞光的雲層底面高度，3–6 km 的中高雲最出片。",
+    "光学等效地表高度": "光學等效地表高度",
+    "气溶胶层「吃掉」光程的等效厚度，会降低有效云底。": "氣溶膠層「吃掉」光程的等效厚度，會降低有效雲底。",
+    "光追": "光追",
+    "可信度": "可信度",
+    "沿地球曲率的抛物线光路做逐波长消光积分，输出真实色彩。": "沿地球曲率的拋物線光路做逐波長消光積分，輸出真實色彩。",
+    "三路模型综合指数的极差分档：<18 高、<35 中、≥35 低。": "三路模型綜合指數的極差分檔：&lt;18 高、&lt;35 中、≥35 低。",
+    "网络不可用时的确定性演示数据，界面有 MOCK 标注。": "網路不可用時的確定性演示數據，介面有 MOCK 標註。",
+    "数据源 Open-Meteo（免费层，非商业用途）· 地图底图腾讯位置服务": "數據源 Open-Meteo（免費層，非商業用途）· 地圖底圖騰訊位置服務",
+    "← 回主页": "← 回主頁",
+    "构建、口径与质量门": "建構、口徑與質量門",
+    "从一条构建命令到三套算法的口径细节，读懂 GLOWCAST v2 的全部机制。": "從一條建構命令到三套算法的口徑細節，讀懂 GLOWCAST v2 的全部機制。",
+    "形态与构建链": "形態與建構鏈",
+    "源码在 v2/，交付物是一个自包含单文件。一条命令跑完构建与发布：": "源碼在 v2/，交付物是一個自包含單檔案。一條命令跑完建構與發布：",
+    "cd v2 && npm run build": "cd v2 &amp;&amp; npm run build",
+    "三段接力：vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 7 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。": "三段接力：vite build 把 JS/CSS/字型全部內聯進 app.html；emit-single.mjs 落成 v2/index.html 並把引用還原成穩定檔案名（殘留雜湊即建構失敗）；publish-root.mjs 把 7 個交付檔案發布到倉庫根並逐檔案 sha256 校驗。產物禁手改；根 index.html 即 GitHub Pages 入口。",
+    "多文件 → app.html 全内联": "多檔案 → app.html 全內聯",
+    "稳定文件名 + 零外链校验": "穩定檔案名 + 零外部連結校驗",
+    "7 个交付文件落仓库根": "7 個交付檔案落倉庫根",
+    "源码结构": "源碼結構",
+    "src/core 的 TS 模块按职责分层：取数与编排（api / forecast / trend / mapload）、算法（scoring / physics / astro / refmodel / skyband / verdict）、地图（mapdata / maprender / ramp / popover）、状态与协议（state / snap / urlstate / cache / calib）、展示辅助（i18n / city / citylang / cityname / units / tz / series / sharecard / compare / math）。": "src/core 的 TS 模組按職責分層：取數與編排（api / forecast / trend / mapload）、算法（scoring / physics / astro / refmodel / skyband / verdict）、地圖（mapdata / maprender / ramp / popover）、狀態與協定（state / snap / urlstate / cache / calib）、展示輔助（i18n / city / citylang / cityname / units / tz / series / sharecard / compare / math）。",
+    "vendor/src-verbatim/ 是 V1 七脚本的冻结副本：不参与构建、不加载，只作口径 diff 基线。V1 算法若演进，先 diff 该目录再同步 src/core。": "vendor/src-verbatim/ 是 V1 七腳本的凍結副本：不參與建構、不載入，只作口徑 diff 基線。V1 算法若演進，先 diff 該目錄再同步 src/core。",
+    "算法口径": "算法口徑",
+    "统计判据路（GFS / ECMWF）：云量、云型、云底高度、气溶胶等要素加权打分（因素面板列全 13 项判据，末项为模式一致性）→ P；光追路：沿地球曲率的抛物线光路做逐波长消光积分，用 CIE 1931 色度函数算出真实色彩 → Q。两路先合成 mixedIndex，再三路集合：": "統計判據路（GFS / ECMWF）：雲量、雲型、雲底高度、氣溶膠等要素加權打分（因素面板列全 13 項判據，末項為模式一致性）→ P；光追路：沿地球曲率的拋物線光路做逐波長消光積分，用 CIE 1931 色度函數算出真實色彩 → Q。兩路先合成 mixedIndex，再三路集合：",
+    "mixedIndex = 0.55·P + 0.45·Q\nW_ENS = GFS 0.30 / ECMWF 0.34 / 光追 0.36（几何平均）\n可信度 = 三路极差分档：<18 高、<35 中、≥35 低": "mixedIndex = 0.55·P + 0.45·Q\nW_ENS = GFS 0.30 / ECMWF 0.34 / 光追 0.36（幾何平均）\n可信度 = 三路極差分檔：&lt;18 高、&lt;35 中、≥35 低",
+    "一切口径与 V1 逐点对齐；任何改变 P/Q 数值的改动必须双落（V1 _p*.js 与 v2 src/core 同步改），并由探针守着。": "一切口徑與 V1 逐點對齊；任何改變 P/Q 數值的改動必須雙落（V1 _p*.js 與 v2 src/core 同步改），並由探針守著。",
+    "与 V1 的关系": "與 V1 的關係",
+    "算法权威在 V1（仓库根 V1/ 目录）。probe:consist 不重写公式，而是从两边源码把同一表达式原样抽出来 eval，在 16 个采样网格上对拍——任何一边改了口径，脚本立刻报差异，相当于一条活的口径守卫。": "算法權威在 V1（倉庫根 V1/ 目錄）。probe:consist 不重寫公式，而是從兩邊源碼把同一表達式原樣抽出來 eval，在 16 個取樣網格上對拍——任何一邊改了口徑，腳本立刻報差異，相當於一條活的口徑守衛。",
+    "两侧状态完全隔离：localStorage 键 sunsetbot.*（V1）vs glowcast.v2.*（v2）；快照 SNAP_VER=1 双向互通，任一侧生成的 ?snap= 链接对方可解。": "兩側狀態完全隔離：localStorage 鍵 sunsetbot.*（V1）vs glowcast.v2.*（v2）；快照 SNAP_VER=1 雙向互通，任一側生成的 ?snap= 連結對方可解。",
+    "观测场渲染": "觀測場渲染",
+    "采样网格规模与间距": "取樣網格規模與間距",
+    "自适应核，R=第 9 近邻×1.06": "自適應核，R=第 9 近鄰×1.06",
+    "11 锚点全光谱，低值不归零": "11 錨點全光譜，低值不歸零",
+    "km 距离淡出，无凸包硬裁切": "km 距離淡出，無凸包硬裁切",
+    "场重建用自适应核 Shepard（R＝第 9 近邻×1.06，过点但不长平台）；色面铺到视口外、靠距离淡出收边；显示平滑把因子场的二值台阶摊成坡（只进栅格，卡片与探针仍是原始值）。三层分工：色面（场）、遮挡层（occ）、可信度（只降饱和）——后两者默认关。": "場重建用自適應核 Shepard（R＝第 9 近鄰×1.06，過點但不長平台）；色面鋪到視口外、靠距離淡出收邊；顯示平滑把因子場的二值台階攤成坡（只進柵格，卡片與探針仍是原始值）。三層分工：色面（場）、遮擋層（occ）、可信度（只降飽和）——後兩者預設關。",
+    "时区与取数账目": "時區與取數賬目",
+    "单点预报加权调用": "單點預報加權呼叫",
+    "观测场全量": "觀測場全量",
+    "十日趋势一次拉完": "十日趨勢一次拉完",
+    "缓存 TTL，键=日期+时段+坐标": "快取 TTL，鍵=日期+時段+座標",
+    "一切时间按城市当地钟（API_TZ=auto，序列存真实 epoch，偏移量先取整再算）。取数账目与纪律：": "一切時間按城市當地鐘（API_TZ=auto，序列存真實 epoch，偏移量先取整再算）。取數賬目與紀律：",
+    "取数只许显式触发，「缓存命中自动绘制」是唯一例外；429 双分类（日额度耗尽劝退 / 短时限流退避），不无脑重试。": "取數只許顯式觸發，「快取命中自動繪製」是唯一例外；429 雙分類（日額度耗盡勸退 / 短時限流退避），不無腦重試。",
+    "快照与 URL 协议": "快照與 URL 協定",
+    "?snap= 后接 base64url 编码的结论快照（SNAP_VER=1），零气象请求还原整张结论卡；语言进 URL（?lang=zh/hant/en），主题不进——分享链接即对方能看懂的版本。": "?snap= 後接 base64url 編碼的結論快照（SNAP_VER=1），零氣象請求還原整張結論卡；語言進 URL（?lang=zh/hant/en），主題不進——分享連結即對方能看懂的版本。",
+    "质量门：探针与纪律": "質量門：探針與紀律",
+    "npm run typecheck      # tsc --noEmit\nnpm run build          # 构建 + 发布校验（缺文件/残留哈希即失败）\nnpm run probe:ui       # agent-browser 驱动，约 280 条断言\nnpm run probe:tz       # 时区口径 28 条\nnpm run probe:consist  # V1↔v2 口径对拍 16 采样点": "npm run typecheck      # tsc --noEmit\nnpm run build          # 建構 + 發布校驗（缺檔案/殘留雜湊即失敗）\nnpm run probe:ui       # agent-browser 驅動，約 280 條斷言\nnpm run probe:tz       # 時區口徑 28 條\nnpm run probe:consist  # V1↔v2 口徑對拍 16 取樣點",
+    "全仓 LF 行尾；改产物必须重跑构建；探针跑的是构建产物，不是源码——忘重建等于测旧代码。": "全倉 LF 行尾；改產物必須重跑建構；探針跑的是建構產物，不是源碼——忘重建等於測舊程式碼。",
+    "部署": "部署",
+    "交付物在仓库根（publish-root 每次构建自动刷新）。GitHub Pages 项目页开在子路径，单文件形态 base 为相对路径，任意静态托管都能开。": "交付物在倉庫根（publish-root 每次建構自動刷新）。GitHub Pages 專案頁開在子路徑，單檔案形態 base 為相對路徑，任意靜態託管都能開。",
+    "地图代理占位符 __TMAP_SERVICE_HOST__ 由构建期环境变量 VITE_TMAP_SERVICE_HOST 注入，产物不含任何密钥；未注入时回落占位符——地图不可用，但查询 / 趋势 / 分享卡全可用。PWA 注册靠 link[rel=manifest] 存在性判断，SW 绝不缓存气象响应，缓存名随产物内容哈希自动作废。": "地圖代理佔位符 __TMAP_SERVICE_HOST__ 由建構期環境變數 VITE_TMAP_SERVICE_HOST 注入，產物不含任何金鑰；未注入時回落佔位符——地圖不可用，但查詢 / 趨勢 / 分享卡全可用。PWA 註冊靠 link[rel=manifest] 存在性判斷，SW 絕不快取氣象響應，快取名隨產物內容雜湊自動作廢。",
+    "用预报数据规划一次拍摄": "用預報數據規劃一次拍攝",
+    "从选日子到出图，把霞光预报变成你的拍摄计划表。": "從選日子到出圖，把霞光預報變成你的拍攝計畫表。",
+    "三步挑一个拍摄夜": "三步挑一個拍攝夜",
+    "十日趋势挑日子": "十日趨勢挑日子",
+    "概率与质量双高的那天值得专程出门；只看概率会赶上「有霞但不好看」。": "概率與質量雙高的那天值得專程出門；只看概率會趕上「有霞但不好看」。",
+    "结论卡卡时间": "結論卡卡時間",
+    "天色带四道线里找你的窗口——晚霞黄金 10–25 分钟，朝霞赶在天亮前；「此刻」游标告诉你还剩多少准备时间。": "天色帶四道線裡找你的窗口——晚霞黃金 10–25 分鐘，朝霞趕在天亮前；「此刻」游標告訴你還剩多少準備時間。",
+    "观测场挑点位": "觀測場挑點位",
+    "切到质量维度找颜色最亮的格子，切云量维度绕开灰的——点位选对，等于提前一小时到位。": "切到質量維度找顏色最亮的格子，切雲量維度繞開灰的——點位選對，等於提前一小時到位。",
+    "结论卡导出": "結論卡匯出",
+    "结论卡的「保存图片」一键导出 PNG：概率大字、天色带、三模型结论都在一张图上，纯 canvas 绘制、配色跟随当前主题。深色 Spectrum 卡适合直接发社交平台；浅色晨光卡适合打印或贴进拍摄计划表。": "結論卡的「儲存圖片」一鍵匯出 PNG：概率大字、天色帶、三模型結論都在一張圖上，純 canvas 繪製、配色跟隨當前主題。深色 Spectrum 卡適合直接發社交平臺；淺色晨光卡適合列印或貼進拍攝計畫表。",
+    "快照链接做内容": "快照連結做內容",
+    "「复制链接」得到的 URL 自带完整结论：对方打开零额度、零等待，语言跟着链接走。V1 用户也能解你的快照——跨版本内容可以互相引用，老读者不会丢。": "「複製連結」得到的 URL 自帶完整結論：對方打開零額度、零等待，語言跟著連結走。V1 用戶也能解你的快照——跨版本內容可以互相引用，老讀者不會丟。",
+    "主题与截图": "主題與截圖",
+    "两套主题都是为出片调的：大气光谱观测站（深空蓝黑加光谱渐变）适合夜景氛围长图；晨光实验室（浅色）适合白天阅读与归档。截图前把时间格式切到你习惯的那档（12 / 24 小时制），时间戳更齐。": "兩套主題都是為出片調的：大氣光譜觀測站（深空藍黑加光譜漸變）適合夜景氛圍長圖；晨光實驗室（淺色）適合白天閱讀與歸檔。截圖前把時間格式切到你習慣的那檔（12 / 24 小時制），時間戳更齊。",
+    "实况校准的反哺": "實況校準的反哺",
+    "每次拍完回来标注「看到了 / 没看到 / 无法判断」。本机样本攒够后（≥8 条），你会看到自己所在区域的观测偏差——那是你的个人命中率，比通用概率更懂你的机位。数据只存本机，换浏览器不跟着走。": "每次拍完回來標註「看到了 / 沒看到 / 無法判斷」。本機樣本攢夠後（≥8 條），你會看到自己所在區域的觀測偏差——那是你的個人命中率，比通用概率更懂你的機位。數據只存本機，換瀏覽器不跟著走。",
+    "额度礼节与离线": "額度禮節與離線",
+    "别用脚本刷接口——免费层按访客 IP 计额，刷爆了大家都没得看。出门前把常用城市看一遍，断网时已缓存的结果照样能开；PWA 装上之后，山里也有底气。": "別用腳本刷介面——免費層按訪客 IP 計額，刷爆了大家都沒得看。出門前把常用城市看一遍，斷網時已快取的結果照樣能開；PWA 裝上之後，山裡也有底氣。"
+  };
+  var EN = {
+    "回主页": "Home",
+    "使用教程": "Tutorial",
+    "语言": "Language",
+    "主题": "Theme",
+    "教程分档": "Tutorial sections",
+    "概览": "Overview",
+    "用户版": "For Users",
+    "开发者版": "For Developers",
+    "创作者版": "For Creators",
+    "跟随系统": "System",
+    "浅色": "Light",
+    "深色": "Dark",
+    "doc.title": "Tutorial · Sunglow GLOWCAST",
+    "doc.desc": "Sunglow GLOWCAST (dawn / dusk glow probability and quality forecast) tutorial: four tracks — overview, users, developers, creators.",
+    "ov.lead": "Sunglow GLOWCAST is a <b>single-file web app</b>: enter a place and a date to forecast the probability and viewing quality of dawn / dusk glow (fire clouds), plotted across an 80 km sampling grid around you. This tutorial comes in four tracks — pick the one that fits you.",
+    "读懂朝霞与晚霞的预报": "Reading the dawn & dusk forecast",
+    "三模型综合": "Three-model ensemble",
+    "GFS 与 ECMWF 两路统计判据加一路光追物理模型，各自打分后按权重几何平均合成；三路分歧度直接换算成可信度。": "Two statistical judges (GFS, ECMWF) plus one ray-tracing physics model score independently, then combine as a weighted geometric mean; the spread between the three becomes the confidence badge.",
+    "光谱观测场": "Spectrum field map",
+    "以查询点为中心的 121 点网格，全光谱色阶铺色，可切换出现概率 / 观赏质量 / 云量 / 可信度四个维度。": "A 121-point grid around your location, painted with a full-spectrum ramp; switch between probability / quality / cloud cover / confidence.",
+    "十日趋势": "10-day trend",
+    "一次取数画十天曲线，朝 / 晚分开看；算好的结果落盘缓存，重开页命中零请求。": "One fetch draws ten days of curves, dawn and dusk separately; results are cached, so reopening hits zero requests.",
+    "多观测点对比": "Multi-spot compare",
+    "最多 4 个机位一次取数横向排序，直接回答「今晚去哪儿拍」。": "Up to 4 spots, one fetch, ranked side by side — it answers 'where should I shoot tonight?'",
+    "快照互通": "Interoperable snapshots",
+    "结论编码进 URL，对方打开即见快照、零额度零请求；快照格式与 V1 完全互通——两边生成的链接互相能解。": "The verdict is encoded into the URL: the recipient opens the snapshot with zero quota and zero requests. The format is fully interoperable with V1 — links from either side decode on the other.",
+    "快速开始": "Quick start",
+    "选地点": "Pick a place",
+    "搜索城市名，或直接输入「纬度,经度」。": "Search a city name, or type 'lat,lon' directly.",
+    "选日期与时段": "Pick date & period",
+    "日期可回看 7 天、前瞻 10 天；朝霞与晚霞分开计算。": "Dates go back 7 days and forward 10; dawn and dusk are computed separately.",
+    "读结论": "Read the verdict",
+    "概率 + 质量分 + 等级 + 可信度；往下拉是十日趋势、观测场与多观测点对比。": "Probability + quality score + grade + confidence; scroll on for the 10-day trend, field map and multi-spot compare.",
+    "版本家族": "The family",
+    "霞光预报家族四套并存、互相隔离：V1（仓库根目录的原版，单文件 assemble 构建链，算法权威）、GLOWCAST v2（本教程所属，项目主线）、v3「追光航志」（画布航图决策版）、Skyglow（Python 服务端版）。页脚「切换到V1」随时回到原版。": "Four builds coexist, fully isolated: V1 (the original at the repo root, single-file assemble chain, the algorithm authority), GLOWCAST v2 (this tutorial's home, the mainline), v3 'Chasing-Light Log' (canvas-chart decision edition) and Skyglow (Python server edition). The footer's 'Switch to V1' takes you back anytime.",
+    "按身份取用": "Pick your track",
+    "从查预报到读结论，每个功能怎么用、数字怎么看。": "From running a forecast to reading the verdict — what every feature does and what the numbers mean.",
+    "进入 →": "Enter →",
+    "构建链、源码结构、算法口径、探针与部署。": "Build chain, source layout, algorithm details, probes and deployment.",
+    "用预报数据规划拍摄、导出分享卡与快照链接。": "Plan a shoot with forecast data; export share cards and snapshot links.",
+    "十分钟看懂这份霞光预报": "Understand this glow forecast in ten minutes",
+    "每个功能怎么用、每个数字怎么读。不需要任何气象背景。": "What each feature does, what each number means. No meteorology background needed.",
+    "查一次预报": "Run a forecast",
+    "顶部搜索框输入城市名，或直接给「纬度,经度」；日期选择器可切到过去 7 天内的任意一天与未来 10 天；朝霞 / 晚霞在结论卡上方切换。": "Type a city in the top search box, or give 'lat,lon' directly; the date picker covers any day from 7 back to 10 ahead; switch dawn / dusk above the verdict card.",
+    "位置与日期不写进偏好——每次打开都是新的开始；想带走当前结果，用分享链接。": "Place and date are never saved to preferences — every open is a fresh start. To take the current result with you, use a share link.",
+    "读懂结论卡": "Reading the verdict card",
+    "出现概率＝今晚「有没有霞」；观赏质量＝「好不好看」（0–100 分，优 ≥80、良 ≥65、一般 ≥45）。两个维度独立：概率高可能质量平平（闷烧），概率低也可能一旦出现极惊艳。": "Probability = 'will there be glow tonight'; quality = 'will it be stunning' (0–100; great ≥80, good ≥65, fair ≥45). The two are independent: high probability can be flat (a smolder), low probability can still be spectacular if it shows.",
+    "卡内天色带标出日出 / 日落与民用 / 航海 / 天文昏影终四道线，「此刻」游标告诉你正处在哪个阶段；晚霞的黄金窗口通常在日落后 10–25 分钟，朝霞则要赶在天亮之前到位。": "The sky band inside the card marks four lines — sunrise/sunset and the civil, nautical and astronomical twilight limits. The 'now' cursor tells you which stage you're in; the golden window for dusk glow is typically 10–25 minutes after sunset, while dawn glow means arriving before first light.",
+    "三张模型卡（GFS / ECMWF / 光追）可逐张对照：结论越一致，可信度徽标越稳；分歧大时，宁可当「可能有」对待。": "Three model cards (GFS / ECMWF / ray-trace) can be compared one by one: the more they agree, the steadier the confidence badge. When they diverge widely, treat it as 'maybe'.",
+    "点「加载趋势」显式取数（约 102 次加权调用，34 个坐标 × 10 天一次拉完），之后朝 / 晚两条概率曲线加质量分柱状列。算好的结果落盘缓存 6 小时，重开页命中直接画出，零请求。": "Click 'Load trend' to fetch explicitly (~102 weighted calls; 34 coordinates × 10 days in one go), then dawn / dusk probability curves plus a quality-score column. Results cache for 6 hours — reopening draws them instantly, zero requests.",
+    "观测场地图": "The field map",
+    "以当前地点为中心的 121 点采样网格（80 km 间距），四种着色维度：出现概率 / 观赏质量 / 云量 / 可信度。色阶是全光谱形态——颜色即数值，没有凸包硬边界，边缘自然淡出。": "A 121-point sampling grid (80 km spacing) around your location with four coloring modes: probability / quality / cloud cover / confidence. The ramp is full-spectrum — color is the value, with no hard hull boundary; edges fade out naturally.",
+    "取数纪律：只有显式点「加载周边地图」才发起请求（约 171 次加权调用）；这个日期已有缓存时会自动画出来。选点有两种方式——直接点格点，或搜城市名；任意点都能一键「加入对比」。": "Fetch discipline: requests fire only when you explicitly click 'Load surrounding map' (~171 weighted calls); if this date is already cached, it draws automatically. Two ways to pick a spot — tap a grid point directly, or search a city name; any point can be added to compare in one tap.",
+    "最多 4 个点。从地图格点加入的免额度（读已取数的场）；搜索加入的每个点约 51 次加权调用，缓存 6 小时。一次取数后按质量分横向排序——「今晚去哪儿拍」就此有答案。": "Up to 4 spots. Points added from the map grid cost no quota (they read the already-fetched field); each searched point costs ~51 weighted calls, cached for 6 hours. After one fetch they rank side by side by quality score — 'where to shoot tonight', answered.",
+    "保存图片与快照链接": "Save image & snapshot link",
+    "结论卡的「保存图片」导出 PNG 结论卡（纯 canvas 绘制，配色跟随当前主题）；「复制链接」把当前结果编码进 URL（base64url，SNAP_VER=1），对方打开即见快照，不消耗任何接口额度。格式与 V1 互通——V1 生成的快照这里能解，反之亦然。": "'Save image' on the verdict card exports a PNG (pure canvas, colors follow your theme); 'Copy link' encodes the current result into the URL (base64url, SNAP_VER=1) — the recipient opens the snapshot directly, costing zero API quota. The format interoperates with V1: snapshots from either side decode on the other.",
+    "实况校准": "Reality calibration",
+    "看完霞回来标注「看到了 / 没看到 / 无法判断」。本机在你的区域加同档概率下累计样本，≥8 条且本档 ≥3 条时展示观测偏差。校准只在本机展示，绝不回改预报模型；关掉标注开关不会删除已有样本。": "After the show, tag 'saw it / didn't / can't tell'. Your device accumulates samples within your region and probability band, and shows the observed deviation once you have ≥8 entries and ≥3 in that band. Calibration is display-only on your device — it never rewrites the forecast model; turning the tagging switch off does not delete existing samples.",
+    "偏好与外观": "Preferences & appearance",
+    "设置面板里：主题（大气光谱观测站·深色 / 晨光实验室·浅色 / 跟随系统）、语言（简体 / 繁體 / English）、单位（公制 km·m·℃ / 英制 mi·ft·℉）、时间格式（12 / 24 小时制）。偏好写本机 localStorage，与本教程页共享同一份。": "In the settings panel: theme (Spectrum Observatory dark / Dawn Lab light / system), language (简体 / 繁體 / English), units (metric km·m·℃ / imperial mi·ft·℉) and clock format (12 / 24-hour). Preferences live in this device's localStorage, shared with this tutorial page.",
+    "缓存、额度与离线": "Cache, quota & offline",
+    "所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度，遇到 429 时限流不自动重试。网络不可用（预算 9 秒）会回落到确定性 mock，界面左上角标注 MOCK——别把 mock 当预报。装了 PWA 的话，断网也能看已缓存的结果。": "All results cache for 6 hours, keyed by date + period + coordinates; the settings panel shows the count and clears everything in one tap. Data comes from Open-Meteo's free tier, metered per visitor IP; a 429 rate-limit is never auto-retried. If the network is unavailable (9-second budget), the app falls back to deterministic mock data, flagged MOCK in the top-left — don't mistake mock for a forecast. With the PWA installed, cached results open even offline.",
+    "术语速查": "Glossary",
+    "气溶胶光学厚度，衡量大气浑浊度（0.1 清澈 → 1+ 重霾）。": "Aerosol optical depth — how murky the air is (0.1 clear → 1+ heavy haze).",
+    "云底高度": "Cloud-base height",
+    "承接霞光的云层底面高度，3–6 km 的中高云最出片。": "The underside of the cloud deck that catches the glow; mid-high clouds at 3–6 km shoot best.",
+    "光学等效地表高度": "Optical effective ground height",
+    "气溶胶层「吃掉」光程的等效厚度，会降低有效云底。": "The equivalent thickness of optical path 'eaten' by the aerosol layer; it lowers the effective cloud base.",
+    "光追": "Ray tracing",
+    "可信度": "Confidence",
+    "沿地球曲率的抛物线光路做逐波长消光积分，输出真实色彩。": "Per-wavelength extinction integration along a parabolic light path following Earth's curvature, outputting true color.",
+    "三路模型综合指数的极差分档：<18 高、<35 中、≥35 低。": "Bands by the spread of the three models' composite index: &lt;18 high, &lt;35 medium, ≥35 low.",
+    "网络不可用时的确定性演示数据，界面有 MOCK 标注。": "Deterministic demo data used when the network is down; flagged MOCK in the UI.",
+    "数据源 Open-Meteo（免费层，非商业用途）· 地图底图腾讯位置服务": "Data: Open-Meteo (free tier, non-commercial) · Map base: Tencent Location Services",
+    "← 回主页": "← Home",
+    "构建、口径与质量门": "Build, calibration & quality gates",
+    "从一条构建命令到三套算法的口径细节，读懂 GLOWCAST v2 的全部机制。": "From one build command to the details of three algorithms — every mechanism of GLOWCAST v2.",
+    "形态与构建链": "Form & build chain",
+    "源码在 v2/，交付物是一个自包含单文件。一条命令跑完构建与发布：": "Source lives in v2/; the deliverable is one self-contained single file. One command builds and publishes:",
+    "cd v2 && npm run build": "cd v2 &amp;&amp; npm run build",
+    "三段接力：vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 7 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。": "Three-stage relay: vite build inlines all JS/CSS/fonts into app.html; emit-single.mjs lands v2/index.html and restores stable filenames for every reference (a residual hash fails the build); publish-root.mjs publishes 7 deliverable files to the repo root with per-file sha256 verification. Never hand-edit the output; the root index.html is the GitHub Pages entry.",
+    "多文件 → app.html 全内联": "Multi-file → app.html fully inlined",
+    "稳定文件名 + 零外链校验": "Stable filenames + zero-external-link check",
+    "7 个交付文件落仓库根": "7 deliverable files to the repo root",
+    "源码结构": "Source layout",
+    "src/core 的 TS 模块按职责分层：取数与编排（api / forecast / trend / mapload）、算法（scoring / physics / astro / refmodel / skyband / verdict）、地图（mapdata / maprender / ramp / popover）、状态与协议（state / snap / urlstate / cache / calib）、展示辅助（i18n / city / citylang / cityname / units / tz / series / sharecard / compare / math）。": "The TS modules in src/core are layered by role: fetching & orchestration (api / forecast / trend / mapload), algorithms (scoring / physics / astro / refmodel / skyband / verdict), map (mapdata / maprender / ramp / popover), state & protocol (state / snap / urlstate / cache / calib), and presentation helpers (i18n / city / citylang / cityname / units / tz / series / sharecard / compare / math).",
+    "vendor/src-verbatim/ 是 V1 七脚本的冻结副本：不参与构建、不加载，只作口径 diff 基线。V1 算法若演进，先 diff 该目录再同步 src/core。": "vendor/src-verbatim/ is a frozen copy of V1's seven scripts: not built, not loaded — only a diff baseline for calibration. If V1's algorithms evolve, diff that directory first, then sync src/core.",
+    "算法口径": "Algorithm details",
+    "统计判据路（GFS / ECMWF）：云量、云型、云底高度、气溶胶等要素加权打分（因素面板列全 13 项判据，末项为模式一致性）→ P；光追路：沿地球曲率的抛物线光路做逐波长消光积分，用 CIE 1931 色度函数算出真实色彩 → Q。两路先合成 mixedIndex，再三路集合：": "Statistical judges (GFS / ECMWF): weighted scoring over cloud cover, cloud type, cloud-base height, aerosols and more (the factors panel lists all 13 criteria, the last being model agreement) → P. Ray tracing: per-wavelength extinction integration along a parabolic path following Earth's curvature, run through the CIE 1931 color functions for true color → Q. The two merge into mixedIndex, then the three-way ensemble:",
+    "mixedIndex = 0.55·P + 0.45·Q\nW_ENS = GFS 0.30 / ECMWF 0.34 / 光追 0.36（几何平均）\n可信度 = 三路极差分档：<18 高、<35 中、≥35 低": "mixedIndex = 0.55·P + 0.45·Q\nW_ENS = GFS 0.30 / ECMWF 0.34 / ray-trace 0.36 (geometric mean)\nConfidence = spread bands: &lt;18 high, &lt;35 medium, ≥35 low",
+    "一切口径与 V1 逐点对齐；任何改变 P/Q 数值的改动必须双落（V1 _p*.js 与 v2 src/core 同步改），并由探针守着。": "Every calibration detail matches V1 point by point; any change to P/Q values must land on both sides (V1 _p*.js and v2 src/core together), guarded by probes.",
+    "与 V1 的关系": "Relationship with V1",
+    "算法权威在 V1（仓库根 V1/ 目录）。probe:consist 不重写公式，而是从两边源码把同一表达式原样抽出来 eval，在 16 个采样网格上对拍——任何一边改了口径，脚本立刻报差异，相当于一条活的口径守卫。": "The algorithm authority is V1 (the V1/ directory at the repo root). probe:consist doesn't rewrite formulas — it extracts the same expressions verbatim from both sources and evals them on a 16-point sampling grid. If either side drifts, the script reports it immediately: a living calibration guard.",
+    "两侧状态完全隔离：localStorage 键 sunsetbot.*（V1）vs glowcast.v2.*（v2）；快照 SNAP_VER=1 双向互通，任一侧生成的 ?snap= 链接对方可解。": "State is fully isolated: localStorage keys sunsetbot.* (V1) vs glowcast.v2.* (v2). Snapshots (SNAP_VER=1) are bidirectional — a ?snap= link from either side decodes on the other.",
+    "观测场渲染": "Field rendering",
+    "采样网格规模与间距": "Sampling grid size & spacing",
+    "自适应核，R=第 9 近邻×1.06": "Adaptive kernel, R = 9th nearest neighbor × 1.06",
+    "11 锚点全光谱，低值不归零": "11-anchor full spectrum; low values never zeroed",
+    "km 距离淡出，无凸包硬裁切": "km distance fade-out; no hard hull clipping",
+    "场重建用自适应核 Shepard（R＝第 9 近邻×1.06，过点但不长平台）；色面铺到视口外、靠距离淡出收边；显示平滑把因子场的二值台阶摊成坡（只进栅格，卡片与探针仍是原始值）。三层分工：色面（场）、遮挡层（occ）、可信度（只降饱和）——后两者默认关。": "Field reconstruction uses an adaptive Shepard kernel (R = 9th nearest neighbor × 1.06 — passes through points without flat plateaus). The color surface extends past the viewport and is bounded by distance fade-out; display smoothing turns the factor field's binary steps into slopes (raster only — cards and probes keep raw values). Three layers, separate jobs: color surface (field), occlusion (occ), confidence (desaturate only) — the latter two are off by default.",
+    "时区与取数账目": "Time zones & fetch accounting",
+    "单点预报加权调用": "Weighted calls, single-point forecast",
+    "观测场全量": "Field map, full load",
+    "十日趋势一次拉完": "10-day trend, one pull",
+    "缓存 TTL，键=日期+时段+坐标": "Cache TTL; key = date + period + coordinates",
+    "一切时间按城市当地钟（API_TZ=auto，序列存真实 epoch，偏移量先取整再算）。取数账目与纪律：": "All times follow the city's local clock (API_TZ=auto; series store true epochs, offsets floored before use). Fetch accounting and discipline:",
+    "取数只许显式触发，「缓存命中自动绘制」是唯一例外；429 双分类（日额度耗尽劝退 / 短时限流退避），不无脑重试。": "Fetches must be explicitly triggered; 'draw automatically on cache hit' is the only exception. 429s are double-classified (daily quota exhausted → discourage; short-term throttle → back off), never blindly retried.",
+    "快照与 URL 协议": "Snapshot & URL protocol",
+    "?snap= 后接 base64url 编码的结论快照（SNAP_VER=1），零气象请求还原整张结论卡；语言进 URL（?lang=zh/hant/en），主题不进——分享链接即对方能看懂的版本。": "?snap= carries a base64url-encoded verdict snapshot (SNAP_VER=1); the whole verdict card is restored with zero weather requests. Language goes into the URL (?lang=zh/hant/en), theme doesn't — a share link is a version the recipient can read.",
+    "质量门：探针与纪律": "Quality gates: probes & discipline",
+    "npm run typecheck      # tsc --noEmit\nnpm run build          # 构建 + 发布校验（缺文件/残留哈希即失败）\nnpm run probe:ui       # agent-browser 驱动，约 280 条断言\nnpm run probe:tz       # 时区口径 28 条\nnpm run probe:consist  # V1↔v2 口径对拍 16 采样点": "npm run typecheck      # tsc --noEmit\nnpm run build          # build + publish checks (missing file / residual hash = failure)\nnpm run probe:ui       # agent-browser driven, ~280 assertions\nnpm run probe:tz       # 28 timezone-calibration assertions\nnpm run probe:consist  # V1↔v2 calibration diff, 16 sample points",
+    "全仓 LF 行尾；改产物必须重跑构建；探针跑的是构建产物，不是源码——忘重建等于测旧代码。": "Repo-wide LF line endings; any change to the output requires a rebuild. Probes run the build output, not the source — forgetting to rebuild means testing old code.",
+    "部署": "Deployment",
+    "交付物在仓库根（publish-root 每次构建自动刷新）。GitHub Pages 项目页开在子路径，单文件形态 base 为相对路径，任意静态托管都能开。": "Deliverables live at the repo root (publish-root refreshes them on every build). GitHub Pages project sites serve from a subpath; the single-file form uses a relative base, so any static host works.",
+    "地图代理占位符 __TMAP_SERVICE_HOST__ 由构建期环境变量 VITE_TMAP_SERVICE_HOST 注入，产物不含任何密钥；未注入时回落占位符——地图不可用，但查询 / 趋势 / 分享卡全可用。PWA 注册靠 link[rel=manifest] 存在性判断，SW 绝不缓存气象响应，缓存名随产物内容哈希自动作废。": "The map-proxy placeholder __TMAP_SERVICE_HOST__ is injected at build time from the VITE_TMAP_SERVICE_HOST env var; the output contains no keys. Without it the placeholder remains — the map is unavailable, but forecast / trend / share card all work. PWA registration is inferred from the presence of link[rel=manifest]; the service worker never caches weather responses, and the cache name auto-expires with the output's content hash.",
+    "用预报数据规划一次拍摄": "Plan a shoot with forecast data",
+    "从选日子到出图，把霞光预报变成你的拍摄计划表。": "From picking the day to exporting the image — turn the glow forecast into your shoot plan.",
+    "三步挑一个拍摄夜": "Three steps to a shoot night",
+    "十日趋势挑日子": "Trend picks the day",
+    "概率与质量双高的那天值得专程出门；只看概率会赶上「有霞但不好看」。": "A day with both high probability and high quality is worth a dedicated trip; probability alone can get you 'glow, but flat'.",
+    "结论卡卡时间": "The verdict card times it",
+    "天色带四道线里找你的窗口——晚霞黄金 10–25 分钟，朝霞赶在天亮前；「此刻」游标告诉你还剩多少准备时间。": "Find your window between the four sky-band lines — dusk glow's golden 10–25 minutes, dawn glow before first light. The 'now' cursor tells you how much setup time is left.",
+    "观测场挑点位": "The field map picks the spot",
+    "切到质量维度找颜色最亮的格子，切云量维度绕开灰的——点位选对，等于提前一小时到位。": "Switch to quality mode for the brightest cells, then cloud mode to dodge the gray ones — the right spot buys you an extra hour on site.",
+    "结论卡导出": "Exporting the verdict card",
+    "结论卡的「保存图片」一键导出 PNG：概率大字、天色带、三模型结论都在一张图上，纯 canvas 绘制、配色跟随当前主题。深色 Spectrum 卡适合直接发社交平台；浅色晨光卡适合打印或贴进拍摄计划表。": "'Save image' exports a PNG in one tap: the big probability number, sky band and three-model verdicts on a single card, pure canvas, colors following your theme. The dark Spectrum card is ready to post; the light Dawn Lab card prints well for your shoot planner.",
+    "快照链接做内容": "Snapshot links as content",
+    "「复制链接」得到的 URL 自带完整结论：对方打开零额度、零等待，语言跟着链接走。V1 用户也能解你的快照——跨版本内容可以互相引用，老读者不会丢。": "The URL from 'Copy link' carries the full verdict: the recipient opens it with zero quota and zero wait, in the link's language. V1 users can decode your snapshots too — cross-version content can reference each other, so old readers aren't lost.",
+    "主题与截图": "Themes & screenshots",
+    "两套主题都是为出片调的：大气光谱观测站（深空蓝黑加光谱渐变）适合夜景氛围长图；晨光实验室（浅色）适合白天阅读与归档。截图前把时间格式切到你习惯的那档（12 / 24 小时制），时间戳更齐。": "Both themes are tuned for content: Spectrum Observatory (deep-space blue-black with spectrum gradients) suits night mood shots; Dawn Lab (light) suits daytime reading and archiving. Before screenshotting, set the clock format you prefer (12 / 24-hour) so timestamps read cleanly.",
+    "实况校准的反哺": "What calibration gives back",
+    "每次拍完回来标注「看到了 / 没看到 / 无法判断」。本机样本攒够后（≥8 条），你会看到自己所在区域的观测偏差——那是你的个人命中率，比通用概率更懂你的机位。数据只存本机，换浏览器不跟着走。": "After each shoot, tag 'saw it / didn't / can't tell'. Once your device has enough samples (≥8), you'll see the observed deviation for your region — your personal hit rate, which knows your spots better than the generic probability. Data stays on the device; it doesn't follow you to another browser.",
+    "额度礼节与离线": "Quota etiquette & offline",
+    "别用脚本刷接口——免费层按访客 IP 计额，刷爆了大家都没得看。出门前把常用城市看一遍，断网时已缓存的结果照样能开；PWA 装上之后，山里也有底气。": "Don't script-hammer the API — the free tier is metered per visitor IP, and burning it leaves nothing for anyone. Check your usual cities before heading out; cached results open fine offline, and with the PWA installed you're covered even in the mountains."
+  };
+  var DICT = { hant: HANT, en: EN };
+  var THEMES = ["auto", "light", "dark"];
+  var THEME_ICON = { auto: "◐", light: "☀", dark: "☾" };
+  var THEME_KEY = { auto: "跟随系统", light: "浅色", dark: "深色" };
+  var VIEWS = ["overview", "users", "dev", "creator"];
+  var LANG = "zh";
 
-  function readMode() {
-    try {
-      var raw = localStorage.getItem(PREF_KEY);
-      if (raw) {
-        var j = JSON.parse(raw);
-        if (j && MODES.indexOf(j.theme) >= 0) return j.theme;
-      }
-    } catch (e) { /* 忽略存储异常 */ }
-    return "auto";
+  function $(s, r) { return (r || document).querySelector(s); }
+  function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
+  function tr(k) {
+    if (LANG === "zh") return k;
+    var d = DICT[LANG];
+    return (d && Object.prototype.hasOwnProperty.call(d, k)) ? d[k] : k;
   }
 
-  function writeMode(m) {
+  /* ---------- 偏好：整份读、补字段写（不碰应用写的单位/时间制式等字段） ---------- */
+  function prefRaw() {
     try {
-      var obj = {};
-      try {
-        var raw = localStorage.getItem(PREF_KEY);
-        if (raw) obj = JSON.parse(raw) || {};
-      } catch (e) { obj = {}; }
-      obj.theme = m;
-      localStorage.setItem(PREF_KEY, JSON.stringify(obj));
-    } catch (e) { /* 存储不可用时静默降级 */ }
+      var j = JSON.parse(localStorage.getItem(PREF_KEY) || "null");
+      if (!j || typeof j !== "object" || Array.isArray(j)) return {};
+      return j;
+    } catch (e) { return {}; }
+  }
+  function prefPatch(patch) {
+    try {
+      var j = prefRaw();
+      Object.keys(patch).forEach(function (k) { j[k] = patch[k]; });
+      localStorage.setItem(PREF_KEY, JSON.stringify(j));
+    } catch (e) { /* 隐私模式 / 配额不足：本次照常生效，只是不落盘 */ }
   }
 
+  /* ---------- 主题 ---------- */
   function systemDark() {
     return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
   }
-
-  function resolved(m) {
-    return m === "auto" ? (systemDark() ? "dark" : "light") : m;
+  function themePref() {
+    var t = prefRaw().theme;
+    return THEMES.indexOf(t) >= 0 ? t : "auto";
+  }
+  function applyTheme(pref) {
+    var k = THEMES.indexOf(pref) >= 0 ? pref : "auto";
+    var dark = k === "dark" || (k === "auto" && systemDark());
+    var eff = dark ? "dark" : "light";
+    var root = document.documentElement;
+    root.setAttribute("data-theme", eff);
+    root.setAttribute("data-theme-pref", k);
+    root.style.colorScheme = eff;
+    $$('meta[name="theme-color"]').forEach(function (m) {
+      var want = eff === "dark" ? "#070b14" : "#f5f7fb";
+      m.setAttribute("media", m.getAttribute("content") === want ? "all" : "not all");
+    });
+    refreshTopButtons();
+  }
+  function setTheme(pref) {
+    applyTheme(pref);
+    prefPatch({ theme: document.documentElement.getAttribute("data-theme-pref") });
+    refreshThemeSeg();
   }
 
-  var btn = document.getElementById("themeBtn");
-  var label = document.getElementById("themeLabel");
-  var icon = document.getElementById("themeIcon");
+  /* ---------- 文案节点 ---------- */
+  var TEXT_NODES = [];
+  var ATTR_NODES = [];
+  function collect() {
+    $$("[data-i18n]").forEach(function (el) {
+      TEXT_NODES.push({ el: el, key: el.getAttribute("data-i18n"), zh: el.innerHTML });
+    });
+    $$("[data-i18n-html]").forEach(function (el) {
+      TEXT_NODES.push({ el: el, key: el.getAttribute("data-i18n-html"), zh: el.innerHTML });
+    });
+    $$("[data-i18n-aria]").forEach(function (el) {
+      ATTR_NODES.push({ el: el, attr: "aria-label", key: el.getAttribute("data-i18n-aria"),
+        zh: el.getAttribute("aria-label") || "" });
+    });
+    $$("[data-i18n-title]").forEach(function (el) {
+      ATTR_NODES.push({ el: el, attr: "title", key: el.getAttribute("data-i18n-title"),
+        zh: el.getAttribute("title") || "" });
+    });
+  }
+  function applyLang() {
+    function pick(n) {
+      if (LANG === "zh") return n.zh;
+      var d = DICT[LANG];
+      var v = d && Object.prototype.hasOwnProperty.call(d, n.key) ? d[n.key] : null;
+      return (v == null || v === "") ? n.zh : v;
+    }
+    TEXT_NODES.forEach(function (n) { n.el.innerHTML = pick(n); });
+    ATTR_NODES.forEach(function (n) { n.el.setAttribute(n.attr, pick(n)); });
+    var meta = LANGS.filter(function (l) { return l.k === LANG; })[0] || LANGS[0];
+    document.documentElement.setAttribute("lang", meta.tag);
+    document.title = LANG === "zh" ? "使用教程 · 霞光预报 GLOWCAST" : (DICT[LANG]["doc.title"] || document.title);
+    var d = $('meta[name="description"]');
+    if (d && LANG !== "zh" && DICT[LANG]["doc.desc"]) d.setAttribute("content", DICT[LANG]["doc.desc"]);
+    refreshTopButtons();
+    refreshLangSeg();
+    refreshThemeSeg();
+  }
+  function setLang(k, write) {
+    if (k !== "zh" && !DICT[k]) return;
+    LANG = k;
+    applyLang();
+    if (write) prefPatch({ lang: k });
+    try {
+      var u = new URL(location.href);
+      if (k === "zh") u.searchParams.delete("lang"); else u.searchParams.set("lang", k);
+      history.replaceState(null, "", u.pathname + u.search + u.hash);
+    } catch (e) { /* file:// 下 URL 可能不可用，忽略 */ }
+  }
+  function detectLang() {
+    var q = null;
+    try { q = new URLSearchParams(location.search).get("lang"); } catch (e) { }
+    if (q === "zh" || (q && DICT[q])) return q;
+    var p = prefRaw().lang;
+    if (p === "zh" || (p && DICT[p])) return p;
+    var nav = (navigator.language || "zh").toLowerCase();
+    if (nav.indexOf("zh") === 0) return /hant|tw|hk|mo/.test(nav) ? "hant" : "zh";
+    return "en";
+  }
 
-  var ICONS = {
-    auto: '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.8v2.2M12 19v2.2M2.8 12h2.2M19 12h2.2M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6"/>',
-    light: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.2 5.2l1.4 1.4M17.4 17.4l1.4 1.4M18.8 5.2l-1.4 1.4M6.6 17.4l-1.4 1.4"/>',
-    dark: '<path d="M20 13.2A8 8 0 0 1 10.8 4 8.2 8.2 0 1 0 20 13.2z"/>'
-  };
+  /* ---------- 顶栏按钮 + 下拉 ---------- */
+  function refreshTopButtons() {
+    var lb = $("#langBtn");
+    if (lb) {
+      var cur = LANGS.filter(function (l) { return l.k === LANG; })[0] || LANGS[0];
+      lb.textContent = cur.short;
+      lb.setAttribute("title", tr("语言"));
+    }
+    var tb = $("#themeBtn");
+    if (tb) {
+      var ico = tb.querySelector(".ico");
+      var ch = THEME_ICON[themePref()] || "◐";
+      if (ico) ico.textContent = ch; else tb.textContent = ch;
+      tb.setAttribute("title", tr("主题"));
+    }
+  }
+  function segHTML(items) {
+    return items.map(function (it) {
+      return '<button type="button" data-k="' + it.k + '" aria-pressed="' + (it.on ? "true" : "false") + '">' +
+        '<span aria-hidden="true" style="width:14px;display:inline-block">' + (it.icon || "") + '</span>' +
+        tr(it.label) + '</button>';
+    }).join("");
+  }
+  function refreshLangSeg() {
+    var box = $("#langSeg");
+    if (!box) return;
+    box.innerHTML = segHTML(LANGS.map(function (l) {
+      return { k: l.k, label: l.name, on: l.k === LANG };
+    }));
+    $$("button", box).forEach(function (b) {
+      b.addEventListener("click", function () { setLang(b.getAttribute("data-k"), true); closeMenus(); });
+    });
+  }
+  function refreshThemeSeg() {
+    var box = $("#themeSeg");
+    if (!box) return;
+    box.innerHTML = segHTML(THEMES.map(function (k) {
+      return { k: k, label: THEME_KEY[k], icon: THEME_ICON[k], on: k === themePref() };
+    }));
+    $$("button", box).forEach(function (b) {
+      b.addEventListener("click", function () { setTheme(b.getAttribute("data-k")); closeMenus(); });
+    });
+  }
+  function closeMenus() {
+    $$(".tmenu").forEach(function (m) { m.hidden = true; });
+    $$(".tbtn").forEach(function (b) { b.setAttribute("aria-expanded", "false"); });
+  }
+  function wireMenu(btnId, menuId) {
+    var btn = document.getElementById(btnId), menu = document.getElementById(menuId);
+    if (!btn || !menu) return;
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      var willOpen = menu.hidden;
+      closeMenus();
+      if (willOpen) { menu.hidden = false; btn.setAttribute("aria-expanded", "true"); }
+    });
+    menu.addEventListener("click", function (e) { e.stopPropagation(); });
+  }
 
-  function render() {
-    var m = readMode();
-    var d = resolved(m);
-    document.documentElement.setAttribute("data-theme", d);
-    document.documentElement.setAttribute("data-theme-mode", m);
-    if (label) label.textContent = LABEL[m] || m;
-    if (icon) {
-      icon.innerHTML = ICONS[m] || ICONS.auto;
-      icon.setAttribute("stroke-width", "1.8");
+  /* ---------- 分档路由 ---------- */
+  function showView(name, write) {
+    if (VIEWS.indexOf(name) < 0) name = "overview";
+    VIEWS.forEach(function (v) {
+      var sec = document.getElementById(v);
+      if (sec) sec.hidden = (v !== name);
+    });
+    $$("#tabs .tab").forEach(function (b) {
+      var on = b.getAttribute("data-view") === name;
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    if (write) {
+      try { history.replaceState(null, "", "#" + name); } catch (e) { }
+    }
+  }
+  function jumpTop() {
+    window.scrollTo(0, 0);
+  }
+  function route() {
+    var h = (location.hash || "").replace("#", "");
+    if (!h) { showView("overview", false); return; }
+    if (VIEWS.indexOf(h) >= 0) { showView(h, false); jumpTop(); return; }
+    var el = document.getElementById(h);
+    if (!el) return;
+    var v = el.closest ? el.closest(".view") : null;
+    if (v && v.hidden) {
+      showView(v.id, false);
+      if (el.scrollIntoView) el.scrollIntoView({ block: "start" });
     }
   }
 
-  if (btn) {
-    btn.addEventListener("click", function () {
-      var m = readMode();
-      var next = MODES[(MODES.indexOf(m) + 1) % MODES.length];
-      writeMode(next);
-      render();
-    });
+  /* ---------- 吸顶条实测高度（写死像素会在换行/放大字号时错位） ---------- */
+  function syncTopHeight() {
+    var t = $(".top");
+    if (!t) return;
+    var h = Math.round(t.getBoundingClientRect().height);
+    if (h > 0) document.documentElement.style.setProperty("--toph", h + "px");
   }
 
-  if (window.matchMedia) {
-    var mq = window.matchMedia("(prefers-color-scheme: dark)");
-    var onChange = function () {
-      if (readMode() === "auto") render();
-    };
-    if (mq.addEventListener) mq.addEventListener("change", onChange);
-    else if (mq.addListener) mq.addListener(onChange);
-  }
-
-  render();
-
-  /* ---- 目录滚动高亮 ---- */
-  var links = Array.prototype.slice.call(document.querySelectorAll(".toc a"));
-  var sections = links.map(function (a) {
-    var id = a.getAttribute("href");
-    return id && id.charAt(0) === "#" ? document.querySelector(id) : null;
-  });
-
-  function setActive(id) {
-    links.forEach(function (a) {
-      var on = a.getAttribute("href") === id;
-      if (on) a.classList.add("active");
-      else a.classList.remove("active");
-      if (on) {
-        try { a.scrollIntoView({ block: "nearest", inline: "center" }); } catch (e) { /* 旧浏览器忽略 */ }
-      }
-    });
-  }
-
-  if ("IntersectionObserver" in window) {
-    var visible = {};
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) {
-        visible[en.target.id] = en.isIntersecting ? en.intersectionRatio : 0;
+  /* ---------- 启动 ---------- */
+  function boot() {
+    collect();
+    LANG = detectLang();
+    applyLang();
+    applyTheme(themePref());
+    $$("#tabs .tab").forEach(function (b) {
+      b.addEventListener("click", function () {
+        showView(b.getAttribute("data-view"), true);
+        jumpTop();
       });
-      var bestId = null, best = 0;
-      Object.keys(visible).forEach(function (k) {
-        if (visible[k] > best) { best = visible[k]; bestId = k; }
-      });
-      if (bestId) setActive("#" + bestId);
-    }, { rootMargin: "-120px 0px -55% 0px", threshold: [0, 0.12, 0.4, 0.8] });
-
-    sections.forEach(function (s) { if (s) io.observe(s); });
+    });
+    wireMenu("langBtn", "langMenu");
+    wireMenu("themeBtn", "themeMenu");
+    document.addEventListener("click", closeMenus);
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeMenus();
+    });
+    window.addEventListener("hashchange", route);
+    window.addEventListener("resize", syncTopHeight);
+    if (window.matchMedia) {
+      try {
+        window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () {
+          if (themePref() === "auto") applyTheme("auto");
+        });
+      } catch (e) { /* 老浏览器：不跟随 */ }
+    }
+    syncTopHeight();
+    route();
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
   }
 })();
 </script>
-
 </body>
 </html>

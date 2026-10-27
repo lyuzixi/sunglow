@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>顶栏手机档：四方案对照</title>
+<style>
+  :root {
+    --bg: #f4f6fa; --card: #ffffff; --line: #e3e8f0; --tx1: #17233a; --tx2: #3d4a63; --tx3: #7d8aa3;
+    --acc: #c07a10; --bad: #c2603a; --ok: #2b7a5b;
+    --font: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 34px 40px 46px; background: var(--bg); color: var(--tx1);
+    font-family: var(--font); -webkit-font-smoothing: antialiased; }
+  header h1 { margin: 0 0 6px; font-size: 20px; letter-spacing: -0.01em; }
+  header p { margin: 0 0 22px; font-size: 13px; color: var(--tx3); line-height: 1.7; max-width: 1080px; }
+  header p b { color: var(--tx2); }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .cell { background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px 18px 16px; display: flex; flex-direction: column; gap: 12px; }
+  .chead { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .num { width: 22px; height: 22px; flex: 0 0 22px; border-radius: 50%; background: var(--tx1);
+    color: #fff; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center;
+    justify-content: center; align-self: center; }
+  .cname { font-size: 15px; font-weight: 600; }
+  .tag { font-size: 11.5px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line);
+    color: var(--tx3); font-variant-numeric: tabular-nums; }
+  .tag.ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 30%, var(--line));
+    background: color-mix(in srgb, var(--ok) 7%, #fff); }
+  .tag.bad { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 30%, var(--line));
+    background: color-mix(in srgb, var(--bad) 7%, #fff); }
+
+  .shot { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #fff; }
+  .shot img { display: block; width: 100%; }
+
+  ul { margin: 0; padding-left: 17px; font-size: 12.5px; line-height: 1.85; color: var(--tx2); }
+  ul li::marker { color: var(--tx3); }
+  ul b { color: var(--tx1); }
+  .minus b { color: var(--bad); }
+
+  footer { margin-top: 22px; padding: 16px 18px; background: #fff; border: 1px solid var(--line);
+    border-radius: 12px; font-size: 12.5px; line-height: 1.9; color: var(--tx2); }
+  footer b { color: var(--tx1); }
+  code { font-family: ui-monospace, "SF Mono", Consolas, monospace; font-size: 12px;
+    background: #f0f3f8; padding: 1px 5px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>手机档（390px）：第二行去掉之后的四个选择</h1>
+  <p>全部是在<b>真实产物</b>上注入临时样式截的图，不是示意图。容器宽 <b>340px</b>（390 视口 − 40 内边距 − 滚动条）。
+     顶栏现状 80px 两行，四案都收成 <b>57px 单行</b>（方案 4 除外，它仍是两行 85px）。</p>
+</header>
+
+<div class="grid">
+  <div class="cell">
+    <div class="chead">
+      <span class="num">1</span><span class="cname">顶栏不放徽标</span>
+      <span class="tag ok">需 340 / 容 340 · 零余量</span>
+    </div>
+    <div class="shot"><img src=".shots/d2-390-1-nopill.png" alt="方案1" /></div>
+    <ul>
+      <li><b>优点</b>：最干净。☰ / logo / 霞光预报 / 四按钮，一眼对齐，没有半句多余的字。</li>
+      <li><b>优点</b>：城市·日期·朝晚霞在 <code>.hero-city</code>、日期选择器、朝/晚霞切换器上都有，信息零损失。</li>
+      <li class="minus"><b>代价</b>：滚动到下方时，顶栏不再告诉你「现在看的是哪一天」。要回顶部或看结论卡才知道。</li>
+    </ul>
+  </div>
+
+  <div class="cell">
+    <div class="chead">
+      <span class="num">2</span><span class="cname">只留 logo + 只地点</span>
+      <span class="tag ok">需 340 / 容 340 · 零余量</span>
+    </div>
+    <div class="shot"><img src=".shots/d2-390-2-logoonly.png" alt="方案2" /></div>
+    <ul>
+      <li><b>优点</b>：徽标还在顶栏，能一直看到「广州市」。</li>
+      <li class="minus"><b>代价</b>：「霞光预报」四个字消失，只剩光谱圆环；新用户不知道这是哪个站。</li>
+      <li class="minus"><b>代价</b>：胶囊和四个图标挨在一起，右上角两个视觉重心打架；日期与朝晚霞仍没有。</li>
+    </ul>
+  </div>
+
+  <div class="cell">
+    <div class="chead">
+      <span class="num">3</span><span class="cname">徽标下移到 hero 上方</span>
+      <span class="tag ok">需 340 / 容 340 · 零余量</span>
+    </div>
+    <div class="shot"><img src=".shots/d2-390-3-herobar.png" alt="方案3" /></div>
+    <ul>
+      <li><b>优点</b>：顶栏单行干净，徽标信息一个字不少（城市 + 日期 + 朝/晚霞）。</li>
+      <li><b>优点</b>：这条带会随页面滚走，滚动阅读时不占地方。</li>
+      <li class="minus"><b>代价</b>：多出一条横贯全宽的分隔线，页面顶部变成「两层额头」；信息与 hero 里的城市名重复一次。</li>
+      <li class="minus"><b>代价</b>：滚下去之后同样看不到。</li>
+    </ul>
+  </div>
+
+  <div class="cell">
+    <div class="chead">
+      <span class="num">4</span><span class="cname">保留两行，改成左对齐信息带</span>
+      <span class="tag bad">仍两行 · 栏高 85px</span>
+    </div>
+    <div class="shot"><img src=".shots/d2-390-4-leftband.png" alt="方案4" /></div>
+    <ul>
+      <li><b>优点</b>：保留原版「第二行徽标」的结构，只是不再右对齐悬空。</li>
+      <li class="minus"><b>代价</b>：你原本不满意的就是两行；这里仍然两行，只是空白的位置从右移到左。</li>
+      <li class="minus"><b>代价</b>：第二行自带一条上发丝线，加上顶栏底边，形成「双线夹一行字」，比现状更像表格。</li>
+    </ul>
+  </div>
+</div>
+
+<footer>
+  <b>四个共同点</b>：① 390 与 430 都<b>零余量或刚好放得下</b>，所以要落地必须在手机档再收 12–20px（logo 28→26、按钮间距 8→4、栏内 gap 12→10）；
+  ② 英文品牌名（Glow Forecast）比中文长，方案 1 在英文 390 下仍需额外处理；③ 四案都要求手机藏掉 <code>GLOWCAST</code> 副标 —— 这是它能收成单行的前提；
+  ④ 方案 1 / 3 的顶栏高度 57px，三处同源值（<code>scroll-margin</code> / 高亮判定线 / 抽屉 top）都会自动跟着 <code>--topbar-h</code> 走，不需要再手改。
+</footer>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "name": "skyglow-tools",
+  "private": true,
+  "description": "Skyglow 全功能单文件版的数值对齐与浏览器探针",
+  "scripts": {
+    "golden": "python tools/emit_golden.py --regen && node tools/check_golden.mjs",
+    "probe": "node tools/probe_single.mjs",
+    "probe:chrome": "node tools/probe_single.mjs --browser=chrome",
+    "probe:edge": "node tools/probe_single.mjs --browser=edge",
+    "probe:webkit": "node tools/probe_single.mjs --browser=webkit"
+  },
+  "devDependencies": {
+    "playwright": "^1.64.1"
+  }
+}

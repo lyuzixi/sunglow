@@ -1,5 +1,5 @@
 /* =========================================================================
-   GLOWCAST v2 · 七日趋势取数（口径对齐原版 loadTrend/computeTrend）
+   GLOWCAST v2 · 七日趋势取数（口径对齐V1 loadTrend/computeTrend）
    34 点（朝/晚样带各 17）× 多日三路（GFS/EC/AQ）→ 逐日 P/Q。
    缓存只存算好的 rows（原始响应太大，一条就撑爆 localStorage）。
    ========================================================================= */
@@ -16,11 +16,12 @@ import {
 import { makeSeries, mergeSeries, type Series } from "./series";
 import { sunEvents as _se } from "./astro";
 import { gradeOf } from "./scoring";
+import { cityTz, rememberTz, type TzInfo } from "./tz";
 
 void _se;
 
 export const TREND_CACHE_PREFIX = "glowcast.v2.trend.";
-export const TREND_CACHE_TTL = 3 * 3600000;
+export const TREND_CACHE_TTL = 6 * 3600000;
 export const TREND_N = 10;
 
 export interface TrendRow {
@@ -46,6 +47,20 @@ export function trendCacheGet(day0: number, lat: number, lon: number): TrendRow[
     return null;
   }
 }
+/** 缓存条目的年龄（毫秒）；没有可用条目返回 null */
+export function trendCacheAge(day0: number, lat: number, lon: number): number | null {
+  try {
+    const s = localStorage.getItem(trendKeyOf(day0, lat, lon));
+    if (!s) return null;
+    const j = JSON.parse(s);
+    if (!j || !j.rows || !j.ts) return null;
+    const age = Date.now() - j.ts;
+    return age < 0 || age > TREND_CACHE_TTL ? null : age;
+  } catch {
+    return null;
+  }
+}
+
 export function trendCachePut(
   day0: number, lat: number, lon: number, rows: TrendRow[]
 ): void {
@@ -72,25 +87,39 @@ export interface TrendLoadResult {
   rows?: TrendRow[];
   message?: string;
   fatal?: boolean;
+  /** true = 直接吃缓存，没发任何请求 */
+  fromCache?: boolean;
+  /** 缓存年龄（毫秒），仅 fromCache 时有意义 */
+  ageMs?: number;
 }
 
 export async function loadTrend(opts: {
   lat: number; lon: number;
   dateStr: string;
   cacheOnly?: boolean;
+  /** 跳过缓存直接重取（用户点「重新取数」时用） */
+  force?: boolean;
   onProgress?: (txt: string) => void;
   stillCurrent: () => boolean;
 }): Promise<TrendLoadResult> {
   const { lat, lon, dateStr, cacheOnly, onProgress, stillCurrent } = opts;
   const [Y, M, D] = dateStr.split("-").map(Number);
+  /* day0 留在 UTC 域（日期字符串与缓存键都靠它）；太阳事件另用一个锚在
+     城市当地零点的真实时刻，两个域不要混 */
   const day0 = Date.UTC(Y, M - 1, D);
+  const tz0 = cityTz(lat, lon);
+  const dayAnchor = day0 - tz0.offsetSec * 1000;
 
-  const hit = trendCacheGet(day0, lat, lon);
-  if (hit) return { ok: true, rows: hit };
+  if (!opts.force) {
+    const hit = trendCacheGet(day0, lat, lon);
+    if (hit) {
+      return { ok: true, rows: hit, fromCache: true, ageMs: trendCacheAge(day0, lat, lon) ?? 0 };
+    }
+  }
   if (cacheOnly) return { ok: false };
 
-  const ptsAM = transectFor(lat, lon, day0, "am");
-  const ptsPM = transectFor(lat, lon, day0, "pm");
+  const ptsAM = transectFor(lat, lon, dayAnchor, "am");
+  const ptsPM = transectFor(lat, lon, dayAnchor, "pm");
   const all = ptsAM.concat(ptsPM);
   const sD = dateStr;
   const eD = ymd(new Date(day0 + (TREND_N - 1) * 86400000));
@@ -106,10 +135,14 @@ export async function loadTrend(opts: {
     ]);
     if (!stillCurrent()) return { ok: false };
 
+    /* 接口回来的时区是权威值，记住它（下次开页默认日期就不用经度估算） */
+    const tzLive = (gD as Series[]).find((x): x is Series => !!x)?.tz;
+    if (tzLive && !tzLive.est) rememberTz(lat, lon, tzLive.iana, tzLive.offsetSec);
+
     const rows: TrendRow[] = [];
     for (let k = 0; k < TREND_N; k++) {
-      const dayMs = day0 + k * 86400000;
-      const dateS = ymd(new Date(dayMs));
+      const dayMs = dayAnchor + k * 86400000;
+      const dateS = ymd(new Date(day0 + k * 86400000));
       for (const period of (["am", "pm"] as const)) {
         const pts = period === "am" ? ptsAM : ptsPM;
         const off = period === "am" ? 0 : ptsAM.length;
@@ -137,7 +170,7 @@ export async function loadTrend(opts: {
     }
     if (!stillCurrent()) return { ok: false };
     if (rows.length) trendCachePut(day0, lat, lon, rows);
-    return { ok: true, rows };
+    return { ok: true, rows, fromCache: false };
   } catch (e) {
     const err = e as { friendly?: string; fatal?: boolean; timeout?: boolean; message?: string };
     return {

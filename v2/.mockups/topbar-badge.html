@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>顶栏徽标 · 宽屏定稿 + 窄屏降级方案对照</title>
+<style>
+/* ===================== 设计令牌（与 src/styles/tokens.css 逐值同源） ===================== */
+[data-theme="light"] {
+  --glass-sheen: rgba(255,255,255,.42); --glass-hi: rgba(255,255,255,.70);
+  --bg-base: #f2f5fb; --bg-deep: #e8edf7; --bg-elev: #ffffff;
+  --bg-card: rgba(255,255,255,.72); --bg-card-solid: #ffffff;
+  --bg-glass: rgba(255,255,255,.55); --bg-glass-2: rgba(255,255,255,.78);
+  --stroke: rgba(40,60,100,.10); --stroke-2: rgba(40,60,100,.20);
+  --tx-1: #111a2c; --tx-2: #46556f; --tx-3: #8693ab;
+  --acc-1: #e02d62; --acc-2: #e07a1c; --acc-3: #0f9fbf;
+  --spectrum: linear-gradient(90deg,#ff4d82,#ff9c3f,#2ed5e8);
+}
+[data-theme="dark"] {
+  --glass-sheen: rgba(255,255,255,.06); --glass-hi: rgba(255,255,255,.09);
+  --bg-base: #070b14; --bg-deep: #04070e; --bg-elev: #0b1220;
+  --bg-card: rgba(15,23,42,.62); --bg-card-solid: #101a2e;
+  --bg-glass: rgba(130,160,220,.06); --bg-glass-2: rgba(130,160,220,.10);
+  --stroke: rgba(148,178,232,.14); --stroke-2: rgba(148,178,232,.26);
+  --tx-1: #e9eefb; --tx-2: #a0b1cd; --tx-3: #5c6c8c;
+  --acc-1: #ff4d82; --acc-2: #ff9c3f; --acc-3: #2ed5e8;
+  --spectrum: linear-gradient(90deg,#ff4d82,#ff9c3f,#2ed5e8);
+}
+
+/* ===================== 版面壳 ===================== */
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: #eef1f6;
+  background-image:
+    radial-gradient(60% 40% at 12% 0%, rgba(255,156,63,.10), transparent 70%),
+    radial-gradient(50% 36% at 92% 8%, rgba(46,213,232,.10), transparent 70%);
+  color: #16203a;
+  font: 14px/1.6 "Inter", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  padding: 34px 26px 90px;
+}
+.sheet { max-width: 1360px; margin: 0 auto; }
+.kopf { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+.eyebrow { font-size: 11px; letter-spacing: .22em; color: #8693ab; }
+h1 { margin: 8px 0 6px; font-size: 1.42rem; line-height: 1.3; letter-spacing: -.01em; }
+.lead { margin: 0; color: #46556f; font-size: 13.5px; max-width: 830px; }
+.lead em { font-style: normal; color: #111a2c; font-weight: 600; }
+.ctrls { display: flex; align-items: center; gap: 10px; }
+.seg { display: inline-flex; padding: 3px; gap: 2px; background: rgba(255,255,255,.75);
+  border: 1px solid rgba(40,60,100,.12); border-radius: 999px; }
+.seg button {
+  border: 0; background: transparent; cursor: pointer; padding: 5px 11px; border-radius: 999px;
+  font: inherit; font-size: 12.5px; color: #46556f;
+}
+.seg button.on { background: #16203a; color: #fff; }
+.hr { height: 1px; background: rgba(40,60,100,.12); margin: 26px 0 22px; }
+h2.sec { font-size: 1.02rem; margin: 30px 0 4px; letter-spacing: .01em; }
+p.sub { margin: 0 0 18px; color: #6b7789; font-size: 12.5px; }
+p.sub b { color: #16203a; }
+
+.card { margin: 0 0 26px; }
+.chead { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 9px; }
+.chead b {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 24px; height: 24px; padding: 0 7px; border-radius: 7px;
+  font-size: 12.5px; letter-spacing: .04em; color: #fff; background: #16203a;
+}
+.chead .nm { font-size: 14.5px; font-weight: 650; color: #111a2c; }
+.chead .tagx {
+  font-size: 11px; letter-spacing: .04em; color: #5c6c8c;
+  border: 1px solid rgba(40,60,100,.16); border-radius: 999px; padding: 1px 8px;
+}
+.fit {
+  font-size: 11px; font-variant-numeric: tabular-nums; letter-spacing: .02em;
+  color: #1c8a55; background: rgba(28,138,85,.10); border-radius: 999px; padding: 1px 9px;
+}
+.fit.bad { color: #c0392b; background: rgba(192,57,43,.10); }
+.why { color: #5c6c8c; font-size: 12.5px; margin: -4px 0 9px; }
+.stack { display: grid; gap: 10px; }
+.pairlab { font-size: 10.5px; letter-spacing: .18em; color: #98a4b8; padding-left: 2px; }
+.scroller { overflow-x: auto; overflow-y: hidden; padding: 1px; }
+.note { margin-top: 10px; font-size: 12.5px; color: #5c6c8c; }
+.note b { color: #111a2c; }
+.note code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11.5px;
+  background: rgba(40,60,100,.07); border-radius: 5px; padding: 1px 5px; }
+
+/* ===================== 被预览的顶栏（逐值复刻 main.css） ===================== */
+.frame {
+  width: var(--w); zoom: var(--z, .8);
+  background: var(--bg-base); color: var(--tx-1);
+  font-family: "Inter", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+  font-size: .95rem; line-height: 1.6;
+  border-radius: 12px; overflow: hidden;
+  box-shadow: 0 10px 30px rgba(20,40,80,.10), 0 0 0 1px rgba(20,40,80,.10);
+}
+.frame a { color: inherit; text-decoration: none; }
+.frame button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+.frame .topbar {
+  position: relative; z-index: 5;
+  backdrop-filter: blur(20px) saturate(1.3);
+  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  background: color-mix(in srgb, var(--bg-base) 72%, transparent);
+  border-bottom: 1px solid var(--stroke);
+}
+.frame .wrap { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
+.frame .topbar-in { display: flex; align-items: center; gap: 12px; height: 62px; }
+.frame.mobile .topbar-in { height: 56px; }
+.frame .hamburger {
+  display: none; width: 34px; height: 34px; flex: 0 0 auto;
+  align-items: center; justify-content: center;
+  border-radius: 10px; border: 1px solid var(--stroke);
+  background: var(--bg-glass); color: var(--tx-2);
+}
+.frame.narrow .hamburger { display: inline-flex; }
+.frame .brand { display: flex; align-items: center; gap: 10px; font-family: "Space Grotesk", "PingFang SC", system-ui, sans-serif; font-weight: 600; letter-spacing: -.01em; color: var(--tx-1); }
+.frame .brand .logo { width: 28px; height: 28px; flex: 0 0 28px; border-radius: 50%; background: var(--spectrum); position: relative; }
+.frame .brand .logo::after { content: ""; position: absolute; inset: 7px; border-radius: 50%; background: var(--bg-base); }
+.frame .brand .name { font-size: 1.02rem; }
+.frame .brand .name em { font-style: normal; margin-left: 7px; font-size: .72rem; letter-spacing: .16em; color: var(--tx-3); font-weight: 500; }
+.frame .nav-tabs { display: flex; gap: 2px; margin-left: auto; margin-right: auto; }
+.frame .nav-tabs a { padding: 7px 13px; border-radius: 999px; color: var(--tx-2); font-size: .82rem; font-weight: 500; }
+.frame .nav-tabs a.on { color: var(--tx-1); background: var(--bg-glass-2); }
+.frame.narrow .nav-tabs { display: none; }
+.frame .top-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.frame .icon-btn {
+  width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 8px; color: var(--tx-2); border: 1px solid transparent; font-size: .85rem; font-weight: 600;
+}
+.frame .topbar-meta {
+  display: none; justify-content: flex-end; align-items: baseline; gap: 6px;
+  font-size: 12px; line-height: 1.35; letter-spacing: .2px; color: var(--tx-3);
+  font-variant-numeric: tabular-nums; padding-bottom: 7px; white-space: nowrap;
+}
+.frame.two .topbar-meta { display: flex; }
+.frame .topbar-meta i { font-style: normal; opacity: .55; }
+
+/* 徽标胶囊：定稿方案 */
+.badge-meta {
+  display: inline-flex; align-items: center;
+  font-size: 12.5px; font-weight: 500; color: var(--tx-2);
+  font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: .1px;
+}
+.badge-meta .dot { font-style: normal; opacity: .5; margin: 0 6px; }
+.vc {
+  padding: 5px 12px; border-radius: 999px; margin-left: 6px;
+  background: var(--bg-glass); border: 1px solid var(--stroke);
+  box-shadow: inset 0 1px 0 var(--glass-hi);
+}
+
+/* ---- 降级方案的收窄手法 ---- */
+.frame.d1 .nav-tabs a { padding: 6px 9px; font-size: .78rem; }
+.frame.d1 .top-actions { gap: 6px; }
+.frame.d1 .brand .name em { display: none; }
+.frame.d2 .meta-pill .p2, .frame.d2 .meta-pill .dot-a { display: none; }
+/* 手机档 P3：藏 GLOWCAST 副标，胶囊只留「朝/晚霞」 */
+.frame.p3 .brand .name em { display: none; }
+
+/* 顶栏下面的页面内容提示 */
+.peek { padding: 13px 0 15px; }
+.peek .wrap { display: grid; gap: 9px; }
+.peek .l1 { height: 13px; width: 38%; border-radius: 4px; background: color-mix(in srgb, var(--tx-3) 22%, transparent); }
+.peek .l2 { height: 9px; width: 62%; border-radius: 4px; background: color-mix(in srgb, var(--tx-3) 14%, transparent); }
+.peek .l3 { height: 9px; width: 49%; border-radius: 4px; background: color-mix(in srgb, var(--tx-3) 11%, transparent); }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="kopf">
+    <div>
+      <div class="eyebrow">GLOWCAST V2 · 顶栏徽标位（第 2 轮）</div>
+      <h1>定稿：C 案微胶囊 ｜ 窄屏降级：五个可选方案</h1>
+      <p class="lead">
+        C 案已按 <em>12.5px / tx-2 / 幽灵底 + 发丝框</em> 实装。第二段是窄屏降级方案的对照：每个方案都在自己的目标宽度下
+        实测「需宽 / 是否溢出 / 导航是否折行」—— 绿色=放得下，红色=挤爆。
+      </p>
+    </div>
+    <div class="ctrls">
+      <div class="seg" id="zoombar">
+        <button data-z="1">100%</button>
+        <button data-z="0.8" class="on">80%</button>
+        <button data-z="0.62">62%</button>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="sec">一 · 定稿效果（C 案）</h2>
+  <p class="sub">1280px：徽标在四按钮右侧同一行，顶栏 87 → 63px；≤1080px 或内容放不下时折回第二行。</p>
+  <div id="stage-final"></div>
+
+  <div class="hr"></div>
+
+  <h2 class="sec">二 · 窄屏降级：五个方案</h2>
+  <p class="sub">
+    痛点不只是「胶囊放不下」：英文导航（Contributing Factors / Field Calibration）比中文宽 <b>251px</b>，
+    单行需 1373px；11 字州名（克孜勒苏柯尔克孜自治州）再加约 100px。
+    下面每个方案都在 1024px（英文那案用 1280px）这个最容易露馅的宽度上取景。
+  </p>
+  <div id="stage-degrade"></div>
+
+  <div class="hr"></div>
+
+  <h2 class="sec">三 · 手机档（390px）三选</h2>
+  <p class="sub">
+    390px 屏幕的内容宽只有 <b>350px</b>：汉堡 34 + 品牌 131 + 四按钮 160 已经占 340，胶囊 203px 怎么都塞不进同一行。
+    下面是三种处理，每帧仍带实测需宽。
+  </p>
+  <div id="stage-phone"></div>
+</div>
+
+<script>
+const NAVS = {
+  zh: ["结论", "十日趋势", "观测场", "多地对比", "影响因素", "实况校准"],
+  en: ["Verdict", "10-Day Trend", "Observation Field", "Compare", "Contributing Factors", "Field Calibration"],
+  enShort: ["Verdict", "10-Day", "Field", "Compare", "Factors", "Calibration"]
+};
+const BRANDS = { zh: ["霞光预报", "GLOWCAST"], en: ["Glow Forecast", "GLOWCAST"] };
+const METAS = { zh: ["北京市", "2026-10-21", "晚霞"], en: ["Beijing", "2026-10-21", "Sunset Glow"] };
+const ICONS = {
+  gear: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
+  book: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15.5H6.5A2.5 2.5 0 0 0 4 21z"/><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H19"/><path d="M8 7.5h7"/></svg>`,
+  menu: `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>`
+};
+
+const pillHTML = (lang) => {
+  const [c, d, p] = METAS[lang];
+  return `<span class="badge-meta vc meta-pill"><span class="p1">${c}</span>` +
+    `<i class="dot dot-a">·</i><span class="p2">${d}</span>` +
+    `<i class="dot dot-b">·</i><span class="p3">${p}</span></span>`;
+};
+/* 手机档 P3 用：胶囊只剩「朝/晚霞」 */
+const pillSlimHTML = (lang) =>
+  `<span class="badge-meta vc meta-pill"><span class="p3">${METAS[lang][2]}</span></span>`;
+
+function topbarHTML({ lang = "zh", navs, two = false, phone }) {
+  const labels = navs || NAVS[lang];
+  const [nm, em] = BRANDS[lang];
+  const [c, d, p] = METAS[lang];
+  const pill = phone === "none" ? "" : phone === "slim" ? pillSlimHTML(lang) : pillHTML(lang);
+  return `<div class="topbar">
+    <div class="wrap topbar-in">
+      <button class="hamburger" aria-label="目录">${ICONS.menu}</button>
+      <a class="brand" href="#"><span class="logo"></span><span class="name">${nm}<em>${em}</em></span></a>
+      <nav class="nav-tabs">${labels.map((n, i) => `<a href="#" class="${i === 0 ? "on" : ""}">${n}</a>`).join("")}</nav>
+      <div class="top-actions">
+        <button class="icon-btn">${ICONS.gear}</button>
+        <button class="icon-btn">${lang === "zh" ? "简" : "EN"}</button>
+        <button class="icon-btn">☀</button>
+        <span class="icon-btn">${ICONS.book}</span>
+        ${two ? "" : pill}
+      </div>
+    </div>
+    ${two ? `<div class="wrap topbar-meta"><span>${c}</span><i>·</i><span>${d}</span><i>·</i><span>${p}</span></div>` : ""}
+  </div>
+  <div class="peek"><div class="wrap"><div class="l1"></div><div class="l2"></div><div class="l3"></div></div></div>`;
+}
+
+const frameHTML = (opts, cls, w, theme, fitId) =>
+  `<div class="scroller"><div class="frame ${cls}" data-theme="${theme}" style="--w:${w}px" data-fit="${fitId || ""}">${topbarHTML(opts)}</div></div>`;
+
+/* ---------------- 一 · 定稿 ---------------- */
+const FINAL = [
+  { lab: "浅色 · 1280px（单行 63px）", cls: "one", w: 1280, theme: "light", o: {} },
+  { lab: "深色 · 1280px", cls: "one", w: 1280, theme: "dark", o: {} },
+  { lab: "折回 · 1080px（86px，徽标回第二行）", cls: "two", w: 1080, theme: "light", o: { two: true } },
+  { lab: "手机 · 390px（80px）", cls: "two narrow mobile", w: 390, theme: "light", o: { two: true } }
+];
+document.getElementById("stage-final").innerHTML = FINAL.map((f) => `
+  <div class="card">
+    <div class="chead"><b>定</b><span class="nm">${f.lab}</span></div>
+    ${frameHTML(f.o, f.cls, f.w, f.theme)}
+  </div>`).join("");
+
+/* ---------------- 二 · 降级方案 ---------------- */
+const DEGRADE = [
+  {
+    k: "D1", nm: "收紧导航（保持单行）", tag: "1024px · 字缩一档",
+    why: "导航 padding 13→9、字号 .82→.78rem、藏 GLOWCAST 副标、按钮间距 8→6。信息零损失，代价是字更小更挤。",
+    cls: "one d1", w: 1024, o: {}
+  },
+  {
+    k: "D2", nm: "胶囊瘦身（保持单行）", tag: "1024px · 藏日期",
+    why: "只留「地点 · 朝/晚霞」，日期交给页面里的日期选择器与结论卡。约省 90px。",
+    cls: "one d2", w: 1024, o: {}
+  },
+  {
+    k: "D3", nm: "提前汉堡（顶栏恒定单行）", tag: "1024px · 导航进抽屉",
+    why: "≤1080 直接藏 6 项导航、交给汉堡抽屉。顶栏永远 63px，锚点/高亮判定零分支。代价是要点一下才见导航。",
+    cls: "one narrow", w: 1024, o: {}
+  },
+  {
+    k: "D4", nm: "折回第二行（已实装）", tag: "1024px · 86px",
+    why: "信息零损失、字号不缩，代价是高度在 63 / 86 两档跳，滚动锚点跟着变。",
+    cls: "two", w: 1024, o: { two: true }
+  },
+  {
+    k: "D5", nm: "英文文案缩短（只影响 EN）", tag: "1280px EN · 单行",
+    why: "10-Day Trend→10-Day、Observation Field→Field、Contributing Factors→Factors、Field Calibration→Calibration。英文单行需宽从 1373 降到约 1180，1280 屏就能单行。",
+    cls: "one", w: 1280, o: { lang: "en", navs: NAVS.enShort }
+  }
+];
+document.getElementById("stage-degrade").innerHTML = DEGRADE.map((d) => `
+  <div class="card">
+    <div class="chead">
+      <b>${d.k}</b><span class="nm">${d.nm}</span>
+      <span class="tagx">${d.tag}</span><span class="fit" id="fit-${d.k}">测宽中…</span>
+    </div>
+    <div class="why">${d.why}</div>
+    ${frameHTML(d.o, d.cls, d.w, "light", d.k)}
+  </div>`).join("") + `
+  <div class="note">
+    <b>怎么实测的：</b>每帧先临时把 <code>zoom</code> 还原成 1 再量（否则量到缩放后的坐标），
+    取 <code>.topbar-in</code> 的 <code>scrollWidth - clientWidth</code> 判溢出、取 6 个导航项的
+    <code>top</code> 是否同值判折行 —— 折行不产生溢出，只看 scrollWidth 会漏掉英文那次的坑。
+  </div>`;
+
+/* ---------------- 三 · 手机档 ---------------- */
+const PHONE = [
+  {
+    k: "P1", nm: "保留两行（现状）", tag: "390px · 80px",
+    why: "徽标回到第二行右对齐，字不缩、日期不丢。代价：手机顶栏 80px，比单行多 23px。",
+    cls: "two narrow mobile", o: { two: true }
+  },
+  {
+    k: "P2", nm: "手机藏起胶囊", tag: "390px · 57px",
+    why: "手机上完全不显示胶囊，顶栏回到 57px 单行。地点/日期/朝晚霞在结论卡标题与日期选择器里都能看到。",
+    cls: "one narrow mobile", o: { phone: "none" }
+  },
+  {
+    k: "P3", nm: "挤进单行（藏副标 + 只留朝/晚）", tag: "390px · 57px",
+    why: "藏掉 GLOWCAST 副标省 63px，胶囊只留「晚霞」两字。代价：品牌标识不完整，且下面这帧会告诉你到底够不够。",
+    cls: "one narrow mobile p3", o: { phone: "slim" }
+  }
+];
+document.getElementById("stage-phone").innerHTML = PHONE.map((d) => `
+  <div class="card">
+    <div class="chead">
+      <b>${d.k}</b><span class="nm">${d.nm}</span>
+      <span class="tagx">${d.tag}</span><span class="fit" id="fit-${d.k}">测宽中…</span>
+    </div>
+    <div class="why">${d.why}</div>
+    ${frameHTML(d.o, d.cls, 390, "light", d.k)}
+  </div>`).join("");
+
+/* ---------------- 逐帧实测标注 ----------------
+   两趟量：① 把帧临时撑到 2000px（wrap 封顶 1180）量「自然需宽」，此时子项不会被压扁；
+   ② 还原到目标宽度量「溢出 / 折行」—— 直接在窄帧里量，flex 会把子项压到容器宽，需宽永远是容器宽。 */
+function annotate() {
+  document.querySelectorAll('.frame[data-fit]').forEach((f) => {
+    const key = f.dataset.fit;
+    if (!key) return;
+    const badge = document.getElementById("fit-" + key);
+    if (!badge) return;
+    const prevZoom = f.style.zoom;
+    const origW = f.style.getPropertyValue("--w");
+    const inn = f.querySelector(".topbar-in");
+
+    f.style.zoom = "1";
+    f.style.setProperty("--w", "2000px");
+    void f.offsetWidth;
+    const kids = [...inn.children].filter((k) => getComputedStyle(k).display !== "none");
+    const need = Math.round(kids.reduce((s, k) => s + k.getBoundingClientRect().width, 0) + 12 * (kids.length - 1));
+
+    f.style.setProperty("--w", origW);
+    void f.offsetWidth;
+    const box = inn.clientWidth;
+    const pushed = inn.scrollWidth - inn.clientWidth > 0.5; /* 真的有东西被挤出容器 */
+    const links = [...f.querySelectorAll(".nav-tabs a")];
+    const lines = links.length ? new Set(links.map((a) => Math.round(a.getBoundingClientRect().top))).size : 0;
+    const nm = f.querySelector(".brand .name");
+    const ncs = getComputedStyle(nm);
+    let nlh = parseFloat(ncs.lineHeight);
+    if (!isFinite(nlh)) nlh = parseFloat(ncs.fontSize) * 1.4;
+    const brandWrap = nm.getBoundingClientRect().height > nlh * 1.35;
+
+    f.style.zoom = prevZoom;
+    /* 判据：①「自然需宽 vs 容器宽」看挤不挤（flex 会把子项压成容器宽，scrollWidth 看不出）；
+       ② scrollWidth 是否真溢出，看有没有东西被挤出去；③ 导航/品牌是否折行。 */
+    const diff = box - need;
+    badge.classList.toggle("bad", pushed || lines > 1);
+    badge.textContent = "需 " + need + "px · 容 " + box + "px · " + (diff >= 0 ? "余 " + diff : "超 " + -diff) +
+      (brandWrap ? " · 品牌折行" : "") + (lines > 1 ? " · 导航折 " + lines + " 行" : "");
+  });
+}
+
+document.getElementById("zoombar").addEventListener("click", (e) => {  const b = e.target.closest("button");
+  if (!b) return;
+  document.querySelectorAll("#zoombar button").forEach((x) => x.classList.toggle("on", x === b));
+  document.documentElement.style.setProperty("--z", b.dataset.z);
+  annotate();
+});
+document.documentElement.style.setProperty("--z", "0.8");
+annotate();
+</script>
+</body>
+</html>

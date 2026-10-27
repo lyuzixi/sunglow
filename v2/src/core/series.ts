@@ -1,22 +1,31 @@
 /* =========================================================================
-   GLOWCAST v2 · 模式序列（原版 _p4.js makeSeries/mergeSeries 移植）
+   GLOWCAST v2 · 模式序列（V1 _p4.js makeSeries/mergeSeries 移植）
    Open-Meteo 响应 → 可按时间取值的序列；两套模式逐时平均出综合场。
    ========================================================================= */
 import { isNum } from "./math";
+import { wallIsoToReal, tzFromApi, type TzInfo } from "./tz";
 
 export interface Series {
   at(key: string, ms: number): number | null;
   raw: Record<string, { t: number; v: number | null }[]>;
+  /** 该响应所属城市的时区（缺省 = 接口没给，按 UTC 解释） */
+  tz: TzInfo;
 }
 
-/** Open-Meteo 逐小时响应 → 序列（时间轴取响应 time 列） */
+/** Open-Meteo 逐小时响应 → 序列（时间轴取响应 time 列）
+    注意：`timezone=auto` 下 time 列是**城市当地墙钟**，必须用响应自己的
+    `utc_offset_seconds` 折回真实时间戳 —— 否则城市墙钟会被当成浏览器本地时间，
+    与太阳时刻（真实几何解）错开「浏览器偏移 − 城市偏移」那么多。 */
 export function makeSeries(data: {
   hourly?: Record<string, unknown>;
+  utc_offset_seconds?: number;
+  timezone?: string;
 }): Series {
+  const tz =
+    tzFromApi(data.timezone, data.utc_offset_seconds) ||
+    { iana: null, offsetSec: 0, est: false };
   const hh = data.hourly || {};
-  const times = ((hh.time || []) as string[]).map((s) =>
-    Date.parse(String(s).length === 16 ? s + ":00" : s)
-  );
+  const times = ((hh.time || []) as string[]).map((s) => wallIsoToReal(String(s), tz.offsetSec));
   const raw: Series["raw"] = {};
   for (const key of Object.keys(hh)) {
     if (key === "time") continue;
@@ -30,6 +39,7 @@ export function makeSeries(data: {
   }
   return {
     raw,
+    tz,
     at(key: string, ms: number): number | null {
       const rows = raw[key];
       if (!rows || !rows.length) return null;
@@ -78,6 +88,7 @@ export function mergeSeries(a: Series | null, b: Series | null): Series | null {
   }
   return {
     raw,
+    tz: a.tz,
     at(key: string, ms: number): number | null {
       const rows = raw[key];
       if (!rows || !rows.length) return null;

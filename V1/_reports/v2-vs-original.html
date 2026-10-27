@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v2 与V1差异报告 · 霞光预报 GLOWCAST</title>
+<style>
+  :root{
+    --ink:#111a2c; --ink2:#46556f; --ink3:#8693ab;
+    --line:#e3e8f0; --line2:#f0f3f8;
+    --bg:#f7f9fc; --card:#ffffff;
+    --a1:#ff4d82; --a2:#ff9c3f; --a3:#2ed5e8;
+    --ok:#12734a; --okbg:#e9f7ef; --okbd:#bfe7d2;
+    --warn:#9a5b06; --warnbg:#fdf3e3; --warnbd:#f2ddba;
+    --bad:#a93226; --badbg:#fdeceb; --badbd:#f5cdc9;
+    --spectrum:linear-gradient(90deg,var(--a1),var(--a2),var(--a3));
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    line-height:1.7; -webkit-font-smoothing:antialiased;
+  }
+  .page{max-width:1000px; margin:0 auto; padding:0 20px 72px}
+  header.hero{padding:44px 0 26px; border-bottom:1px solid var(--line); margin-bottom:34px}
+  .eyebrow{display:inline-flex; align-items:center; gap:8px; font-size:12px; letter-spacing:.16em; color:var(--ink3); text-transform:uppercase}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--spectrum)}
+  h1{font-size:clamp(26px,4vw,38px); line-height:1.25; margin:14px 0 10px; letter-spacing:-.02em}
+  .lede{font-size:16px; color:var(--ink2); max-width:74ch; margin:0}
+  .meta{display:flex; flex-wrap:wrap; gap:10px 18px; margin-top:18px; font-size:12.5px; color:var(--ink3)}
+  .meta b{color:var(--ink2); font-weight:600}
+
+  h2{font-size:20px; margin:44px 0 6px; letter-spacing:-.01em}
+  h2 .num{display:inline-block; width:26px; color:var(--ink3); font-weight:500}
+  .sub{color:var(--ink3); font-size:13px; margin:0 0 16px}
+
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin:18px 0 8px}
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 18px}
+  .kpi .k{font-size:12px; color:var(--ink3)}
+  .kpi .v{font-size:24px; font-weight:650; letter-spacing:-.02em; margin-top:4px; font-variant-numeric:tabular-nums}
+  .kpi .n{font-size:12px; color:var(--ink3); margin-top:2px}
+
+  .tablewrap{background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden}
+  table{width:100%; border-collapse:collapse; font-size:13.5px}
+  th,td{padding:11px 14px; text-align:left; border-bottom:1px solid var(--line2); vertical-align:top}
+  th{background:#fbfcfe; font-weight:600; font-size:12.5px; color:var(--ink2); white-space:nowrap}
+  tr:last-child td{border-bottom:0}
+  td.num{font-variant-numeric:tabular-nums; white-space:nowrap}
+  .c{width:88px; text-align:center; white-space:nowrap}
+
+  .pill{display:inline-block; padding:1px 8px; border-radius:999px; font-size:12px; font-weight:600; border:1px solid}
+  .p-ok{color:var(--ok); background:var(--okbg); border-color:var(--okbd)}
+  .p-warn{color:var(--warn); background:var(--warnbg); border-color:var(--warnbd)}
+  .p-bad{color:var(--bad); background:var(--badbg); border-color:var(--badbd)}
+  .p-mute{color:var(--ink3); background:#f4f6fa; border-color:var(--line)}
+
+  .note{border-left:3px solid var(--a2); background:#fffaf3; padding:12px 16px; border-radius:0 10px 10px 0; font-size:13.5px; color:#6b4a12; margin:16px 0}
+  .note b{color:#5a3d0c}
+  .note.blue{border-color:var(--a3); background:#f2fbfc; color:#14555c}
+  .note.blue b{color:#0f4249}
+
+  ul.tight{margin:10px 0 0; padding-left:20px; color:var(--ink2); font-size:14px}
+  ul.tight li{margin:6px 0}
+  code{background:#f2f5fa; border:1px solid var(--line2); border-radius:5px; padding:1px 5px; font-size:12.5px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; color:#2c3a52}
+
+  .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:12px}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 18px}
+  .card h3{margin:0 0 8px; font-size:14.5px}
+  .card p{margin:0; font-size:13.5px; color:var(--ink2)}
+
+  footer{margin-top:52px; padding-top:18px; border-top:1px solid var(--line); font-size:12.5px; color:var(--ink3)}
+  @media print{
+    body{background:#fff}
+    .page{max-width:none; padding:0}
+    h2{page-break-after:avoid}
+    .tablewrap,.card,.kpi{break-inside:avoid}
+  }
+  @media (max-width:640px){
+    th,td{padding:9px 10px}
+    .c{width:64px}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="hero">
+  <div class="eyebrow"><span class="dot"></span>对比报告 · 2026-10-20</div>
+  <h1>v2 与V1差异报告</h1>
+  <p class="lede">
+    v2 是V1的<b>重写</b>而不是改写：同一套评分算法与数据源，换了一套工程形态（Vue 3 组件化 + 单文件产物）
+    与信息架构（天色带、多模型对比并入结论层）。下面按「交付形态 → 功能面 → 算法 → 地图 → 顶栏 → 数据」逐段对账，
+    并列出 v2 目前仍缺的 3 处。
+  </p>
+  <div class="meta">
+    <span>V1：<b>根目录 <code>index.html</code></b>（assemble.py 拼接）</span>
+    <span>v2：<b><code>v2/index.html</code></b>（Vite 单文件）</span>
+    <span>核对方式：源码 grep + 线上实拍</span>
+  </div>
+</header>
+
+<!-- 1 -->
+<h2><span class="num">01</span>先看结论</h2>
+<p class="sub">三个数字 + 三处缺口。</p>
+<div class="kpis">
+  <div class="kpi"><div class="k">交付体积（应用）</div><div class="v">655 KB</div><div class="n">V1 785 KB · 均单文件零外链</div></div>
+  <div class="kpi"><div class="k">教程页体积</div><div class="v">54 KB</div><div class="n">V1 156 KB（深度长文）</div></div>
+  <div class="kpi"><div class="k">本地缓存族</div><div class="v">3 族</div><div class="n">点预报 / 观测场 / 趋势，均可视可清</div></div>
+  <div class="kpi"><div class="k">算法口径</div><div class="v">同源</div><div class="n">W_ENS 与 mixedIndex 已逐项核对一致</div></div>
+</div>
+
+<div class="note">
+  <b>v2 目前仍缺 1 处：</b>地图没有海陆掩膜（色面会盖到海上，V1只画陆域）。<br>
+  已补齐：移动端目录抽屉（分组 + 液态玻璃）、PWA（manifest + sw + 192/512 图标）。
+</div>
+
+<!-- 2 -->
+<h2><span class="num">02</span>交付与工程形态</h2>
+<p class="sub">同样的“一个 HTML”，来路完全不同。</p>
+<div class="tablewrap">
+<table>
+  <thead><tr><th>维度</th><th>V1</th><th>v2</th><th class="c">评价</th></tr></thead>
+  <tbody>
+    <tr><td>技术栈</td><td>原生 JS + 模板拼接（<code>tpl/template.html</code> + <code>_p2…_p6.js</code>）</td><td>Vue 3 + TypeScript + Vite（<code>app.html</code> → <code>index.html</code>）</td><td class="c"><span class="pill p-mute">取舍</span></td></tr>
+    <tr><td>构建</td><td><code>python assemble.py</code>（字符串装配 + 注入站点基址）</td><td><code>npm run build</code>（vite + viteSingleFile + 零外链断言）</td><td class="c"><span class="pill p-ok">v2 更稳</span></td></tr>
+    <tr><td>交付物</td><td><code>index.html</code> + <code>404.html</code> + <code>tutorial.html</code>，PWA 可选产物</td><td><b>只有</b> <code>v2/index.html</code>；另有 <code>404.html</code>、<code>tutorial.html</code> 两页</td><td class="c"><span class="pill p-ok">更纯</span></td></tr>
+    <tr><td>体积</td><td class="num">785 KB（含内联字体）</td><td class="num">655 KB（含内联字体）</td><td class="c"><span class="pill p-ok">-17%</span></td></tr>
+    <tr><td>PWA</td><td>sw.js + manifest + 图标</td><td>同（4 个附属文件；应用本体仍是单文件）</td><td class="c"><span class="pill p-ok">✓</span></td></tr>
+    <tr><td>源文件组织</td><td>按“第几页”切分（<code>_p4.js</code> 评分、<code>_p5b.js</code> 天色带…）</td><td>按领域切分（<code>core/scoring.ts</code>、<code>components/MapView.vue</code>…）</td><td class="c"><span class="pill p-ok">v2 更易读</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- 3 -->
+<h2><span class="num">03</span>功能面对账</h2>
+<p class="sub">✓ 有 · ◐ 形态不同 · ✗ 无</p>
+<div class="tablewrap">
+<table>
+  <thead><tr><th>模块</th><th class="c">V1</th><th class="c">v2</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>结论卡（P/Q/等级/可信度）</td><td class="c">✓</td><td class="c">✓</td><td>指标与四档词汇一致</td></tr>
+    <tr><td>天色带（曙暮光分段）</td><td class="c">✓ <span class="pill p-mute">独立层</span></td><td class="c">✓ <span class="pill p-mute">并入结论卡</span></td><td>v2 五段固定色 + 日落/渐暗/深蓝/天黑通俗轴</td></tr>
+    <tr><td>多模型对比</td><td class="c">✓ <span class="pill p-mute">独立表</span></td><td class="c">✓ <span class="pill p-mute">切结论层内</span></td><td>v2 用分段器切换主数字 + 全量对照表</td></tr>
+    <tr><td>12 项因素</td><td class="c">✓</td><td class="c">✓</td><td>键名与评分权重同源</td></tr>
+    <tr><td>趋势</td><td class="c">✓ 10 日</td><td class="c">✓ 10 日</td><td>v2 曾为 7 日，已按V1改 10 日</td></tr>
+    <tr><td>观测场（地图）</td><td class="c">✓</td><td class="c">✓</td><td>见第 5 节逐层对比</td></tr>
+    <tr><td>实况校准</td><td class="c">✓</td><td class="c">✓</td><td>同键分仓（<code>sunsetbot.calib</code> / <code>glowcast.v2.calib</code>）</td></tr>
+    <tr><td>快照分享</td><td class="c">✓</td><td class="c">✓</td><td>SNAP_VER=1 互通</td></tr>
+    <tr><td>三语</td><td class="c">✓</td><td class="c">✓</td><td>v2 词条集中 <code>i18n-extra.ts</code>，覆盖到地图/设置/趋势/因素</td></tr>
+    <tr><td>单位制 / 12 小时制</td><td class="c">✓</td><td class="c">✓</td><td>v2 接入结论卡与因素面板</td></tr>
+    <tr><td>URL 状态同步</td><td class="c">✓</td><td class="c">✓</td><td>经纬度 / 日期 / 时段 / 快照</td></tr>
+    <tr><td>移动端目录抽屉</td><td class="c">✓</td><td class="c">✗</td><td><b>v2 窄屏直接隐藏导航，无替代入口</b></td></tr>
+    <tr><td>README / 教程</td><td class="c">✓ 156 KB 深度页</td><td class="c">✓ 54 KB</td><td>v2 独立单文件教程（可用但更浅）</td></tr>
+    <tr><td>404 页</td><td class="c">✓ 根目录</td><td class="c">✓ <code>v2/404.html</code></td><td>v2 同款头栏/三语/主题（19 KB 自包含）</td></tr>
+    <tr><td>PWA 离线安装</td><td class="c">✓</td><td class="c">✓</td><td>v2 用 4 个附属文件；SW 只缓存外壳，不缓存气象响应</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- 4 -->
+<h2><span class="num">04</span>算法口径</h2>
+<p class="sub">这部分是“同源”，不是“相似”。已逐项核对：</p>
+<div class="tablewrap">
+<table>
+  <thead><tr><th>口径</th><th>V1</th><th>v2</th><th class="c">一致</th></tr></thead>
+  <tbody>
+    <tr><td>模型集成权重 <code>W_ENS</code></td><td class="num">gfs .30 / ec .34 / rt .36</td><td>直接 import 同一常量</td><td class="c"><span class="pill p-ok">✓</span></td></tr>
+    <tr><td>综合指数 <code>mixedIndex</code></td><td class="num">0.55·P + 0.45·Q</td><td class="num">0.55·P + 0.45·Q</td><td class="c"><span class="pill p-ok">✓</span></td></tr>
+    <tr><td>综合方式</td><td>非空子集按权重几何平均</td><td>同式（<code>forecast.ts</code> 注明与 once() 一致）</td><td class="c"><span class="pill p-ok">✓</span></td></tr>
+    <tr><td>地图取色刻度</td><td>固定 0–100 绝对刻度、7 档</td><td>同（HEAT_RAMP 白→黄→橙→红）</td><td class="c"><span class="pill p-ok">✓</span></td></tr>
+    <tr><td>一致性公式 <code>consist</code></td><td class="num">100 − ΔI × 1.9</td><td class="num">100 − ΔI × 1.9 <span class="pill p-ok">已修</span></td><td class="c"><span class="pill p-ok">✓ 已对拍</span></td></tr>
+    <tr><td>可信度分档阈值</td><td class="num">18 / 35 / ∞</td><td class="num">18 / 35 / ∞</td><td class="c"><span class="pill p-ok">✓</span></td></tr>
+  </tbody>
+</table>
+</div>
+<div class="note blue">
+  <b>对拍已做（<code>npm run probe:consist</code>）：</b>脚本从两边源码里<b>原样抽出</b> <code>consist</code> 表达式与分档阈值，
+  在同一 ΔI 网格（0…100，16 个点）上比数值。<b>结果：16/16 一致，阈值一致。</b><br>
+  ／对拍过程中发现并修正了一处真实漂移：v2 曾写成 <code>100 − ΔI</code>（漏了斜率 <b>1.9</b>），
+  ΔI=20 时会给 80 分「很一致」，而V1是 62 分——分歧被系统性低估。
+</div>
+
+<!-- 5 -->
+<h2><span class="num">05</span>地图实现</h2>
+<p class="sub">v2 是把V1的栅格算法整套搬过来的，差别在“边缘处理”和“交互外壳”。</p>
+<div class="tablewrap">
+<table>
+  <thead><tr><th>层</th><th>V1</th><th>v2</th><th class="c">评价</th></tr></thead>
+  <tbody>
+    <tr><td>投影</td><td><code>map.projectToContainer</code></td><td>同（早期误用 <code>map.project</code> 导致图层不跟地图，已修）</td><td class="c"><span class="pill p-ok">一致</span></td></tr>
+    <tr><td>色面栅格</td><td>0.05°（约 5.5 km）</td><td>0.05°（超 16 万格自动降档）</td><td class="c"><span class="pill p-ok">一致</span></td></tr>
+    <tr><td>边界</td><td>凸包 + 70 km 羽化 + 噪声 + 2 格模糊</td><td>凸包 + <b>110 km</b> 羽化 + 噪声 + 2 格模糊</td><td class="c"><span class="pill p-warn">羽化更宽</span></td></tr>
+    <tr><td>插值</td><td>IDW 1/d²</td><td>IDW <b>1/(d²+900)</b>（≈30 km 正则化，消采样点圆盘）</td><td class="c"><span class="pill p-warn">观感调整</span></td></tr>
+    <tr><td>等值线</td><td>SVG + marching squares</td><td>Canvas + marching squares（16 案表已修正）</td><td class="c"><span class="pill p-ok">同法</span></td></tr>
+    <tr><td>海陆掩膜</td><td>✓ <code>buildLandMask</code>，只画陆域</td><td>✗ 无（会盖到海上）</td><td class="c"><span class="pill p-bad">缺</span></td></tr>
+    <tr><td>云纹 / 经纬网 / 直标</td><td>✓ 四档云纹</td><td>✓ 四档云纹（开关移入观测场面板）</td><td class="c"><span class="pill p-ok">一致</span></td></tr>
+    <tr><td>维度 / 模型切换</td><td>综合/概率/质量/分歧 × 4 模型</td><td>同</td><td class="c"><span class="pill p-ok">一致</span></td></tr>
+    <tr><td>全屏</td><td>按钮 + 退出按钮</td><td>按钮 + <b>Esc 退出</b>（去掉左上角黑按钮）</td><td class="c"><span class="pill p-mute">更净</span></td></tr>
+    <tr><td>取数纪律</td><td>显式触发；命中缓存可自动绘制</td><td>同（<code>cacheOnly</code> 在快路径后、网络前返回）</td><td class="c"><span class="pill p-ok">一致</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- 6 -->
+<h2><span class="num">06</span>顶栏与信息架构</h2>
+<p class="sub">两边都是“两行报头”，但第二行和窄屏策略不同。</p>
+<div class="cards">
+  <div class="card">
+    <h3>V1</h3>
+    <p>行 1：汉堡（<b>目录抽屉入口</b>）/ logo / 标题 / 语言 / 主题；行 2：徽标纯文字右对齐。窄屏保持两行，抽屉可开。</p>
+  </div>
+  <div class="card">
+    <h3>v2</h3>
+    <p>行 1：logo / 导航（结论·趋势·观测场）/ ⚙ 设置 / 简繁 EN / 主题 / <b>教程图标</b>；行 2：<code>城市 · 日期 · 朝/晚霞</code> 徽标。窄屏<b>隐藏导航且无抽屉</b>。</p>
+  </div>
+  <div class="card">
+    <h3>差别</h3>
+    <p>v2 把教程从导航移成右侧图标（省一格），但代价是窄屏少了一个“去哪”的入口 —— V1的汉堡抽屉正好补这块。</p>
+  </div>
+</div>
+
+<!-- 7 -->
+<h2><span class="num">07</span>数据与缓存</h2>
+<div class="tablewrap">
+<table>
+  <thead><tr><th>项</th><th>V1</th><th>v2</th><th class="c">评价</th></tr></thead>
+  <tbody>
+    <tr><td>数据源</td><td>Open-Meteo（GFS / ECMWF / 气溶胶）</td><td>同</td><td class="c"><span class="pill p-ok">一致</span></td></tr>
+    <tr><td>单点缓存</td><td>✓ 缓存原始序列</td><td>✓ 缓存<b>计算结果</b>（日期+时段+坐标，3h，LRU 12）</td><td class="c"><span class="pill p-ok">等价</span></td></tr>
+    <tr><td>观测场缓存</td><td>✓ 3h / LRU 6</td><td>✓ 同（键带 v6 版本号，旧缓存自动失效）</td><td class="c"><span class="pill p-ok">一致</span></td></tr>
+    <tr><td>趋势缓存</td><td>✓ 3h</td><td>✓ 3h（只存算好的 rows）</td><td class="c"><span class="pill p-ok">一致</span></td></tr>
+    <tr><td>缓存可视化</td><td>无</td><td>✓ 设置面板「取数缓存」：三族条数/体积/一键清除</td><td class="c"><span class="pill p-ok">v2 多</span></td></tr>
+    <tr><td>默认城市</td><td>偏好 / 首个城市</td><td><b>定位</b>（≤200 km 就近城市，否则“我的位置”）→ 失败回落<b>广州市</b></td><td class="c"><span class="pill p-ok">v2 多</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- 8 -->
+<h2><span class="num">08</span>建议</h2>
+<ul class="tight">
+  <li><b>补移动端目录抽屉</b>（最值得做）：现在 ≤760px 导航直接 display:none，用户没法在长页里跳转，只能滚。V1那套汉堡 + 贴顶栏抽屉可直接搬。</li>
+  <li><b>上海陆掩膜</b>：需要一份简化的中国海岸线多边形（或按经纬度栅格预生成），否则海上也会出现色带，观感上“不真实”。</li>
+  <li><b>教程深度</b>：v2 教程 54 KB vs V1 156 KB，算法解释与调参说明偏薄，可按V1目录补齐章节。</li>
+</ul>
+
+<footer>
+  报告基于 2026-10-20 的 <code>main</code>（v2 提交 <code>1e88e78</code>）与根目录V1产物核对；
+  体积为字节实测，功能项以源码 grep 为准。文中“待验证”项未经逐行对拍，如需可另出一份数值对拍表。
+</footer>
+
+</div>
+</body>
+</html>
