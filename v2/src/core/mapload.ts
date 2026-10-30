@@ -15,10 +15,26 @@ import { cityTz, rememberTz } from "./tz";
 import { t } from "./i18n";
 
 export const MODEL_NAME = { gfs: "gfs_seamless", ec: "ecmwf_ifs025" };
+/* 地图批量采样用的字段集（**10 个**，仍落在计费下限档：
+   计费权重 = max(1, 变量数/10) × max(1, 天数/14)，10 个变量仍是 1.0 而不是 1.1 以上，
+   所以补上露点不花一分额度）。与单点侧 F_VARS 刻意分开 —— 不要合并成一份，
+   否则 152~169 个坐标的权重从 1.0 涨到 1.4（见V1 _p4.js 的额度说明）。 */
 export const F_MAP_VARS = [
   "temperature_2m", "dew_point_2m", "relative_humidity_2m",
   "cloud_cover_low", "cloud_cover_mid", "cloud_cover_high", "visibility",
   "pressure_msl", "boundary_layer_height", "freezing_level_height"
+];
+
+/* 单点精细预报所需字段（只请求真正参与计算的量，减少载荷）。
+   wind 两项喂 alongComponent → geom 与「云边界风速分量」；cape/precip 喂
+   「对流活动」与 stab 的对流/降水折减。v2 迁移时误用了 F_MAP_VARS，这四项
+   因此恒为空 —— 这里按V1 F_VARS 原样恢复。 */
+export const F_VARS = [
+  "temperature_2m", "dew_point_2m", "relative_humidity_2m",
+  "cloud_cover_low", "cloud_cover_mid", "cloud_cover_high", "visibility",
+  "pressure_msl", "wind_speed_10m", "wind_direction_10m",
+  "boundary_layer_height", "freezing_level_height",
+  "precipitation", "cape"
 ];
 
 const JGET_TIMEOUT_MS = 12000;

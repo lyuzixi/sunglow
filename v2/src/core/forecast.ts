@@ -16,7 +16,7 @@ import {
   fetchForecastBundle, makeMockBundle, makeReader, pressureTrend, alongComponent,
   withBudget
 } from "./api";
-import { MODEL_NAME, F_MAP_VARS, apiForecastBatched, apiAQBatched, TRANSECT } from "./mapload";
+import { MODEL_NAME, F_VARS, apiForecastBatched, apiAQBatched, TRANSECT } from "./mapload";
 import { MAP_TZ } from "./mapdata";
 import { makeSeries, mergeSeries, type Series } from "./series";
 import { primaryDeckOf } from "./scoring";
@@ -138,8 +138,8 @@ function mockTransect(
    —— 页面每次打开都会跑一次单点预报，没有这层缓存就等于每次开页都重取
    17 个样带点 × 3 路（51 次加权调用）。TTL 6 小时，LRU 上限 12 条。
    ========================================================================= */
-/* v2：时间轴改为「城市墙钟 → 真实时间戳」，旧缓存里的时刻是错位的，一律作废 */
-const POINT_CACHE_PREFIX = "glowcast.v2.point.v2.";
+/* v3：单点取数改回 F_VARS（补回 wind/cape/precip）—— 旧缓存里这两项恒为空，一律作废 */
+const POINT_CACHE_PREFIX = "glowcast.v2.point.v3.";
 /* 6 小时：GFS/EC 本身 6 小时一轮，3 小时的 TTL 等于有一半时间在重复取同一份数据 */
 const POINT_CACHE_TTL = 6 * 3600000;
 const POINT_CACHE_MAX = 12;
@@ -269,11 +269,11 @@ export async function runForecast(opts: {
   try {
     if (opts.useMock) throw new Error("mock");
     sG = await withBudget(
-      apiForecastBatched(MODEL_NAME.gfs, ptsLL, dateStr, dateStr, MAP_TZ, F_MAP_VARS),
+      apiForecastBatched(MODEL_NAME.gfs, ptsLL, dateStr, dateStr, MAP_TZ, F_VARS),
       12000
     ) as Series[];
     sE = await apiForecastBatched(
-      MODEL_NAME.ec, ptsLL, dateStr, dateStr, MAP_TZ, F_MAP_VARS
+      MODEL_NAME.ec, ptsLL, dateStr, dateStr, MAP_TZ, F_VARS
     ).catch(() => null);
     sA = await apiAQBatched(ptsLL, dateStr, dateStr, MAP_TZ).catch(() => null);
   } catch {
