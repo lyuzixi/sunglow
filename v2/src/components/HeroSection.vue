@@ -64,11 +64,12 @@ onMounted(() => {
           {{ t("大气光谱观测站") }} · {{ t("多模型综合") }}
         </div>
         <h1 class="hero-title">
-          {{ t("霞光预报") }}
-          <span class="spectrum-text glow">GLOWCAST</span>
+          霞光档案
+          <span class="spectrum-text glow">SUNGLOW</span>
         </h1>
         <p class="hero-sub">
-          {{ t("沉浸式预报体验 —— GFS / ECMWF / 光追物理三套算法，把今晚的天空写成一份可以出发的理由。") }}
+          <span class="hero-slogan">{{ t("让每一次追霞，都有迹可循") }}</span>
+          <span class="hero-sub-tech">{{ t("沉浸式预报体验 —— GFS / ECMWF / 光追物理三套算法，把今晚的天空写成一份可以出发的理由。") }}</span>
         </p>
 
         <div class="hero-controls">
@@ -256,6 +257,20 @@ onMounted(() => {
   font-size: var(--fs-lead);
   max-width: 540px;
   margin: 0 0 26px;
+}
+/* 品牌 slogan 主句 + 原技术说明降为辅助行 */
+.hero-slogan {
+  display: block;
+  color: var(--tx-1);
+  font-size: calc(var(--fs-lead) + 0.16rem);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.hero-sub-tech {
+  display: block;
+  margin-top: 6px;
+  color: var(--tx-3);
+  font-size: var(--fs-small);
 }
 .hero-controls {
   display: flex;

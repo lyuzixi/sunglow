@@ -77,7 +77,7 @@ function applyTopbarHeight() {
 /* 单行是否「挤爆」= 横向溢出 OR 内部折行。
    只看 scrollWidth 不够：flex 项会先缩到 min-content 再换行，溢出量恒为 0，
    而英文导航（Verdict / Contributing Factors / Field Calibration）与品牌名
-   （Glow Forecast）正是这样被折成两行塞进 62px 的 —— 肉眼很难看，量却看不见。 */
+   （霞光档案）正是这样被折成两行塞进 62px 的 —— 肉眼很难看，量却看不见。 */
 function isSqueezed(el: HTMLElement) {
   const inn = el.querySelector<HTMLElement>(".topbar-in");
   if (inn && inn.scrollWidth - inn.clientWidth > 0) return true;
@@ -337,7 +337,7 @@ const themeIcon = () =>
       <router-link class="brand" to="/">
         <span class="logo" aria-hidden="true" />
         <span class="name">
-          {{ t("霞光预报") }}<em>GLOWCAST</em>
+          霞光档案<em>SUNGLOW</em>
         </span>
       </router-link>
 

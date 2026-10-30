@@ -1,5 +1,5 @@
 /* =========================================================================
-   GLOWCAST v2 · 基础排版 / 玻璃面板 / 动效
+   SUNGLOW v2 · 基础排版 / 玻璃面板 / 动效
    ========================================================================= */
 @import "./tokens.css";
 
@@ -493,7 +493,7 @@ input, select {
 .meta-pill .dot { font-style: normal; opacity: 0.5; margin: 0 6px; }
 /* 四态长相（形态由 TopBar 的 refit() 逐级判定，CSS 只负责长什么样）：
    one   单行 + 胶囊
-   tight 收紧导航（padding 13→9 / 字号 .78rem / 藏 GLOWCAST 副标 / 按钮 gap 6）+ 胶囊
+   tight 收紧导航（padding 13→9 / 字号 .78rem / 藏 SUNGLOW 副标 / 按钮 gap 6）+ 胶囊
    menu  汉堡接管导航 + 胶囊（抽屉 armed）
    mini  手机极简 —— **蕴含 menu**：连接紧后的导航都放不下，7 项导航必须继续藏。
          徽标整块从顶栏撤走（340px 里放不下胶囊，折回第二行会留下一片空白），
@@ -537,18 +537,12 @@ input, select {
 .brand .logo {
   width: 28px; height: 28px; flex: 0 0 28px;
   border-radius: 50%;
-  background: var(--spectrum);
-  position: relative;
-}
-.brand .logo::after {
-  content: "";
-  position: absolute; inset: 7px;
-  border-radius: 50%;
-  background: var(--bg-base);
+  /* 品牌图裁切版（去掉 SUNGLOW 字标），构建时内联为 data URI */
+  background: url("../assets/logo-mark.png") center / cover no-repeat;
 }
 .brand .name { font-size: 1.02rem; }
 /* 主名与尾标各自可成行：两者之间没有空格，行内不会产生断行点，
-   英文 "Glow Forecast"+"GLOWCAST" 的最小内容宽会顶到 187px，390px 手机把整页顶出 65px 横向滚动。
+   品牌 "霞光档案"+"SUNGLOW" 的最小内容宽会顶到 187px，390px 手机把整页顶出 65px 横向滚动。
    改成 flex + wrap（去掉 margin-left，用 column-gap）后桌面观感不变、手机仍是副标另起一行。 */
 .brand .name { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 7px; }
 .brand .name em {
@@ -781,6 +775,9 @@ table.data tr:last-child td { border-bottom: 0; }
   justify-content: space-between;
   align-items: center;
 }
+/* 页脚拆两行：品牌 + slogan 一行，数据源声明一行 */
+.foot-brand { display: flex; flex-direction: column; gap: 3px; }
+.foot-sub { font-size: var(--fs-tiny); }
 
 .center-screen {
   min-height: calc(100vh - 62px);

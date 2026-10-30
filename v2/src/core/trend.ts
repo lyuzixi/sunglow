@@ -1,5 +1,5 @@
 /* =========================================================================
-   GLOWCAST v2 · 七日趋势取数（口径对齐V1 loadTrend/computeTrend）
+   SUNGLOW v2 · 七日趋势取数（口径对齐V1 loadTrend/computeTrend）
    34 点（朝/晚样带各 17）× 多日三路（GFS/EC/AQ）→ 逐日 P/Q。
    缓存只存算好的 rows（原始响应太大，一条就撑爆 localStorage）。
    ========================================================================= */
@@ -20,7 +20,7 @@ import { cityTz, rememberTz, type TzInfo } from "./tz";
 
 void _se;
 
-export const TREND_CACHE_PREFIX = "glowcast.v2.trend.";
+export const TREND_CACHE_PREFIX = "SUNGLOW.v2.trend.";
 export const TREND_CACHE_TTL = 6 * 3600000;
 export const TREND_N = 10;
 

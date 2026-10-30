@@ -78,7 +78,7 @@ function setUnits(u: "metric" | "imperial") {
       </div>
 
       <p class="note">
-        {{ t("偏好存 glowcast.v2.pref，与V1 sunsetbot.pref.v1 相互独立。位置、日期与地图时段不持久化。") }}
+        {{ t("偏好存 SUNGLOW.v2.pref，与V1 sunsetbot.pref.v1 相互独立。位置、日期与地图时段不持久化。") }}
       </p>
     </div>
   </div>

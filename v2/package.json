@@ -3,7 +3,7 @@
   "private": true,
   "version": "2.0.0",
   "type": "module",
-  "description": "霞光预报 GLOWCAST · 大气光谱观测站版",
+  "description": "霞光档案 · SUNGLOW · 大气光谱观测站版",
   "scripts": {
     "dev": "vite",
     "build": "vite build && node scripts/emit-single.mjs && node scripts/publish-root.mjs",

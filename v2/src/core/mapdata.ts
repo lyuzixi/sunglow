@@ -1,8 +1,8 @@
 /* =========================================================================
-   GLOWCAST v2 · 地图数据层（口径与V1 _p6.js 对齐）
+   SUNGLOW v2 · 地图数据层（口径与V1 _p6.js 对齐）
    121 点局部网格 / 缓存 v8 语义 / 四维度取值 / 场重建交给 maprender。
    V1基准：MAP_RADIUS_KM=500、缓存 sunsetbot.map.v6.。
-   v2 存储族：glowcast.v2.map.v8.*（独立命名空间，同版本语义）。
+   v2 存储族：SUNGLOW.v2.map.v8.*（独立命名空间，同版本语义）。
    ========================================================================= */
 import {
   clamp, isNum, nz, haversineKm, destPoint, wgeo
@@ -46,8 +46,8 @@ export const TRANSECT = [
 /* ---- 缓存（v6 语义：键带坐标 + 版本族清理 + LRU） ---- */
 /* v9：格距改 80 km（121 点），旧 57 点网格的缓存一律作废；
    且 refGap 的语义由「原始差」改成「标准化形态分歧」，v8 条目里的是旧值。 */
-export const MAP_CACHE_PREFIX = "glowcast.v2.map.v9.";
-export const MAP_CACHE_FAMILY = "glowcast.v2.map.";
+export const MAP_CACHE_PREFIX = "SUNGLOW.v2.map.v9.";
+export const MAP_CACHE_FAMILY = "SUNGLOW.v2.map.";
 export const MAP_CACHE_TTL = 6 * 3600000;
 /* 121 点 × 2 时段 × 约 0.8 KB ≈ 190 KB/条；留 5 条约 1 MB，不挤压其它偏好键 */
 export const MAP_CACHE_MAX = 5;

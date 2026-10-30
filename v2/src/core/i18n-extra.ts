@@ -1,5 +1,5 @@
 /* =========================================================================
-   GLOWCAST v2 · 词典增量（地图 / 设置 / 趋势 / 因素 / 天色带 / 快照 / 校准）
+   SUNGLOW v2 · 词典增量（地图 / 设置 / 趋势 / 因素 / 天色带 / 快照 / 校准）
    键 = 简体原文；只写繁 / 英两份。
    ========================================================================= */
 
@@ -165,11 +165,11 @@ export const HANT_EXTRA: Record<string, string> = {
   "航海昏影终": "航海昏影終",
   "民用昏影终": "民用昏影終",
   "沉浸式预报体验 —— GFS / ECMWF / 光追物理三套算法，把今晚的天空写成一份可以出发的理由。": "沉浸式預報體驗 —— GFS / ECMWF / 光追物理三套演算法，把今晚的天空寫成一份可以出發的理由。",
-  "校准仅在本机展示（glowcast.v2.calib），不会回改预报模型。事件结束 1 小时后才可标注；同一地点同一时段只保留一条记录。": "校準僅在本機展示（glowcast.v2.calib），不會回改預報模型。事件結束 1 小時後才可標註；同一地點同一時段只保留一條記錄。",
+  "校准仅在本机展示（SUNGLOW.v2.calib），不会回改预报模型。事件结束 1 小时后才可标注；同一地点同一时段只保留一条记录。": "校準僅在本機展示（SUNGLOW.v2.calib），不會回改預報模型。事件結束 1 小時後才可標註；同一地點同一時段只保留一條記錄。",
   "生成的链接与V1互通（SNAP_VER=1），对方无需重新取数即可查看。": "生成的連結與V1互通（SNAP_VER=1），對方無需重新取數即可查看。",
   "公制 (km / m / ℃)": "公制 (km / m / ℃)",
   "英制 (mi / ft / ℉)": "英制 (mi / ft / ℉)",
-  "偏好存 glowcast.v2.pref，与V1 sunsetbot.pref.v1 相互独立。位置、日期与地图时段不持久化。": "偏好存 glowcast.v2.pref，與V1 sunsetbot.pref.v1 相互獨立。位置、日期與地圖時段不持久化。",
+  "偏好存 SUNGLOW.v2.pref，与V1 sunsetbot.pref.v1 相互独立。位置、日期与地图时段不持久化。": "偏好存 SUNGLOW.v2.pref，與V1 sunsetbot.pref.v1 相互獨立。位置、日期與地圖時段不持久化。",
   "个网格点 · 缓存": "個網格點 · 快取",
   "十日趋势": "十日趨勢",
   "霞光窗口": "霞光視窗",
@@ -358,8 +358,8 @@ export const HANT_EXTRA: Record<string, string> = {
   "综合 I {v}": "綜合 I {v}",
   "预报时效约 {n} 小时": "預報時效約 {n} 小時",
   "实况 / 历史分析场": "實況 / 歷史分析場",
-  "霞光预报 · 数据源 Open-Meteo（GFS / ECMWF-IFS / CAMS 气溶胶）· 结论仅供观赏参考":
-    "霞光預報 · 資料源 Open-Meteo（GFS / ECMWF-IFS / CAMS 氣溶膠）· 結論僅供觀賞參考",
+  "霞光档案 · 数据源 Open-Meteo（GFS / ECMWF-IFS / CAMS 气溶胶）· 结论仅供观赏参考":
+    "霞光檔案 · 資料源 Open-Meteo（GFS / ECMWF-IFS / CAMS 氣溶膠）· 結論僅供觀賞參考",
   "点位": "點位",
   /* ---- 地名后缀（城市名 / 网格点名共用，2026-10-22；方位词原已存在） ---- */
   "我的位置": "我的位置",
@@ -536,11 +536,11 @@ export const EN_EXTRA: Record<string, string> = {
   "航海昏影终": "Nautical dusk",
   "民用昏影终": "Civil dusk",
   "沉浸式预报体验 —— GFS / ECMWF / 光追物理三套算法，把今晚的天空写成一份可以出发的理由。": "An immersive forecast — GFS, ECMWF and ray-tracing models turn tonight's sky into a reason to head out.",
-  "校准仅在本机展示（glowcast.v2.calib），不会回改预报模型。事件结束 1 小时后才可标注；同一地点同一时段只保留一条记录。": "Calibration is shown locally only (glowcast.v2.calib) and never feeds back into the model. Logging opens 1 hour after the event; one record per place and period.",
+  "校准仅在本机展示（SUNGLOW.v2.calib），不会回改预报模型。事件结束 1 小时后才可标注；同一地点同一时段只保留一条记录。": "Calibration is shown locally only (SUNGLOW.v2.calib) and never feeds back into the model. Logging opens 1 hour after the event; one record per place and period.",
   "生成的链接与V1互通（SNAP_VER=1），对方无需重新取数即可查看。": "Links are interoperable with V1 (SNAP_VER=1); the recipient sees results without refetching.",
   "公制 (km / m / ℃)": "Metric (km / m / ℃)",
   "英制 (mi / ft / ℉)": "Imperial (mi / ft / ℉)",
-  "偏好存 glowcast.v2.pref，与V1 sunsetbot.pref.v1 相互独立。位置、日期与地图时段不持久化。": "Preferences live in glowcast.v2.pref, isolated from V1's sunsetbot.pref.v1. Location, date and map period are not persisted.",
+  "偏好存 SUNGLOW.v2.pref，与V1 sunsetbot.pref.v1 相互独立。位置、日期与地图时段不持久化。": "Preferences live in SUNGLOW.v2.pref, isolated from V1's sunsetbot.pref.v1. Location, date and map period are not persisted.",
   "个网格点 · 缓存": "grid points · cached",
   "十日趋势": "10-Day Trend",
   "霞光窗口": "Glow window",
@@ -729,8 +729,8 @@ export const EN_EXTRA: Record<string, string> = {
   "综合 I {v}": "Composite I {v}",
   "预报时效约 {n} 小时": "Lead time ≈ {n} h",
   "实况 / 历史分析场": "Analysis field",
-  "霞光预报 · 数据源 Open-Meteo（GFS / ECMWF-IFS / CAMS 气溶胶）· 结论仅供观赏参考":
-    "Glowcast · Data: Open-Meteo (GFS / ECMWF-IFS / CAMS aerosol) · For viewing reference only",
+  "霞光档案 · 数据源 Open-Meteo（GFS / ECMWF-IFS / CAMS 气溶胶）· 结论仅供观赏参考":
+    "SUNGLOW · Data: Open-Meteo (GFS / ECMWF-IFS / CAMS aerosol) · For viewing reference only",
   "点位": "Point",
   /* ---- 地名后缀（城市名 / 网格点名共用，2026-10-22；方位词原已存在） ---- */
   "我的位置": "My location",

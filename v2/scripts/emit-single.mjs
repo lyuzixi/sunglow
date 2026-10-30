@@ -47,7 +47,18 @@ if (/\.\/[a-z0-9-]+-[A-Za-z0-9_-]{6,}\.(webmanifest|png)/i.test(html)) {
 
 /* 产物文件名统一成 index.html（GitHub Pages 的目录入口） */
 fs.writeFileSync(out, html, "utf8");
-fs.rmSync(build, { recursive: true, force: true });
+/* Windows 上刚写完的文件可能被杀软/索引器短暂占用，rmSync 会抛 ENOTEMPTY；
+   退让重试几次再判定失败（此前每次构建都要手工清一遍中间目录）。 */
+for (let i = 0; i < 6; i++) {
+  try {
+    fs.rmSync(build, { recursive: true, force: true, maxRetries: 3, retryDelay: 200 });
+    break;
+  } catch (e) {
+    /* 交付物已写出；中间目录清不掉只是脏，不是构建失败 —— 报一声继续走 */
+    if (i === 5) console.warn("emit-single: 中间目录暂未清空（" + e.code + "），可稍后手工删除 " + build);
+    else await new Promise((r) => setTimeout(r, 400 * (i + 1)));
+  }
+}
 
 const kb = (fs.statSync(out).size / 1024).toFixed(1);
 console.log("emit-single: index.html 已生成（" + kb + " KB，零外链）");

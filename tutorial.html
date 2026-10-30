@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark light">
-<title>使用教程 · 霞光预报 GLOWCAST</title>
-<meta name="description" content="霞光预报 GLOWCAST（朝霞 / 晚霞火烧云概率与质量预报）使用教程：四档合一 —— 概览、用户版、开发者版、创作者版。">
+<title>使用教程 · 霞光档案 · SUNGLOW</title>
+<meta name="description" content="霞光档案 · SUNGLOW（朝霞 / 晚霞火烧云概率与质量预报）使用教程：四档合一 —— 概览、用户版、开发者版、创作者版。">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff4d82'/%3E%3Cstop offset='.5' stop-color='%23ff9c3f'/%3E%3Cstop offset='1' stop-color='%232ed5e8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='url(%23g)' stroke-width='3'/%3E%3Ccircle cx='16' cy='16' r='5' fill='url(%23g)'/%3E%3C/svg%3E">
 <meta name="theme-color" content="#070b14">
 <meta name="theme-color" content="#f5f7fb">
@@ -66,7 +66,7 @@ a:hover{text-decoration:underline}
   padding:5px 11px;border:1px solid var(--line);border-radius:var(--r-full);white-space:nowrap}
 .back:hover{color:var(--tx);border-color:var(--tx3);text-decoration:none}
 .logo{width:15px;height:15px;border-radius:50%;flex:none;
-  background:conic-gradient(from 210deg,var(--spectrum-1),var(--spectrum-2),var(--spectrum-3),var(--spectrum-1));
+  background:url("./icon-192.png") center/cover no-repeat;
   box-shadow:0 0 0 3px var(--glass)}
 .brand{font-size:13px;font-weight:600;letter-spacing:.4px;color:var(--tx2);white-space:nowrap}
 .spacer{flex:1}
@@ -103,6 +103,7 @@ a:hover{text-decoration:underline}
 .pill{display:inline-block;font-size:11.5px;letter-spacing:.6px;color:var(--acc2);
   border:1px solid var(--accbd);background:var(--accbg);border-radius:var(--r-full);padding:3px 12px}
 .lead{font-size:15.5px;color:var(--tx2);max-width:760px;margin:0}
+.slogan{font-size:12.5px;letter-spacing:.5px;color:var(--tx3);margin:12px 0 0}
 .lead b{color:var(--tx)}
 h2{font-size:19px;margin:0 0 10px;letter-spacing:-.01em}
 h2 .no{font-family:var(--mono);font-size:12px;color:var(--tx3);margin-right:8px;font-weight:400}
@@ -166,7 +167,7 @@ footer{border-top:1px solid var(--line2);margin-top:44px}
   <div class="top-in">
     <a class="back" href="./index.html"><span aria-hidden="true">←</span>&nbsp;<span data-i18n="回主页">回主页</span></a>
     <div class="logo" aria-hidden="true"></div>
-    <span class="brand">GLOWCAST · <span data-i18n="使用教程">使用教程</span></span>
+    <span class="brand">SUNGLOW · <span data-i18n="使用教程">使用教程</span></span>
     <div class="spacer"></div>
     <div class="dwrap">
       <button type="button" id="langBtn" class="tbtn" aria-haspopup="true" aria-expanded="false" title="语言">中</button>
@@ -197,9 +198,10 @@ footer{border-top:1px solid var(--line2);margin-top:44px}
 <!-- ==================== 概览 ==================== -->
 <section class="view" id="overview">
   <div class="hero">
-    <span class="pill">GLOWCAST · <span data-i18n="使用教程">使用教程</span></span>
+    <span class="pill">SUNGLOW · <span data-i18n="使用教程">使用教程</span></span>
+    <p class="slogan" data-i18n="让每一次追霞，都有迹可循">让每一次追霞，都有迹可循</p>
     <h1 data-i18n="读懂朝霞与晚霞的预报">读懂朝霞与晚霞的预报</h1>
-    <p class="lead" data-i18n-html="ov.lead">霞光预报 GLOWCAST 是一个<b>单文件 Web 应用</b>：输入地点与日期，预测朝霞 / 晚霞（火烧云）出现的概率与观赏质量，并在周边 80 km 采样网格上画出霞光分布。这份教程分四档，按身份取用。</p>
+    <p class="lead" data-i18n-html="ov.lead">霞光档案 · SUNGLOW 是一个<b>单文件 Web 应用</b>：输入地点与日期，预测朝霞 / 晚霞（火烧云）出现的概率与观赏质量，并在周边 80 km 采样网格上画出霞光分布。这份教程分四档，按身份取用。</p>
   </div>
 
   <div class="hl">
@@ -221,7 +223,7 @@ footer{border-top:1px solid var(--line2);margin-top:44px}
 
   <section class="sec" id="ov-family">
     <h2><span class="no">02</span><span data-i18n="版本家族">版本家族</span></h2>
-    <p data-i18n="霞光预报家族三套并存、互相隔离：V1（仓库根目录的原版，单文件 assemble 构建链，算法权威）、GLOWCAST v2（本教程所属，项目主线）、Skyglow（Python 服务端版）。页脚「切换到V1」随时回到原版。">霞光预报家族三套并存、互相隔离：V1（仓库根目录的原版，单文件 assemble 构建链，算法权威）、GLOWCAST v2（本教程所属，项目主线）、Skyglow（Python 服务端版）。页脚「切换到V1」随时回到原版。</p>
+    <p data-i18n="霞光预报家族三套并存、互相隔离：V1（仓库根目录的原版，单文件 assemble 构建链，算法权威）、SUNGLOW v2（本教程所属，项目主线）、Skyglow（Python 服务端版）。页脚「切换到V1」随时回到原版。">霞光预报家族三套并存、互相隔离：V1（仓库根目录的原版，单文件 assemble 构建链，算法权威）、SUNGLOW v2（本教程所属，项目主线）、Skyglow（Python 服务端版）。页脚「切换到V1」随时回到原版。</p>
   </section>
 
   <section class="sec" id="ov-pick">
@@ -324,7 +326,7 @@ footer{border-top:1px solid var(--line2);margin-top:44px}
   <div class="hero">
     <span class="pill" data-i18n="开发者版">开发者版</span>
     <h1 data-i18n="构建、口径与质量门">构建、口径与质量门</h1>
-    <p class="lead" data-i18n="从一条构建命令到三套算法的口径细节，读懂 GLOWCAST v2 的全部机制。">从一条构建命令到三套算法的口径细节，读懂 GLOWCAST v2 的全部机制。</p>
+    <p class="lead" data-i18n="从一条构建命令到三套算法的口径细节，读懂 SUNGLOW v2 的全部机制。">从一条构建命令到三套算法的口径细节，读懂 SUNGLOW v2 的全部机制。</p>
   </div>
 
   <section class="sec" id="d-build">
@@ -485,9 +487,10 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "跟随系统": "跟隨系統",
     "浅色": "淺色",
     "深色": "深色",
-    "doc.title": "使用教程 · 霞光預報 GLOWCAST",
-    "doc.desc": "霞光預報 GLOWCAST（朝霞 / 晚霞火燒雲概率與質量預報）使用教程：四檔合一 —— 概覽、用戶版、開發者版、創作者版。",
-    "ov.lead": "霞光預報 GLOWCAST 是一個<b>單檔案 Web 應用</b>：輸入地點與日期，預測朝霞 / 晚霞（火燒雲）出現的概率與觀賞質量，並在周邊 80 km 取樣網格上畫出霞光分布。這份教程分四檔，按身份取用。",
+    "doc.title": "使用教程 · 霞光檔案 · SUNGLOW",
+    "让每一次追霞，都有迹可循": "讓每一次追霞，都有跡可循",
+    "doc.desc": "霞光檔案 · SUNGLOW（朝霞 / 晚霞火燒雲概率與質量預報）使用教程：四檔合一 —— 概覽、用戶版、開發者版、創作者版。",
+    "ov.lead": "霞光檔案 · SUNGLOW 是一個<b>單檔案 Web 應用</b>：輸入地點與日期，預測朝霞 / 晚霞（火燒雲）出現的概率與觀賞質量，並在周邊 80 km 取樣網格上畫出霞光分布。這份教程分四檔，按身份取用。",
     "读懂朝霞与晚霞的预报": "讀懂朝霞與晚霞的預報",
     "三模型综合": "三模型綜合",
     "GFS 与 ECMWF 两路统计判据加一路光追物理模型，各自打分后按权重几何平均合成；三路分歧度直接换算成可信度。": "GFS 與 ECMWF 兩路統計判據加一路光追物理模型，各自打分後按權重幾何平均合成；三路分歧度直接換算成可信度。",
@@ -507,7 +510,7 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "读结论": "讀結論",
     "概率 + 质量分 + 等级 + 可信度；往下拉是十日趋势、观测场与多观测点对比。": "概率 + 質量分 + 等級 + 可信度；往下拉是十日趨勢、觀測場與多觀測點對比。",
     "版本家族": "版本家族",
-    "霞光预报家族三套并存、互相隔离：V1（仓库根目录的原版，单文件 assemble 构建链，算法权威）、GLOWCAST v2（本教程所属，项目主线）、Skyglow（Python 服务端版）。页脚「切换到V1」随时回到原版。": "霞光預報家族三套並存、互相隔離：V1（倉庫根目錄的原版，單檔案 assemble 建構鏈，算法權威）、GLOWCAST v2（本教程所屬，專案主線）、Skyglow（Python 服務端版）。頁腳「切換到V1」隨時回到原版。",
+    "霞光预报家族三套并存、互相隔离：V1（仓库根目录的原版，单文件 assemble 构建链，算法权威）、SUNGLOW v2（本教程所属，项目主线）、Skyglow（Python 服务端版）。页脚「切换到V1」随时回到原版。": "霞光預報家族三套並存、互相隔離：V1（倉庫根目錄的原版，單檔案 assemble 建構鏈，算法權威）、SUNGLOW v2（本教程所屬，專案主線）、Skyglow（Python 服務端版）。頁腳「切換到V1」隨時回到原版。",
     "按身份取用": "按身份取用",
     "从查预报到读结论，每个功能怎么用、数字怎么看。": "從查預報到讀結論，每個功能怎麼用、數字怎麼看。",
     "进入 →": "進入 →",
@@ -549,7 +552,7 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "数据源 Open-Meteo（免费层，非商业用途）· 地图底图腾讯位置服务": "數據源 Open-Meteo（免費層，非商業用途）· 地圖底圖騰訊位置服務",
     "← 回主页": "← 回主頁",
     "构建、口径与质量门": "建構、口徑與質量門",
-    "从一条构建命令到三套算法的口径细节，读懂 GLOWCAST v2 的全部机制。": "從一條建構命令到三套算法的口徑細節，讀懂 GLOWCAST v2 的全部機制。",
+    "从一条构建命令到三套算法的口径细节，读懂 SUNGLOW v2 的全部机制。": "從一條建構命令到三套演算法的口徑細節，讀懂 SUNGLOW v2 的全部機制。",
     "形态与构建链": "形態與建構鏈",
     "源码在 v2/，交付物是一个自包含单文件。一条命令跑完构建与发布：": "源碼在 v2/，交付物是一個自包含單檔案。一條命令跑完建構與發布：",
     "cd v2 && npm run build": "cd v2 &amp;&amp; npm run build",
@@ -621,9 +624,10 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "跟随系统": "System",
     "浅色": "Light",
     "深色": "Dark",
-    "doc.title": "Tutorial · Sunglow GLOWCAST",
-    "doc.desc": "Sunglow GLOWCAST (dawn / dusk glow probability and quality forecast) tutorial: four tracks — overview, users, developers, creators.",
-    "ov.lead": "Sunglow GLOWCAST is a <b>single-file web app</b>: enter a place and a date to forecast the probability and viewing quality of dawn / dusk glow (fire clouds), plotted across an 80 km sampling grid around you. This tutorial comes in four tracks — pick the one that fits you.",
+    "doc.title": "Tutorial · SUNGLOW",
+    "让每一次追霞，都有迹可循": "Every glow chase leaves a trace.",
+    "doc.desc": "SUNGLOW (dawn / dusk glow probability and quality forecast) tutorial: four tracks — overview, users, developers, creators.",
+    "ov.lead": "SUNGLOW is a <b>single-file web app</b>: enter a place and a date to forecast the probability and viewing quality of dawn / dusk glow (fire clouds), plotted across an 80 km sampling grid around you. This tutorial comes in four tracks — pick the one that fits you.",
     "读懂朝霞与晚霞的预报": "Reading the dawn & dusk forecast",
     "三模型综合": "Three-model ensemble",
     "GFS 与 ECMWF 两路统计判据加一路光追物理模型，各自打分后按权重几何平均合成；三路分歧度直接换算成可信度。": "Two statistical judges (GFS, ECMWF) plus one ray-tracing physics model score independently, then combine as a weighted geometric mean; the spread between the three becomes the confidence badge.",
@@ -643,7 +647,7 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "读结论": "Read the verdict",
     "概率 + 质量分 + 等级 + 可信度；往下拉是十日趋势、观测场与多观测点对比。": "Probability + quality score + grade + confidence; scroll on for the 10-day trend, field map and multi-spot compare.",
     "版本家族": "The family",
-    "霞光预报家族三套并存、互相隔离：V1（仓库根目录的原版，单文件 assemble 构建链，算法权威）、GLOWCAST v2（本教程所属，项目主线）、Skyglow（Python 服务端版）。页脚「切换到V1」随时回到原版。": "Three builds coexist, fully isolated: V1 (the original at the repo root, single-file assemble chain, the algorithm authority), GLOWCAST v2 (this tutorial's home, the mainline) and Skyglow (Python server edition). The footer's 'Switch to V1' takes you back anytime.",
+    "霞光预报家族三套并存、互相隔离：V1（仓库根目录的原版，单文件 assemble 构建链，算法权威）、SUNGLOW v2（本教程所属，项目主线）、Skyglow（Python 服务端版）。页脚「切换到V1」随时回到原版。": "Three builds coexist, fully isolated: V1 (the original at the repo root, single-file assemble chain, the algorithm authority), SUNGLOW v2 (this tutorial's home, the mainline) and Skyglow (Python server edition). The footer's 'Switch to V1' takes you back anytime.",
     "按身份取用": "Pick your track",
     "从查预报到读结论，每个功能怎么用、数字怎么看。": "From running a forecast to reading the verdict — what every feature does and what the numbers mean.",
     "进入 →": "Enter →",
@@ -685,7 +689,7 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "数据源 Open-Meteo（免费层，非商业用途）· 地图底图腾讯位置服务": "Data: Open-Meteo (free tier, non-commercial) · Map base: Tencent Location Services",
     "← 回主页": "← Home",
     "构建、口径与质量门": "Build, calibration & quality gates",
-    "从一条构建命令到三套算法的口径细节，读懂 GLOWCAST v2 的全部机制。": "From one build command to the details of three algorithms — every mechanism of GLOWCAST v2.",
+    "从一条构建命令到三套算法的口径细节，读懂 SUNGLOW v2 的全部机制。": "From one build command to the details of three algorithms — every mechanism of SUNGLOW v2.",
     "形态与构建链": "Form & build chain",
     "源码在 v2/，交付物是一个自包含单文件。一条命令跑完构建与发布：": "Source lives in v2/; the deliverable is one self-contained single file. One command builds and publishes:",
     "cd v2 && npm run build": "cd v2 &amp;&amp; npm run build",
@@ -833,7 +837,7 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     ATTR_NODES.forEach(function (n) { n.el.setAttribute(n.attr, pick(n)); });
     var meta = LANGS.filter(function (l) { return l.k === LANG; })[0] || LANGS[0];
     document.documentElement.setAttribute("lang", meta.tag);
-    document.title = LANG === "zh" ? "使用教程 · 霞光预报 GLOWCAST" : (DICT[LANG]["doc.title"] || document.title);
+    document.title = LANG === "zh" ? "使用教程 · 霞光档案 · SUNGLOW" : (DICT[LANG]["doc.title"] || document.title);
     var d = $('meta[name="description"]');
     if (d && LANG !== "zh" && DICT[LANG]["doc.desc"]) d.setAttribute("content", DICT[LANG]["doc.desc"]);
     refreshTopButtons();

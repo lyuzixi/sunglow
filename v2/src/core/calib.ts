@@ -1,13 +1,13 @@
 /* =========================================================================
-   GLOWCAST v2 · F4 本地校准
+   SUNGLOW v2 · F4 本地校准
    口径来源：V1 _p5.js 校准存储。四条硬边界原样保留：
    ① 只展示不回改模型  ② 样本不够不给结论（CALIB_MIN_N=8 / CALIB_MIN_BUCKET=3）
    ③ a=-1 不进统计  ④ 关掉 ≠ 删除（开关与清空分离）
-   存储键独立命名空间：glowcast.v2.calib
+   存储键独立命名空间：SUNGLOW.v2.calib
    ========================================================================= */
 import { clamp, isNum } from "./math";
 
-export const CALIB_KEY = "glowcast.v2.calib";
+export const CALIB_KEY = "SUNGLOW.v2.calib";
 export const CALIB_GRID_DEG = 0.5;
 export const CALIB_BUCKET = 20;
 export const CALIB_HIT_MIN = 2;

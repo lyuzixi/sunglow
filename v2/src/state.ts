@@ -1,6 +1,6 @@
 /* =========================================================================
-   GLOWCAST v2 · 全局状态
-   偏好键：glowcast.v2.pref（独立命名空间，不碰V1 sunsetbot.pref.v1）
+   SUNGLOW v2 · 全局状态
+   偏好键：SUNGLOW.v2.pref（独立命名空间，不碰V1 sunsetbot.pref.v1）
    ========================================================================= */
 import { reactive, computed, ref } from "vue";
 import { detectLang, setLang, type Lang } from "./core/i18n";
@@ -12,7 +12,7 @@ import { cityTz, todayInTz } from "./core/tz";
 
 export type ThemeMode = "dark" | "light" | "system";
 
-export const PREF_KEY = "glowcast.v2.pref";
+export const PREF_KEY = "SUNGLOW.v2.pref";
 
 /* ---- 偏好白名单（口径对齐V1 PREF_BOOL/PREF_STR） ---- */
 export const PREF_BOOL = [

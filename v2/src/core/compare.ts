@@ -1,12 +1,12 @@
 /* =========================================================================
-   GLOWCAST v2 · 多观测点对比（2026-10-21）
+   SUNGLOW v2 · 多观测点对比（2026-10-21）
    场景：同一天同一时段，多个地点的霞光条件横向排行榜（grill 拍板）。
    纪律：
    · 当前地点自动加入第一张卡，复用主结果，零取数，不占 4 个名额。
    · 地图选点：观测场该日期已加载时直接用 MapPoint，零额度。
    · 搜索 / 经纬度：走 runForecast（缓存优先），每点 ≈51 次加权调用。
    · 取数三档与全局一致：auto 只看缓存绝不取数 / click 缓存优先 / force 绕开。
-   · 列表持久化 glowcast.v2.cmp.v1（与 pref 分键），「清空对比」才清。
+   · 列表持久化 SUNGLOW.v2.cmp.v1（与 pref 分键），「清空对比」才清。
    ========================================================================= */
 import { ref } from "vue";
 import {
@@ -18,7 +18,7 @@ import { isNum } from "./math";
 import type { MapPoint } from "./mapdata";
 import type { City } from "./city";
 
-export const CMP_KEY = "glowcast.v2.cmp.v1";
+export const CMP_KEY = "SUNGLOW.v2.cmp.v1";
 export const CMP_MAX = 4;
 
 export interface ComparePt {

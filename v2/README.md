@@ -1,4 +1,4 @@
-# 霞光预报 GLOWCAST · v2「大气光谱观测站」
+# 霞光档案 · SUNGLOW · v2「大气光谱观测站」
 
 > 本文是 [霞光预报 sunglow](../README.md) 的其中一版：v2 主线。
 

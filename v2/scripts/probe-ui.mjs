@@ -201,7 +201,7 @@ eq("1000px 7 项导航仍是一行且可见",
     return n.querySelectorAll('a').length + '/' + tops.size;})()`), "7/1");
 eq("收紧档导航内边距 6/9", ev(`(()=>{const a=document.querySelector('.nav-tabs a');const cs=getComputedStyle(a);
   return cs.paddingTop+' '+cs.paddingLeft;})()`), "6px 9px");
-eq("收紧档藏起 GLOWCAST 副标", ev(`getComputedStyle(document.querySelector('.brand .name em')).display`), "none");
+eq("收紧档藏起 SUNGLOW 副标", ev(`getComputedStyle(document.querySelector('.brand .name em')).display`), "none");
 ok("收紧档徽标仍在第一行", ev(`getComputedStyle(document.querySelector('.top-actions > .meta-pill')).display`) !== "none"
   && ev(`document.querySelectorAll('.topbar-meta').length`) === 0);
 
@@ -325,7 +325,7 @@ ok("390px 顶栏不再有徽标（胶囊隐藏 + 第二行 DOM 已删除）",
 ok("390px 教程按钮撤出顶栏（入口在抽屉「指南」组）",
   ev(`getComputedStyle(document.querySelector('.tut-btn')).display`) === "none"
   && ev(`!!document.querySelector('.mdrawer .md-group a[href$="tutorial.html"]')`) === true);
-ok("390px 品牌名单行（藏 GLOWCAST 副标，不被挤成两行）", ev(`(()=>{
+ok("390px 品牌名单行（藏 SUNGLOW 副标，不被挤成两行）", ev(`(()=>{
   const nm=document.querySelector('.brand .name'); const cs=getComputedStyle(nm);
   let lh=parseFloat(cs.lineHeight); if(!isFinite(lh)) lh=parseFloat(cs.fontSize)*1.4;
   return nm.getBoundingClientRect().height <= lh*1.35
@@ -915,8 +915,8 @@ eq("画布 2 倍像素密度（1560×800）", [sh1?.w, sh1?.h], [1560, 800]);
 ok("画面不是空白（取样出足够多颜色）", !!sh1 && sh1.colors > 30, String(sh1 && sh1.colors));
 ok("元信息挂在画布上（模型/来源/细节行）",
   !!sh1?.meta && sh1.meta.rows.length === 4, JSON.stringify(sh1?.meta && sh1.meta.rows));
-ok("文件名＝霞光预报_城市_日期_晚霞.png",
-  /^霞光预报_北京_2026-10-21_晚霞\.png$/.test((dl1 && dl1.name) || ""), JSON.stringify(dl1));
+ok("文件名＝霞光档案_城市_日期_晚霞.png",
+  /^霞光档案_北京_2026-10-21_晚霞\.png$/.test((dl1 && dl1.name) || ""), JSON.stringify(dl1));
 ok("<a download> 走的是 blob URL", (dl1 && dl1.scheme) === "blob:", JSON.stringify(dl1));
 ok("深色主题导出深色底（角落接近 #101a2e）",
   !!sh1 && sh1.corner[0] < 60 && sh1.corner[2] > sh1.corner[0], JSON.stringify(sh1 && sh1.corner));
@@ -972,8 +972,8 @@ ev(SHARE_SETUP);
 ev(`document.querySelector('.share-btn').click()`);
 wait(1800);
 const dlEn = ev(`window.__dl`);
-ok("英文下文件名也翻译（Glow Forecast_…）",
-  /^Glow Forecast_北京_2026-10-21_.+\.png$/.test((dlEn && dlEn.name) || ""), JSON.stringify(dlEn));
+ok("英文下文件名也翻译（SUNGLOW_…）",
+  /^SUNGLOW_北京_2026-10-21_.+\.png$/.test((dlEn && dlEn.name) || ""), JSON.stringify(dlEn));
 
 /* ================= 缓存优先 / 显式取数（2026-10-21 额度审计后） =================
    断言「点了不取数」必须数真实请求数 —— 看界面文案是看不出来的。
@@ -1532,7 +1532,7 @@ ok("英文徽标仍在第一行（第二行结构已删除）",
   enTop.bar === 63 && enTop.pill !== "none" && enTop.meta === 0 && enTop.armed === true, JSON.stringify(enTop));
 
 /* ================= 英文手机 390：品牌名不许把页面顶出横向滚动 =================
-   "Glow Forecast" 与 "GLOWCAST" 之间没有空格，行内断不开，改前会把整页顶出 65px。 */
+   "霞光档案" 与 "SUNGLOW" 之间没有空格，行内断不开，改前会把整页顶出 65px。 */
 vp(390, 844);
 ab("reload");
 wait(1200);

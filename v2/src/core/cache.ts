@@ -1,12 +1,12 @@
 /* =========================================================================
-   GLOWCAST v2 · 取数缓存总览（设置面板用）
+   SUNGLOW v2 · 取数缓存总览（设置面板用）
    只扫 localStorage 前缀，不依赖各业务模块，避免循环引用。
    三族：单点预报 / 观测场地图 / 十日趋势。校准记录不在其中（那是数据，不是缓存）。
    ========================================================================= */
 const FAMILIES = {
-  point: "glowcast.v2.point.",
-  map: "glowcast.v2.map.",
-  trend: "glowcast.v2.trend."
+  point: "SUNGLOW.v2.point.",
+  map: "SUNGLOW.v2.map.",
+  trend: "SUNGLOW.v2.trend."
 } as const;
 
 export type CacheKind = keyof typeof FAMILIES;

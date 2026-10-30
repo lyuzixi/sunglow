@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>页面不存在 · 霞光预报 GLOWCAST</title>
+<title>页面不存在 · 霞光档案 · SUNGLOW</title>
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#070b14">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff4d82'/%3E%3Cstop offset='.5' stop-color='%23ff9c3f'/%3E%3Cstop offset='1' stop-color='%232ed5e8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='url(%23g)' stroke-width='3'/%3E%3Ccircle cx='16' cy='16' r='5' fill='url(%23g)'/%3E%3C/svg%3E">
@@ -66,7 +66,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .brand{display:flex; align-items:center; gap:10px; min-width:0}
 .brand-dot{
   width:26px; height:26px; border-radius:50%; flex:0 0 auto;
-  background:var(--spectrum);
+  background:url("./icon-192.png") center/cover no-repeat;
 }
 .brand-tx{display:flex; align-items:baseline; gap:6px; white-space:nowrap; overflow:hidden}
 .brand-tx b{font-size:15px; letter-spacing:-.01em}
@@ -121,6 +121,7 @@ main{
 }
 h1{font-size:clamp(19px,2.6vw,24px); margin:0 0 10px; letter-spacing:-.01em}
 .lead{color:var(--tx-2); line-height:1.8; margin:0 0 18px; font-size:15px}
+.slogan{color:var(--tx-3); font-size:12.5px; letter-spacing:.04em; margin:0 0 18px}
 .miss{
   display:flex; gap:10px; align-items:baseline; flex-wrap:wrap;
   padding:10px 12px; border-radius:var(--r-sm);
@@ -155,7 +156,7 @@ h1{font-size:clamp(19px,2.6vw,24px); margin:0 0 10px; letter-spacing:-.01em}
   <div class="topbar-in">
     <a class="brand" id="brand" href="./index.html">
       <span class="brand-dot"></span>
-      <span class="brand-tx"><b data-i18n="霞光预报">霞光预报</b><em>GLOWCAST</em></span>
+      <span class="brand-tx"><b data-i18n="霞光档案">霞光档案</b><em>SUNGLOW</em></span>
     </a>
 
     <nav class="nav" id="nav">
@@ -191,6 +192,7 @@ h1{font-size:clamp(19px,2.6vw,24px); margin:0 0 10px; letter-spacing:-.01em}
     <p class="code">404</p>
     <h1 data-i18n="页面不存在">页面不存在</h1>
     <p class="lead" data-i18n="这条地址没有对应的页面——链接可能已经更新，或者路径里有拼写错误。">这条地址没有对应的页面——链接可能已经更新，或者路径里有拼写错误。</p>
+    <p class="slogan" data-i18n="让每一次追霞，都有迹可循">让每一次追霞，都有迹可循</p>
 
     <div class="miss" id="miss" hidden>
       <span data-i18n="请求地址">请求地址</span>
@@ -203,7 +205,7 @@ h1{font-size:clamp(19px,2.6vw,24px); margin:0 0 10px; letter-spacing:-.01em}
     </div>
 
     <p class="foot">
-      <span data-i18n="霞光预报 v2 是单文件应用：整个程序就是一个 index.html，双击即可离线使用。">霞光预报 v2 是单文件应用：整个程序就是一个 index.html，双击即可离线使用。</span>
+      <span data-i18n="霞光档案 v2 是单文件应用：整个程序就是一个 index.html，双击即可离线使用。">霞光档案 v2 是单文件应用：整个程序就是一个 index.html，双击即可离线使用。</span>
       <a href="./index.html" data-i18n="打开应用">打开应用</a>
     </p>
   </div>
@@ -216,7 +218,8 @@ h1{font-size:clamp(19px,2.6vw,24px); margin:0 0 10px; letter-spacing:-.01em}
   /* ---------------- 三语词条（与主页同一套措辞） ---------------- */
   var DICT = {
     hant: {
-      "霞光预报": "霞光預報",
+      "霞光档案": "霞光檔案",
+      "让每一次追霞，都有迹可循": "讓每一次追霞，都有跡可循",
       "结论": "結論",
       "十日趋势": "十日趨勢",
       "观测场": "觀測場",
@@ -230,15 +233,16 @@ h1{font-size:clamp(19px,2.6vw,24px); margin:0 0 10px; letter-spacing:-.01em}
       "深色": "深色",
       "浅色": "淺色",
       "跟随系统": "跟隨系統",
-      "霞光预报 v2 是单文件应用：整个程序就是一个 index.html，双击即可离线使用。":
-        "霞光預報 v2 是單檔應用：整個程式就是一個 index.html，雙擊即可離線使用。",
+      "霞光档案 v2 是单文件应用：整个程序就是一个 index.html，双击即可离线使用。":
+        "霞光檔案 v2 是單檔應用：整個程式就是一個 index.html，雙擊即可離線使用。",
       "打开应用": "開啟應用",
-      "页面不存在 · 霞光预报 GLOWCAST": "頁面不存在 · 霞光預報 GLOWCAST",
+      "页面不存在 · 霞光档案 · SUNGLOW": "頁面不存在 · 霞光檔案 · SUNGLOW",
       "语言": "語言",
       "主题": "主題"
     },
     en: {
-      "霞光预报": "GLOWCAST",
+      "霞光档案": "霞光档案",
+      "让每一次追霞，都有迹可循": "Every glow chase leaves a trace.",
       "结论": "Verdict",
       "十日趋势": "10-Day Trend",
       "观测场": "Observation Field",
@@ -252,10 +256,10 @@ h1{font-size:clamp(19px,2.6vw,24px); margin:0 0 10px; letter-spacing:-.01em}
       "深色": "Dark",
       "浅色": "Light",
       "跟随系统": "System",
-      "霞光预报 v2 是单文件应用：整个程序就是一个 index.html，双击即可离线使用。":
-        "GLOWCAST v2 ships as a single file: the whole app is one index.html you can open offline.",
+      "霞光档案 v2 是单文件应用：整个程序就是一个 index.html，双击即可离线使用。":
+        "SUNGLOW v2 ships as a single file: the whole app is one index.html you can open offline.",
       "打开应用": "Open the app",
-      "页面不存在 · 霞光预报 GLOWCAST": "Page not found · GLOWCAST",
+      "页面不存在 · 霞光档案 · SUNGLOW": "Page not found · SUNGLOW",
       "语言": "Language",
       "主题": "Theme"
     }
@@ -289,7 +293,7 @@ h1{font-size:clamp(19px,2.6vw,24px); margin:0 0 10px; letter-spacing:-.01em}
     for (var i = 0; i < nodes.length; i++) {
       nodes[i].textContent = t(nodes[i].getAttribute("data-i18n"));
     }
-    document.title = t("页面不存在 · 霞光预报 GLOWCAST");
+    document.title = t("页面不存在 · 霞光档案 · SUNGLOW");
     var lb = document.getElementById("langBtn");
     if (lb) { lb.textContent = LANG_SHORT[lang]; lb.setAttribute("aria-label", t("语言")); }
     var tb = document.getElementById("themeBtn");

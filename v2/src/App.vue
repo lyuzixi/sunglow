@@ -17,9 +17,12 @@ watchEffect(() => {
   <router-view :key="state.lang + state.theme" />
   <footer v-if="showFoot" class="foot">
     <div class="wrap foot-in">
-      <div>
-        <b class="spectrum-text" style="font-family: var(--font-display)">GLOWCAST</b>
-        · {{ t("霞光预报") }} · {{ t("数据源") }} Open-Meteo（{{ t("非商业用途") }}）
+      <div class="foot-brand">
+        <div>
+          <b class="spectrum-text" style="font-family: var(--font-display)">SUNGLOW</b>
+          · 霞光档案 · {{ t("让每一次追霞，都有迹可循") }}
+        </div>
+        <div class="foot-sub">{{ t("数据源") }} Open-Meteo（{{ t("非商业用途") }}）</div>
       </div>
       <div style="display: flex; gap: 14px; align-items: center">
         <a href="./tutorial.html">{{ t("使用教程") }}</a>

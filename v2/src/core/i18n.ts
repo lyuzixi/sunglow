@@ -1,5 +1,5 @@
 /* =========================================================================
-   GLOWCAST v2 · 三语词典（简 / 繁 / 英）
+   SUNGLOW v2 · 三语词典（简 / 繁 / 英）
    键 = 简体中文原文。词条只写繁/英两份；简体直接返回键本身。
    与V1 _pi18n.js 独立（v2 界面文案更精简，不搬运V1全量词典）。
    ========================================================================= */
@@ -17,7 +17,8 @@ export const LANG_SHORT: Record<Lang, string> = {
 type Dict = Record<string, string>;
 
 const HANT: Dict = {
-  "霞光预报": "霞光預報",
+  "霞光档案": "霞光檔案",
+  "让每一次追霞，都有迹可循": "讓每一次追霞，都有跡可循",
   "大气光谱观测站": "大氣光譜觀測站",
   "晨光实验室": "晨光實驗室",
   "出现概率": "出現概率",
@@ -136,7 +137,8 @@ const HANT: Dict = {
 };
 
 const EN: Dict = {
-  "霞光预报": "Glow Forecast",
+  "霞光档案": "SUNGLOW",
+  "让每一次追霞，都有迹可循": "Every glow chase leaves a trace.",
   "大气光谱观测站": "Atmospheric Spectrum Observatory",
   "晨光实验室": "Dawn Light Laboratory",
   "出现概率": "Probability",

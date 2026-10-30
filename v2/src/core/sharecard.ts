@@ -1,5 +1,5 @@
 /* =========================================================================
-   GLOWCAST v2 · 分享卡（保存图片）
+   SUNGLOW v2 · 分享卡（保存图片）
    纯 canvas 手绘，不引任何外部库 —— 单文件产物里不可能放 html2canvas。
    版式对齐V1 _p5b.shareCard()：等级色 / 天色带 / 概率大字 / 城市与日期 /
    质量分与等级胶囊 / 结论句 / 四行细节 / 页脚，780×400 画布，2 倍像素密度。
@@ -98,9 +98,9 @@ function safeName(s: string): string {
   return String(s).replace(/[\\/:*?"<>|]/g, "").trim() || t("点位");
 }
 
-/** 文件名：霞光预报_城市_日期_晚霞.png（与V1同构，随语言变） */
+/** 文件名：霞光档案_城市_日期_晚霞.png（与V1同构，随语言变） */
 export function shareFileName(r: ForecastResult): string {
-  return t("霞光预报") + "_" + safeName(cityName(r.city.name, getLang())) + "_" + r.dateStr + "_" +
+  return t("霞光档案") + "_" + safeName(cityName(r.city.name, getLang())) + "_" + r.dateStr + "_" +
     t(r.period === "am" ? "朝霞" : "晚霞") + ".png";
 }
 
@@ -293,12 +293,17 @@ export function drawShareCard(
     c.fillText(fit(c, s, maxW), X, 242 + k * 23);
   });
 
+  /* 品牌 slogan（全站品牌触点之一） */
+  c.font = f(500, 13); c.fillStyle = TX2; c.textAlign = "center";
+  c.fillText(fit(c, t("让每一次追霞，都有迹可循"), W - 120), W / 2, 330);
+  c.textAlign = "left";
+
   /* 页脚 */
   c.strokeStyle = LINE; c.lineWidth = 1;
   c.beginPath(); c.moveTo(44, 340); c.lineTo(W - 44, 340); c.stroke();
   c.font = f(500, 12); c.fillStyle = TX3;
   c.fillText(
-    fit(c, t("霞光预报 · 数据源 Open-Meteo（GFS / ECMWF-IFS / CAMS 气溶胶）· 结论仅供观赏参考"), W - 250),
+    fit(c, t("霞光档案 · 数据源 Open-Meteo（GFS / ECMWF-IFS / CAMS 气溶胶）· 结论仅供观赏参考"), W - 250),
     44, 366
   );
   c.textAlign = "right";
@@ -389,7 +394,7 @@ export async function saveShareCard(
     const file = new File([blob], meta.fileName, { type: "image/png" });
     if (nav.canShare!({ files: [file] })) {
       try {
-        await nav.share!({ files: [file], title: t("霞光预报"), text: meta.fileName });
+        await nav.share!({ files: [file], title: t("霞光档案"), text: meta.fileName });
         return "shared";
       } catch (e) {
         if ((e as Error)?.name === "AbortError") return "cancelled";
