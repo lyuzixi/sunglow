@@ -1,6 +1,8 @@
-# 霞光预报
+# Sunglow Classic Edition · 经典原版（V1）
 
-> 本文是 [霞光预报 sunglow](../README.md) 的其中一版：V1 原版。
+> 本文是 [sunglow](../README.md) 的其中一版：**Sunglow Classic Edition（经典原版，内部标识 V1）**。
+> 它是历史经典版本，**不是当前主线**；当前主线为 **Sunglow Spectrum Edition（光谱观测版，V2）**，
+> 另有一版 **Skyglow Enhanced Edition（Skyglow移植增强版，目录 `Skyglow/`）**。
 
 基于气象数据预测**朝霞 / 晚霞（火烧云）出现概率与观赏质量**的单文件 Web 应用。
 
@@ -366,4 +368,4 @@ B5 并发点击 —— 另有 `raceprobe` 覆盖），且**各自打一行「已
 [Open-Meteo](https://open-meteo.com)，省界数据来自阿里云 DataV，
 地图服务来自[腾讯位置服务](https://lbs.qq.com)，请遵守各自的服务条款。
 
-> 注：仓库内的 `Skyglow/` 为第三方项目 [couletian/Skyglow](https://github.com/couletian/Skyglow) 的改进版（上游未附 LICENSE，默认版权保留），不适用本节「本项目」表述；详见 `Skyglow/README.md` 顶部来源说明。
+> 注：仓库内的 `Skyglow/`（Skyglow Enhanced Edition / Skyglow移植增强版）是基于第三方项目 [couletian/Skyglow](https://github.com/couletian/Skyglow) 的移植增强独立版本（上游未附 LICENSE，默认版权保留），不适用本节「本项目」表述；详见 `Skyglow/README.md` 顶部来源说明。

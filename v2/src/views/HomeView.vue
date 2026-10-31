@@ -269,7 +269,7 @@ onMounted(async () => {
         <div>
           <h3 style="margin: 0 0 6px">{{ t("分享快照") }}</h3>
           <p style="margin: 0; color: var(--tx-2); font-size: var(--fs-small)">
-            {{ t("生成的链接与V1互通（SNAP_VER=1），对方无需重新取数即可查看。") }}
+            {{ t("生成的链接与 Sunglow Classic Edition（V1）互通（SNAP_VER=1），对方无需重新取数即可查看。") }}
           </p>
         </div>
         <button class="btn btn-primary" :disabled="!snapUrl" @click="copySnap">

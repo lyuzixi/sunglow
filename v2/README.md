@@ -1,9 +1,14 @@
-# 霞光档案 · SUNGLOW · v2「大气光谱观测站」
+# 霞光档案 · SUNGLOW · Spectrum Edition（光谱观测版）
 
-> 本文是 [霞光预报 sunglow](../README.md) 的其中一版：v2 主线。
+> 本文是 [SUNGLOW](../README.md) 的 **Sunglow Spectrum Edition（V2 · 光谱观测版）**：当前主线。
 
-全新高级科技风版本。与V1（`V1/`，单文件 assemble 构建链）**完全隔离、互不影响**：
-V1代码与资源零改动，v2 只单向链接到V1。
+全新高级科技风版本。与 **Sunglow Classic Edition**（`V1/`，内部标识 V1，单文件 assemble 构建链）**完全隔离、互不影响**：
+V1 代码与资源零改动，Spectrum Edition 只单向链接到 Classic Edition。
+
+## 版本家族
+- **Sunglow Spectrum Edition（V2 · 光谱观测版）**：当前主线，本目录。
+- **Sunglow Classic Edition（V1 · 经典原版）**：历史经典版本，保留最初的设计与算法实现。
+- **Skyglow Enhanced Edition（Skyglow · Skyglow移植增强版）**：基于第三方 [couletian/Skyglow](https://github.com/couletian/Skyglow) 的移植增强独立版本，不是 V2 的下一代。
 
 ## 视觉方向
 **A · 大气光谱观测站**（深色） / **晨光实验室**（浅色） / 跟随系统
@@ -81,8 +86,8 @@ npm run build              # 单文件产物 + publish-root 自动发布 9 个�
 - 分档走 hash 路由（`#users` / `#dev` / `#creator`），档内章节有锚点；吸顶条高度实测写入 `--toph`。
 - 应用内**没有**教程路由：2026-10-26 删除了无入口的 `/tutorial` 孤儿视图，避免两份教程各自漂移。
 
-## 与V1的关系
-| 项 | V1 | v2 |
+## 与 Sunglow Classic Edition（V1）的关系
+| 项 | Classic Edition（V1） | Spectrum Edition（V2） |
 |---|---|---|
 | 构建链 | `assemble.py` 单文件 | Vite 多文件产物 |
 | 存储 | `sunsetbot.pref.v1` / `sunsetbot.calib.v1` | `SUNGLOW.v2.pref` / `SUNGLOW.v2.calib` |

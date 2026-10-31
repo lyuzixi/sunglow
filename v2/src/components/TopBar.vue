@@ -41,7 +41,7 @@ const DETAIL_NAV: { id: string; label: string; fold: string }[] = [
 const settingsOpen = ref(false);
 const langOpen = ref(false);
 const themeOpen = ref(false);
-/* 版本菜单（2026-10-27）：桌面顶栏右侧，条目只写版本名（V1 / Skyglow），
+/* 版本菜单（2026-10-27）：桌面顶栏右侧，条目写正式版名（两行：英文全名 + 中文名），
    手机极简档隐藏按钮，入口交给目录抽屉的「其他版本」组。 */
 const verOpen = ref(false);
 const rootEl = ref<HTMLElement | null>(null);
@@ -433,8 +433,12 @@ const themeIcon = () =>
             </svg>
           </button>
           <div v-if="verOpen" class="menu-pop ver-pop" role="menu" :aria-label="t('其他版本')">
-            <a role="menuitem" href="V1/index.html"><span>V1</span><i class="arw">↗</i></a>
-            <a role="menuitem" href="Skyglow/index.html"><span>Skyglow</span><i class="arw">↗</i></a>
+            <a role="menuitem" href="V1/index.html">
+              <span class="ver-tx"><span class="ver-l1">{{ t("Sunglow Classic Edition") }}</span><span class="ver-l2">{{ t("经典原版") }}</span></span><i class="arw">↗</i>
+            </a>
+            <a role="menuitem" href="Skyglow/index.html">
+              <span class="ver-tx"><span class="ver-l1">{{ t("Skyglow Enhanced Edition") }}</span><span class="ver-l2">{{ t("Skyglow移植增强版") }}</span></span><i class="arw">↗</i>
+            </a>
           </div>
         </div>
 
@@ -500,12 +504,12 @@ const themeIcon = () =>
       <a class="ext" href="./tutorial.html"><span>{{ t("使用教程") }}</span><i class="arw">↗</i></a>
     </div>
 
-    <!-- 其他版本（2026-10-27）：与桌面下拉同口径，只写版本名；
+    <!-- 其他版本（2026-10-27）：与桌面下拉同口径，写两行正式版名；
          真链接、根位置（publish-root 禁止 ../），点它直接离开首页。 -->
     <div class="md-group">
       <h4>{{ t("其他版本") }}</h4>
-      <a class="ext" href="V1/index.html"><span>V1</span><i class="arw">↗</i></a>
-      <a class="ext" href="Skyglow/index.html"><span>Skyglow</span><i class="arw">↗</i></a>
+      <a class="ext" href="V1/index.html"><span class="ver-tx"><span class="ver-l1">{{ t("Sunglow Classic Edition") }}</span><span class="ver-l2">{{ t("经典原版") }}</span></span><i class="arw">↗</i></a>
+      <a class="ext" href="Skyglow/index.html"><span class="ver-tx"><span class="ver-l1">{{ t("Skyglow Enhanced Edition") }}</span><span class="ver-l2">{{ t("Skyglow移植增强版") }}</span></span><i class="arw">↗</i></a>
     </div>
   </aside>
 </template>

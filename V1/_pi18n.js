@@ -70,10 +70,13 @@ const I18N_ZH_HANT = {
   /* 教程入口（2026-10-19）：顶栏图标 + 抽屉「指南」组各一条，两处共用同两个键 */
   "使用教程": "使用教學",
   "指南": "指南",
-  /* 版本切换（2026-10-27）：目录「其他版本」组 + 页脚切换行，两处共用这三个键 */
-  "切换到V2": "切換到V2",
-  "切换到Skyglow": "切換到Skyglow",
+  /* 版本切换：目录「其他版本」分组的标题（两个版本出口改用下面的正式名） */
   "其他版本": "其他版本",
+  /* 版本正式名（2026-10-31）：顶栏第二行 + 页脚/目录「其他版本」的中文小字 */
+  "经典原版": "經典原版",
+  "光谱观测版": "光譜觀測版",
+  "Skyglow移植增强版": "Skyglow移植增強版",
+  "SUNGLOW · Classic Edition · 经典原版": "SUNGLOW · Classic Edition · 經典原版",
 
   "主结果": "主結果",
   "未来趋势": "未來趨勢",
@@ -632,10 +635,13 @@ const I18N_EN = {
   /* 教程入口（2026-10-19）：顶栏图标 + 抽屉「指南」组各一条，两处共用同两个键 */
   "使用教程": "User guide",
   "指南": "Guide",
-  /* 版本切换（2026-10-27）：目录「其他版本」组 + 页脚切换行，两处共用这三个键 */
-  "切换到V2": "Switch to V2",
-  "切换到Skyglow": "Switch to Skyglow",
+  /* 版本切换：目录「其他版本」分组的标题（两个版本出口改用下面的正式名） */
   "其他版本": "Other versions",
+  /* 版本正式名（2026-10-31）：顶栏第二行 + 页脚/目录「其他版本」的中文小字 */
+  "经典原版": "Classic Edition",
+  "光谱观测版": "Spectrum Edition",
+  "Skyglow移植增强版": "Enhanced Edition",
+  "SUNGLOW · Classic Edition · 经典原版": "SUNGLOW · Classic Edition",
 
   "主结果": "Main results",
   "未来趋势": "Outlook",
@@ -925,7 +931,7 @@ const I18N_EN = {
   "点位": "point",
   "预报时效约 {n} 小时": "Lead time about {n} h",
   "实况 / 历史分析场": "Analysis / historical field",
-  "霞光预报 · 数据源 Open-Meteo（GFS / ECMWF-IFS / CAMS 气溶胶）· 结论仅供观赏参考": "Glowcast · Data: Open-Meteo (GFS / ECMWF-IFS / CAMS aerosol) · For viewing guidance only",
+  "霞光预报 · 数据源 Open-Meteo（GFS / ECMWF-IFS / CAMS 气溶胶）· 结论仅供观赏参考": "SUNGLOW · Data: Open-Meteo (GFS / ECMWF-IFS / CAMS aerosol) · For viewing guidance only",
   "载霞云层 {v}": "Glow cloud {v}",
   "覆盖 {v}": "cover {v}",
   "可信度 {v}": "confidence {v}",
@@ -1075,7 +1081,7 @@ const I18N_EN = {
   "<b>地图的算法模型选择</b>：热力图可分别按 <b>多模型综合 / GFS / ECMWF-IFS / 光追算法</b> 四者之一着色。四套结果在<b>同一次取数</b>中一次性算好并随该日数据缓存，因此切换模型只是换个维度重新插值着色，<b>不会产生新的网络请求</b>；多模型综合＝GFS / ECMWF / 光追 按 0.30 / 0.34 / 0.36 的加权几何平均，某个模型缺数据时自动剔除该项并重新归一（与单点查询口径一致）。若某模型本次确实没有可用结果，选择框中会标注「本次无数据」并置灰，误选时会自动回退到多模型综合并给出提示；整批取数失败（如接口限流）则在地图区显示错误说明，点「刷新地图」重试。": "<b>Choosing the map's model</b>: the heatmap can be coloured by any of <b>blend / GFS / ECMWF-IFS / ray tracing</b>. All four are computed in the <b>same fetch</b> and cached with that day's data, so switching model only re-interpolates the colouring — <b>no extra network requests</b>. The blend is the weighted geometric mean of GFS / ECMWF / ray tracing at 0.30 / 0.34 / 0.36; a model without data is dropped and the rest renormalised (the same convention as the single-point query). If a model has no usable result this run, the selector marks it “no data this run”, greys it out and falls back to the blend with a notice; if the whole fetch fails (rate limiting, say), the map area shows the error and Refresh map retries.",
   "霞光对云的三维分布极为敏感。教程明确指出：短期预报时效不建议超过 36 小时；超过时效或模式间分歧较大时，结论仅作参考，应以临近时刻的卫星云图与实况外推为准。": "Glow is extremely sensitive to the three-dimensional cloud field. The tutorial is explicit: short-range lead times beyond 36 hours are discouraged, and beyond that — or when models disagree — treat the result as indicative only and rely on recent satellite imagery and observed trends.",
   "本程序为科普与辅助决策工具，不构成任何形式的专业气象预报或出行承诺。": "This app is an educational and decision-support tool; it is not a professional weather forecast and carries no promise about your trip.",
-  "霞光预报单文件版 · 全部计算在浏览器本地完成 · 数据经 Open-Meteo / CAMS 实时获取": "Glowcast, single-file edition · everything is computed in your browser · data fetched live from Open-Meteo / CAMS",
+  "霞光预报单文件版 · 全部计算在浏览器本地完成 · 数据经 Open-Meteo / CAMS 实时获取": "SUNGLOW, single-file edition · everything is computed in your browser · data fetched live from Open-Meteo / CAMS",
   "主题": "Theme",
   "跟随系统": "System",
   "浅色": "Light",

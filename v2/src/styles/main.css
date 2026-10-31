@@ -723,6 +723,13 @@ input, select {
 }
 .menu-pop a .arw { font-style: normal; font-size: 12px; opacity: 0.85; }
 
+/* ---- 版本切换：两行完整名（英文正式名 + 本地化中文名） ---- */
+.ver-tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; line-height: 1.25; }
+.ver-l1 { font-size: var(--fs-small); color: var(--tx-1); }
+.ver-l2 { font-size: var(--fs-tiny); color: var(--tx-3); }
+.md-group a.ext .ver-l1 { color: var(--acc-2); }
+.md-group a.ext .ver-l2 { color: var(--tx-3); font-weight: 500; }
+
 /* ---- 表格 ---- */
 table.data {
   width: 100%;
@@ -778,6 +785,8 @@ table.data tr:last-child td { border-bottom: 0; }
 /* 页脚拆两行：品牌 + slogan 一行，数据源声明一行 */
 .foot-brand { display: flex; flex-direction: column; gap: 3px; }
 .foot-sub { font-size: var(--fs-tiny); }
+.foot-ver { display: inline-flex; flex-direction: column; gap: 1px; line-height: 1.25; }
+.foot-ver .zh { font-size: var(--fs-tiny); color: var(--tx-3); }
 
 .center-screen {
   min-height: calc(100vh - 62px);

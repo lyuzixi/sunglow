@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>霞光 Skyglow · 火烧云概率预报</title>
-<meta name="description" content="基于 ERA5 分层云量、CAMS 气溶胶光学厚度与太阳几何的朝霞/晚霞定量预报，含历史回测验证。">
+<title>Skyglow Enhanced Edition · Skyglow移植增强版 · 火烧云概率预报</title>
+<meta name="description" content="Skyglow Enhanced Edition（Skyglow移植增强版）：基于 ERA5 分层云量、CAMS 气溶胶光学厚度与太阳几何的朝霞/晚霞定量预报，含历史回测验证。">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PGNpcmNsZSBjeD0iMTYiIGN5PSIxOSIgcj0iOCIgZmlsbD0iI2ZmN2E0ZCIvPjxwYXRoIGQ9Ik0yIDI1aDI4IiBzdHJva2U9IiNmZmIwNzAiIHN0cm9rZS13aWR0aD0iMiIvPjwvc3ZnPg==">
 <link rel="stylesheet" href="/styles.css">
 </head>
@@ -17,7 +17,10 @@
       <span class="brand-mark" aria-hidden="true">
         <svg viewBox="0 0 32 32" width="26" height="26"><defs><linearGradient id="bg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd166"/><stop offset="1" stop-color="#ff5a3c"/></linearGradient></defs><circle cx="16" cy="19" r="7" fill="url(#bg1)"/><path d="M2 24h28" stroke="#ff8a5c" stroke-width="1.4" opacity=".75"/><path d="M5 27h22" stroke="#ff8a5c" stroke-width="1" opacity=".35"/></svg>
       </span>
-      <span class="brand-text">霞光<span class="brand-en">SKYGLOW</span></span>
+      <span class="brand-copy">
+        <span class="brand-text">霞光<span class="brand-en">SKYGLOW</span></span>
+        <span class="brand-sub">Enhanced Edition · Skyglow移植增强版</span>
+      </span>
     </a>
     <nav class="nav">
       <a href="#forecast" class="active">预报</a>
@@ -452,7 +455,10 @@
   </section>
 
   <footer class="foot">
-    <div>霞光 Skyglow · 火烧云概率预报（改进自第三方项目）</div>
+    <div>Skyglow Enhanced Edition · Skyglow移植增强版 · 火烧云概率预报（基于第三方项目移植增强）
+      <div class="fine">Python 服务端沿用上游实现；原作者：<strong>couletian</strong> · 上游：<a href="https://github.com/couletian/Skyglow" target="_blank" rel="noopener">couletian/Skyglow</a> · 本仓库：<a href="https://github.com/lyuzixi/sunglow" target="_blank" rel="noopener">lyuzixi/sunglow</a><br>
+        本版本是基于上游的移植增强独立版本，不是 Sunglow V3，也不是 V2 的下一代。上游未附 LICENSE，版权归原作者所有并保留；本目录不主张上游代码的版权，引用或再分发前请先联系原作者确认。</div>
+    </div>
     <div id="footMeta">数据：ERA5 / CAMS / Open-Meteo · 标签：sunsetbot 再分析记录</div>
   </footer>
 </main>

@@ -4,8 +4,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>霞光预报 sunglow · Code Wiki</title>
-<meta name="description" content="霞光预报（sunglow）仓库 Code Wiki：V1 / v2 两套自研工程与第三方 Skyglow 改进版的架构、模块职责、关键类与函数、依赖关系、运行方式，以及对该项目的理解与改进清单。">
+<title>SUNGLOW 霞光预报 · Code Wiki</title>
+<meta name="description" content="SUNGLOW 霞光预报仓库 Code Wiki：Sunglow Spectrum Edition（V2）/ Sunglow Classic Edition（V1）两套自研工程与 Skyglow Enhanced Edition（Skyglow）的架构、模块职责、关键类与函数、依赖关系、运行方式，以及对该项目的理解与改进清单。">
 <style>
 :root{
   --bg:#070b14; --bg2:#0c1322; --bg3:rgba(255,255,255,.035); --bg4:rgba(255,255,255,.06);
@@ -250,8 +250,8 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
 <div class="shell">
   <aside class="sidebar" id="sidebar">
     <div class="brand">
-      <div class="t">霞光预报 <em>sunglow</em></div>
-      <div class="s">Code Wiki · V1 / v2 / Skyglow 全深度</div>
+      <div class="t">SUNGLOW <em>霞光预报</em></div>
+      <div class="s">Code Wiki · V2 / V1 / Skyglow 三版本全深度</div>
     </div>
     <div class="spectrum"></div>
     <div class="searchbox">
@@ -264,16 +264,16 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
       <a href="#panorama">02 · 项目全景</a>
       <a href="#architecture">03 · 架构总览</a>
       <div class="grp">工程详解</div>
-      <a href="#v1">04 · V1 工程</a>
+      <a href="#v1">04 · Sunglow Classic Edition 工程</a>
       <a href="#v1-build" class="sub">构建链与脚本块</a>
       <a href="#v1-modules" class="sub">模块与关键函数</a>
       <a href="#v1-map" class="sub">地图模块与代理</a>
       <a href="#v1-check" class="sub">回归套件</a>
-      <a href="#v2">05 · v2 工程</a>
+      <a href="#v2">05 · Sunglow Spectrum Edition 工程</a>
       <a href="#v2-build" class="sub">构建与发布链</a>
       <a href="#v2-core" class="sub">core 模块与函数</a>
       <a href="#v2-ui" class="sub">组件与状态</a>
-      <a href="#skyglow">06 · Skyglow 改进版</a>
+      <a href="#skyglow">06 · Skyglow Enhanced Edition</a>
       <a href="#sg-api" class="sub">HTTP 路由</a>
       <a href="#sg-core" class="sub">core 模块与函数</a>
       <a href="#sg-web" class="sub">前端与 tools</a>
@@ -289,7 +289,7 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
     </nav>
     <div class="sidefoot">
       依据：仓库当前工作区源码逐行核对（2026-10-26）<br>
-      覆盖：V1 / v2 / Skyglow（第三方改进）
+      覆盖：Sunglow Spectrum Edition（V2）/ Classic Edition（V1）/ Skyglow Enhanced Edition（Skyglow）
     </div>
   </aside>
 
@@ -298,11 +298,13 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
 
   <header class="hero">
     <span class="kicker">CODE WIKI · 生成于 2026-10-26 · 修订于 2026-10-27</span>
-    <h1>霞光预报 <span class="g">sunglow</span><br>工程代码地图</h1>
+    <h1>SUNGLOW <span class="g">霞光预报</span><br>工程代码地图</h1>
     <p class="lede">
       一个「预测朝霞 / 晚霞（火烧云）出现概率与观赏质量」的气象可视化产品家族。
-      仓库里并存<b>两套自研工程</b>：V1（单文件拼装，算法权威）、v2（Vue 主线，交付落仓库根），
-      以及<b>第三方改进版</b> Skyglow（上游 Python 服务端 + 本仓库的单文件 JS 移植增强）。
+      仓库里并存<b>两套自研工程</b>：Sunglow Classic Edition（内部标识 V1，单文件拼装，算法权威）、
+      Sunglow Spectrum Edition（内部标识 V2，当前主线，交付落仓库根），
+      以及 <b>Skyglow Enhanced Edition</b>（内部标识 Skyglow：基于第三方 couletian/Skyglow 的独立移植增强版本，
+      上游 Python 服务端 + 本仓库的单文件 JS 移植增强；不是 V3，也不是 V2 的下一代）。
       本文档把三套工程的<b>架构、模块职责、关键类与函数、依赖关系、运行方式</b>整理成一张可检索的地图，
       并在末尾给出对该项目的理解与可执行的改进清单。
     </p>
@@ -316,22 +318,22 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
     <div class="statgrid">
       <div class="stat">
         <div class="n">7 + 1</div>
-        <div class="l">V1 业务片段 + 模板</div>
+        <div class="l">Sunglow Classic Edition（V1）业务片段 + 模板</div>
         <div class="d">≈ 9.3k 行 JS 拼装为一份 index.html</div>
       </div>
       <div class="stat">
         <div class="n">31 / 19</div>
-        <div class="l">v2 core 模块 / Vue 组件</div>
+        <div class="l">Sunglow Spectrum Edition（V2）core 模块 / Vue 组件</div>
         <div class="d">构建链三级：vite → 单文件 → 发布落根</div>
       </div>
       <div class="stat">
         <div class="n">13 / 20</div>
-        <div class="l">Skyglow core 模块 / tools 脚本</div>
+        <div class="l">Skyglow Enhanced Edition core 模块 / tools 脚本</div>
         <div class="d">运行时零第三方依赖，可选依赖优雅降级</div>
       </div>
       <div class="stat">
         <div class="n">26</div>
-        <div class="l">V1 回归探针（+3 观测项）</div>
+        <div class="l">Sunglow Classic Edition（V1）回归探针（+3 观测项）</div>
         <div class="d">事实库 .facts.json 记断言数与源码指纹</div>
       </div>
     </div>
@@ -342,7 +344,7 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
     <h2><span class="num">01</span>速览与导读<span class="caret">▾</span></h2>
     <div class="sec-body">
       <p class="sub">先给结论：这个仓库真正的资产是<mark class="key">算法口径 + 回归套件 + 文档纪律</mark>，UI 是可替换的表层。
-        V1 与 v2 共用同一套判据（GFS / ECMWF / 光追三路 + 加权几何平均）；Skyglow 源自第三方项目，在服务端实现同一物理思路并加了标定层与神经网络，代码互不共享。</p>
+        Sunglow Classic Edition（V1）与 Sunglow Spectrum Edition（V2）共用同一套判据（GFS / ECMWF / 光追三路 + 加权几何平均）；Skyglow Enhanced Edition（Skyglow）源自第三方项目，在服务端实现同一物理思路并加了标定层与神经网络，代码互不共享。</p>
 
       <h3 id="tl-dr">一页速览（TL;DR）</h3>
       <div class="table-wrap">
@@ -351,12 +353,12 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
           <tbody>
             <tr>
               <td>要改算法看哪</td>
-              <td>V1 的 <code>_p3.js</code>/<code>_p4.js</code>（权威口径）；v2 的 <span class="ref">v2/src/core/physics.ts</span>、<span class="ref">v2/src/core/scoring.ts</span>；服务端看 <span class="ref">Skyglow/core/model.py</span></td>
+              <td>Sunglow Classic Edition（V1）的 <code>_p3.js</code>/<code>_p4.js</code>（权威口径）；Sunglow Spectrum Edition（V2）的 <span class="ref">v2/src/core/physics.ts</span>、<span class="ref">v2/src/core/scoring.ts</span>；服务端看 <span class="ref">Skyglow/core/model.py</span></td>
               <td>§4.2 / §5.3 / §6.3</td>
             </tr>
             <tr>
               <td>要改界面看哪</td>
-              <td>v2（主线）：<span class="ref">v2/src/components/</span> 19 个组件 + <span class="ref">v2/src/styles/tokens.css</span> 双主题令牌</td>
+              <td>Sunglow Spectrum Edition（V2）：<span class="ref">v2/src/components/</span> 19 个组件 + <span class="ref">v2/src/styles/tokens.css</span> 双主题令牌</td>
               <td>§5.4</td>
             </tr>
             <tr>
@@ -366,12 +368,12 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
             </tr>
             <tr>
               <td>怎么本地跑</td>
-              <td>v2：<code>cd v2 &amp;&amp; npm install &amp;&amp; npm run dev</code>；V1：<code>cd V1 &amp;&amp; python assemble.py</code>；Skyglow：<code>setup.bat</code> → <code>run.bat</code></td>
+              <td>Sunglow Spectrum Edition（V2）：<code>cd v2 &amp;&amp; npm install &amp;&amp; npm run dev</code>；Sunglow Classic Edition（V1）：<code>cd V1 &amp;&amp; python assemble.py</code>；Skyglow Enhanced Edition（Skyglow）：<code>setup.bat</code> → <code>run.bat</code></td>
               <td>§9.1</td>
             </tr>
             <tr>
               <td>最该先修什么</td>
-              <td>Skyglow 静态文件路径解析加固、全国地图串行耗时、<code>npm run probe</code> 指向缺失脚本、跨工程常量漂移门禁</td>
+              <td>Skyglow Enhanced Edition 静态文件路径解析加固、全国地图串行耗时、<code>npm run probe</code> 指向缺失脚本、跨工程常量漂移门禁</td>
               <td>§11 / §12</td>
             </tr>
           </tbody>
@@ -392,7 +394,7 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
 
       <div class="callout">
         <span class="tt">覆盖边界</span>
-        本文写 V1、v2 两套自研工程，以及第三方 Skyglow 的改进版（上游 Python 服务端 + 本仓库的移植增强单文件版）。
+        本文写 Sunglow Spectrum Edition（V2）与 Sunglow Classic Edition（V1）两套自研工程，以及 Skyglow Enhanced Edition（内部标识 Skyglow，基于第三方项目的移植增强独立版本；上游 Python 服务端 + 本仓库的移植增强单文件版）。
         仓库内既有的两份方案文档（<span class="ref">项目架构与技术实现方案.md</span>、<span class="ref">Skyglow-项目架构与技术实现方案.md</span>）
         是本文的重要交叉来源，本文在其基础上补齐了 Skyglow 的 core/tools 细节与三套工程的运行方式，并加入了我自己的判读与改进清单。
       </div>
@@ -406,7 +408,38 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
       <p class="sub">一句话定位：把「今天傍晚会不会烧」这件模糊判断，拆成可解释的概率、质量分、等级与逐项因素，
         再用地图与趋势回答「去哪拍、哪晚去」。</p>
 
-      <h3 id="product">2.1 产品能力清单</h3>
+      <h3 id="naming">2.1 版本命名对照</h3>
+      <p>项目品牌统一为 <b>SUNGLOW</b>。三个版本对外使用正式名，<code>V2</code> / <code>V1</code> / <code>Skyglow</code> 仅作内部标识、目录名与技术引用；不再使用并列别名，也不加 Pro / Max / Ultimate 等后缀。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>英文正式名</th><th>中文名</th><th>内部标识</th><th>目录</th><th>定位</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><b>Sunglow Spectrum Edition</b></td>
+              <td>光谱观测版</td>
+              <td><code>V2</code></td>
+              <td><span class="ref">v2/</span></td>
+              <td><b>当前主线</b>：Vue 3 + Vite 工程，视觉重做，交付落仓库根</td>
+            </tr>
+            <tr>
+              <td><b>Sunglow Classic Edition</b></td>
+              <td>经典原版</td>
+              <td><code>V1</code></td>
+              <td><span class="ref">V1/</span></td>
+              <td><b>历史经典版本</b>：单文件拼装，算法权威与回归基准，已冻结为只读基准</td>
+            </tr>
+            <tr>
+              <td><b>Skyglow Enhanced Edition</b></td>
+              <td>Skyglow移植增强版</td>
+              <td><code>Skyglow</code></td>
+              <td><span class="ref">Skyglow/</span></td>
+              <td><b>独立移植增强版本</b>：基于第三方 <span class="ref">couletian/Skyglow</span> 的移植增强；不是 V3，也不是 V2 的下一代</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="product">2.2 产品能力清单</h3>
       <div class="table-wrap">
         <table>
           <thead><tr><th>能力</th><th>内容</th><th>实现位置</th></tr></thead>
@@ -424,31 +457,31 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
         </table>
       </div>
 
-      <h3 id="three-projects">2.2 三套工程格局（一图看懂）</h3>
+      <h3 id="three-projects">2.3 三套工程格局（一图看懂）</h3>
       <div class="table-wrap">
         <table>
           <thead><tr><th>工程</th><th>形态</th><th>构建链</th><th>交付产物</th><th>定位</th></tr></thead>
           <tbody>
             <tr>
-              <td><b>V1</b> <span class="ref">V1/</span></td>
+              <td><b>Sunglow Classic Edition（V1）</b> <span class="ref">V1/</span></td>
               <td>纯前端、零依赖、IIFE + 全局函数</td>
               <td><code>python assemble.py</code> 拼装单文件</td>
               <td><code>V1/index.html</code>（804 KB）+ <code>404.html</code>（33 KB）</td>
-              <td>功能全集、<strong>算法权威</strong>；2026-10-25 整体封存进 <code>V1/</code></td>
+              <td><b>历史经典版本</b>：功能全集、<strong>算法权威</strong>；2026-10-25 整体封存进 <code>V1/</code>，冻结为只读基准</td>
             </tr>
             <tr>
-              <td><b>v2</b> <span class="ref">v2/</span></td>
+              <td><b>Sunglow Spectrum Edition（V2）</b> <span class="ref">v2/</span></td>
               <td>Vue 3.5 + Vite 6 + TS 5.7（hash 路由）</td>
               <td><code>vite build</code> → <code>emit-single.mjs</code> → <code>publish-root.mjs</code></td>
               <td><strong>仓库根 9 个文件</strong>（index/404/tutorial/sw/manifest/图标×4）</td>
-              <td><strong>项目主线</strong>：视觉重做，算法口径与 V1 逐点对齐</td>
+              <td><strong>当前主线</strong>：视觉重做，算法口径与 Sunglow Classic Edition（V1）逐点对齐</td>
             </tr>
             <tr>
-              <td><b>Skyglow</b>（改进版） <span class="ref">Skyglow/</span></td>
+              <td><b>Skyglow Enhanced Edition（Skyglow）</b> <span class="ref">Skyglow/</span></td>
               <td>上游 Python 标准库 HTTP 服务 + 原生 JS/Canvas 前端；<code>index.html</code> 为单文件移植产物</td>
               <td>无（解释器直接跑）/ <code>tools/build_single.py</code> 打包单文件</td>
               <td>本地 / 自托管 Web 服务</td>
-              <td>上游服务端定量版 + 本仓库移植增强：ERA5 / CAMS / GRIB2 直连、全国地图、<strong>标定层 + 神经网络</strong></td>
+              <td><b>独立移植增强版本</b>（非 V3、非 V2 下一代）：上游服务端定量版 + 本仓库移植增强：ERA5 / CAMS / GRIB2 直连、全国地图、<strong>标定层 + 神经网络</strong></td>
             </tr>
           </tbody>
         </table>
@@ -456,23 +489,23 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
 
       <div class="callout warm">
         <span class="tt">隔离是怎么做到的</span>
-        前端靠 <b>localStorage 键命名空间</b>互不读写：V1 用 <code>sunsetbot.*</code>，
-        v2 用 <code>SUNGLOW.v2.*</code>；
-        Skyglow 的状态在服务端 <code>data/</code> 目录（文件缓存），前端只持有会话内的 state。
+        前端靠 <b>localStorage 键命名空间</b>互不读写：Sunglow Classic Edition（V1）用 <code>sunsetbot.*</code>，
+        Sunglow Spectrum Edition（V2）用 <code>SUNGLOW.v2.*</code>；
+        Skyglow Enhanced Edition 的状态在服务端 <code>data/</code> 目录（文件缓存），前端只持有会话内的 state。
         这条纪律的直接好处：同一浏览器里同时开着三套，任何一套的偏好、缓存、校准都不会串味。
       </div>
 
-      <h3 id="timeline">2.3 演进时间线（据仓库文档与产物时间戳）</h3>
+      <h3 id="timeline">2.4 演进时间线（据仓库文档与产物时间戳）</h3>
       <div class="tl">
-        <div class="it"><div class="d">2026-10-17 ~ 10-18</div><div class="x"><b>V1 地图改进</b>：局部 500 km 网格替代固定 152 城市、云量淡纹、等值线屏幕空间矢量、羽化边缘。<span class="ref">V1/_p6.js:153</span></div></div>
+        <div class="it"><div class="d">2026-10-17 ~ 10-18</div><div class="x"><b>Sunglow Classic Edition（V1）地图改进</b>：局部 500 km 网格替代固定 152 城市、云量淡纹、等值线屏幕空间矢量、羽化边缘。<span class="ref">V1/_p6.js:153</span></div></div>
         <div class="it"><div class="d">2026-10-20</div><div class="x"><b>回归基线</b>：<code>.facts.json</code> 记录 17 个探针合计 <b>557 条断言、0 失败</b><sup><a href="#cite-4">[4]</a></sup>（据《项目架构与技术实现方案》§8）。</div></div>
-        <div class="it"><div class="d">2026-10-21</div><div class="x"><b>git HEAD = 8900cf9</b>：v2 之后有大量未提交改动（本文无法在本机核验 git，引用既有文档结论）。</div></div>
-        <div class="it"><div class="d">2026-10-22 ~ 10-23</div><div class="x"><b>v2 色面二次返工</b>：全光谱 <code>GLOW_ANCHORS</code>、自适应核 Shepard、距离淡出、可信度降饱和；教训是「深蓝 + 中 alpha = 脏紫滤镜」。</div></div>
-        <div class="it"><div class="d">2026-10-25</div><div class="x"><b>仓库重整</b>：V1（原版）整体迁入 <code>V1/</code>，v2 明确为项目主线。</div></div>
-        <div class="it"><div class="d">2026-10-26</div><div class="x"><b>交付物落根</b>：v2 构建链新增 <code>publish-root</code>，9 个交付文件带 sha256 校验发布到仓库根，根路径即 GitHub Pages 入口。</div></div>
+        <div class="it"><div class="d">2026-10-21</div><div class="x"><b>git HEAD = 8900cf9</b>：Sunglow Spectrum Edition（V2）之后有大量未提交改动（本文无法在本机核验 git，引用既有文档结论）。</div></div>
+        <div class="it"><div class="d">2026-10-22 ~ 10-23</div><div class="x"><b>Sunglow Spectrum Edition（V2）色面二次返工</b>：全光谱 <code>GLOW_ANCHORS</code>、自适应核 Shepard、距离淡出、可信度降饱和；教训是「深蓝 + 中 alpha = 脏紫滤镜」。</div></div>
+        <div class="it"><div class="d">2026-10-25</div><div class="x"><b>仓库重整</b>：Sunglow Classic Edition（V1）整体迁入 <code>V1/</code>，Sunglow Spectrum Edition（V2）明确为当前主线。</div></div>
+        <div class="it"><div class="d">2026-10-26</div><div class="x"><b>交付物落根</b>：Sunglow Spectrum Edition（V2）构建链新增 <code>publish-root</code>，9 个交付文件带 sha256 校验发布到仓库根，根路径即 GitHub Pages 入口。</div></div>
       </div>
 
-      <h3 id="constraints">2.4 贯穿全项目的四条硬约束</h3>
+      <h3 id="constraints">2.5 贯穿全项目的四条硬约束</h3>
       <div class="kv">
         <div class="i"><span class="k">约束 ①</span><b>单文件自包含</b>是第一约束：图标内联 data-URI、不做 <code>og:image</code>；PWA 由静态伴侣提供（sw.js / manifest / 图标随发布落根，SW 只在 http(s) 下注册）。</div>
         <div class="i"><span class="k">约束 ②</span><b>额度纪律</b>：取数必须显式触发；缓存命中是唯一例外；429 分「日额度耗尽」与「短时限流」两类分别给处置建议。</div>
@@ -521,25 +554,25 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
           <div class="layer">
             <div class="ln">应用层<br>APP</div>
             <div class="lc">
-              <div class="card"><b>V1</b>单文件 IIFE：State + 渲染 + 腾讯地图模块（7 片段拼装）</div>
-              <div class="card"><b>v2</b>Vue SPA：core 算法层 31 模块 + 19 组件 + 2 视图 + hash 路由</div>
-              <div class="card"><b>Skyglow</b>标准库 HTTP 服务（12 个 JSON API）+ 原生 JS 前端 3 文件</div>
+              <div class="card"><b>Sunglow Classic Edition（V1）</b>单文件 IIFE：State + 渲染 + 腾讯地图模块（7 片段拼装）</div>
+              <div class="card"><b>Sunglow Spectrum Edition（V2）</b>Vue SPA：core 算法层 31 模块 + 19 组件 + 2 视图 + hash 路由</div>
+              <div class="card"><b>Skyglow Enhanced Edition（Skyglow）</b>标准库 HTTP 服务（12 个 JSON API）+ 原生 JS 前端 3 文件</div>
             </div>
           </div>
           <div class="layer">
             <div class="ln">交付层<br>DELIVERY</div>
             <div class="lc">
               <div class="card"><b>根目录（线上）</b><code>index.html</code> 单文件 + 404 / 教程 / PWA 四件套</div>
-              <div class="card"><b>V1/</b>独立单文件产物，可单独部署或经子路径访问</div>
-              <div class="card"><b>Skyglow/</b>自托管服务，容器环境变量 <code>PORT</code> 适配</div>
+              <div class="card"><b>V1/</b>Sunglow Classic Edition 独立单文件产物，可单独部署或经子路径访问</div>
+              <div class="card"><b>Skyglow/</b>Skyglow Enhanced Edition 自托管服务，容器环境变量 <code>PORT</code> 适配</div>
             </div>
           </div>
           <div class="layer">
             <div class="ln">观测层<br>GUARD</div>
             <div class="lc">
-              <div class="card"><b>V1 回归套件</b>26 探针 + <code>.facts.json</code> 事实库 + <code>docfacts</code> 文档一致性</div>
-              <div class="card"><b>v2 探针</b>probe-ui / probe-tz / probe-consist + <code>tz.test.ts</code></div>
-              <div class="card"><b>Skyglow 工具</b>check_direct / measure_accuracy / verify_* 系列实测脚本</div>
+              <div class="card"><b>Sunglow Classic Edition（V1）回归套件</b>26 探针 + <code>.facts.json</code> 事实库 + <code>docfacts</code> 文档一致性</div>
+              <div class="card"><b>Sunglow Spectrum Edition（V2）探针</b>probe-ui / probe-tz / probe-consist + <code>tz.test.ts</code></div>
+              <div class="card"><b>Skyglow Enhanced Edition 工具</b>check_direct / measure_accuracy / verify_* 系列实测脚本</div>
             </div>
           </div>
         </div>
@@ -548,7 +581,7 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
 
       <h3 id="main-flows">3.2 三条主链路</h3>
 
-      <h4>链路 A · V1 单点预报（前端自算）</h4>
+      <h4>链路 A · Sunglow Classic Edition（V1）单点预报（前端自算）</h4>
       <figure class="diagram">
         <div class="flow">
           <div class="fnode"><div class="h">readUrl()</div><div class="b">坐标 / 地名 / 日期 / 时段 / lang / snap 解析</div></div>
@@ -563,10 +596,10 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
           <div class="arrows">→</div>
           <div class="fnode"><div class="h">renderAll()</div><div class="b">结论卡 / 因素表 / 光追曲线 / 分享卡</div></div>
         </div>
-        <figcaption>图 3-2 V1 单点链路：<span class="ref">V1/_p5.js:1058</span> → <span class="ref">V1/_p5.js:1130</span> → <span class="ref">V1/_p5b.js:46</span>。</figcaption>
+        <figcaption>图 3-2 Sunglow Classic Edition 单点链路：<span class="ref">V1/_p5.js:1058</span> → <span class="ref">V1/_p5.js:1130</span> → <span class="ref">V1/_p5b.js:46</span>。</figcaption>
       </figure>
 
-      <h4>链路 B · v2 构建与发布（源码 → 线上单文件）</h4>
+      <h4>链路 B · Sunglow Spectrum Edition（V2）构建与发布（源码 → 线上单文件）</h4>
       <figure class="diagram">
         <div class="flow">
           <div class="fnode"><div class="h">src/**</div><div class="b">Vue 组件 + core TS 算法层 + tokens.css</div></div>
@@ -581,10 +614,10 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
           <div class="arrows">→</div>
           <div class="fnode ok"><div class="h">GitHub Pages 根</div><div class="b">根 index.html 即线上入口</div></div>
         </div>
-        <figcaption>图 3-3 v2 交付链：<span class="ref">v2/package.json:9</span>；失败即 <code>exit 1</code>，不接受「半套交付」。</figcaption>
+        <figcaption>图 3-3 Sunglow Spectrum Edition 交付链：<span class="ref">v2/package.json:9</span>；失败即 <code>exit 1</code>，不接受「半套交付」。</figcaption>
       </figure>
 
-      <h4>链路 C · Skyglow 服务端预报</h4>
+      <h4>链路 C · Skyglow Enhanced Edition 服务端预报</h4>
       <figure class="diagram">
         <div class="flow">
           <div class="fnode"><div class="h">web/app.js</div><div class="b">用户点「开始预测」才取数（额度纪律）</div></div>
@@ -599,7 +632,7 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
           <div class="arrows">→</div>
           <div class="fnode"><div class="h">store.put</div><div class="b">按日期远近分层 TTL 落盘</div></div>
         </div>
-        <figcaption>图 3-4 Skyglow 链路：<span class="ref">Skyglow/core/service.py:243</span>；辅助源 WeatherAPI / 和风天气只做校验与缺测补位。</figcaption>
+        <figcaption>图 3-4 Skyglow Enhanced Edition 链路：<span class="ref">Skyglow/core/service.py:243</span>；辅助源 WeatherAPI / 和风天气只做校验与缺测补位。</figcaption>
       </figure>
 
       <h3 id="data-sources">3.3 数据源与额度口径</h3>
@@ -621,33 +654,33 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
       <h3 id="cross-deps">3.4 跨工程依赖关系（单向、无环）</h3>
       <figure class="diagram">
         <div class="flow">
-          <div class="fnode acc2"><div class="h">V1/（封存）</div><div class="b">算法权威 + 回归套件；产物独立部署</div></div>
+          <div class="fnode acc2"><div class="h">Sunglow Classic Edition（V1，封存）</div><div class="b">算法权威 + 回归套件；产物独立部署</div></div>
           <div class="arrows">冻结副本 →</div>
-          <div class="fnode acc"><div class="h">v2/</div><div class="b">vendor/src-verbatim 作 diff 基线；发布 7 文件到仓库根</div></div>
+          <div class="fnode acc"><div class="h">Sunglow Spectrum Edition（V2）</div><div class="b">vendor/src-verbatim 作 diff 基线；发布 7 文件到仓库根</div></div>
           <div class="arrows">→</div>
-          <div class="fnode ok"><div class="h">仓库根产物</div><div class="b">线上入口；根 404/tutorial/sw/manifest/图标由 v2 提供</div></div>
+          <div class="fnode ok"><div class="h">仓库根产物</div><div class="b">线上入口；根 404/tutorial/sw/manifest/图标由 Sunglow Spectrum Edition（V2）提供</div></div>
           <div class="arrows">独立</div>
-          <div class="fnode"><div class="h">Skyglow/</div><div class="b">第三方改进：上游 <code>core/</code> + 本仓库 <code>js/</code> 移植与 <code>tools/</code>；不与前端共享代码</div></div>
+          <div class="fnode"><div class="h">Skyglow Enhanced Edition（Skyglow）</div><div class="b">第三方移植增强：上游 <code>core/</code> + 本仓库 <code>js/</code> 移植与 <code>tools/</code>；不与前端共享代码</div></div>
         </div>
-        <figcaption>图 3-5 依赖方向：V1 → v2 是<b>单向参考</b>（冻结副本，不参与构建）；Skyglow 源自第三方项目，与两套自研前端完全解耦；三者的判据都参考 sunsetbot，但代码互不共享。</figcaption>
+        <figcaption>图 3-5 依赖方向：Sunglow Classic Edition（V1）→ Sunglow Spectrum Edition（V2）是<b>单向参考</b>（冻结副本，不参与构建）；Skyglow Enhanced Edition 源自第三方项目，与两套自研前端完全解耦；三者的判据都参考 sunsetbot，但代码互不共享。</figcaption>
       </figure>
 
       <div class="callout">
         <span class="tt">一个容易被忽略的结构事实</span>
         根目录里的 <code>404.html</code> / <code>tutorial.html</code> / <code>sw.js</code> / <code>manifest.webmanifest</code> / 四个图标
         <b>不是</b>手写文件，而是 <span class="ref">v2/scripts/publish-root.mjs:23-31</span> 定义的交付文件全集的一部分。
-        也就是说：改这几个文件的正确姿势是改 v2 下的同名文件，然后跑 <code>npm run build</code> 让它们重新发布。
+        也就是说：改这几个文件的正确姿势是改 Sunglow Spectrum Edition（V2）下的同名文件，然后跑 <code>npm run build</code> 让它们重新发布。
       </div>
     </div>
   </section>
 
   <!-- ============================== 04 ============================== -->
   <section class="sec" id="v1">
-    <h2><span class="num">04</span>V1 工程：单文件拼装的算法权威<span class="caret">▾</span></h2>
+    <h2><span class="num">04</span>Sunglow Classic Edition（V1）工程：单文件拼装的算法权威<span class="caret">▾</span></h2>
     <div class="sec-body">
-      <p class="sub">V1 是「原版 + 功能全集 + 算法权威」。它没有框架、没有打包器、没有运行时依赖，
+      <p class="sub">Sunglow Classic Edition 是<b>历史经典版本</b>，也是「功能全集 + 算法权威」。它没有框架、没有打包器、没有运行时依赖，
         9 千多行 JS 被拆成 7 个片段，由 <span class="ref">V1/assemble.py</span> 用一个模板拼成一份 HTML。
-        读懂 V1，等于读懂了另外两套前端的判据来源。</p>
+        读懂它，等于读懂了另外两套前端的判据来源。</p>
 
       <div class="kv">
         <div class="i"><span class="k">源码规模</span>_pi18n 1214 · _p2 339 · _p3 239 · _p4 547 · _p5 2037 · _p5b 938 · _p6 3958 行</div>
@@ -671,7 +704,7 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
           <div class="arrows">+</div>
           <div class="fnode"><div class="h">404.html</div><div class="b">共用令牌，站点根绝对地址由 SITE_BASE 注入</div></div>
         </div>
-        <figcaption>图 4-1 V1 构建链：<span class="ref">V1/assemble.py:63</span> 定义 PARTS，<span class="ref">V1/assemble.py:194-276</span> 执行拼装与校验。</figcaption>
+        <figcaption>图 4-1 Sunglow Classic Edition 构建链：<span class="ref">V1/assemble.py:63</span> 定义 PARTS，<span class="ref">V1/assemble.py:194-276</span> 执行拼装与校验。</figcaption>
       </figure>
 
       <h4>4.1.1 四个脚本块是不变量</h4>
@@ -854,7 +887,7 @@ PWA=1 SITE_BASE=sunglow python assemble.py  <span class="c"># 可选 PWA 四件�
           <div class="arrows">→</div>
           <div class="fnode"><div class="h">叠加层</div><div class="b">等值线 / 经纬网 / 可信度纱 / 云纹 / 图钉 / 悬停卡 / 排行榜</div></div>
         </div>
-        <figcaption>图 4-2 V1 地图管线：常量见 <span class="ref">V1/_p6.js:99-100</span>（半径/间距）、<span class="ref">V1/_p6.js:140</span>（栅格）、<span class="ref">V1/_p6.js:230</span>（7 档）；主函数 <span class="ref">V1/_p6.js:3094</span> / <span class="ref">3475</span>。</figcaption>
+        <figcaption>图 4-2 Sunglow Classic Edition 地图管线：常量见 <span class="ref">V1/_p6.js:99-100</span>（半径/间距）、<span class="ref">V1/_p6.js:140</span>（栅格）、<span class="ref">V1/_p6.js:230</span>（7 档）；主函数 <span class="ref">V1/_p6.js:3094</span> / <span class="ref">3475</span>。</figcaption>
       </figure>
 
       <div class="table-wrap">
@@ -963,16 +996,16 @@ PWA=1 SITE_BASE=sunglow python assemble.py  <span class="c"># 可选 PWA 四件�
         </table>
       </div>
 
-      <h3 id="v1-debt">4.8 V1 的风险与技术债</h3>
+      <h3 id="v1-debt">4.8 Sunglow Classic Edition（V1）的风险与技术债</h3>
       <div class="table-wrap">
         <table>
           <thead><tr><th>级别</th><th>问题</th><th>位置</th><th>影响</th></tr></thead>
           <tbody>
             <tr><td><span class="badge b-p1">P1</span></td><td>单文件全局作用域：7 个片段互相依赖顶层符号，靠 4 块不变量与 globals 探针兜底</td><td><span class="ref">V1/assemble.py:63</span> · <span class="ref">V1/_check/globals.js</span></td><td>新增全局名可能静默覆盖；重构自由度低</td></tr>
             <tr><td><span class="badge b-p1">P1</span></td><td><code>_p6.js</code> 近 4000 行同时承载地图渲染、地图缓存、单点缓存三个职责</td><td><span class="ref">V1/_p6.js:1492-1607</span> · <span class="ref">V1/_p6.js:3094</span></td><td>改地图容易误伤缓存；阅读成本高</td></tr>
-            <tr><td><span class="badge b-p1">P1</span></td><td>V1 已封存但仍是算法权威，v2 靠冻结副本手工 diff，缺自动门禁</td><td><span class="ref">v2/vendor/src-verbatim/</span></td><td>V1 改动不会自动传导到 v2；口径漂移只能靠人发现</td></tr>
+            <tr><td><span class="badge b-p1">P1</span></td><td>Sunglow Classic Edition（V1）已封存但仍是算法权威，Sunglow Spectrum Edition（V2）靠冻结副本手工 diff，缺自动门禁</td><td><span class="ref">v2/vendor/src-verbatim/</span></td><td>V1 改动不会自动传导到 V2；口径漂移只能靠人发现</td></tr>
             <tr><td><span class="badge b-p2">P2</span></td><td>文档行数/大小与当前源码有漂移（既有总览写 _p6 4066 行，实测 3958 行）</td><td><span class="ref">项目架构与技术实现方案.md</span></td><td>docfacts 可覆盖常量，但不覆盖所有叙述性数字</td></tr>
-            <tr><td><span class="badge b-p2">P2</span></td><td>纯静态部署时地图完全不可用，用户看到的是一段说明</td><td><span class="ref">V1/README.md §2.1</span></td><td>产品体验分裂；缓解方式是代理或改用 v2 的地图实现</td></tr>
+            <tr><td><span class="badge b-p2">P2</span></td><td>纯静态部署时地图完全不可用，用户看到的是一段说明</td><td><span class="ref">V1/README.md §2.1</span></td><td>产品体验分裂；缓解方式是代理或改用 Sunglow Spectrum Edition（V2）的地图实现</td></tr>
             <tr><td><span class="badge b-p2">P2</span></td><td>回归套件依赖固定 Node 路径与浏览器/CDP，CI 化成本高</td><td><span class="ref">V1/_check/all.py:48</span></td><td>本地可跑，但缺一条无人值守的流水线</td></tr>
           </tbody>
         </table>
@@ -982,9 +1015,9 @@ PWA=1 SITE_BASE=sunglow python assemble.py  <span class="c"># 可选 PWA 四件�
 
   <!-- ============================== 05 ============================== -->
   <section class="sec" id="v2">
-    <h2><span class="num">05</span>v2 工程：Vue 主线与「大气光谱观测站」<span class="caret">▾</span></h2>
+    <h2><span class="num">05</span>Sunglow Spectrum Edition（V2）工程：Vue 与「大气光谱观测站」<span class="caret">▾</span></h2>
     <div class="sec-body">
-      <p class="sub">v2 是当前项目主线。它把 V1 的算法层逐函数移植到 TypeScript，重做了整套视觉，
+      <p class="sub">Sunglow Spectrum Edition 是当前项目主线。它把 Sunglow Classic Edition（V1）的算法层逐函数移植到 TypeScript，重做了整套视觉，
         并新增一条「构建 → 单文件 → 发布落根」的交付链。仓库根的 <code>index.html</code> 就是它的产物。</p>
 
       <div class="kv">
@@ -1117,17 +1150,17 @@ PWA=1 SITE_BASE=sunglow python assemble.py  <span class="c"># 可选 PWA 四件�
             <tr>
               <td><a href="v2/src/core/scoring.ts" target="_blank" class="ref">scoring.ts</a></td>
               <td><code>buildEnv</code> (39) · <code>W_STAT</code> (77) · <code>scoreStat</code> (139) · <code>scoreRay</code> (238) · <code>QUALITY_BANDS</code> (327) · <code>ENS_CONF_BANDS</code> (348) · <code>W_ENS</code> (374) · <code>mixedIndex</code> (378)</td>
-              <td>与 V1 逐点对齐的判据；九因子权重与综合权重是口径的一部分</td>
+              <td>与 Sunglow Classic Edition（V1）逐点对齐的判据；九因子权重与综合权重是口径的一部分</td>
             </tr>
             <tr>
               <td><a href="v2/src/core/physics.ts" target="_blank" class="ref">physics.ts</a></td>
               <td><code>rayTraceColor</code> (92) · <code>cloudDecks</code> (204) · <code>analyseTransect</code> (238) · <code>fireGeometry</code> (295) · <code>cloudBlockOf</code> (315) · <code>brightnessLevel</code> (325)</td>
-              <td>物理与色度层；与 V1 <code>_p3.js</code> 对应</td>
+              <td>物理与色度层；与 Sunglow Classic Edition（V1）<code>_p3.js</code> 对应</td>
             </tr>
             <tr>
               <td><a href="v2/src/core/astro.ts" target="_blank" class="ref">astro.ts</a></td>
               <td><code>solarPosition</code> (15) · <code>solarNoonMs</code> (49) · <code>sunEvents</code> (72) · <code>sunAltRate</code> (111) · <code>eventAzimuth</code> (121)</td>
-              <td>天文层；v2 额外做「城市墙钟 → 真实时间戳」的时区对齐</td>
+              <td>天文层；Sunglow Spectrum Edition（V2）额外做「城市墙钟 → 真实时间戳」的时区对齐</td>
             </tr>
             <tr>
               <td><a href="v2/src/core/mapdata.ts" target="_blank" class="ref">mapdata.ts</a></td>
@@ -1152,7 +1185,7 @@ PWA=1 SITE_BASE=sunglow python assemble.py  <span class="c"># 可选 PWA 四件�
             <tr>
               <td><a href="v2/src/core/tz.ts" target="_blank" class="ref">tz.ts</a></td>
               <td><code>cityTz</code> (80) · <code>tzAt</code> (131) · <code>fmtClock</code> (172) · <code>wallIsoToReal</code> (153)</td>
-              <td>v2 新增的时区体系：城市墙钟与真实时间戳分离，避免「异国城市时刻错位」</td>
+              <td>Sunglow Spectrum Edition（V2）新增的时区体系：城市墙钟与真实时间戳分离，避免「异国城市时刻错位」</td>
             </tr>
             <tr>
               <td><a href="v2/src/core/factors.ts" target="_blank" class="ref">factors.ts</a></td>
@@ -1177,7 +1210,7 @@ PWA=1 SITE_BASE=sunglow python assemble.py  <span class="c"># 可选 PWA 四件�
             <tr>
               <td><a href="v2/src/core/snap.ts" target="_blank" class="ref">snap.ts</a></td>
               <td><code>SNAP_VER=1</code> (11) · <code>SNAP_KEYS</code> (16) · <code>SNAP_TYPES</code> (21)</td>
-              <td>与 V1 互通的快照协议；白名单一致</td>
+              <td>与 Sunglow Classic Edition（V1）互通的快照协议；白名单一致</td>
             </tr>
           </tbody>
         </table>
@@ -1226,7 +1259,7 @@ PWA=1 SITE_BASE=sunglow python assemble.py  <span class="c"># 可选 PWA 四件�
           </tbody>
         </table>
       </div>
-      <p style="color:var(--muted);font-size:13.2px">注意：<code>compare.ts</code> 的上限是 4（<code>CMP_MAX=4</code>），而 V1 的对比上限是 5；
+      <p style="color:var(--muted);font-size:13.2px">注意：<code>compare.ts</code> 的上限是 4（<code>CMP_MAX=4</code>），而 Sunglow Classic Edition（V1）的对比上限是 5；
         这类「看起来应该一样」的数字是跨版本阅读时最容易误判的地方，本文在 §7.4 单列了差异登记表。</p>
 
       <h3 id="v2-ui">5.4 组件与视图：19 + 2</h3>
@@ -1245,16 +1278,16 @@ PWA=1 SITE_BASE=sunglow python assemble.py  <span class="c"># 可选 PWA 四件�
       </div>
 
       <h3 id="v2-map">5.5 地图：121 点、自适应核 Shepard、无凸包裁切</h3>
-      <p>v2 地图仍使用腾讯 GL JS 作为底图（<span class="ref">v2/src/components/MapView.vue:37-61</span>），
-        但色面与叠加层全部由自有 canvas 绘制。数据侧与 V1 同构、参数不同：</p>
+      <p>Sunglow Spectrum Edition（V2）地图仍使用腾讯 GL JS 作为底图（<span class="ref">v2/src/components/MapView.vue:37-61</span>），
+        但色面与叠加层全部由自有 canvas 绘制。数据侧与 Sunglow Classic Edition（V1）同构、参数不同：</p>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>项</th><th>V1</th><th>v2</th><th>影响</th></tr></thead>
+          <thead><tr><th>项</th><th>Sunglow Classic Edition（V1）</th><th>Sunglow Spectrum Edition（V2）</th><th>影响</th></tr></thead>
           <tbody>
-            <tr><td>局部网格</td><td>500 km / 120 km → 57 点</td><td>500 km / 80 km → 121 点</td><td>v2 更密、请求更多；采样与渲染解耦</td></tr>
-            <tr><td>色面重建</td><td>IDW + 凸包裁切 + 70 km 羽化</td><td>自适应核 Shepard（第 9 近邻 ×1.06）+ 距离淡出 60→320 km</td><td>v2 无硬边，低值「浅色 + 低 alpha」不归零</td></tr>
+            <tr><td>局部网格</td><td>500 km / 120 km → 57 点</td><td>500 km / 80 km → 121 点</td><td>Spectrum 更密、请求更多；采样与渲染解耦</td></tr>
+            <tr><td>色面重建</td><td>IDW + 凸包裁切 + 70 km 羽化</td><td>自适应核 Shepard（第 9 近邻 ×1.06）+ 距离淡出 60→320 km</td><td>Spectrum 无硬边，低值「浅色 + 低 alpha」不归零</td></tr>
             <tr><td>色阶</td><td><code>HEAT_RAMP</code> 白→黄→橙→红 7 档</td><td><code>GLOW_ANCHORS</code> 11 锚点全光谱 + <code>GLOW_BANDS</code></td><td>视觉语言不同，数值口径相同</td></tr>
-            <tr><td>缓存</td><td>3 h / 4 条单点</td><td>6 h / 5 条地图</td><td>v2 更省请求</td></tr>
+            <tr><td>缓存</td><td>3 h / 4 条单点</td><td>6 h / 5 条地图</td><td>Spectrum 更省请求</td></tr>
           </tbody>
         </table>
       </div>
@@ -1290,13 +1323,13 @@ npm run probe:consist</pre>
       <p>交付：根 <code>index.html</code> 可直接双击，断网可用（JS/CSS/字体内联）。
         PWA 附属文件由仓库提供，<code>emit-single</code> 只负责把 Vite 的哈希名改回稳定名并校验存在性。</p>
 
-      <h3 id="v2-debt">5.8 v2 的风险与技术债</h3>
+      <h3 id="v2-debt">5.8 Sunglow Spectrum Edition（V2）的风险与技术债</h3>
       <div class="table-wrap">
         <table>
           <thead><tr><th>级别</th><th>问题</th><th>位置</th><th>影响</th></tr></thead>
           <tbody>
             <tr><td><span class="badge b-p0">P0</span></td><td><code>npm run probe</code> 指向缺失的 <code>scripts/probe.mjs</code></td><td><span class="ref">v2/package.json:11</span></td><td>质量门一键入口失效，容易被误认为「没有探针」</td></tr>
-            <tr><td><span class="badge b-p1">P1</span></td><td>算法层是 V1 的手工移植，仓库内无自动 diff 门禁；<code>vendor/src-verbatim</code> 只是冻结副本</td><td><span class="ref">v2/vendor/src-verbatim/</span> · §5.2</td><td>V1 改口径后 v2 可能静默漂移</td></tr>
+            <tr><td><span class="badge b-p1">P1</span></td><td>算法层是 Sunglow Classic Edition（V1）的手工移植，仓库内无自动 diff 门禁；<code>vendor/src-verbatim</code> 只是冻结副本</td><td><span class="ref">v2/vendor/src-verbatim/</span> · §5.2</td><td>V1 改口径后 Sunglow Spectrum Edition（V2）可能静默漂移</td></tr>
             <tr><td><span class="badge b-p2">P2</span></td><td><code>api.ts</code> 导出的 <code>TMAP_SERVICE_HOST</code> 未被组件使用，MapView 自己读 <code>import.meta.env.VITE_TMAP_SERVICE_HOST</code></td><td><span class="ref">v2/src/core/api.ts:11</span> · <span class="ref">v2/src/components/MapView.vue:42</span></td><td>死导出；两个配置源并存</td></tr>
             <tr><td><span class="badge b-p2">P2</span></td><td>大块静态数据内联（城市表、i18n 词典、色阶），单文件体积约 0.8 MB</td><td><span class="ref">v2/src/core/citydata.ts</span> · <span class="ref">v2/src/core/i18n-extra.ts</span></td><td>首屏解析成本；单文件约束下无法靠拆包解决</td></tr>
             <tr><td><span class="badge b-p2">P2</span></td><td>发布链依赖人工执行 <code>npm run build</code>，仓库内无 CI 工作流</td><td><span class="ref">v2/scripts/publish-root.mjs</span></td><td>根副本可能与源码不同步；目前靠机制校验而非流水线</td></tr>
@@ -1308,9 +1341,9 @@ npm run probe:consist</pre>
 
   <!-- ============================== 06 ============================== -->
   <section class="sec" id="skyglow">
-    <h2><span class="num">06</span>Skyglow 改进版：上游 Python 服务端 + 单文件移植<span class="caret">▾</span></h2>
+    <h2><span class="num">06</span>Skyglow Enhanced Edition：上游 Python 服务端 + 单文件移植<span class="caret">▾</span></h2>
     <div class="sec-body">
-      <p class="sub"><b>来源</b>：本目录源自第三方项目 <span class="ref">couletian/Skyglow</span>，Python 服务端沿用上游，<code>index.html</code> 由本仓库把上游算法逐行移植为纯 JS 并打包；上游未附 LICENSE，默认版权保留。
+      <p class="sub"><b>来源</b>：<b>Skyglow Enhanced Edition（中文名 Skyglow移植增强版，内部标识 Skyglow）</b>是<b>独立移植增强版本</b>——基于第三方项目 <span class="ref">couletian/Skyglow</span>，不是 V3，也不是 Sunglow Spectrum Edition（V2）的下一代；Python 服务端沿用上游，<code>index.html</code> 由本仓库把上游算法逐行移植为纯 JS 并打包；上游未附 LICENSE，默认版权保留。
         它是本仓库唯一的服务端实现：核心链路只依赖 Python 标准库，
         引入 ERA5 / CAMS / 官方档案 GRIB2 直连，并把「物理子评分 + 岭回归标定层 + 神经网络辅助」串成一条定量管线。
         它产出的六档强度与全国晚霞图，是前端两套自研工程目前没有的能力。</p>
@@ -1359,7 +1392,7 @@ npm run probe:consist</pre>
           <div class="arrows">→</div>
           <div class="fnode ok"><div class="h">store.put</div><div class="b">按日期远近分层 TTL 落盘</div></div>
         </div>
-        <figcaption>图 6-1 Skyglow 预测链路：<span class="ref">Skyglow/core/service.py:243</span>（缓存入口）→ <span class="ref">:258</span>（装配）。</figcaption>
+        <figcaption>图 6-1 Skyglow Enhanced Edition 预测链路：<span class="ref">Skyglow/core/service.py:243</span>（缓存入口）→ <span class="ref">:258</span>（装配）。</figcaption>
       </figure>
 
       <div class="table-wrap">
@@ -1500,7 +1533,7 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
         <li>凭据写 <code>config.local.json</code>（已 gitignore）或环境变量；仓库不内置任何密钥。</li>
       </ul>
 
-      <h3 id="sg-debt">6.5 Skyglow 的风险与技术债</h3>
+      <h3 id="sg-debt">6.5 Skyglow Enhanced Edition（Skyglow）的风险与技术债</h3>
       <div class="table-wrap">
         <table>
           <thead><tr><th>级别</th><th>问题</th><th>位置</th><th>影响</th></tr></thead>
@@ -1526,7 +1559,7 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
     <h2><span class="num">07</span>算法与口径对照<span class="caret">▾</span></h2>
     <div class="sec-body">
       <p class="sub">这一章是「三套实现到底是不是同一套算法」的答案。结论：判据骨架完全一致，
-        差异集中在网格密度、缓存 TTL、等级制式与 Skyglow 独有的标定层。</p>
+        差异集中在网格密度、缓存 TTL、等级制式与 Skyglow Enhanced Edition 独有的标定层。</p>
 
       <h3 id="three-models">7.1 三路模型与合成</h3>
       <div class="table-wrap">
@@ -1563,12 +1596,12 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
           </tbody>
         </table>
       </div>
-      <p style="color:var(--muted);font-size:13.2px">权重之和为 1.00；V1 <span class="ref">V1/_p4.js:300</span> 与 v2 <span class="ref">v2/src/core/scoring.ts:77</span> 数值一致 —— 这是「口径单一权威」的最关键一处。</p>
+      <p style="color:var(--muted);font-size:13.2px">权重之和为 1.00；Sunglow Classic Edition（V1）<span class="ref">V1/_p4.js:300</span> 与 Sunglow Spectrum Edition（V2）<span class="ref">v2/src/core/scoring.ts:77</span> 数值一致 —— 这是「口径单一权威」的最关键一处。</p>
 
-      <h3 id="skyglow-model">7.3 Skyglow 的模型与它的不同</h3>
+      <h3 id="skyglow-model">7.3 Skyglow Enhanced Edition 的模型与它的不同</h3>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>维度</th><th>V1 / v2</th><th>Skyglow</th></tr></thead>
+          <thead><tr><th>维度</th><th>Sunglow Classic Edition（V1）/ Spectrum Edition（V2）</th><th>Skyglow Enhanced Edition（Skyglow）</th></tr></thead>
           <tbody>
             <tr><td>子评分</td><td>九因子统计 + 光追物理两路</td><td>四子评分：<code>canvas</code> / <code>light</code> / <code>horizon</code> / <code>purity</code></td></tr>
             <tr><td>合成方式</td><td>三模型加权几何平均</td><td>物理特征 → 岭回归 <code>intensity</code> → logistic 概率；另加 NN 辅助概率（仅展示）</td></tr>
@@ -1581,7 +1614,7 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
       </div>
       <div class="callout">
         <span class="tt">一句话理解两者的关系</span>
-        前端两套是「同一算法的两种呈现」；Skyglow 是「同一物理直觉的另一种数学化」。
+        前端两套是「同一算法的两种呈现」；Skyglow Enhanced Edition 是「同一物理直觉的另一种数学化」。
         它们共享的是<b>物理量定义</b>（云幕、光路、通透度、几何）与<b>工程纪律</b>（缓存、降级、可解释），
         而不是同一行代码。若将来要做「前端显示与后端一致」的校验，需要先定义可比的中间量。
       </div>
@@ -1590,14 +1623,14 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
       <p>下表把「刻意不同」与「疑似漂移」分开记录。建议把它变成仓库里的一份真实文件（见 §12 的 I7）。</p>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>项</th><th>V1</th><th>v2</th><th>Skyglow</th><th>判定</th></tr></thead>
+          <thead><tr><th>项</th><th>Sunglow Classic Edition（V1）</th><th>Sunglow Spectrum Edition（V2）</th><th>Skyglow Enhanced Edition（Skyglow）</th><th>判定</th></tr></thead>
           <tbody>
             <tr><td>局部网格</td><td>500/120 km → 57 点</td><td>500/80 km → 121 点</td><td>城市 0.25° → 169 点；全国 2.0° → 608 点</td><td><span class="badge b-ok">刻意</span></td></tr>
             <tr><td>单点缓存 TTL</td><td>3 h / 4 条</td><td>6 h / 12 条</td><td>分层（60 min – 6 h）</td><td><span class="badge b-info">策略差异</span></td></tr>
             <tr><td>地图缓存 TTL</td><td>3 h</td><td>6 h / 5 条</td><td>全国 6 h / 城市 3 h</td><td><span class="badge b-info">策略差异</span></td></tr>
             <tr><td>对比点上限</td><td>5</td><td>4（<code>CMP_MAX</code>）</td><td>无此功能</td><td><span class="badge b-p1">疑似漂移</span></td></tr>
             <tr><td>质量分档</td><td>四档</td><td>四档</td><td>六档</td><td><span class="badge b-ok">刻意</span></td></tr>
-            <tr><td>W_STAT 九因子权重</td><td>—</td><td colspan="2" style="text-align:center">三处需要人工确认为一致（本次已核对 V1 与 v2 数值相同）</td><td><span class="badge b-ok">一致</span></td></tr>
+            <tr><td>W_STAT 九因子权重</td><td>—</td><td colspan="2" style="text-align:center">三处需要人工确认为一致（本次已核对 Sunglow Classic Edition（V1）与 Sunglow Spectrum Edition（V2）数值相同）</td><td><span class="badge b-ok">一致</span></td></tr>
             <tr><td>快照协议</td><td colspan="2" style="text-align:center"><code>SNAP_VER=1</code>，白名单与键相同，双向可解</td><td>无此功能</td><td><span class="badge b-ok">互通</span></td></tr>
             <tr><td>地图色阶</td><td>HEAT_RAMP 7 档</td><td>GLOW_ANCHORS 11 锚点</td><td>紫→橙→金 12 段</td><td><span class="badge b-ok">刻意</span></td></tr>
             <tr><td>时区口径</td><td><code>API_TZ="auto"</code> 全应用唯一</td><td>城市墙钟 / 真实时间戳分离 + 时区记忆</td><td>以 bundle offset 为准，兜底 +8</td><td><span class="badge b-p2">需登记</span></td></tr>
@@ -1608,10 +1641,10 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
 
       <h3 id="extra-rules">7.3b 三套共有的工程规则（更容易被忽略的「口径」）</h3>
       <ul>
-        <li><b>缺测不当 0</b>：因子缺测记 <code>missF</code> 并在界面标注；Skyglow 的 <code>_fill_aux</code> 只做补位、不改写原始来源。</li>
-        <li><b>降级要说话</b>：EC 请求失败 → 附注说明；Skyglow 缺 eccodes → 界面标「缺解码器」；v2 全失败 → 标 <code>MOCK</code>。</li>
-        <li><b>假数据不落盘</b>：v2 <code>src==="mock"</code> 不写缓存；Skyglow 直连失败不写结果缓存。</li>
-        <li><b>429 双分类</b>：日额度耗尽与短时限流给相反的建议；V1 用响应体关键词判别，v2 用不重试 + retry-after 上限。</li>
+        <li><b>缺测不当 0</b>：因子缺测记 <code>missF</code> 并在界面标注；Skyglow Enhanced Edition 的 <code>_fill_aux</code> 只做补位、不改写原始来源。</li>
+        <li><b>降级要说话</b>：EC 请求失败 → 附注说明；Skyglow Enhanced Edition 缺 eccodes → 界面标「缺解码器」；Sunglow Spectrum Edition（V2）全失败 → 标 <code>MOCK</code>。</li>
+        <li><b>假数据不落盘</b>：Sunglow Spectrum Edition（V2）<code>src==="mock"</code> 不写缓存；Skyglow Enhanced Edition 直连失败不写结果缓存。</li>
+        <li><b>429 双分类</b>：日额度耗尽与短时限流给相反的建议；Sunglow Classic Edition（V1）用响应体关键词判别，Sunglow Spectrum Edition（V2）用不重试 + retry-after 上限。</li>
         <li><b>取数必须显式触发</b>：三套工程都遵守；唯一例外是缓存命中。</li>
       </ul>
     </div>
@@ -1626,13 +1659,13 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
         <table>
           <thead><tr><th>工程</th><th>运行时依赖</th><th>构建期依赖</th><th>外部服务</th></tr></thead>
           <tbody>
-            <tr><td>V1</td><td>无（原生 JS）</td><td>Python 3 标准库（<code>zlib</code>+<code>struct</code> 手写 PNG 编码）</td><td>腾讯地图 GL JS（可选）、Open-Meteo、DataV GeoJSON（构建期内联）</td></tr>
-            <tr><td>v2</td><td>Vue 3.5 · vue-router 4 · @fontsource（自托管字体，打包进产物）</td><td>Vite 6 · TypeScript 5.7 · @vitejs/plugin-vue · vite-plugin-singlefile · opencc-js（生成繁中映射）</td><td>同 V1 + 腾讯地图（可选）</td></tr>
+            <tr><td>Sunglow Classic Edition（V1）</td><td>无（原生 JS）</td><td>Python 3 标准库（<code>zlib</code>+<code>struct</code> 手写 PNG 编码）</td><td>腾讯地图 GL JS（可选）、Open-Meteo、DataV GeoJSON（构建期内联）</td></tr>
+            <tr><td>Sunglow Spectrum Edition（V2）</td><td>Vue 3.5 · vue-router 4 · @fontsource（自托管字体，打包进产物）</td><td>Vite 6 · TypeScript 5.7 · @vitejs/plugin-vue · vite-plugin-singlefile · opencc-js（生成繁中映射）</td><td>同 Sunglow Classic Edition（V1）+ 腾讯地图（可选）</td></tr>
           </tbody>
         </table>
       </div>
 
-      <h3 id="deps-sky">8.2 Skyglow 依赖与降级矩阵</h3>
+      <h3 id="deps-sky">8.2 Skyglow Enhanced Edition 依赖与降级矩阵</h3>
       <div class="table-wrap">
         <table>
           <thead><tr><th>包</th><th>用途</th><th>不装的后果</th></tr></thead>
@@ -1658,7 +1691,7 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
       <div class="callout ok">
         <span class="tt">隐私基线</span>
         两套前端把所有用户数据留在本机（localStorage：偏好 / 缓存 / 校准 / 对比点），没有账号体系与埋点；
-        Skyglow 的「本地校准」在服务端不存在，用户的实况回填只在前端。这一条是本文档愿意明确背书的隐私结论。
+        Skyglow Enhanced Edition 的「本地校准」在服务端不存在，用户的实况回填只在前端。这一条是本文档愿意明确背书的隐私结论。
       </div>
     </div>
   </section>
@@ -1673,21 +1706,21 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
           <thead><tr><th>工程</th><th>前置</th><th>开发 / 构建</th><th>测试</th><th>打开方式</th></tr></thead>
           <tbody>
             <tr>
-              <td>V1</td>
+              <td>Sunglow Classic Edition（V1）</td>
               <td>Python 3（仅标准库）；回归需 Node + 浏览器</td>
               <td><code>cd V1 &amp;&amp; python assemble.py</code></td>
               <td><code>python _check/all.py</code></td>
               <td>双击 <code>V1/index.html</code></td>
             </tr>
             <tr>
-              <td>v2</td>
+              <td>Sunglow Spectrum Edition（V2）</td>
               <td>Node 18+（构建）+ npm</td>
               <td><code>cd v2 &amp;&amp; npm install &amp;&amp; npm run dev</code>（开发）<br><code>npm run build</code>（构建并发布到仓库根）</td>
               <td><code>npm run typecheck</code>；<code>npm run probe:ui|probe:tz|probe:consist</code></td>
               <td>开发：<code>localhost:5173/app.html</code>；交付：双击根 <code>index.html</code></td>
             </tr>
             <tr>
-              <td>Skyglow</td>
+              <td>Skyglow Enhanced Edition（Skyglow）</td>
               <td>Python 3.9+；可选 <code>eccodes</code> / <code>numpy</code> / <code>cryptography</code></td>
               <td>无构建；<code>setup.bat</code> → <code>run.bat</code>（Win）/ <code>./setup.sh</code> → <code>./run.sh</code></td>
               <td><code>tools/check_direct.py</code>、<code>tools/measure_accuracy.py</code>、<code>tools/smoke_single.py</code></td>
@@ -1702,11 +1735,11 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
         <table>
           <thead><tr><th>形态</th><th>适用</th><th>步骤要点</th><th>地图</th></tr></thead>
           <tbody>
-            <tr><td>本地双击</td><td>自用、演示、离线</td><td>直接打开根 <code>index.html</code> 或 <code>V1/index.html</code></td><td>V1 不可用；v2 视代理配置</td></tr>
-            <tr><td>GitHub Pages（根）</td><td>线上主站</td><td>v2 构建后把根 7 文件提交；根路径即入口</td><td>需代理地址</td></tr>
-            <tr><td>GitHub Pages（子路径）</td><td>V1 存档页</td><td><code>SITE_BASE=sunglow python assemble.py</code>；404 页用站点根绝对地址</td><td>需 <code>TMAP_SERVICE_HOST</code></td></tr>
+            <tr><td>本地双击</td><td>自用、演示、离线</td><td>直接打开根 <code>index.html</code> 或 <code>V1/index.html</code></td><td>Sunglow Classic Edition（V1）不可用；Sunglow Spectrum Edition（V2）视代理配置</td></tr>
+            <tr><td>GitHub Pages（根）</td><td>线上主站</td><td>Sunglow Spectrum Edition（V2）构建后把根 7 文件提交；根路径即入口</td><td>需代理地址</td></tr>
+            <tr><td>GitHub Pages（子路径）</td><td>Sunglow Classic Edition（V1）存档页</td><td><code>SITE_BASE=sunglow python assemble.py</code>；404 页用站点根绝对地址</td><td>需 <code>TMAP_SERVICE_HOST</code></td></tr>
             <tr><td>Cloudflare Pages + Functions</td><td>需要地图的正经部署</td><td>Pages 项目（构建命令空、产物目录 <code>/</code>）+ 环境变量 <code>TMAP_KEY</code>；构建期传 <code>TMAP_SERVICE_HOST=https://域名/_TMapService</code></td><td><b>可用</b>，key 不进产物</td></tr>
-            <tr><td>自托管服务（Skyglow）</td><td>想要六档/标定/直连</td><td><code>PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py</code>；反向代理需处理子路径（见 <code>STATIC_HOSTING.md</code>）</td><td>自带 Canvas 全国图</td></tr>
+            <tr><td>自托管服务（Skyglow Enhanced Edition）</td><td>想要六档/标定/直连</td><td><code>PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py</code>；反向代理需处理子路径（见 <code>STATIC_HOSTING.md</code>）</td><td>自带 Canvas 全国图</td></tr>
           </tbody>
         </table>
       </div>
@@ -1716,25 +1749,25 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
         <table>
           <thead><tr><th>变量</th><th>工程</th><th>作用</th><th>缺省</th></tr></thead>
           <tbody>
-            <tr><td><code>TMAP_SERVICE_HOST</code></td><td>V1 构建期</td><td>注入地图代理地址</td><td>本地预览占位符</td></tr>
-            <tr><td><code>SITE_BASE</code></td><td>V1 构建期</td><td>404 页站点根</td><td><code>/</code></td></tr>
-            <tr><td><code>PWA</code></td><td>V1 构建期</td><td>是否产出 PWA 四件套</td><td>关</td></tr>
-            <tr><td><code>OUT_DIR</code></td><td>V1 构建期</td><td>产物目录（探针用）</td><td><code>V1/</code></td></tr>
-            <tr><td><code>VITE_TMAP_SERVICE_HOST</code></td><td>v2 构建期</td><td>地图代理地址（MapView 读取）</td><td>占位符</td></tr>
-            <tr><td><code>PORT</code> / <code>SKYGLOW_HOST</code></td><td>Skyglow</td><td>端口与监听地址</td><td>8770 / <code>127.0.0.1</code></td></tr>
-            <tr><td><code>SKYGLOW_WEATHERAPI_KEY</code> / <code>WEATHERAPI_KEY</code></td><td>Skyglow</td><td>WeatherAPI 凭据</td><td>未配置则跳过校验</td></tr>
-            <tr><td><code>SKYGLOW_QWEATHER_*</code> / 私钥文件</td><td>Skyglow</td><td>和风天气凭据（host/key/kid/iss/sub/private_key）</td><td>未配置则只作展示</td></tr>
+            <tr><td><code>TMAP_SERVICE_HOST</code></td><td>Sunglow Classic Edition（V1）构建期</td><td>注入地图代理地址</td><td>本地预览占位符</td></tr>
+            <tr><td><code>SITE_BASE</code></td><td>Sunglow Classic Edition（V1）构建期</td><td>404 页站点根</td><td><code>/</code></td></tr>
+            <tr><td><code>PWA</code></td><td>Sunglow Classic Edition（V1）构建期</td><td>是否产出 PWA 四件套</td><td>关</td></tr>
+            <tr><td><code>OUT_DIR</code></td><td>Sunglow Classic Edition（V1）构建期</td><td>产物目录（探针用）</td><td><code>V1/</code></td></tr>
+            <tr><td><code>VITE_TMAP_SERVICE_HOST</code></td><td>Sunglow Spectrum Edition（V2）构建期</td><td>地图代理地址（MapView 读取）</td><td>占位符</td></tr>
+            <tr><td><code>PORT</code> / <code>SKYGLOW_HOST</code></td><td>Skyglow Enhanced Edition</td><td>端口与监听地址</td><td>8770 / <code>127.0.0.1</code></td></tr>
+            <tr><td><code>SKYGLOW_WEATHERAPI_KEY</code> / <code>WEATHERAPI_KEY</code></td><td>Skyglow Enhanced Edition</td><td>WeatherAPI 凭据</td><td>未配置则跳过校验</td></tr>
+            <tr><td><code>SKYGLOW_QWEATHER_*</code> / 私钥文件</td><td>Skyglow Enhanced Edition</td><td>和风天气凭据（host/key/kid/iss/sub/private_key）</td><td>未配置则只作展示</td></tr>
           </tbody>
         </table>
       </div>
 
       <h3 id="run-pitfalls">9.4 已知的坑（按踩到概率排序）</h3>
       <ol>
-        <li><b>用 <code>0.0.0.0</code> 访问 Skyglow</b>：那是监听地址，浏览器会直接拒绝；用控制台打印的 <code>127.0.0.1</code>。</li>
+        <li><b>用 <code>0.0.0.0</code> 访问 Skyglow Enhanced Edition</b>：那是监听地址，浏览器会直接拒绝；用控制台打印的 <code>127.0.0.1</code>。</li>
         <li><b>直接双击 <code>v2/app.html</code></b>：ES module 从 <code>file://</code> 加载会被 CORS 拦截；要么用 <code>npm run dev</code>，要么用构建出来的根 <code>index.html</code>。</li>
-        <li><b>手改仓库根产物</b>：下次 <code>npm run build</code> 会覆盖；正确入口是 v2 下的同名源文件。</li>
-        <li><b>V1 地图不显示</b>：纯静态部署没有代理，是预期行为；需要地图就配 Cloudflare Functions。</li>
-        <li><b>Skyglow 直连开关灰掉</b>：解释器缺 <code>eccodes</code>；用 <code>setup.bat</code> 建的 <code>.venv</code> 启动。</li>
+        <li><b>手改仓库根产物</b>：下次 <code>npm run build</code> 会覆盖；正确入口是 Sunglow Spectrum Edition（V2）下的同名源文件。</li>
+        <li><b>Sunglow Classic Edition（V1）地图不显示</b>：纯静态部署没有代理，是预期行为；需要地图就配 Cloudflare Functions。</li>
+        <li><b>Skyglow Enhanced Edition 直连开关灰掉</b>：解释器缺 <code>eccodes</code>；用 <code>setup.bat</code> 建的 <code>.venv</code> 启动。</li>
         <li><b>Windows 上 <code>run.bat</code> 出现碎片命令错误</b>：文件被存成 LF 换行；改回 CRLF。</li>
         <li><b>free 层 429</b>：地图与趋势最费额度；看到「日额度耗尽」提示时，次日重置前不要反复点「加载地图」。</li>
       </ol>
@@ -1773,7 +1806,7 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
         <li>
           <b>口径单一权威 + 命名空间隔离。</b>
           <code>W_ENS / W_STAT / TRANSECT / mixedIndex / QUALITY_BANDS</code> 只有一份真值；
-          v2 用 <code>vendor/src-verbatim</code> 冻结 V1 七脚本作为 diff 基线；两套前端各占一个 localStorage 命名空间。
+          Sunglow Spectrum Edition（V2）用 <code>vendor/src-verbatim</code> 冻结 Sunglow Classic Edition（V1）七脚本作为 diff 基线；两套前端各占一个 localStorage 命名空间。
           这让「三套工程并行」没有立刻烂成三个互不相干的玩具。
         </li>
         <li>
@@ -1798,13 +1831,13 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
         <table>
           <thead><tr><th>工程</th><th>它承担的角色</th><th>我认为的正确走向</th></tr></thead>
           <tbody>
-            <tr><td>V1</td><td>算法权威 + 回归基准 + 功能全集参照</td><td><b>冻结为只读基准</b>：打 tag、写清「不再演进、只作 diff 参照与回归环境」，避免三处同时改算法</td></tr>
-            <tr><td>v2</td><td>主线：交付、体验、迭代都在这里</td><td>承接所有新功能与体验优化；算法改动先在 v2 落地，再用 diff 门禁回看 V1 差异</td></tr>
-            <tr><td>Skyglow</td><td>定量分支：标定、多源、全国图、可重训模型</td><td>作为「实验室」：模型改动先在这里验证（有回测与指标），成熟后再反向影响前端口径</td></tr>
+            <tr><td>Sunglow Classic Edition（V1）</td><td>算法权威 + 回归基准 + 功能全集参照</td><td><b>冻结为只读基准</b>：打 tag、写清「不再演进、只作 diff 参照与回归环境」，避免三处同时改算法</td></tr>
+            <tr><td>Sunglow Spectrum Edition（V2）</td><td>当前主线：交付、体验、迭代都在这里</td><td>承接所有新功能与体验优化；算法改动先在 Sunglow Spectrum Edition（V2）落地，再用 diff 门禁回看 Sunglow Classic Edition（V1）差异</td></tr>
+            <tr><td>Skyglow Enhanced Edition（Skyglow）</td><td>定量分支：标定、多源、全国图、可重训模型</td><td>作为「实验室」：模型改动先在这里验证（有回测与指标），成熟后再反向影响前端口径</td></tr>
           </tbody>
         </table>
       </div>
-      <p>换句话说：<b>V1 是过去时的真值，v2 是现在时的产品，Skyglow 是将来时的模型</b>。
+      <p>换句话说：<b>Sunglow Classic Edition（V1）是过去时的真值，Sunglow Spectrum Edition（V2）是现在时的产品，Skyglow Enhanced Edition（Skyglow）是将来时的模型</b>。
         三者关系健康，但缺一条把它们连起来的自动化通道 —— 这也是我改进清单里占比最大的一块。</p>
 
       <h3 id="strengths">10.4 值得学习 / 保留的六件事</h3>
@@ -1812,9 +1845,9 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
         <li><b>把纪律写成可执行的检查。</b>「自动加载不烧额度」「校准不回改模型」这类约束都有对应探针（<code>spotprobe</code>、<code>calibprobe</code>），不靠人记。</li>
         <li><b>构建物的自我校验。</b>占位符残留即失败、外链即失败、sha256 不一致即失败 —— 让「看起来发布了」变成「确定发布了」。</li>
         <li><b>降级有声音。</b>MOCK 徽章、缺解码器提示、缓存命中说明、429 分支文案，都在替用户建立「这条结论有多可信」的预期。</li>
-        <li><b>协议先行。</b>快照协议 <code>SNAP_VER=1</code> 与白名单在 V1/v2 之间互通，且解码即校验 —— 跨版本分享链接不会因为重写而失效。</li>
+        <li><b>协议先行。</b>快照协议 <code>SNAP_VER=1</code> 与白名单在 Sunglow Classic Edition（V1）/ Spectrum Edition（V2）之间互通，且解码即校验 —— 跨版本分享链接不会因为重写而失效。</li>
         <li><b>缓存分层讲道理。</b>趋势只存算好的 rows（1.9 KB）而不是原始响应（5 MB），这是对 localStorage 5 MB 配额的正面回应。</li>
-        <li><b>视觉与物理统一。</b>v2 把光谱色阶同时用在 UI 与地图色面（<code>SPECTRUM_RAMP</code> / <code>GLOW_ANCHORS</code>），让「漂亮」不是外加的，而是从判据里长出来的。</li>
+        <li><b>视觉与物理统一。</b>Sunglow Spectrum Edition（V2）把光谱色阶同时用在 UI 与地图色面（<code>SPECTRUM_RAMP</code> / <code>GLOW_ANCHORS</code>），让「漂亮」不是外加的，而是从判据里长出来的。</li>
       </ul>
 
       <h3 id="tension">10.5 我看到的四处张力（未解问题）</h3>
@@ -1822,16 +1855,16 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
         <li><b>单文件 vs 可安装 PWA。</b>物理上互斥，只能靠 <code>PWA=1</code> 的选项共存；但两套形态意味着两条测试路径（<code>pwaprobe</code> 已经在守，成本真实存在）。</li>
         <li><b>前端两套 vs 服务端一套的模型语义。</b>四档 vs 六档、分歧度 vs lead-time 置信度，用户在不同入口看到的「强度」并不等价。短期无害，长期会变成品牌级困惑。</li>
         <li><b>额度纪律 vs 体验。</b>「每次都显式触发」是省额度，但用户的第一印象常常是「怎么没自动出结果」。目前用缓存命中来缓冲，边界上有优化空间。</li>
-        <li><b>手工移植 vs 自动等价性。</b>v2 的算法正确性建立在「当时对齐过」上，而不是「每次构建都验证」。这是当前体系里最大的隐性风险。</li>
+        <li><b>手工移植 vs 自动等价性。</b>Sunglow Spectrum Edition（V2）的算法正确性建立在「当时对齐过」上，而不是「每次构建都验证」。这是当前体系里最大的隐性风险。</li>
       </ol>
 
       <h3 id="first-week">10.6 如果由我接手：第一周会做的五件事</h3>
       <ol>
         <li>修 <code>npm run probe</code>（§12 I2），让「一键跑质量门」真实可用 —— 没有这个，后面所有改动都缺少反馈。</li>
-        <li>加固 Skyglow 静态文件路径校验（I1），把 <code>0.0.0.0</code> 场景从「有风险」变成「有防线」。</li>
-        <li>跑一次真实回归：V1 <code>_check/all.py</code> + v2 三个探针，把当前红灯/黄灯记账，形成改善基线。</li>
+        <li>加固 Skyglow Enhanced Edition 静态文件路径校验（I1），把 <code>0.0.0.0</code> 场景从「有风险」变成「有防线」。</li>
+        <li>跑一次真实回归：Sunglow Classic Edition（V1）<code>_check/all.py</code> + Sunglow Spectrum Edition（V2）三个探针，把当前红灯/黄灯记账，形成改善基线。</li>
         <li>建立口径登记表（I7），把 §7.4 的差异表变成仓库里的文件，之后任何常量改动都要过它。</li>
-        <li>给 Skyglow 全国图加并发（I3），因为它是「能力展示」的主窗口，等待 40 秒会直接劝退使用者。</li>
+        <li>给 Skyglow Enhanced Edition 全国图加并发（I3），因为它是「能力展示」的主窗口，等待 40 秒会直接劝退使用者。</li>
       </ol>
     </div>
   </section>
@@ -1845,11 +1878,11 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
 
       <figure class="diagram">
         <div class="kv">
-          <div class="i"><span class="k">P0 · 安全 / 失效</span><b style="color:var(--bad)">2 项</b>：Skyglow 路径校验、v2 探针入口失效</div>
+          <div class="i"><span class="k">P0 · 安全 / 失效</span><b style="color:var(--bad)">2 项</b>：Skyglow Enhanced Edition 路径校验、Sunglow Spectrum Edition（V2）探针入口失效</div>
           <div class="i"><span class="k">P1 · 性能 / 正确性 / 门禁</span><b style="color:var(--warn)">8 项</b>：全国图耗时、直连串行、时区兜底、缓存并发、口径漂移…</div>
           <div class="i"><span class="k">P2 · 卫生问题</span><b style="color:var(--accent3)">10 项</b>：注释漂移、死导出、单文件版归位、文档数字…</div>
         </div>
-        <figcaption>图 11-1 风险分布：真正的「会出事」集中在 Skyglow 服务端与跨工程口径两条线上。</figcaption>
+        <figcaption>图 11-1 风险分布：真正的「会出事」集中在 Skyglow Enhanced Edition 服务端与跨工程口径两条线上。</figcaption>
       </figure>
 
       <div class="table-wrap">
@@ -1865,13 +1898,13 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
             <tr><td class="n">R7</td><td><span class="badge b-p1">P1</span></td><td>V1 ↔ v2 算法口径无自动 diff 门禁，冻结副本只作人工参照</td><td><span class="ref">v2/vendor/src-verbatim/</span></td><td>写 diff 脚本纳入构建；见 I8</td></tr>
             <tr><td class="n">R8</td><td><span class="badge b-p1">P1</span></td><td>对比点上限 V1=5 / v2=4，未见登记为刻意差异</td><td><span class="ref">v2/src/core/compare.ts:22</span></td><td>确认口径并写进登记表；见 I7</td></tr>
             <tr><td class="n">R9</td><td><span class="badge b-p1">P1</span></td><td>v2 发布依赖人工执行构建，仓库内无 CI，根副本可能滞后于源码</td><td><span class="ref">v2/scripts/publish-root.mjs</span></td><td>加工作流或 pre-commit；见 I9</td></tr>
-            <tr><td class="n">R10</td><td><span class="badge b-p1">P1</span></td><td>V1 单文件全局作用域，7 片段共享顶层符号；回归可挡冲突但重构阻力大</td><td><span class="ref">V1/assemble.py:63</span></td><td>维持冻结策略；新逻辑只进 v2；见 I12</td></tr>
+            <tr><td class="n">R10</td><td><span class="badge b-p1">P1</span></td><td>V1 单文件全局作用域，7 片段共享顶层符号；回归可挡冲突但重构阻力大</td><td><span class="ref">V1/assemble.py:63</span></td><td>维持冻结策略；新逻辑只进 Sunglow Spectrum Edition（V2）；见 I12</td></tr>
             <tr><td class="n">R11</td><td><span class="badge b-p2">P2</span></td><td>Skyglow <code>DEFAULT_MODEL</code> 阈值与 <code>model.json</code> 数值不同，缺字段时语义静默切换</td><td><span class="ref">Skyglow/core/model.py:36-48</span></td><td>让缺字段直接报错或同步默认值</td></tr>
             <tr><td class="n">R12</td><td><span class="badge b-p2">P2</span></td><td>Skyglow 无鉴权 / 无 CORS / 配置类 POST 可写凭据文件；线程无上限、无请求超时</td><td><span class="ref">Skyglow/server.py:56-93</span> · <span class="ref">:361-397</span></td><td>公网部署检查清单 + 可选 token；见 I10</td></tr>
             <tr><td class="n">R13</td><td><span class="badge b-p2">P2</span></td><td>Skyglow 单文件版与模块化版并行演化，无同步机制</td><td><span class="ref">Skyglow/tools/make_single.py</span></td><td>标记为构建产物 + 校验；见 I11</td></tr>
             <tr><td class="n">R14</td><td><span class="badge b-p2">P2</span></td><td>v2 <code>api.ts</code> 导出未被使用的代理常量 <code>TMAP_SERVICE_HOST</code>，MapView 另读环境变量</td><td><span class="ref">v2/src/core/api.ts:11</span> · <span class="ref">v2/src/components/MapView.vue:42</span></td><td>删除死导出或让组件复用</td></tr>
             <tr><td class="n">R15</td><td><span class="badge b-p2">P2</span></td><td>既有总览文档的源码行数/体积与当前不一致（如 <code>_p6.js</code> 4066 vs 实测 3958）</td><td><span class="ref">项目架构与技术实现方案.md</span></td><td>把叙述性数字纳入 docfacts 或改为引用事实库</td></tr>
-            <tr><td class="n">R16</td><td><span class="badge b-p2">P2</span></td><td>V1 纯静态部署时地图不可用，与 v2 体验分裂</td><td><span class="ref">V1/README.md §2.1</span></td><td>在存档页显式引导到 v2；或补一个无 SDK 的降级地图</td></tr>
+            <tr><td class="n">R16</td><td><span class="badge b-p2">P2</span></td><td>Sunglow Classic Edition（V1）纯静态部署时地图不可用，与 Sunglow Spectrum Edition（V2）体验分裂</td><td><span class="ref">V1/README.md §2.1</span></td><td>在存档页显式引导到 Sunglow Spectrum Edition（V2）；或补一个无 SDK 的降级地图</td></tr>
             <tr><td class="n">R17</td><td><span class="badge b-p2">P2</span></td><td>V1 回归套件需要浏览器/CDP 与固定 Node 路径，难以无人值守</td><td><span class="ref">V1/_check/all.py:48</span></td><td>容器化运行环境；先记录「重活探针」清单</td></tr>
             <tr><td class="n">R18</td><td><span class="badge b-p2">P2</span></td><td>单文件产物 800 KB 级，首屏解析成本随内联数据增长</td><td><span class="ref">v2/src/core/citydata.ts</span> · <span class="ref">i18n-extra.ts</span></td><td>压缩内联数据（城市表可裁剪）；量测首屏 TTI 后再决定</td></tr>
           </tbody>
@@ -1932,18 +1965,18 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
         <table>
           <thead><tr><th>编号</th><th>动作</th><th>落点</th><th>验收判据</th></tr></thead>
           <tbody>
-            <tr><td class="n">I8</td><td>V1↔v2 语义 diff 门禁：把关键函数（<code>scoreStat</code>/<code>scoreRay</code>/<code>analyseTransect</code>/<code>wgeo</code>）在两侧做「常量级」比对并输出差异报告</td><td>新增 <code>v2/scripts/diff-verbatim.mjs</code>，接入 build 或 probe</td><td>只改 v2 的 <code>W_STAT</code> 权重会立即报出差异条目</td></tr>
-            <tr><td class="n">I9</td><td>根产物防手改：构建后生成根 <code>MANIFEST.sha256</code>，CI 或 pre-commit 校验</td><td><span class="ref">v2/scripts/publish-root.mjs</span></td><td>手改根 <code>index.html</code> 后校验失败并给出「请改 v2 源文件」提示</td></tr>
-            <tr><td class="n">I10</td><td>Skyglow 公网部署检查清单：README 增章 + 可选 token 中间层 + CORS 说明 + 线程/超时上限</td><td><span class="ref">Skyglow/README.md</span> · <span class="ref">Skyglow/server.py:361-397</span></td><td>清单逐条可核（含 <code>curl</code> 验证命令）；未设 token 时启动打印醒目警告</td></tr>
-            <tr><td class="n">I11</td><td>Skyglow 单文件版归位：文件头加「构建产物，请勿手改」，并把一次字节一致校验写进 <code>make_single.py</code></td><td><span class="ref">Skyglow/tools/make_single.py</span></td><td>单文件版与模块化版重新生成后字节一致；不一致时报错</td></tr>
-            <tr><td class="n">I12</td><td>V1 正式冻结：打 tag + 在 <code>V1/README.md</code> 顶部写「只读基准」说明；把 §4.8 的债标为「随冻结接受，不再排期」</td><td><span class="ref">V1/README.md</span></td><td>文档明确「新功能只进 v2」；后续 PR 不再修改 V1 业务逻辑</td></tr>
+            <tr><td class="n">I8</td><td>Sunglow Classic Edition（V1）↔ Sunglow Spectrum Edition（V2）语义 diff 门禁：把关键函数（<code>scoreStat</code>/<code>scoreRay</code>/<code>analyseTransect</code>/<code>wgeo</code>）在两侧做「常量级」比对并输出差异报告</td><td>新增 <code>v2/scripts/diff-verbatim.mjs</code>，接入 build 或 probe</td><td>只改 Sunglow Spectrum Edition（V2）的 <code>W_STAT</code> 权重会立即报出差异条目</td></tr>
+            <tr><td class="n">I9</td><td>根产物防手改：构建后生成根 <code>MANIFEST.sha256</code>，CI 或 pre-commit 校验</td><td><span class="ref">v2/scripts/publish-root.mjs</span></td><td>手改根 <code>index.html</code> 后校验失败并给出「请改 Sunglow Spectrum Edition（V2）源文件」提示</td></tr>
+            <tr><td class="n">I10</td><td>Skyglow Enhanced Edition 公网部署检查清单：README 增章 + 可选 token 中间层 + CORS 说明 + 线程/超时上限</td><td><span class="ref">Skyglow/README.md</span> · <span class="ref">Skyglow/server.py:361-397</span></td><td>清单逐条可核（含 <code>curl</code> 验证命令）；未设 token 时启动打印醒目警告</td></tr>
+            <tr><td class="n">I11</td><td>Skyglow Enhanced Edition 单文件版归位：文件头加「构建产物，请勿手改」，并把一次字节一致校验写进 <code>make_single.py</code></td><td><span class="ref">Skyglow/tools/make_single.py</span></td><td>单文件版与模块化版重新生成后字节一致；不一致时报错</td></tr>
+            <tr><td class="n">I12</td><td>Sunglow Classic Edition（V1）正式冻结：打 tag + 在 <code>V1/README.md</code> 顶部写「只读基准」说明；把 §4.8 的债标为「随冻结接受，不再排期」</td><td><span class="ref">V1/README.md</span></td><td>文档明确「新功能只进 Sunglow Spectrum Edition（V2）」；后续 PR 不再修改 Sunglow Classic Edition（V1）业务逻辑</td></tr>
           </tbody>
         </table>
       </div>
 
       <div class="callout ok">
         <span class="tt">做完这些之后的项目状态</span>
-        安全面：Skyglow 即便以 <code>0.0.0.0</code> 暴露也有防线；质量面：一条命令跑全部前端质量门，
+        安全面：Skyglow Enhanced Edition 即便以 <code>0.0.0.0</code> 暴露也有防线；质量面：一条命令跑全部前端质量门，
         口径漂移由脚本而不是人负责；性能面：全国图从「等 40 秒」变成「等十几秒且能看进度」；
         一致性面：三套工程的差异第一次有了书面台账。这四点做完，项目就从「一个人维护得动」变成「换人也能接手」。
       </div>
@@ -1959,25 +1992,25 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
         <table>
           <thead><tr><th>路径</th><th>行数 / 大小</th><th>作用</th></tr></thead>
           <tbody>
-            <tr><td><code>V1/assemble.py</code></td><td class="n">419 行</td><td>V1 构建器：拼装片段、替换占位符、校验残留</td></tr>
+            <tr><td><code>V1/assemble.py</code></td><td class="n">419 行</td><td>Sunglow Classic Edition 构建器：拼装片段、替换占位符、校验残留</td></tr>
             <tr><td><code>V1/_p2.js · _p3.js · _p4.js</code></td><td class="n">339 / 239 / 547</td><td>数学天文 + 物理色度 + 取数评分</td></tr>
             <tr><td><code>V1/_p5.js · _p5b.js</code></td><td class="n">2037 / 938</td><td>主流程与状态、结果渲染与分享卡</td></tr>
             <tr><td><code>V1/_p6.js</code></td><td class="n">3958 行</td><td>地图模块（含单点磁盘缓存）</td></tr>
             <tr><td><code>V1/_check/all.py</code></td><td class="n">—</td><td>26 探针总表 + 事实库维护</td></tr>
-            <tr><td><code>V1/index.html</code> / <code>404.html</code></td><td class="n">804 KB / 33 KB</td><td>V1 交付产物（禁手改）</td></tr>
-            <tr><td><code>v2/package.json</code></td><td class="n">—</td><td>v2 脚本入口（dev/build/typecheck/probe*）</td></tr>
+            <tr><td><code>V1/index.html</code> / <code>404.html</code></td><td class="n">804 KB / 33 KB</td><td>Sunglow Classic Edition 交付产物（禁手改）</td></tr>
+            <tr><td><code>v2/package.json</code></td><td class="n">—</td><td>Sunglow Spectrum Edition 脚本入口（dev/build/typecheck/probe*）</td></tr>
             <tr><td><code>v2/scripts/emit-single.mjs · publish-root.mjs</code></td><td class="n">~50 / ~77 行</td><td>单文件化与发布落根（含 sha256 校验）</td></tr>
             <tr><td><code>v2/src/core/</code></td><td class="n">31 个模块</td><td>算法、地图、缓存、协议、时区、多语言</td></tr>
             <tr><td><code>v2/src/state.ts</code></td><td class="n">—</td><td>响应式全局状态与偏好白名单</td></tr>
             <tr><td><code>v2/src/components/</code></td><td class="n">19 个组件</td><td>界面层</td></tr>
-            <tr><td><code>v2/vendor/src-verbatim/</code></td><td class="n">—</td><td>V1 七脚本冻结副本（diff 基线，不参与构建）</td></tr>
+            <tr><td><code>v2/vendor/src-verbatim/</code></td><td class="n">—</td><td>Sunglow Classic Edition（V1）七脚本冻结副本（diff 基线，不参与构建）</td></tr>
             <tr><td><code>Skyglow/server.py</code></td><td class="n">402 行</td><td>HTTP 服务与 12 个 JSON API</td></tr>
             <tr><td><code>Skyglow/core/service.py</code></td><td class="n">451 行</td><td>预报装配（缓存 → 四源 × 两事件）</td></tr>
             <tr><td><code>Skyglow/core/model.py</code> + <code>data/model.json</code></td><td class="n">262 行</td><td>物理子评分与岭回归标定层（ridge-v2.1）</td></tr>
             <tr><td><code>Skyglow/core/meteo.py · direct.py · glowmap.py</code></td><td class="n">398 / 363 / 263</td><td>数据接入、GRIB2 直连、格点场</td></tr>
             <tr><td><code>Skyglow/web/*.js</code></td><td class="n">1168 / 508 / 310</td><td>主界面 / Canvas 地图 / 方位分析</td></tr>
             <tr><td><code>Skyglow/tools/</code></td><td class="n">20 个脚本</td><td>数据集、标定、训练、回测与实测校验</td></tr>
-            <tr><td>仓库根 7 文件</td><td class="n">≈977 KB 合计（index 829 KB）</td><td>线上交付物（由 v2 发布）</td></tr>
+            <tr><td>仓库根 7 文件</td><td class="n">≈977 KB 合计（index 829 KB）</td><td>线上交付物（由 Sunglow Spectrum Edition（V2）发布）</td></tr>
           </tbody>
         </table>
       </div>
@@ -1992,7 +2025,7 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
             <tr><td>ΔI / 一致性</td><td>模型间的分歧度与由此换算的一致性（0–100）</td></tr>
             <tr><td>九因子</td><td><code>W_STAT</code> 定义的九个统计判据（云量/云型/云底/几何/气溶胶/能见度/湿度/稳定度/遮挡）</td></tr>
             <tr><td>光追 / rt</td><td>基于光谱消光与 CIE 色度的物理模型，独立于统计模型给出第三路结论</td></tr>
-            <tr><td>标定层</td><td>Skyglow 在物理特征上拟合的岭回归，输出强度潜变量与概率</td></tr>
+            <tr><td>标定层</td><td>Skyglow Enhanced Edition 在物理特征上拟合的岭回归，输出强度潜变量与概率</td></tr>
             <tr><td>快照 / SNAP</td><td><code>?snap=</code> 携带的结论摘要，零请求还原结果，跨版本互通</td></tr>
             <tr><td>额度纪律</td><td>取数必须显式触发、缓存优先、429 分类处置</td></tr>
             <tr><td>MOCK</td><td>取数失败时的确定性假数据，界面明确标注，不写缓存</td></tr>
@@ -2011,15 +2044,15 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
       <h2 style="cursor:default"><span class="num">※</span>Sources<span class="caret" style="display:none">▾</span></h2>
       <ol>
         <li id="cite-1">
-          <span class="src-title">V1/README.md — V1 工程的功能全集、部署形态（纯静态 / Cloudflare Pages 代理 / PWA）与产品约束说明。</span>
+          <span class="src-title">V1/README.md — Sunglow Classic Edition 的功能全集、部署形态（纯静态 / Cloudflare Pages 代理 / PWA）与产品约束说明。</span>
           <a class="src-url" href="file:///d:/sunglow/V1/README.md" target="_blank" rel="noopener">file:///d:/sunglow/V1/README.md</a>
         </li>
         <li id="cite-2">
-          <span class="src-title">v2/README.md — v2「大气光谱观测站」的技术栈、构建链、交付物与与 V1 的口径关系。</span>
+          <span class="src-title">v2/README.md — Sunglow Spectrum Edition「大气光谱观测站」的技术栈、构建链、交付物与与 Sunglow Classic Edition（V1）的口径关系。</span>
           <a class="src-url" href="file:///d:/sunglow/v2/README.md" target="_blank" rel="noopener">file:///d:/sunglow/v2/README.md</a>
         </li>
         <li id="cite-3">
-          <span class="src-title">Skyglow/README.md — Skyglow 的预测逻辑、地图配额策略、可选依赖与运行方式。</span>
+          <span class="src-title">Skyglow/README.md — Skyglow Enhanced Edition 的预测逻辑、地图配额策略、可选依赖与运行方式。</span>
           <a class="src-url" href="file:///d:/sunglow/Skyglow/README.md" target="_blank" rel="noopener">file:///d:/sunglow/Skyglow/README.md</a>
         </li>
         <li id="cite-4">
@@ -2027,7 +2060,7 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
           <a class="src-url" href="file:///d:/sunglow/项目架构与技术实现方案.md" target="_blank" rel="noopener">file:///d:/sunglow/项目架构与技术实现方案.md</a>
         </li>
         <li id="cite-5">
-          <span class="src-title">Skyglow-项目架构与技术实现方案.md — Skyglow 的专题方案文档（架构、算法、数据管线）。</span>
+          <span class="src-title">Skyglow-项目架构与技术实现方案.md — Skyglow Enhanced Edition 的专题方案文档（架构、算法、数据管线）。</span>
           <a class="src-url" href="file:///d:/sunglow/Skyglow-项目架构与技术实现方案.md" target="_blank" rel="noopener">file:///d:/sunglow/Skyglow-项目架构与技术实现方案.md</a>
         </li>
         <li id="cite-6">
@@ -2037,7 +2070,7 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
       </ol>
     </div>
     <p style="margin-top:18px">
-      霞光预报 sunglow · Code Wiki · 生成于 2026-10-26 · 修订于 2026-10-27 · 覆盖 V1 / v2 / Skyglow<br>
+      SUNGLOW 霞光预报 · Code Wiki · 生成于 2026-10-26 · 修订于 2026-10-27 · 覆盖 Sunglow Spectrum Edition（V2）/ Sunglow Classic Edition（V1）/ Skyglow Enhanced Edition（Skyglow）<br>
       本文档为单文件自包含 HTML，无外部依赖；行号与数字对应生成时刻的工作区快照，源码变动后请以 <span class="ref">文件:行号</span> 复核。
     </p>
   </footer>

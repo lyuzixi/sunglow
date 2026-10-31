@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>页面不存在 · 霞光档案 · SUNGLOW</title>
+<title>页面不存在 · SUNGLOW Spectrum Edition · 光谱观测版</title>
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#070b14">
 <link rel="icon" type="image/png" href="./favicon-192.png">
@@ -68,9 +68,11 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   width:26px; height:26px; border-radius:50%; flex:0 0 auto;
   background:url("./icon-192.png") center/cover no-repeat;
 }
-.brand-tx{display:flex; align-items:baseline; gap:6px; white-space:nowrap; overflow:hidden}
+.brand-tx{display:flex; flex-direction:column; gap:1px; white-space:nowrap; overflow:hidden}
+.brand-line{display:flex; align-items:baseline; gap:6px}
 .brand-tx b{font-size:15px; letter-spacing:-.01em}
 .brand-tx em{font-style:normal; font-size:10.5px; letter-spacing:.16em; color:var(--tx-3)}
+.brand-ed{font-size:9.5px; letter-spacing:.08em; color:var(--tx-3)}
 .nav{display:flex; align-items:center; gap:2px; margin-left:6px; flex:1 1 auto; min-width:0}
 .nav a{
   padding:7px 11px; border-radius:var(--r-full); font-size:13px; color:var(--tx-2);
@@ -156,7 +158,7 @@ h1{font-size:clamp(19px,2.6vw,24px); margin:0 0 10px; letter-spacing:-.01em}
   <div class="topbar-in">
     <a class="brand" id="brand" href="./index.html">
       <span class="brand-dot"></span>
-      <span class="brand-tx"><b data-i18n="霞光档案">霞光档案</b><em>SUNGLOW</em></span>
+      <span class="brand-tx"><span class="brand-line"><b data-i18n="霞光档案">霞光档案</b><em>SUNGLOW</em></span><span class="brand-ed" data-i18n="Spectrum Edition · 光谱观测版">Spectrum Edition · 光谱观测版</span></span>
     </a>
 
     <nav class="nav" id="nav">
@@ -205,7 +207,7 @@ h1{font-size:clamp(19px,2.6vw,24px); margin:0 0 10px; letter-spacing:-.01em}
     </div>
 
     <p class="foot">
-      <span data-i18n="霞光档案 v2 是单文件应用：整个程序就是一个 index.html，双击即可离线使用。">霞光档案 v2 是单文件应用：整个程序就是一个 index.html，双击即可离线使用。</span>
+      <span data-i18n="霞光档案 · SUNGLOW Spectrum Edition 是单文件应用：整个程序就是一个 index.html，双击即可离线使用。">霞光档案 · SUNGLOW Spectrum Edition 是单文件应用：整个程序就是一个 index.html，双击即可离线使用。</span>
       <a href="./index.html" data-i18n="打开应用">打开应用</a>
     </p>
   </div>
@@ -233,10 +235,11 @@ h1{font-size:clamp(19px,2.6vw,24px); margin:0 0 10px; letter-spacing:-.01em}
       "深色": "深色",
       "浅色": "淺色",
       "跟随系统": "跟隨系統",
-      "霞光档案 v2 是单文件应用：整个程序就是一个 index.html，双击即可离线使用。":
-        "霞光檔案 v2 是單檔應用：整個程式就是一個 index.html，雙擊即可離線使用。",
+      "霞光档案 · SUNGLOW Spectrum Edition 是单文件应用：整个程序就是一个 index.html，双击即可离线使用。":
+        "霞光檔案 · SUNGLOW Spectrum Edition 是單檔應用：整個程式就是一個 index.html，雙擊即可離線使用。",
       "打开应用": "開啟應用",
-      "页面不存在 · 霞光档案 · SUNGLOW": "頁面不存在 · 霞光檔案 · SUNGLOW",
+      "页面不存在 · SUNGLOW Spectrum Edition · 光谱观测版": "頁面不存在 · SUNGLOW Spectrum Edition · 光譜觀測版",
+      "Spectrum Edition · 光谱观测版": "Spectrum Edition · 光譜觀測版",
       "语言": "語言",
       "主题": "主題"
     },
@@ -256,10 +259,11 @@ h1{font-size:clamp(19px,2.6vw,24px); margin:0 0 10px; letter-spacing:-.01em}
       "深色": "Dark",
       "浅色": "Light",
       "跟随系统": "System",
-      "霞光档案 v2 是单文件应用：整个程序就是一个 index.html，双击即可离线使用。":
-        "SUNGLOW v2 ships as a single file: the whole app is one index.html you can open offline.",
+      "霞光档案 · SUNGLOW Spectrum Edition 是单文件应用：整个程序就是一个 index.html，双击即可离线使用。":
+        "SUNGLOW Spectrum Edition ships as a single file: the whole app is one index.html you can open offline.",
       "打开应用": "Open the app",
-      "页面不存在 · 霞光档案 · SUNGLOW": "Page not found · SUNGLOW",
+      "页面不存在 · SUNGLOW Spectrum Edition · 光谱观测版": "Page not found · SUNGLOW Spectrum Edition",
+      "Spectrum Edition · 光谱观测版": "Spectrum Edition",
       "语言": "Language",
       "主题": "Theme"
     }
@@ -293,7 +297,7 @@ h1{font-size:clamp(19px,2.6vw,24px); margin:0 0 10px; letter-spacing:-.01em}
     for (var i = 0; i < nodes.length; i++) {
       nodes[i].textContent = t(nodes[i].getAttribute("data-i18n"));
     }
-    document.title = t("页面不存在 · 霞光档案 · SUNGLOW");
+    document.title = t("页面不存在 · SUNGLOW Spectrum Edition · 光谱观测版");
     var lb = document.getElementById("langBtn");
     if (lb) { lb.textContent = LANG_SHORT[lang]; lb.setAttribute("aria-label", t("语言")); }
     var tb = document.getElementById("themeBtn");

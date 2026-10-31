@@ -1,6 +1,6 @@
-# 静态托管可行性评估与配置步骤
+# 静态托管可行性评估与配置步骤（Skyglow Enhanced Edition）
 
-> **本仓库说明（2026-10-27）**：本文是上游原稿，评估对象为当时仅含 Python 后端的 `skyglow/` 与 `skyglow-release/`（在本仓库统一为 `Skyglow/`）。原文结论「不能直接静态托管」**不适用于**本仓库新增的 `index.html` 全功能单文件版——它已把算法移植为纯 JS，可双击或直接静态托管；GRIB2 官方档案直连仍需 Python 版。
+> **本仓库说明（2026-10-27）**：本文属于 **Skyglow Enhanced Edition（Skyglow移植增强版）** 文档。该版本是基于第三方 [couletian/Skyglow](https://github.com/couletian/Skyglow) 的**移植增强独立版本**，不是 Sunglow V3，也不是 V2 的下一代。本文是上游原稿，评估对象为当时仅含 Python 后端的 `skyglow/` 与 `skyglow-release/`（在本仓库统一为 `Skyglow/`）。原文结论「不能直接静态托管」**不适用于**本仓库新增的 `index.html` 全功能单文件版——它已把算法移植为纯 JS，可双击或直接静态托管；GRIB2 官方档案直连仍需 Python 版。上游未附 LICENSE，默认版权保留；引用或再分发前请先联系原作者确认。
 
 > 评估对象：`skyglow/`（开发版）与 `skyglow-release/`（发布版）
 > 评估时间：2026-10-18

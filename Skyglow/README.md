@@ -1,4 +1,6 @@
-# 霞光 Skyglow · 火烧云概率预报（改进版）
+# Skyglow Enhanced Edition · Skyglow移植增强版 · 火烧云概率预报
+
+> **定位与命名**：本目录是 **Skyglow Enhanced Edition（Skyglow移植增强版）**，简称 Skyglow Enhanced，内部标识仍为 Skyglow。它是基于第三方项目 [couletian/Skyglow](https://github.com/couletian/Skyglow) 的**移植增强独立版本**，不是 Sunglow V3，也不是 Sunglow V2 的下一代；与同仓的 Sunglow Spectrum Edition / 光谱观测版（V2）、Sunglow Classic Edition / 经典原版（V1）并列，各自独立。
 
 > **来源与定性**：本目录源自 GitHub 项目 [couletian/Skyglow](https://github.com/couletian/Skyglow)（原作者 couletian）。Python 服务端部分沿用上游；`index.html` 全功能单文件版由 **lyuzixi** 把上游 Python 算法逐行移植为纯 JS 并打包成自包含页面，属**移植增强（衍生作品）**，不是从零自研。上游未附 LICENSE，默认版权保留；引用或再分发前请先联系原作者确认授权。
 

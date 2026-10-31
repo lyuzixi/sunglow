@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>霞光 Skyglow · 火烧云概率预报</title>
-<meta name="description" content="基于 ERA5 分层云量、CAMS 气溶胶光学厚度与太阳几何的朝霞/晚霞定量预报（全功能单文件版）。">
+<title>Skyglow Enhanced Edition · Skyglow移植增强版 · 火烧云概率预报</title>
+<meta name="description" content="Skyglow Enhanced Edition（Skyglow移植增强版）：基于 ERA5 分层云量、CAMS 气溶胶光学厚度与太阳几何的朝霞/晚霞定量预报（全功能单文件版）。">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PGNpcmNsZSBjeD0iMTYiIGN5PSIxOSIgcj0iOCIgZmlsbD0iI2ZmN2E0ZCIvPjxwYXRoIGQ9Ik0yIDI1aDI4IiBzdHJva2U9IiNmZmIwNzAiIHN0cm9rZS13aWR0aD0iMiIvPjwvc3ZnPg==">
 <style>
 :root{
@@ -39,6 +39,8 @@ body{
 .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text)}
 .brand-text{font-weight:650;font-size:17px;letter-spacing:.02em}
 .brand-en{font-size:10px;letter-spacing:.22em;color:var(--muted);margin-left:8px;font-weight:500}
+.brand-copy{display:flex;flex-direction:column;line-height:1.18}
+.brand-sub{font-size:10px;letter-spacing:.04em;color:var(--muted2);margin-top:2px}
 .nav{display:flex;gap:22px;margin-left:auto}
 .nav a{color:var(--muted);text-decoration:none;font-size:14px;padding:6px 0;position:relative}
 .nav a:hover{color:var(--text)}
@@ -82,6 +84,8 @@ body{
 .mnav-group a.active:before{content:"";position:absolute;left:8px;top:9px;bottom:9px;width:2px;
   border-radius:2px;background:linear-gradient(180deg,var(--accent),var(--accent2))}
 .mnav-group a .arw{margin-left:auto;font-style:normal;font-size:11px;color:var(--muted2)}
+.mnav-group a.ext .ext-copy{display:flex;flex-direction:column;gap:1px;line-height:1.35}
+.mnav-group a.ext .ext-cn{font-size:11px;color:var(--muted2);letter-spacing:.02em}
 body.mnav-open{overflow:hidden}
 @media (max-width:980px){.mnav-btn{display:flex}}
 
@@ -284,6 +288,9 @@ table.src th{color:var(--muted2);font-weight:500;font-size:10.5px}
 .foot .fine{margin-top:6px;line-height:1.7}
 .foot a{color:var(--muted);text-decoration:underline;text-decoration-color:rgba(255,255,255,.18)}
 .foot a:hover{color:var(--accent)}
+.foot-vers{display:flex;flex-wrap:wrap;gap:6px 16px}
+.foot-vers a{display:flex;flex-direction:column;line-height:1.45}
+.foot-vers .ver-cn{font-size:10.5px;color:var(--muted2)}
 .attribution{font-size:10.5px;color:var(--muted2);margin-top:5px}
 .attribution a{color:var(--muted);text-decoration:underline;text-decoration-color:rgba(255,255,255,.18)}
 .attribution a:hover{color:var(--accent)}
@@ -557,7 +564,10 @@ table.src-table tr:hover td{background:rgba(255,255,255,.02)}
       <span class="brand-mark" aria-hidden="true">
         <svg viewBox="0 0 32 32" width="26" height="26"><defs><linearGradient id="bg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd166"/><stop offset="1" stop-color="#ff5a3c"/></linearGradient></defs><circle cx="16" cy="19" r="7" fill="url(#bg1)"/><path d="M2 24h28" stroke="#ff8a5c" stroke-width="1.4" opacity=".75"/><path d="M5 27h22" stroke="#ff8a5c" stroke-width="1" opacity=".35"/></svg>
       </span>
-      <span class="brand-text">霞光<span class="brand-en">SKYGLOW</span></span>
+      <span class="brand-copy">
+        <span class="brand-text">霞光<span class="brand-en">SKYGLOW</span></span>
+        <span class="brand-sub">Enhanced Edition · Skyglow移植增强版</span>
+      </span>
     </a>
     <nav class="nav">
       <a href="#forecast" class="active">预报</a>
@@ -598,8 +608,8 @@ table.src-table tr:hover td{background:rgba(255,255,255,.02)}
   </div>
   <div class="mnav-group">
     <h4>其他版本</h4>
-    <a class="ext" href="../V1/index.html"><span>V1</span><i class="arw">↗</i></a>
-    <a class="ext" href="../index.html"><span>V2</span><i class="arw">↗</i></a>
+    <a class="ext" href="../V1/index.html"><span class="ext-copy"><span>Sunglow Classic Edition</span><span class="ext-cn">经典原版</span></span><i class="arw">↗</i></a>
+    <a class="ext" href="../index.html"><span class="ext-copy"><span>Sunglow Spectrum Edition</span><span class="ext-cn">光谱观测版</span></span><i class="arw">↗</i></a>
   </div>
 </aside>
 
@@ -1007,14 +1017,15 @@ table.src-table tr:hover td{background:rgba(255,255,255,.02)}
   </section>
 
   <footer class="foot">
-    <div>霞光 Skyglow · 火烧云概率预报（改进自第三方项目）
+    <div>Skyglow Enhanced Edition · Skyglow移植增强版 · 火烧云概率预报（基于第三方项目移植增强）
       <div class="fine">全功能单文件版由 <strong>lyuzixi</strong> 将上游 Python 算法逐行移植为纯 JS 并打包（移植增强）。<br>
-        原作者：<strong>couletian</strong> · 上游：<a href="https://github.com/couletian/Skyglow" target="_blank" rel="noopener">couletian/Skyglow</a> · 本仓库：<a href="https://github.com/lyuzixi/sunglow" target="_blank" rel="noopener">lyuzixi/sunglow</a></div>
+        原作者：<strong>couletian</strong> · 上游：<a href="https://github.com/couletian/Skyglow" target="_blank" rel="noopener">couletian/Skyglow</a> · 本仓库：<a href="https://github.com/lyuzixi/sunglow" target="_blank" rel="noopener">lyuzixi/sunglow</a><br>
+        上游未附 LICENSE，版权归原作者所有并保留；本目录不主张上游代码的版权，引用或再分发前请先联系原作者确认。</div>
       <!-- 版本切换（2026-10-27）：三版同仓并存，本页是 /Skyglow/ 下的单文件产物，
            ../ 指向上级 —— 仓库根 index.html 即线上 V2，V1/ 与本目录同级，
            所以 file:// 双击与静态托管两种打开方式下都成立。不放进 #footMeta：
            那一格由 JS 写模型版本，探针按内容读它。 -->
-      <div class="fine"><a href="../V1/index.html">切换到V1 →</a> · <a href="../index.html">切换到V2 →</a></div>
+      <div class="fine foot-vers"><a href="../V1/index.html"><span>Sunglow Classic Edition</span><span class="ver-cn">经典原版 →</span></a><a href="../index.html"><span>Sunglow Spectrum Edition</span><span class="ver-cn">光谱观测版 →</span></a></div>
     </div>
     <div id="footMeta">数据：ERA5 / CAMS / Open-Meteo · 标签：sunsetbot 再分析记录</div>
   </footer>

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title data-i18n="页面不存在 · 霞光预报">页面不存在 · 霞光预报</title>
-<meta name="description" content="你访问的地址没有对应的页面。返回霞光预报首页，查询朝霞与晚霞的出现概率与观赏质量。">
+<title data-i18n="页面不存在 · SUNGLOW Classic Edition · 霞光预报">页面不存在 · SUNGLOW Classic Edition · 霞光预报</title>
+<meta name="description" content="SUNGLOW Classic Edition（经典原版）· 你访问的地址没有对应的页面。返回霞光预报首页，查询朝霞与晚霞的出现概率与观赏质量。">
 <!-- 404 页**必须** noindex：它会被托管平台拿去应答**任意**未知路径（包括爬虫顺着
      外链摸过来的各种拼错地址），放进索引等于给站点造出一批空壳收录。 -->
 <meta name="robots" content="noindex">
@@ -207,6 +207,8 @@ a{color:var(--blue)}
 .logo::after{content:"";position:absolute;left:3px;right:3px;bottom:5px;height:1px;
   background:var(--tx3);opacity:.55}
 .top h1{font-size:16px;line-height:1.3;letter-spacing:.2px}
+/* 报头第二行（与主页同款）：Sunglow Classic Edition / 经典原版，10px、--tx3。 */
+.top-ed{font-size:10px;line-height:1.4;letter-spacing:.04em;color:var(--tx3)}
 /* 标题列必须 min-width:0（与主页同一条纪律）：h1 是 nowrap，其 min-content 等于
    整行标题宽，缺它标题列不许收缩，会把 badge 顶出容器右缘 → 页面 scrollWidth 变大。 */
 .top-tx{min-width:0}
@@ -311,6 +313,7 @@ a{color:var(--blue)}
     <div class="logo" aria-hidden="true"></div>
     <div class="top-tx">
       <h1 data-i18n="霞光预报">霞光预报</h1>
+      <div class="top-ed" data-i18n="SUNGLOW · Classic Edition · 经典原版">SUNGLOW · Classic Edition · 经典原版</div>
     </div>
     <div class="spacer"></div>
     <!-- 语言入口（2026-10-19：与主页同款，从正文搬进导航栏，靠右成组、徽标左侧） -->
@@ -380,8 +383,9 @@ a{color:var(--blue)}
   var SHORT = { zh: "中", zhHant: "繁", en: "EN" };
   var DICT = {
     en: {
-      "页面不存在 · 霞光预报": "Page not found · Sunset Glow Forecast",
+      "页面不存在 · SUNGLOW Classic Edition · 霞光预报": "Page not found · SUNGLOW Classic Edition · Sunset Glow Forecast",
       "霞光预报": "Sunset Glow Forecast",
+      "SUNGLOW · Classic Edition · 经典原版": "SUNGLOW · Classic Edition",
       "404 · 页面不存在": "404 · Page not found",
       "找不到这个页面": "This page does not exist",
       "这个地址没有对应的页面 —— 可能是链接过期、地址输错，或者页面已经挪走了。":
@@ -394,8 +398,9 @@ a{color:var(--blue)}
       "语言": "Language"
     },
     zhHant: {
-      "页面不存在 · 霞光预报": "頁面不存在 · 霞光預報",
+      "页面不存在 · SUNGLOW Classic Edition · 霞光预报": "頁面不存在 · SUNGLOW Classic Edition · 霞光預報",
       "霞光预报": "霞光預報",
+      "SUNGLOW · Classic Edition · 经典原版": "SUNGLOW · Classic Edition · 經典原版",
       "404 · 页面不存在": "404 · 頁面不存在",
       "找不到这个页面": "找不到這個頁面",
       "这个地址没有对应的页面 —— 可能是链接过期、地址输错，或者页面已经挪走了。":

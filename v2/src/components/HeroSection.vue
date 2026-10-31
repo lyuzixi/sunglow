@@ -67,6 +67,7 @@ onMounted(() => {
           霞光档案
           <span class="spectrum-text glow">SUNGLOW</span>
         </h1>
+        <p class="hero-edition">{{ t("Spectrum Edition · 光谱观测版") }}</p>
         <p class="hero-sub">
           <span class="hero-slogan">{{ t("让每一次追霞，都有迹可循") }}</span>
           <span class="hero-sub-tech">{{ t("沉浸式预报体验 —— GFS / ECMWF / 光追物理三套算法，把今晚的天空写成一份可以出发的理由。") }}</span>
@@ -234,6 +235,13 @@ onMounted(() => {
   letter-spacing: -0.03em;
   font-weight: 650;
   overflow-wrap: anywhere;
+}
+.hero-edition {
+  margin: -6px 0 18px;
+  color: var(--tx-2);
+  font-family: var(--font-display);
+  font-size: var(--fs-small);
+  letter-spacing: 0.08em;
 }
 @media (max-width: 560px) {
   .hero-title {

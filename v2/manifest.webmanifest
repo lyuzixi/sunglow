@@ -1,7 +1,7 @@
 {
-  "name": "霞光档案 · SUNGLOW · 大气光谱观测站",
-  "short_name": "霞光档案",
-  "description": "多模式晚霞/朝霞概率与观赏质量预报：GFS + ECMWF + 光追三路集成，含周边热力图与十日趋势。让每一次追霞，都有迹可循。",
+  "name": "SUNGLOW Spectrum Edition · 光谱观测版",
+  "short_name": "光谱观测版",
+  "description": "霞光档案 · SUNGLOW Spectrum Edition · 光谱观测版：多模式晚霞/朝霞概率与观赏质量预报，GFS + ECMWF + 光追三路集成，含周边热力图与十日趋势。",
   "lang": "zh-CN",
   "dir": "ltr",
   "start_url": "./index.html",
