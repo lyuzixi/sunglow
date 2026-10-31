@@ -26,6 +26,7 @@ const FILES = [
   "tutorial.html",
   "sw.js",
   "manifest.webmanifest",
+  "favicon-192.png",
   "icon-192.png",
   "icon-512.png",
   "icon-maskable-512.png",

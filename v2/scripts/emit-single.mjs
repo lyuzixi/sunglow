@@ -27,6 +27,7 @@ if (/<script[^>]+src=|<link[^>]+rel=["']stylesheet["']/i.test(raw)) {
    这里把引用改回同目录下的稳定文件名（文件本身由仓库提供，不再由构建生成）。 */
 const RENAME = [
   [/\.\/manifest-[A-Za-z0-9_-]+\.webmanifest/g, "./manifest.webmanifest"],
+  [/\.\/favicon-192-[A-Za-z0-9_-]+\.png/g, "./favicon-192.png"],
   [/\.\/icon-192-[A-Za-z0-9_-]+\.png/g, "./icon-192.png"],
   [/\.\/icon-512-[A-Za-z0-9_-]+\.png/g, "./icon-512.png"]
 ];
@@ -34,7 +35,7 @@ let html = raw;
 for (const [re, to] of RENAME) html = html.replace(re, to);
 
 /* 引用必须能在同目录找到实体文件，否则宁可构建失败也别上线一个装不了的 PWA */
-for (const f of ["manifest.webmanifest", "icon-192.png", "icon-512.png"]) {
+for (const f of ["manifest.webmanifest", "favicon-192.png", "icon-192.png", "icon-512.png"]) {
   if (html.includes("./" + f) && !fs.existsSync(path.join(root, f))) {
     console.error("emit-single: 引用了 " + f + "，但 " + root + " 下没有这个文件");
     process.exit(3);
