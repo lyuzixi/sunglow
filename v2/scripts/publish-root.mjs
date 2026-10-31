@@ -6,7 +6,7 @@
    即线上站点，V1/、Skyglow/ 退为同级归档。源码工程留在 v2/（构建需要
    manifest.webmanifest / icon-192.png 等输入在场），根目录是发布副本。
 
-   做法：7 个交付文件从 v2/ 拷贝到仓库根，逐文件 sha256 校验；
+   做法：FILES 里的全部交付文件从 v2/ 拷贝到仓库根，逐文件 sha256 校验；
    缺文件 / 拷贝校验失败 / 根 index.html 残留指向上级的跨目录链接 ⇒ exit 1。
    为什么机制化：根副本是线上交付物，手动拷贝必漂移（仓库纪律：判据必须机制化，
    参照 emit-single 对稳定文件名与残留哈希的校验思路）。
@@ -18,7 +18,7 @@ import crypto from "node:crypto";
 const root = path.resolve(import.meta.dirname, "..");   // v2/
 const repo = path.resolve(root, "..");                  // 仓库根
 
-/* 交付文件全集：index.html 是构建产物，其余是静态伴侣（404/教程/PWA 四件套）。
+/* 交付文件全集：index.html 是构建产物，其余是静态伴侣（404/教程/PWA 配套）。
    注意 app.html / README / package.json / src/ 等工程文件不发布。 */
 const FILES = [
   "index.html",

@@ -49,15 +49,15 @@ v2/
 
 | 产物 | 路径 | 怎么打开 |
 |---|---|---|
-| **唯一交付** | 仓库根 `index.html` | **直接双击**，断网可用。JS/CSS/字体内联，约 815KB |
-| 发布伴随 | 根 `404.html` / `tutorial.html` / `sw.js` / `manifest.webmanifest` / 图标×2 | `npm run build` 自动发布 |
+| **唯一交付** | 仓库根 `index.html` | **直接双击**，断网可用。JS/CSS/字体内联，约 0.8MB |
+| 发布伴随 | 根 `404.html` / `tutorial.html` / `sw.js` / `manifest.webmanifest` / 图标×4 | `npm run build` 自动发布 |
 | 开发 | 源码入口 `v2/app.html`（不对外） | `cd v2 && npm run dev` → 打开 `/app.html` |
 
 ```bash
 cd v2
 npm install
 npm run dev                # 开发服务器
-npm run build              # 单文件产物 + publish-root 自动发布 7 个文件到仓库根
+npm run build              # 单文件产物 + publish-root 自动发布 9 个文件到仓库根
 ```
 
 > 为什么不直接双击源码入口 `v2/app.html`：Vite 默认产物是 ES module 多文件，
@@ -77,7 +77,7 @@ npm run build              # 单文件产物 + publish-root 自动发布 7 个�
 | 创作者版 | 拍摄者 | 三步挑拍摄夜、结论卡导出、快照做内容、主题与截图、校准反哺、额度礼节 |
 
 - 三语（简 / 繁 / EN）：页内 `data-i18n` 词典 + 顶栏语言切换器，`?lang=` 可直开；主题三态与主页一致。
-- 与主页共享同一份偏好 `glowcast.v2.pref`（语言 / 主题，补字段写入，不碰单位与时间制式）。
+- 与主页共享同一份偏好 `SUNGLOW.v2.pref`（语言 / 主题，补字段写入，不碰单位与时间制式）。
 - 分档走 hash 路由（`#users` / `#dev` / `#creator`），档内章节有锚点；吸顶条高度实测写入 `--toph`。
 - 应用内**没有**教程路由：2026-10-26 删除了无入口的 `/tutorial` 孤儿视图，避免两份教程各自漂移。
 
@@ -85,7 +85,7 @@ npm run build              # 单文件产物 + publish-root 自动发布 7 个�
 | 项 | V1 | v2 |
 |---|---|---|
 | 构建链 | `assemble.py` 单文件 | Vite 多文件产物 |
-| 存储 | `sunsetbot.pref.v1` / `sunsetbot.calib.v1` | `glowcast.v2.pref` / `glowcast.v2.calib` |
+| 存储 | `sunsetbot.pref.v1` / `sunsetbot.calib.v1` | `SUNGLOW.v2.pref` / `SUNGLOW.v2.calib` |
 | 地图色阶 | HEAT_RAMP 白→黄→橙→红 | SPECTRUM_RAMP 深靛→品红→琥珀→电离青 |
 | 预报算法 | GFS/EC 统计 + 光追 | **口径完全一致**（逐函数移植） |
 | 快照格式 | SNAP_VER=1 | **互通**（任一侧生成对方可解） |

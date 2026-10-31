@@ -36,7 +36,7 @@
 ## 版本互不影响
 
 - 三套代码、资源与构建链各自独立（Skyglow 含上游 Python 实现与其 JS 移植版），改动互不牵连；页面之间只做单向互链，不共享代码。
-- 本地存储按版本分命名空间，互不覆盖：V1 `sunsetbot.*`、v2 `glowcast.v2.*`、Skyglow `skyglow.p0.*`。
+- 本地存储按版本分命名空间，互不覆盖：V1 `sunsetbot.*`、v2 `SUNGLOW.v2.*`、Skyglow `skyglow.p0.*`。
 - 算法口径以 V1 为基线；v2 的 `vendor/src-verbatim/` 是 V1 脚本的冻结副本，不参与构建、仅作对照。
 
 ## 目录结构

@@ -440,7 +440,7 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
               <td><b>v2</b> <span class="ref">v2/</span></td>
               <td>Vue 3.5 + Vite 6 + TS 5.7（hash 路由）</td>
               <td><code>vite build</code> → <code>emit-single.mjs</code> → <code>publish-root.mjs</code></td>
-              <td><strong>仓库根 7 个文件</strong>（index/404/tutorial/sw/manifest/图标×2）</td>
+              <td><strong>仓库根 9 个文件</strong>（index/404/tutorial/sw/manifest/图标×4）</td>
               <td><strong>项目主线</strong>：视觉重做，算法口径与 V1 逐点对齐</td>
             </tr>
             <tr>
@@ -457,7 +457,7 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
       <div class="callout warm">
         <span class="tt">隔离是怎么做到的</span>
         前端靠 <b>localStorage 键命名空间</b>互不读写：V1 用 <code>sunsetbot.*</code>，
-        v2 用 <code>glowcast.v2.*</code>；
+        v2 用 <code>SUNGLOW.v2.*</code>；
         Skyglow 的状态在服务端 <code>data/</code> 目录（文件缓存），前端只持有会话内的 state。
         这条纪律的直接好处：同一浏览器里同时开着三套，任何一套的偏好、缓存、校准都不会串味。
       </div>
@@ -469,12 +469,12 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
         <div class="it"><div class="d">2026-10-21</div><div class="x"><b>git HEAD = 8900cf9</b>：v2 之后有大量未提交改动（本文无法在本机核验 git，引用既有文档结论）。</div></div>
         <div class="it"><div class="d">2026-10-22 ~ 10-23</div><div class="x"><b>v2 色面二次返工</b>：全光谱 <code>GLOW_ANCHORS</code>、自适应核 Shepard、距离淡出、可信度降饱和；教训是「深蓝 + 中 alpha = 脏紫滤镜」。</div></div>
         <div class="it"><div class="d">2026-10-25</div><div class="x"><b>仓库重整</b>：V1（原版）整体迁入 <code>V1/</code>，v2 明确为项目主线。</div></div>
-        <div class="it"><div class="d">2026-10-26</div><div class="x"><b>交付物落根</b>：v2 构建链新增 <code>publish-root</code>，7 个交付文件带 sha256 校验发布到仓库根，根路径即 GitHub Pages 入口。</div></div>
+        <div class="it"><div class="d">2026-10-26</div><div class="x"><b>交付物落根</b>：v2 构建链新增 <code>publish-root</code>，9 个交付文件带 sha256 校验发布到仓库根，根路径即 GitHub Pages 入口。</div></div>
       </div>
 
       <h3 id="constraints">2.4 贯穿全项目的四条硬约束</h3>
       <div class="kv">
-        <div class="i"><span class="k">约束 ①</span><b>单文件自包含</b>是第一约束：图标内联 data-URI、不做 <code>og:image</code>、PWA 默认关（SW 注册物理上无法来自单文件）。</div>
+        <div class="i"><span class="k">约束 ①</span><b>单文件自包含</b>是第一约束：图标内联 data-URI、不做 <code>og:image</code>；PWA 由静态伴侣提供（sw.js / manifest / 图标随发布落根，SW 只在 http(s) 下注册）。</div>
         <div class="i"><span class="k">约束 ②</span><b>额度纪律</b>：取数必须显式触发；缓存命中是唯一例外；429 分「日额度耗尽」与「短时限流」两类分别给处置建议。</div>
         <div class="i"><span class="k">约束 ③</span><b>判据机制化</b>：文档里写的数字必须由探针产出并留指纹，源码改了没重跑就报 STALE。</div>
         <div class="i"><span class="k">约束 ④</span><b>口径单一权威</b>：算法常量（<code>W_ENS</code>/<code>TRANSECT</code>/<code>mixedIndex</code>/<code>QUALITY_BANDS</code>）只允许一份真值，跨工程靠冻结副本 diff。</div>
@@ -577,7 +577,7 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
           <div class="arrows">→</div>
           <div class="fnode acc2"><div class="h">emit-single.mjs</div><div class="b">输出 v2/index.html，删中间目录</div></div>
           <div class="arrows">→</div>
-          <div class="fnode ok"><div class="h">publish-root.mjs</div><div class="b">7 文件拷到仓库根，逐文件 sha256 + 跨目录链接回归检查</div></div>
+          <div class="fnode ok"><div class="h">publish-root.mjs</div><div class="b">9 文件拷到仓库根，逐文件 sha256 + 跨目录链接回归检查</div></div>
           <div class="arrows">→</div>
           <div class="fnode ok"><div class="h">GitHub Pages 根</div><div class="b">根 index.html 即线上入口</div></div>
         </div>
@@ -634,7 +634,7 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
 
       <div class="callout">
         <span class="tt">一个容易被忽略的结构事实</span>
-        根目录里的 <code>404.html</code> / <code>tutorial.html</code> / <code>sw.js</code> / <code>manifest.webmanifest</code> / 两个图标
+        根目录里的 <code>404.html</code> / <code>tutorial.html</code> / <code>sw.js</code> / <code>manifest.webmanifest</code> / 四个图标
         <b>不是</b>手写文件，而是 <span class="ref">v2/scripts/publish-root.mjs:23-31</span> 定义的交付文件全集的一部分。
         也就是说：改这几个文件的正确姿势是改 v2 下的同名文件，然后跑 <code>npm run build</code> 让它们重新发布。
       </div>
@@ -990,7 +990,7 @@ PWA=1 SITE_BASE=sunglow python assemble.py  <span class="c"># 可选 PWA 四件�
       <div class="kv">
         <div class="i"><span class="k">技术栈</span>Vue 3.5 · vue-router 4（hash）· TypeScript 5.7 · Vite 6 · vite-plugin-singlefile</div>
         <div class="i"><span class="k">源码规模</span>31 个 core 模块 · 19 个组件 · 2 个视图 · 1 个 composable</div>
-        <div class="i"><span class="k">交付</span>根 <code>index.html</code> 828,960 B（零外链）+ 404 / 教程 / PWA 四件套共 7 文件</div>
+        <div class="i"><span class="k">交付</span>根 <code>index.html</code>（零外链，约 0.8 MB）+ 404 / 教程 / PWA 配套共 9 文件</div>
         <div class="i"><span class="k">运行</span>双击根产物即可；开发用 <code>npm run dev</code> 打开 <code>/app.html</code></div>
       </div>
 
@@ -1003,7 +1003,7 @@ PWA=1 SITE_BASE=sunglow python assemble.py  <span class="c"># 可选 PWA 四件�
           <div class="arrows">→</div>
           <div class="fnode"><div class="h">emit-single.mjs</div><div class="b">校验零外链；PWA 引用改稳定名；写 v2/index.html；删中间目录</div></div>
           <div class="arrows">→</div>
-          <div class="fnode acc2"><div class="h">publish-root.mjs</div><div class="b">7 文件拷到仓库根，逐文件 sha256；检查 ../V1/ 等跨目录链接</div></div>
+          <div class="fnode acc2"><div class="h">publish-root.mjs</div><div class="b">9 文件拷到仓库根，逐文件 sha256；检查 ../V1/ 等跨目录链接</div></div>
           <div class="arrows">→</div>
           <div class="fnode ok"><div class="h">仓库根</div><div class="b">Pages 入口；根副本与源码分离</div></div>
         </div>
@@ -1015,18 +1015,20 @@ PWA=1 SITE_BASE=sunglow python assemble.py  <span class="c"># 可选 PWA 四件�
           <thead><tr><th>npm script</th><th>命令</th><th>作用</th></tr></thead>
           <tbody>
             <tr><td><code>dev</code></td><td><code>vite</code></td><td>开发服务器；打开 <code>/app.html</code>（源码入口不对外）</td></tr>
-            <tr><td><code>build</code></td><td><code>vite build &amp;&amp; node scripts/emit-single.mjs &amp;&amp; node scripts/publish-root.mjs</code></td><td>单文件产物并自动发布 7 文件到仓库根</td></tr>
+            <tr><td><code>build</code></td><td><code>node scripts/check-consistency.mjs &amp;&amp; vite build &amp;&amp; node scripts/emit-single.mjs &amp;&amp; node scripts/publish-root.mjs</code></td><td>文档一致性校验 + 单文件产物并自动发布 9 文件到仓库根</td></tr>
             <tr><td><code>typecheck</code></td><td><code>tsc --noEmit</code></td><td>类型检查</td></tr>
+            <tr><td><code>check:docs</code></td><td><code>node scripts/check-consistency.mjs</code></td><td>文档 / 交付清单一致性门禁（build 前置）</td></tr>
             <tr><td><code>probe</code></td><td><code>node scripts/probe.mjs</code></td><td><span class="badge b-p0">失效</span> 该文件不存在（见 §5.7）</td></tr>
             <tr><td><code>probe:tz</code> / <code>probe:ui</code> / <code>probe:consist</code></td><td>对应 <code>scripts/probe-*.mjs</code></td><td>时区 / UI / 单点-地图一致性探针</td></tr>
           </tbody>
         </table>
       </div>
 
-      <h4>5.1.1 发布文件全集（7 个）</h4>
-      <p><span class="ref">v2/scripts/publish-root.mjs:23-31</span> 定义了写死的 7 文件清单：
+      <h4>5.1.1 发布文件全集（9 个）</h4>
+      <p><span class="ref">v2/scripts/publish-root.mjs:23-31</span> 定义了写死的 9 文件清单：
         <code>index.html</code> · <code>404.html</code> · <code>tutorial.html</code> · <code>sw.js</code> ·
-        <code>manifest.webmanifest</code> · <code>icon-192.png</code> · <code>icon-512.png</code>。
+        <code>manifest.webmanifest</code> · <code>favicon-192.png</code> · <code>icon-192.png</code> ·
+        <code>icon-512.png</code> · <code>icon-maskable-512.png</code>。
         源码工程留在 <code>v2/</code>，仓库根只是发布副本；<code>v2/index.html</code> 是构建中间产物。
       </p>
       <div class="table-wrap">
@@ -1035,7 +1037,7 @@ PWA=1 SITE_BASE=sunglow python assemble.py  <span class="c"># 可选 PWA 四件�
           <tbody>
             <tr><td>产物不能有外链脚本/样式</td><td><span class="ref">v2/scripts/emit-single.mjs:20-23</span></td><td><code>exit 2</code></td></tr>
             <tr><td>PWA 附属文件必须存在且为稳定名</td><td><span class="ref">v2/scripts/emit-single.mjs:28-46</span></td><td><code>exit 3/4</code></td></tr>
-            <tr><td>7 文件逐个 sha256 比对</td><td><span class="ref">v2/scripts/publish-root.mjs:50-56</span></td><td>构建失败（<code>exit 1</code>）</td></tr>
+            <tr><td>9 文件逐个 sha256 比对</td><td><span class="ref">v2/scripts/publish-root.mjs:50-56</span></td><td>构建失败（<code>exit 1</code>）</td></tr>
             <tr><td>根 index.html 不得残留 <code>../V1/</code> 等跨目录链接</td><td><span class="ref">v2/scripts/publish-root.mjs:36-66</span></td><td>构建失败</td></tr>
           </tbody>
         </table>
@@ -1170,7 +1172,7 @@ PWA=1 SITE_BASE=sunglow python assemble.py  <span class="c"># 可选 PWA 四件�
             <tr>
               <td><a href="v2/src/core/calib.ts" target="_blank" class="ref">calib.ts</a></td>
               <td>常量 (10-18) · <code>calibRead/Save</code> (46-60) · <code>calibStats</code> (123)</td>
-              <td>F4 四边界原样保留；键 <code>glowcast.v2.calib</code></td>
+              <td>F4 四边界原样保留；键 <code>SUNGLOW.v2.calib</code></td>
             </tr>
             <tr>
               <td><a href="v2/src/core/snap.ts" target="_blank" class="ref">snap.ts</a></td>
@@ -1185,7 +1187,7 @@ PWA=1 SITE_BASE=sunglow python assemble.py  <span class="c"># 可选 PWA 四件�
       <h4>5.3.1 单点预报数据流</h4>
       <ol>
         <li><b>输入</b>：<code>state.city</code> / <code>dateStr</code> / <code>period</code>；HomeView 调 <code>runForecast({city,dateStr,period,force})</code>（<span class="ref">v2/src/views/HomeView.vue:28-50</span>）。</li>
-        <li><b>缓存</b>：先 <code>pointCacheGet</code>，键 = <code>glowcast.v2.point.v2.日期|时段@lat.toFixed(1),lon.toFixed(1)</code>，TTL 6 h、LRU 12。命中直接返回，一个请求都不发。</li>
+        <li><b>缓存</b>：先 <code>pointCacheGet</code>，键 = <code>SUNGLOW.v2.point.v3.日期|时段@lat.toFixed(1),lon.toFixed(1)</code>，TTL 6 h、LRU 12。命中直接返回，一个请求都不发。</li>
         <li><b>太阳事件</b>：用城市时区把日期锚到当地零点，再求日出/日落与高度角变化率。</li>
         <li><b>取数</b>：沿事件方位构造 17 点样带（0…400 km），GFS 走 12 s 总预算，EC 与 AQ 失败可降级为 <code>null</code>；全失败则回落 mock 并标 <code>src:"mock"</code>。</li>
         <li><b>评分</b>：<code>analyseTransect</code> → <code>scoreStat</code> + <code>scoreRay</code> → <code>wgeo</code> 按 <code>W_ENS</code> 合成。</li>
@@ -1206,7 +1208,7 @@ PWA=1 SITE_BASE=sunglow python assemble.py  <span class="c"># 可选 PWA 四件�
           </tbody>
         </table>
       </div>
-      <p>偏好键 <code>glowcast.v2.pref</code>（<span class="ref">v2/src/state.ts:15</span>）；折叠项默认值分两类：
+      <p>偏好键 <code>SUNGLOW.v2.pref</code>（<span class="ref">v2/src/state.ts:15</span>）；折叠项默认值分两类：
         整卡默认展开，卡内说明块默认收起（<span class="ref">v2/src/state.ts:29-35</span>）。</p>
 
       <h4>5.3.3 localStorage 键与 TTL</h4>
@@ -1214,13 +1216,13 @@ PWA=1 SITE_BASE=sunglow python assemble.py  <span class="c"># 可选 PWA 四件�
         <table>
           <thead><tr><th>用途</th><th>键前缀</th><th>TTL / 上限</th><th>位置</th></tr></thead>
           <tbody>
-            <tr><td>偏好</td><td><code>glowcast.v2.pref</code></td><td>无 TTL</td><td><span class="ref">v2/src/state.ts:15</span></td></tr>
-            <tr><td>单点缓存</td><td><code>glowcast.v2.point.v2.</code></td><td>6 h / LRU 12</td><td><span class="ref">v2/src/core/forecast.ts:142-145</span></td></tr>
-            <tr><td>地图缓存</td><td><code>glowcast.v2.map.v9.</code></td><td>6 h / 上限 5</td><td><span class="ref">v2/src/core/mapdata.ts:49-53</span></td></tr>
-            <tr><td>趋势缓存</td><td><code>glowcast.v2.trend.</code></td><td>按天 / 位置</td><td><span class="ref">v2/src/core/trend.ts:23</span></td></tr>
-            <tr><td>校准</td><td><code>glowcast.v2.calib</code></td><td>上限 200 条</td><td><span class="ref">v2/src/core/calib.ts:10-16</span></td></tr>
-            <tr><td>对比点</td><td><code>glowcast.v2.cmp.v1</code></td><td>最多 4 个</td><td><span class="ref">v2/src/core/compare.ts:21-22</span></td></tr>
-            <tr><td>时区记忆</td><td><code>glowcast.v2.tz.</code></td><td>按坐标</td><td><span class="ref">v2/src/core/tz.ts:25</span></td></tr>
+            <tr><td>偏好</td><td><code>SUNGLOW.v2.pref</code></td><td>无 TTL</td><td><span class="ref">v2/src/state.ts:15</span></td></tr>
+            <tr><td>单点缓存</td><td><code>SUNGLOW.v2.point.v3.</code></td><td>6 h / LRU 12</td><td><span class="ref">v2/src/core/forecast.ts:142-145</span></td></tr>
+            <tr><td>地图缓存</td><td><code>SUNGLOW.v2.map.v9.</code></td><td>6 h / 上限 5</td><td><span class="ref">v2/src/core/mapdata.ts:49-53</span></td></tr>
+            <tr><td>趋势缓存</td><td><code>SUNGLOW.v2.trend.</code></td><td>按天 / 位置</td><td><span class="ref">v2/src/core/trend.ts:23</span></td></tr>
+            <tr><td>校准</td><td><code>SUNGLOW.v2.calib</code></td><td>上限 200 条</td><td><span class="ref">v2/src/core/calib.ts:10-16</span></td></tr>
+            <tr><td>对比点</td><td><code>SUNGLOW.v2.cmp.v1</code></td><td>最多 4 个</td><td><span class="ref">v2/src/core/compare.ts:21-22</span></td></tr>
+            <tr><td>时区记忆</td><td><code>SUNGLOW.v2.tz.</code></td><td>按坐标</td><td><span class="ref">v2/src/core/tz.ts:25</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -1279,7 +1281,7 @@ npm run dev          <span class="c"># 打开 http://localhost:5173/app.html（�
 
 <span class="c"># 类型检查 / 构建 / 发布</span>
 npm run typecheck
-npm run build        <span class="c"># vite → emit-single → publish-root，自动更新仓库根 7 文件</span>
+npm run build        <span class="c"># check-consistency → vite → emit-single → publish-root，自动更新仓库根 9 文件</span>
 
 <span class="c"># 探针</span>
 npm run probe:ui
@@ -1295,9 +1297,8 @@ npm run probe:consist</pre>
           <tbody>
             <tr><td><span class="badge b-p0">P0</span></td><td><code>npm run probe</code> 指向缺失的 <code>scripts/probe.mjs</code></td><td><span class="ref">v2/package.json:11</span></td><td>质量门一键入口失效，容易被误认为「没有探针」</td></tr>
             <tr><td><span class="badge b-p1">P1</span></td><td>算法层是 V1 的手工移植，仓库内无自动 diff 门禁；<code>vendor/src-verbatim</code> 只是冻结副本</td><td><span class="ref">v2/vendor/src-verbatim/</span> · §5.2</td><td>V1 改口径后 v2 可能静默漂移</td></tr>
-            <tr><td><span class="badge b-p1">P1</span></td><td>地图缓存前缀 v9，但文件头注释写「v8 存储族」</td><td><span class="ref">v2/src/core/mapdata.ts:5</span> vs <span class="ref">:49</span></td><td>阅读误导；升级缓存版本时容易漏改注释</td></tr>
             <tr><td><span class="badge b-p2">P2</span></td><td><code>api.ts</code> 导出的 <code>TMAP_SERVICE_HOST</code> 未被组件使用，MapView 自己读 <code>import.meta.env.VITE_TMAP_SERVICE_HOST</code></td><td><span class="ref">v2/src/core/api.ts:11</span> · <span class="ref">v2/src/components/MapView.vue:42</span></td><td>死导出；两个配置源并存</td></tr>
-            <tr><td><span class="badge b-p2">P2</span></td><td>大块静态数据内联（城市表、i18n 词典、色阶），单文件体积 829 KB</td><td><span class="ref">v2/src/core/citydata.ts</span> · <span class="ref">v2/src/core/i18n-extra.ts</span></td><td>首屏解析成本；单文件约束下无法靠拆包解决</td></tr>
+            <tr><td><span class="badge b-p2">P2</span></td><td>大块静态数据内联（城市表、i18n 词典、色阶），单文件体积约 0.8 MB</td><td><span class="ref">v2/src/core/citydata.ts</span> · <span class="ref">v2/src/core/i18n-extra.ts</span></td><td>首屏解析成本；单文件约束下无法靠拆包解决</td></tr>
             <tr><td><span class="badge b-p2">P2</span></td><td>发布链依赖人工执行 <code>npm run build</code>，仓库内无 CI 工作流</td><td><span class="ref">v2/scripts/publish-root.mjs</span></td><td>根副本可能与源码不同步；目前靠机制校验而非流水线</td></tr>
           </tbody>
         </table>
@@ -1868,7 +1869,7 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
             <tr><td class="n">R11</td><td><span class="badge b-p2">P2</span></td><td>Skyglow <code>DEFAULT_MODEL</code> 阈值与 <code>model.json</code> 数值不同，缺字段时语义静默切换</td><td><span class="ref">Skyglow/core/model.py:36-48</span></td><td>让缺字段直接报错或同步默认值</td></tr>
             <tr><td class="n">R12</td><td><span class="badge b-p2">P2</span></td><td>Skyglow 无鉴权 / 无 CORS / 配置类 POST 可写凭据文件；线程无上限、无请求超时</td><td><span class="ref">Skyglow/server.py:56-93</span> · <span class="ref">:361-397</span></td><td>公网部署检查清单 + 可选 token；见 I10</td></tr>
             <tr><td class="n">R13</td><td><span class="badge b-p2">P2</span></td><td>Skyglow 单文件版与模块化版并行演化，无同步机制</td><td><span class="ref">Skyglow/tools/make_single.py</span></td><td>标记为构建产物 + 校验；见 I11</td></tr>
-            <tr><td class="n">R14</td><td><span class="badge b-p2">P2</span></td><td>v2 <code>mapdata.ts</code> 注释写「v8 存储族」而前缀是 v9；<code>api.ts</code> 导出未被使用的代理常量</td><td><span class="ref">v2/src/core/mapdata.ts:5</span> · <span class="ref">v2/src/core/api.ts:11</span></td><td>顺手清理，避免下次升级踩到</td></tr>
+            <tr><td class="n">R14</td><td><span class="badge b-p2">P2</span></td><td>v2 <code>api.ts</code> 导出未被使用的代理常量 <code>TMAP_SERVICE_HOST</code>，MapView 另读环境变量</td><td><span class="ref">v2/src/core/api.ts:11</span> · <span class="ref">v2/src/components/MapView.vue:42</span></td><td>删除死导出或让组件复用</td></tr>
             <tr><td class="n">R15</td><td><span class="badge b-p2">P2</span></td><td>既有总览文档的源码行数/体积与当前不一致（如 <code>_p6.js</code> 4066 vs 实测 3958）</td><td><span class="ref">项目架构与技术实现方案.md</span></td><td>把叙述性数字纳入 docfacts 或改为引用事实库</td></tr>
             <tr><td class="n">R16</td><td><span class="badge b-p2">P2</span></td><td>V1 纯静态部署时地图不可用，与 v2 体验分裂</td><td><span class="ref">V1/README.md §2.1</span></td><td>在存档页显式引导到 v2；或补一个无 SDK 的降级地图</td></tr>
             <tr><td class="n">R17</td><td><span class="badge b-p2">P2</span></td><td>V1 回归套件需要浏览器/CDP 与固定 Node 路径，难以无人值守</td><td><span class="ref">V1/_check/all.py:48</span></td><td>容器化运行环境；先记录「重活探针」清单</td></tr>

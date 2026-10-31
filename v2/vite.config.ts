@@ -6,8 +6,8 @@ import { resolve } from "node:path";
 // SUNGLOW v2 —— 单一交付形态：**一个 HTML 文件**（JS/CSS/字体全部内联）。
 //   源码入口：app.html（开发/构建入口，不对外）
 //   交付产物：index.html（npm run build 生成，双击即可离线使用）
-// 已删除：dist/ 多文件产物、PWA（sw.js/manifest/图标）、v2 独立 404 页 ——
-// 它们都要"多个文件"才能成立，与单文件形态互斥。
+// Vite 只负责产出单文件 app.html；404/tutorial/sw/manifest/图标是 v2/ 下的
+// 静态伴侣，由 publish-root 与 index.html 一并发布到仓库根（不经过 Vite）。
 export default defineConfig(() => ({
   plugins: [vue(), viteSingleFile()],
   base: "./",

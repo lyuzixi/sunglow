@@ -10,10 +10,10 @@
 <meta name="theme-color" content="#070b14">
 <meta name="theme-color" content="#f5f7fb">
 <script>
-/* 主题引导：与主页同一份偏好（glowcast.v2.pref），在 CSS 之前定 data-theme，防刷新闪白 */
+/* 主题引导：与主页同一份偏好（SUNGLOW.v2.pref），在 CSS 之前定 data-theme，防刷新闪白 */
 (function () {
   try {
-    var j = JSON.parse(localStorage.getItem("glowcast.v2.pref") || "null");
+    var j = JSON.parse(localStorage.getItem("SUNGLOW.v2.pref") || "null");
     var t = (j && typeof j === "object" && !Array.isArray(j)) ? j.theme : null;
     var k = (t === "light" || t === "dark") ? t : "auto";
     var dark = k === "dark" || (k === "auto" && window.matchMedia &&
@@ -333,11 +333,11 @@ footer{border-top:1px solid var(--line2);margin-top:44px}
     <h2><span class="no">01</span><span data-i18n="形态与构建链">形态与构建链</span></h2>
     <p data-i18n="源码在 v2/，交付物是一个自包含单文件。一条命令跑完构建与发布：">源码在 v2/，交付物是一个自包含单文件。一条命令跑完构建与发布：</p>
     <div class="code" data-i18n="cd v2 &amp;&amp; npm run build">cd v2 &amp;&amp; npm run build</div>
-    <p data-i18n="三段接力：vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 7 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。">三段接力：vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 7 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。</p>
+    <p data-i18n="三段接力：vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 9 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。">三段接力：vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 9 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。</p>
     <div class="kv">
       <div class="c"><div class="n">vite build</div><div class="d" data-i18n="多文件 → app.html 全内联">多文件 → app.html 全内联</div></div>
       <div class="c"><div class="n">emit-single</div><div class="d" data-i18n="稳定文件名 + 零外链校验">稳定文件名 + 零外链校验</div></div>
-      <div class="c"><div class="n">publish-root</div><div class="d" data-i18n="7 个交付文件落仓库根">7 个交付文件落仓库根</div></div>
+      <div class="c"><div class="n">publish-root</div><div class="d" data-i18n="9 个交付文件落仓库根">9 个交付文件落仓库根</div></div>
     </div>
   </section>
 
@@ -361,7 +361,7 @@ W_ENS = GFS 0.30 / ECMWF 0.34 / 光追 0.36（几何平均）
   <section class="sec" id="d-v1">
     <h2><span class="no">04</span><span data-i18n="与 V1 的关系">与 V1 的关系</span></h2>
     <p data-i18n="算法权威在 V1（仓库根 V1/ 目录）。probe:consist 不重写公式，而是从两边源码把同一表达式原样抽出来 eval，在 16 个采样网格上对拍——任何一边改了口径，脚本立刻报差异，相当于一条活的口径守卫。">算法权威在 V1（仓库根 V1/ 目录）。probe:consist 不重写公式，而是从两边源码把同一表达式原样抽出来 eval，在 16 个采样网格上对拍——任何一边改了口径，脚本立刻报差异，相当于一条活的口径守卫。</p>
-    <p data-i18n="两侧状态完全隔离：localStorage 键 sunsetbot.*（V1）vs glowcast.v2.*（v2）；快照 SNAP_VER=1 双向互通，任一侧生成的 ?snap= 链接对方可解。">两侧状态完全隔离：localStorage 键 sunsetbot.*（V1）vs glowcast.v2.*（v2）；快照 SNAP_VER=1 双向互通，任一侧生成的 ?snap= 链接对方可解。</p>
+    <p data-i18n="两侧状态完全隔离：localStorage 键 sunsetbot.*（V1）vs SUNGLOW.v2.*（v2）；快照 SNAP_VER=1 双向互通，任一侧生成的 ?snap= 链接对方可解。">两侧状态完全隔离：localStorage 键 sunsetbot.*（V1）vs SUNGLOW.v2.*（v2）；快照 SNAP_VER=1 双向互通，任一侧生成的 ?snap= 链接对方可解。</p>
   </section>
 
   <section class="sec" id="d-render">
@@ -468,7 +468,7 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
 <script>
 (function () {
   "use strict";
-  var PREF_KEY = "glowcast.v2.pref";
+  var PREF_KEY = "SUNGLOW.v2.pref";
   var LANGS = [
     { k: "zh", name: "中文", short: "中", tag: "zh-CN" },
     { k: "hant", name: "繁體", short: "繁", tag: "zh-Hant-TW" },
@@ -556,10 +556,10 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "形态与构建链": "形態與建構鏈",
     "源码在 v2/，交付物是一个自包含单文件。一条命令跑完构建与发布：": "源碼在 v2/，交付物是一個自包含單檔案。一條命令跑完建構與發布：",
     "cd v2 && npm run build": "cd v2 &amp;&amp; npm run build",
-    "三段接力：vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 7 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。": "三段接力：vite build 把 JS/CSS/字型全部內聯進 app.html；emit-single.mjs 落成 v2/index.html 並把引用還原成穩定檔案名（殘留雜湊即建構失敗）；publish-root.mjs 把 7 個交付檔案發布到倉庫根並逐檔案 sha256 校驗。產物禁手改；根 index.html 即 GitHub Pages 入口。",
+    "三段接力：vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 9 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。": "三段接力：vite build 把 JS/CSS/字型全部內聯進 app.html；emit-single.mjs 落成 v2/index.html 並把引用還原成穩定檔案名（殘留雜湊即建構失敗）；publish-root.mjs 把 9 個交付檔案發布到倉庫根並逐檔案 sha256 校驗。產物禁手改；根 index.html 即 GitHub Pages 入口。",
     "多文件 → app.html 全内联": "多檔案 → app.html 全內聯",
     "稳定文件名 + 零外链校验": "穩定檔案名 + 零外部連結校驗",
-    "7 个交付文件落仓库根": "7 個交付檔案落倉庫根",
+    "9 个交付文件落仓库根": "9 個交付檔案落倉庫根",
     "源码结构": "源碼結構",
     "src/core 的 TS 模块按职责分层：取数与编排（api / forecast / trend / mapload）、算法（scoring / physics / astro / refmodel / skyband / verdict）、地图（mapdata / maprender / ramp / popover）、状态与协议（state / snap / urlstate / cache / calib）、展示辅助（i18n / city / citylang / cityname / units / tz / series / sharecard / compare / math）。": "src/core 的 TS 模組按職責分層：取數與編排（api / forecast / trend / mapload）、算法（scoring / physics / astro / refmodel / skyband / verdict）、地圖（mapdata / maprender / ramp / popover）、狀態與協定（state / snap / urlstate / cache / calib）、展示輔助（i18n / city / citylang / cityname / units / tz / series / sharecard / compare / math）。",
     "vendor/src-verbatim/ 是 V1 七脚本的冻结副本：不参与构建、不加载，只作口径 diff 基线。V1 算法若演进，先 diff 该目录再同步 src/core。": "vendor/src-verbatim/ 是 V1 七腳本的凍結副本：不參與建構、不載入，只作口徑 diff 基線。V1 算法若演進，先 diff 該目錄再同步 src/core。",
@@ -569,7 +569,7 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "一切口径与 V1 逐点对齐；任何改变 P/Q 数值的改动必须双落（V1 _p*.js 与 v2 src/core 同步改），并由探针守着。": "一切口徑與 V1 逐點對齊；任何改變 P/Q 數值的改動必須雙落（V1 _p*.js 與 v2 src/core 同步改），並由探針守著。",
     "与 V1 的关系": "與 V1 的關係",
     "算法权威在 V1（仓库根 V1/ 目录）。probe:consist 不重写公式，而是从两边源码把同一表达式原样抽出来 eval，在 16 个采样网格上对拍——任何一边改了口径，脚本立刻报差异，相当于一条活的口径守卫。": "算法權威在 V1（倉庫根 V1/ 目錄）。probe:consist 不重寫公式，而是從兩邊源碼把同一表達式原樣抽出來 eval，在 16 個取樣網格上對拍——任何一邊改了口徑，腳本立刻報差異，相當於一條活的口徑守衛。",
-    "两侧状态完全隔离：localStorage 键 sunsetbot.*（V1）vs glowcast.v2.*（v2）；快照 SNAP_VER=1 双向互通，任一侧生成的 ?snap= 链接对方可解。": "兩側狀態完全隔離：localStorage 鍵 sunsetbot.*（V1）vs glowcast.v2.*（v2）；快照 SNAP_VER=1 雙向互通，任一側生成的 ?snap= 連結對方可解。",
+    "两侧状态完全隔离：localStorage 键 sunsetbot.*（V1）vs SUNGLOW.v2.*（v2）；快照 SNAP_VER=1 双向互通，任一侧生成的 ?snap= 链接对方可解。": "兩側狀態完全隔離：localStorage 鍵 sunsetbot.*（V1）vs SUNGLOW.v2.*（v2）；快照 SNAP_VER=1 雙向互通，任一側生成的 ?snap= 連結對方可解。",
     "观测场渲染": "觀測場渲染",
     "采样网格规模与间距": "取樣網格規模與間距",
     "自适应核，R=第 9 近邻×1.06": "自適應核，R=第 9 近鄰×1.06",
@@ -693,10 +693,10 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "形态与构建链": "Form & build chain",
     "源码在 v2/，交付物是一个自包含单文件。一条命令跑完构建与发布：": "Source lives in v2/; the deliverable is one self-contained single file. One command builds and publishes:",
     "cd v2 && npm run build": "cd v2 &amp;&amp; npm run build",
-    "三段接力：vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 7 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。": "Three-stage relay: vite build inlines all JS/CSS/fonts into app.html; emit-single.mjs lands v2/index.html and restores stable filenames for every reference (a residual hash fails the build); publish-root.mjs publishes 7 deliverable files to the repo root with per-file sha256 verification. Never hand-edit the output; the root index.html is the GitHub Pages entry.",
+    "三段接力：vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 9 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。": "Three-stage relay: vite build inlines all JS/CSS/fonts into app.html; emit-single.mjs lands v2/index.html and restores stable filenames for every reference (a residual hash fails the build); publish-root.mjs publishes 9 deliverable files to the repo root with per-file sha256 verification. Never hand-edit the output; the root index.html is the GitHub Pages entry.",
     "多文件 → app.html 全内联": "Multi-file → app.html fully inlined",
     "稳定文件名 + 零外链校验": "Stable filenames + zero-external-link check",
-    "7 个交付文件落仓库根": "7 deliverable files to the repo root",
+    "9 个交付文件落仓库根": "9 deliverable files to the repo root",
     "源码结构": "Source layout",
     "src/core 的 TS 模块按职责分层：取数与编排（api / forecast / trend / mapload）、算法（scoring / physics / astro / refmodel / skyband / verdict）、地图（mapdata / maprender / ramp / popover）、状态与协议（state / snap / urlstate / cache / calib）、展示辅助（i18n / city / citylang / cityname / units / tz / series / sharecard / compare / math）。": "The TS modules in src/core are layered by role: fetching & orchestration (api / forecast / trend / mapload), algorithms (scoring / physics / astro / refmodel / skyband / verdict), map (mapdata / maprender / ramp / popover), state & protocol (state / snap / urlstate / cache / calib), and presentation helpers (i18n / city / citylang / cityname / units / tz / series / sharecard / compare / math).",
     "vendor/src-verbatim/ 是 V1 七脚本的冻结副本：不参与构建、不加载，只作口径 diff 基线。V1 算法若演进，先 diff 该目录再同步 src/core。": "vendor/src-verbatim/ is a frozen copy of V1's seven scripts: not built, not loaded — only a diff baseline for calibration. If V1's algorithms evolve, diff that directory first, then sync src/core.",
@@ -706,7 +706,7 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "一切口径与 V1 逐点对齐；任何改变 P/Q 数值的改动必须双落（V1 _p*.js 与 v2 src/core 同步改），并由探针守着。": "Every calibration detail matches V1 point by point; any change to P/Q values must land on both sides (V1 _p*.js and v2 src/core together), guarded by probes.",
     "与 V1 的关系": "Relationship with V1",
     "算法权威在 V1（仓库根 V1/ 目录）。probe:consist 不重写公式，而是从两边源码把同一表达式原样抽出来 eval，在 16 个采样网格上对拍——任何一边改了口径，脚本立刻报差异，相当于一条活的口径守卫。": "The algorithm authority is V1 (the V1/ directory at the repo root). probe:consist doesn't rewrite formulas — it extracts the same expressions verbatim from both sources and evals them on a 16-point sampling grid. If either side drifts, the script reports it immediately: a living calibration guard.",
-    "两侧状态完全隔离：localStorage 键 sunsetbot.*（V1）vs glowcast.v2.*（v2）；快照 SNAP_VER=1 双向互通，任一侧生成的 ?snap= 链接对方可解。": "State is fully isolated: localStorage keys sunsetbot.* (V1) vs glowcast.v2.* (v2). Snapshots (SNAP_VER=1) are bidirectional — a ?snap= link from either side decodes on the other.",
+    "两侧状态完全隔离：localStorage 键 sunsetbot.*（V1）vs SUNGLOW.v2.*（v2）；快照 SNAP_VER=1 双向互通，任一侧生成的 ?snap= 链接对方可解。": "State is fully isolated: localStorage keys sunsetbot.* (V1) vs SUNGLOW.v2.* (v2). Snapshots (SNAP_VER=1) are bidirectional — a ?snap= link from either side decodes on the other.",
     "观测场渲染": "Field rendering",
     "采样网格规模与间距": "Sampling grid size & spacing",
     "自适应核，R=第 9 近邻×1.06": "Adaptive kernel, R = 9th nearest neighbor × 1.06",

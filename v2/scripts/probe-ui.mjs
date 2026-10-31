@@ -134,7 +134,7 @@ console.log("v2 顶栏探针 · " + PAGE);
 ab("open", PAGE);
 /* 上一轮可能把 lang / theme / 折叠态留在 localStorage 里，先清干净再开跑，
    否则断言会拿到上一轮的语言与折叠状态 */
-ab("eval", `localStorage.removeItem('glowcast.v2.pref')`);
+ab("eval", `localStorage.removeItem('SUNGLOW.v2.pref')`);
 ab("reload");
 wait(1500);
 
@@ -414,7 +414,7 @@ eq("抽屉里的光追项保留全称",
    所以整套自绘。这里断言：没有原生控件、弹层实色、落在视口内、键盘可用。 */
 console.log("\n[自绘下拉]");
 vp(1200, 900);
-ab("eval", `localStorage.removeItem('glowcast.v2.pref')`);
+ab("eval", `localStorage.removeItem('SUNGLOW.v2.pref')`);
 ab("reload");
 wait(1500);
 
@@ -485,7 +485,7 @@ ok("Esc 关闭列表", ev(`!document.querySelector('.sel-pop')`) === true);
 const opaque = (v) => /^rgb\(\d+, \d+, \d+\)$/.test(v || "");
 function popLook(theme) {
   vp(1200, 900);
-  ab("eval", `localStorage.setItem('glowcast.v2.pref', JSON.stringify(Object.assign(JSON.parse(localStorage.getItem('glowcast.v2.pref')||'{}'),{theme:'${theme}'})))`);
+  ab("eval", `localStorage.setItem('SUNGLOW.v2.pref', JSON.stringify(Object.assign(JSON.parse(localStorage.getItem('SUNGLOW.v2.pref')||'{}'),{theme:'${theme}'})))`);
   ab("reload");
   wait(1300);
   ev(`document.querySelectorAll('.ctl button.sel')[0].click()`);
@@ -507,7 +507,7 @@ ok("浅色：弹层实色且底色与深色不同",
 /* ================= 自绘月历（替代 input[type=date]） ================= */
 console.log("\n[自绘月历]");
 vp(1200, 900);
-ab("eval", `localStorage.removeItem('glowcast.v2.pref')`);
+ab("eval", `localStorage.removeItem('SUNGLOW.v2.pref')`);
 ab("reload");
 wait(1500);
 ev(`window.scrollTo(0,0)`); /* 浏览器可能恢复上次滚动位置，回顶部再验英雄区 */
@@ -591,11 +591,11 @@ wait(150);
    所以断言分两段：① 清空偏好后拿到的初始态；② 页面上手点是否双向写偏好。 */
 console.log("\n[折叠接线]");
 vp(1200, 900);
-ab("eval", `localStorage.removeItem('glowcast.v2.pref')`);
+ab("eval", `localStorage.removeItem('SUNGLOW.v2.pref')`);
 ab("reload");
 wait(1800);
 
-const FOLD_STATE = `(()=>{const p=JSON.parse(localStorage.getItem('glowcast.v2.pref')||'{}');
+const FOLD_STATE = `(()=>{const p=JSON.parse(localStorage.getItem('SUNGLOW.v2.pref')||'{}');
   return {
     pref:['rayFold','notesFold','heroFold','trendFold','legendFold'].map(k=>k in p?p[k]:null),
     details:[...document.querySelectorAll('.fnote')].map(d=>d.open),
@@ -633,14 +633,14 @@ ok("设置页也没有「显示」分组", sett && !sett.groups.includes("显示
 /* 校准开关的唯一入口挪进实况校准卡后，切换必须写偏好 —— 否则关掉刷新又自动开 */
 ev(`document.querySelector('#calib .sw')?.click()`);
 wait(300);
-const calibPersist = ev(`(()=>{const pref=JSON.parse(localStorage.getItem('glowcast.v2.pref')||'{}');
+const calibPersist = ev(`(()=>{const pref=JSON.parse(localStorage.getItem('SUNGLOW.v2.pref')||'{}');
   const sw=document.querySelector('#calib .sw');
   return {calibOff:pref.calibOff===true, on:sw?sw.classList.contains('on'):null};})()`);
 ok("点校准卡的开关会写偏好（calibOff 翻转为 true、开关显示关闭）",
   calibPersist && calibPersist.calibOff === true && calibPersist.on === false, JSON.stringify(calibPersist));
 ev(`document.querySelector('#calib .sw')?.click()`);
 wait(300);
-const calibRestore = ev(`JSON.parse(localStorage.getItem('glowcast.v2.pref')||'{}').calibOff`);
+const calibRestore = ev(`JSON.parse(localStorage.getItem('SUNGLOW.v2.pref')||'{}').calibOff`);
 ok("再点一次恢复默认（calibOff 回 false）", calibRestore !== true, String(calibRestore));
 ab("press", "Escape");
 wait(200);
@@ -707,7 +707,7 @@ ok("英文下光追卡正文无残留中文", en.cjk === false, JSON.stringify(e
 console.log("\n[模型卡]");
 vp(1200, 900);
 ab("open", PAGE + "?name=%E5%8C%97%E4%BA%AC&lat=39.9042&lon=116.4074&date=2026-10-21&period=pm");
-ab("eval", `localStorage.setItem('glowcast.v2.pref', JSON.stringify({lang:'zh',theme:'dark'}))`);
+ab("eval", `localStorage.setItem('SUNGLOW.v2.pref', JSON.stringify({lang:'zh',theme:'dark'}))`);
 ab("reload");
 wait(5200);
 
@@ -778,7 +778,7 @@ wait(1200);
 const m4 = ev(`(()=>{const w=document.querySelector('.mc-wrap'); if(!w) return null;
   return {cjk:/[\\u4e00-\\u9fa5]/.test(w.innerText), txt:w.innerText.replace(/\\s+/g,' ').slice(0,160)};})()`);
 ok("英文下模型卡无残留中文", m4 && m4.cjk === false, JSON.stringify(m4));
-ab("eval", `localStorage.setItem('glowcast.v2.pref', JSON.stringify({lang:'zh',theme:'dark'}))`);
+ab("eval", `localStorage.setItem('SUNGLOW.v2.pref', JSON.stringify({lang:'zh',theme:'dark'}))`);
 
 /* ================= 页面时刻按「所选城市的当地时间」显示 =================
    浏览器在 Asia/Shanghai。若时刻仍按浏览器时区显示，东京会差 1 小时、纽约会差 12 小时。
@@ -794,8 +794,8 @@ let tzSkipped = 0;
 for (const c of TZ_CASES) {
   ab("open", PAGE + "?name=" + encodeURIComponent(c.name) +
     "&lat=" + c.lat + "&lon=" + c.lon + "&date=2026-10-21&period=pm");
-  ab("eval", `localStorage.setItem('glowcast.v2.pref', JSON.stringify({lang:'zh',theme:'dark'}))`);
-  ab("eval", `Object.keys(localStorage).filter(k=>k.startsWith('glowcast.v2.point')||k.startsWith('glowcast.v2.tz')).forEach(k=>localStorage.removeItem(k))`);
+  ab("eval", `localStorage.setItem('SUNGLOW.v2.pref', JSON.stringify({lang:'zh',theme:'dark'}))`);
+  ab("eval", `Object.keys(localStorage).filter(k=>k.startsWith('SUNGLOW.v2.point')||k.startsWith('SUNGLOW.v2.tz')).forEach(k=>localStorage.removeItem(k))`);
   ab("reload");
   /* 固定等待在网络慢时会读到空 DOM（时刻=null、又不是 mock）——
      轮询到「结果就绪」或「mock 兜底」再取样。 */
@@ -880,8 +880,8 @@ const SHARE_GEO = `(()=>{
 })()`;
 
 ab("open", PAGE + "?name=%E5%8C%97%E4%BA%AC&lat=39.9042&lon=116.4074&date=2026-10-21&period=pm");
-ab("eval", `localStorage.setItem('glowcast.v2.pref', JSON.stringify({lang:'zh',theme:'dark'}))`);
-ab("eval", `Object.keys(localStorage).filter(k=>k.startsWith('glowcast.v2.point')||k.startsWith('glowcast.v2.tz')).forEach(k=>localStorage.removeItem(k))`);
+ab("eval", `localStorage.setItem('SUNGLOW.v2.pref', JSON.stringify({lang:'zh',theme:'dark'}))`);
+ab("eval", `Object.keys(localStorage).filter(k=>k.startsWith('SUNGLOW.v2.point')||k.startsWith('SUNGLOW.v2.tz')).forEach(k=>localStorage.removeItem(k))`);
 ab("reload");
 wait(4500);
 vp(1200, 900);
@@ -933,7 +933,7 @@ eq("单模型：图上标出 GFS 且 single=true",
   [sh2?.meta?.single, sh2?.meta?.model], [true, "GFS 统计"]);
 
 /* 浅色主题 → 同一张卡换成纸面浅底 */
-ab("eval", `localStorage.setItem('glowcast.v2.pref', JSON.stringify({lang:'zh',theme:'light'}))`);
+ab("eval", `localStorage.setItem('SUNGLOW.v2.pref', JSON.stringify({lang:'zh',theme:'light'}))`);
 ab("reload");
 wait(4200);
 vp(1200, 900);
@@ -960,7 +960,7 @@ ok("390px 下页面没有横向溢出",
   JSON.stringify(ev(`[document.documentElement.scrollWidth, document.documentElement.clientWidth]`)));
 
 /* 英文模式：按钮与文件名都要翻译 */
-ab("eval", `localStorage.setItem('glowcast.v2.pref', JSON.stringify({lang:'en',theme:'light'}))`);
+ab("eval", `localStorage.setItem('SUNGLOW.v2.pref', JSON.stringify({lang:'en',theme:'light'}))`);
 vp(1200, 900);
 ab("reload");
 wait(4200);
@@ -1010,8 +1010,8 @@ const FRESH_INFO = (sec) => `(()=>{const s=document.querySelector('${sec} .fresh
 /* URL 钉死城市/日期/时段，避免跨时区跑出不同的「今天」；
    语言强制回简体 —— 上一段留了英文 pref，会让中文断言全部失效 */
 ab("open", PAGE + "?name=%E5%8C%97%E4%BA%AC&lat=39.9042&lon=116.4074&date=2026-10-21&period=pm");
-ab("eval", `localStorage.setItem('glowcast.v2.pref', JSON.stringify({lang:'zh',theme:'light'}))`);
-ab("eval", `Object.keys(localStorage).filter(k=>k.startsWith('glowcast.v2.')&&k!=='glowcast.v2.pref').forEach(k=>localStorage.removeItem(k))`);
+ab("eval", `localStorage.setItem('SUNGLOW.v2.pref', JSON.stringify({lang:'zh',theme:'light'}))`);
+ab("eval", `Object.keys(localStorage).filter(k=>k.startsWith('SUNGLOW.v2.')&&k!=='SUNGLOW.v2.pref').forEach(k=>localStorage.removeItem(k))`);
 ab("eval", FETCH_STUB);
 ab("reload");
 wait(1200);
@@ -1397,7 +1397,7 @@ function waitCmp(minCards, noMiss) {
   return ev(`({n:document.querySelectorAll('#compare .rcard').length,
     miss:document.querySelectorAll('#compare .rcard.miss').length})`);
 }
-ab("eval", `localStorage.removeItem('glowcast.v2.cmp.v1')`);
+ab("eval", `localStorage.removeItem('SUNGLOW.v2.cmp.v1')`);
 ab("eval", FETCH_STUB);
 ab("reload");
 wait(1200);
@@ -1429,7 +1429,7 @@ ok("仅 1 卡时右侧有「＋ 再加一个观测点」占位卡",
   !!struct && struct.ph === true && /再加一个观测点/.test(phTxt), JSON.stringify([struct, phTxt]));
 
 /* 种入一个搜索点（天津市），刷新后列表应记住 */
-ab("eval", `localStorage.setItem('glowcast.v2.cmp.v1', JSON.stringify([{name:"天津市",prov:"天津市",lat:39.13,lon:117.20,src:"search"}]))`);
+ab("eval", `localStorage.setItem('SUNGLOW.v2.cmp.v1', JSON.stringify([{name:"天津市",prov:"天津市",lat:39.13,lon:117.20,src:"search"}]))`);
 ab("eval", FETCH_STUB);
 ab("reload");
 wait(1200);
@@ -1486,7 +1486,7 @@ const nAfterRm = ev(`document.querySelectorAll('#compare .rcard').length`);
 ok("移除单点后只剩当前地点卡", nAfterRm === 1, JSON.stringify(nAfterRm));
 ev(`[...document.querySelectorAll('#compare .acts button')].find(b=>b.innerText.includes('清空'))?.click()`);
 wait(500);
-const lsCmp = ev(`localStorage.getItem('glowcast.v2.cmp.v1')`);
+const lsCmp = ev(`localStorage.getItem('SUNGLOW.v2.cmp.v1')`);
 ok("「清空对比」清空列表与存储", lsCmp === "[]" && ev(`document.querySelectorAll('#compare .rcard').length`) === 1,
   JSON.stringify(lsCmp));
 
@@ -1506,7 +1506,7 @@ ok("390px 标题不被挤扁（section-head 换行、head-right 落到下一行�
    实测：英文单行需 1373px、收紧后含胶囊约 1230px，而 .wrap 封顶 1180 —— 两条路都超。
    所以英文的判据是「导航不许折成两行、顶栏不许横向溢出」，形态落到 menu 是预期结果。 */
 console.log("\n[1280px 英文]");
-ab("eval", `localStorage.setItem('glowcast.v2.pref', JSON.stringify({lang:'en',theme:'light'}))`);
+ab("eval", `localStorage.setItem('SUNGLOW.v2.pref', JSON.stringify({lang:'en',theme:'light'}))`);
 ab("reload");
 wait(1500);
 vp(1280, 900);
@@ -1568,7 +1568,7 @@ const NAME_CASES = [
 
 function cityLangCase(lang) {
   ab("open", PAGE);
-  ab("eval", `localStorage.setItem('glowcast.v2.pref', ` +
+  ab("eval", `localStorage.setItem('SUNGLOW.v2.pref', ` +
     `JSON.stringify({lang:'${lang}',theme:'light',cityName:'广州市'}))`);
   ab("reload");
   wait(1600);
@@ -1682,7 +1682,7 @@ console.log("\n[案 C·2 · 街区级自动切换底图文字]");
 
 /* 换英文页：简体的 conf 与该状态无关，滞回链的语义要在英文模式下才验得真 */
 ab("open", PAGE);
-ab("eval", `localStorage.setItem('glowcast.v2.pref', ` +
+ab("eval", `localStorage.setItem('SUNGLOW.v2.pref', ` +
   `JSON.stringify({lang:'en',theme:'light',cityName:'广州市'}))`);
 ab("reload");
 wait(1600);
@@ -1745,8 +1745,8 @@ eq("滞回全程：≤120 开、滞回带保持现状、>132 关",
    **标签优先**：有缓存直接出数，否则只给一个显式取数按钮。 */
 console.log("\n[城市名选点（点广州市必须给广州市）]");
 ab("open", PAGE + "?name=%E9%A6%99%E6%B8%AF&lat=22.3193&lon=114.1694&date=2026-10-22&period=pm");
-ab("eval", `localStorage.setItem('glowcast.v2.pref', JSON.stringify({lang:'zh',theme:'light',cityName:'香港'}))`);
-ab("eval", `Object.keys(localStorage).filter(k=>k.startsWith('glowcast.v2.')&&k!=='glowcast.v2.pref').forEach(k=>localStorage.removeItem(k))`);
+ab("eval", `localStorage.setItem('SUNGLOW.v2.pref', JSON.stringify({lang:'zh',theme:'light',cityName:'香港'}))`);
+ab("eval", `Object.keys(localStorage).filter(k=>k.startsWith('SUNGLOW.v2.')&&k!=='SUNGLOW.v2.pref').forEach(k=>localStorage.removeItem(k))`);
 ab("eval", FETCH_STUB);
 ab("reload");
 wait(1400);
