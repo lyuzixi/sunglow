@@ -79,6 +79,22 @@
   --q-mid: #e2b45e;
   --q-bad: #f2796a;
   --q-info: #7ab8ff;
+
+  /* ---- 首屏照片报头（实验）：深色压暗水面 ---- */
+  --photo-veil:
+    radial-gradient(760px 420px at 16% 58%, rgba(7,11,20,.72), rgba(7,11,20,.28) 58%, transparent 80%),
+    linear-gradient(180deg, rgba(7,11,20,.28) 0%, rgba(7,11,20,.02) 16%, rgba(7,11,20,.18) 46%, rgba(7,11,20,.72) 76%, var(--bg-base) 100%);
+  --photo-veil-sm: var(--photo-veil);
+  --photo-credit: rgba(233,238,251,.62);
+  --photo-credit-shadow: 0 1px 12px rgba(2,6,16,.9);
+  --photo-tag: rgba(233,238,251,.68);
+  --photo-dial-halo: none;
+  --photo-field-bg: rgba(7,11,20,.55);
+  /* M3 全幅：深色压暗左上与底部 */
+  --photo-full-veil:
+    radial-gradient(820px 520px at 16% 34%, rgba(7,11,20,.88), rgba(7,11,20,.4) 56%, transparent 78%),
+    linear-gradient(180deg, rgba(7,11,20,.9) 0%, rgba(7,11,20,.55) 26%, rgba(7,11,20,.14) 58%, rgba(7,11,20,.52) 84%, var(--bg-base) 100%);
+  --photo-full-veil-sm: var(--photo-full-veil);
 }
 
 /* ===================== 浅色 · 晨光实验室 ===================== */
@@ -118,4 +134,24 @@
   --q-mid: #c07a10;
   --q-bad: #c0392b;
   --q-info: #2266bb;
+
+  /* ---- 首屏照片报头（实验）：浅色雾化水面 ---- */
+  --photo-veil:
+    radial-gradient(820px 520px at 12% 64%, rgba(242,245,251,.98), rgba(242,245,251,.82) 46%, rgba(242,245,251,.18) 78%, transparent 90%),
+    linear-gradient(180deg, rgba(242,245,251,.40) 0%, rgba(242,245,251,.08) 18%, rgba(242,245,251,.30) 42%, rgba(242,245,251,.88) 68%, var(--bg-base) 100%);
+  --photo-veil-sm:
+    radial-gradient(520px 420px at 8% 70%, rgba(242,245,251,.96), rgba(242,245,251,.55) 50%, transparent 80%),
+    linear-gradient(180deg, rgba(242,245,251,.28) 0%, rgba(242,245,251,.04) 22%, rgba(242,245,251,.24) 48%, rgba(242,245,251,.90) 72%, var(--bg-base) 100%);
+  --photo-credit: rgba(17,26,44,.56);
+  --photo-credit-shadow: 0 1px 10px rgba(242,245,251,.9);
+  --photo-tag: rgba(17,26,44,.5);
+  --photo-dial-halo: radial-gradient(closest-side, rgba(242,245,251,.78), rgba(242,245,251,.22) 68%, transparent 100%);
+  --photo-field-bg: rgba(255,255,255,.72);
+  /* M3 全幅：浅色晨雾白纱 */
+  --photo-full-veil:
+    radial-gradient(940px 620px at 12% 38%, rgba(242,245,251,.97), rgba(242,245,251,.74) 48%, rgba(242,245,251,.18) 76%, transparent 88%),
+    linear-gradient(180deg, rgba(242,245,251,.95) 0%, rgba(242,245,251,.68) 26%, rgba(242,245,251,.22) 54%, rgba(242,245,251,.66) 84%, var(--bg-base) 100%);
+  --photo-full-veil-sm:
+    radial-gradient(760px 520px at 10% 40%, rgba(242,245,251,.95), rgba(242,245,251,.68) 48%, rgba(242,245,251,.14) 78%, transparent 90%),
+    linear-gradient(180deg, rgba(242,245,251,.92) 0%, rgba(242,245,251,.6) 26%, rgba(242,245,251,.16) 54%, rgba(242,245,251,.62) 84%, var(--bg-base) 100%);
 }

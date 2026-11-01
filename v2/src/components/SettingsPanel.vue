@@ -27,6 +27,10 @@ function setUnits(u: "metric" | "imperial") {
   state.units = u;
   savePrefs();
 }
+function setHeroMode(m: "off" | "band" | "full") {
+  state.heroPhotoMode = m;
+  savePrefs();
+}
 </script>
 
 <template>
@@ -39,6 +43,23 @@ function setUnits(u: "metric" | "imperial") {
       </svg>
     </button>
     <div v-if="open" class="panel glass">
+      <div class="grp">
+        <div class="grp-h">{{ t("外观") }}</div>
+        <div class="sub-h">{{ t("照片背景") }}</div>
+        <div class="seg" role="group" :aria-label="t('照片背景')">
+          <button :class="{ on: state.heroPhotoMode === 'off' }" @click="setHeroMode('off')">
+            {{ t("关闭") }}
+          </button>
+          <button :class="{ on: state.heroPhotoMode === 'band' }" @click="setHeroMode('band')">
+            {{ t("报头带") }}
+          </button>
+          <button :class="{ on: state.heroPhotoMode === 'full' }" @click="setHeroMode('full')">
+            {{ t("全幅") }}
+          </button>
+        </div>
+        <p class="note">{{ t("照片模式：报头带在首屏顶部显示实拍照片；全幅用同一张照片铺满首屏。") }}</p>
+      </div>
+
       <div class="grp">
         <div class="grp-h">{{ t("单位") }}</div>
         <div class="seg" role="group" :aria-label="t('单位')">

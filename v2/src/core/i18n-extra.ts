@@ -371,7 +371,14 @@ export const HANT_EXTRA: Record<string, string> = {
   "差": "差",
   "三套算法结论接近": "三套演算法結論接近",
   "三套算法存在一定分歧": "三套演算法存在一定分歧",
-  "三套算法分歧较大": "三套演算法分歧較大"
+  "三套算法分歧较大": "三套演算法分歧較大",
+  /* ---- 首屏照片模式（实验，2026-11-02） ---- */
+  "外观": "外觀",
+  "照片背景": "照片背景",
+  "报头带": "報頭帶",
+  "全幅": "全幅",
+  "照片模式：报头带在首屏顶部显示实拍照片；全幅用同一张照片铺满首屏。": "照片模式：報頭帶在首屏頂部顯示實拍照片；全幅用同一張照片鋪滿首屏。",
+  "广州 · 珠江 · 实拍": "廣州 · 珠江 · 實拍"
 };
 
 export const EN_EXTRA: Record<string, string> = {
@@ -741,5 +748,12 @@ export const EN_EXTRA: Record<string, string> = {
   "差": "Poor",
   "三套算法结论接近": "All three models agree",
   "三套算法存在一定分歧": "Models slightly diverge",
-  "三套算法分歧较大": "Models diverge widely"
+  "三套算法分歧较大": "Models diverge widely",
+  /* ---- 首屏照片模式（实验，2026-11-02） ---- */
+  "外观": "Appearance",
+  "照片背景": "Photo Background",
+  "报头带": "Masthead",
+  "全幅": "Full-bleed",
+  "照片模式：报头带在首屏顶部显示实拍照片；全幅用同一张照片铺满首屏。": "Photo mode: Masthead places the field photo at the top of the hero; Full-bleed covers the entire hero with the same photo.",
+  "广州 · 珠江 · 实拍": "Guangzhou · Pearl River · Field photo"
 };

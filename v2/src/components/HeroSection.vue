@@ -5,6 +5,7 @@ import { t } from "../core/i18n";
 import { searchCity, type City } from "../core/city";
 import { cityName, cityWithRegion, regionName } from "../core/citylang";
 import DatePicker from "./DatePicker.vue";
+import heroPhoto from "../assets/hero-photo.webp";
 
 const q = ref("");
 const suggestions = ref<City[]>([]);
@@ -14,6 +15,8 @@ const heroEl = ref<HTMLElement | null>(null);
 const res = computed(() => state.result);
 const P = computed(() => (res.value ? Math.round(res.value.P) : null));
 const Q = computed(() => (res.value ? Math.round(res.value.Q) : null));
+const bandOn = computed(() => state.heroPhotoMode === "band");
+const fullOn = computed(() => state.heroPhotoMode === "full");
 
 function onInput() {
   suggestions.value = q.value.trim() ? searchCity(q.value, 8) : [];
@@ -49,7 +52,23 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="hero">
+  <section class="hero" :class="{ 'photo-hero': bandOn, 'photo-hero-full': fullOn }">
+    <div
+      v-if="bandOn"
+      class="photo-band"
+      :style="{ backgroundImage: `url(${heroPhoto})` }"
+    >
+      <span class="photo-tag" aria-hidden="true">SUNGLOW · SPECTRUM</span>
+      <span class="photo-credit">{{ t("广州 · 珠江 · 实拍") }}</span>
+    </div>
+    <div
+      v-else-if="fullOn"
+      class="photo-full"
+      :style="{ backgroundImage: `url(${heroPhoto})` }"
+    >
+      <span class="photo-credit">{{ t("广州 · 珠江 · 实拍") }}</span>
+    </div>
+
     <div class="hero-bg" aria-hidden="true">
       <div class="ring r1" />
       <div class="ring r2" />
@@ -182,6 +201,104 @@ onMounted(() => {
   padding: clamp(32px, 6vw, 84px) 0 clamp(28px, 5vw, 72px);
   overflow: hidden;
 }
+/* ---- 首屏照片报头（实验）：M2 标题咬合 ---- */
+.photo-hero { padding-top: 0; }
+.photo-hero .hero-bg { display: none; }
+.photo-band {
+  position: relative;
+  width: 100%;
+  height: clamp(380px, 52vh, 520px);
+  background-size: cover;
+  background-position: 50% 70%;
+  overflow: hidden;
+}
+.photo-band::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--photo-veil);
+  pointer-events: none;
+}
+.photo-tag {
+  position: absolute;
+  left: 24px;
+  top: 18px;
+  z-index: 2;
+  font-family: var(--font-display);
+  font-size: var(--fs-tiny);
+  letter-spacing: 0.18em;
+  color: var(--photo-tag);
+  text-shadow: var(--photo-credit-shadow);
+}
+.photo-credit {
+  position: absolute;
+  right: 24px;
+  top: 18px;
+  z-index: 2;
+  font-size: var(--fs-tiny);
+  letter-spacing: 0.06em;
+  color: var(--photo-credit);
+  text-shadow: var(--photo-credit-shadow);
+}
+.photo-hero .hero-in {
+  margin-top: calc(-1 * clamp(170px, 24vh, 240px));
+  position: relative;
+  z-index: 2;
+}
+.photo-hero .hero-dial { position: relative; }
+.photo-hero .hero-dial::before {
+  content: "";
+  position: absolute;
+  inset: -26px;
+  z-index: -1;
+  border-radius: 50%;
+  background: var(--photo-dial-halo);
+  pointer-events: none;
+}
+.photo-hero .field {
+  background: var(--photo-field-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+/* ---- M3：全幅照片背景 ---- */
+.photo-hero-full .hero-bg { display: none; }
+.photo-full {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: 50% 8%;
+  overflow: hidden;
+}
+.photo-full::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--photo-full-veil);
+  pointer-events: none;
+}
+.photo-hero-full .hero-in { position: relative; z-index: 2; }
+.photo-hero-full .hero-dial { position: relative; }
+.photo-hero-full .hero-dial::before {
+  content: "";
+  position: absolute;
+  inset: -26px;
+  z-index: -1;
+  border-radius: 50%;
+  background: var(--photo-dial-halo);
+  pointer-events: none;
+}
+.photo-hero-full .field {
+  background: var(--photo-field-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.photo-hero-full .photo-credit { top: auto; bottom: 16px; right: 24px; }
+.photo-hero-full .city { color: var(--tx-2); text-shadow: var(--photo-credit-shadow); }
+.photo-hero .dial-center span,
+.photo-hero-full .dial-center span,
+.photo-hero .metric .lab,
+.photo-hero-full .metric .lab { color: var(--tx-2); }
 .hero-bg {
   position: absolute; inset: 0;
   pointer-events: none;
@@ -259,6 +376,12 @@ onMounted(() => {
     justify-content: center;
     margin-top: 2px;
   }
+  .photo-band::after { background: var(--photo-veil-sm); }
+  .photo-tag { left: 16px; top: 14px; }
+  .photo-credit { right: 16px; top: 14px; }
+  .photo-hero .hero-in { margin-top: -110px; }
+  .photo-full::after { background: var(--photo-full-veil-sm); }
+  .photo-hero-full .photo-credit { top: auto; right: 16px; bottom: 12px; }
 }
 .hero-sub {
   color: var(--tx-2);

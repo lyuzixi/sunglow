@@ -38,7 +38,8 @@ export const PREF_STR: Record<string, readonly string[]> = {
   mapDim: ["mix", "p", "q", "dv"],
   mapModel: ["ens", "gfs", "ec", "rt"],
   theme: ["auto", "light", "dark"],
-  lang: ["zh", "hant", "en"]
+  lang: ["zh", "hant", "en"],
+  heroPhotoMode: ["off", "band", "full"]
 };
 
 export interface AppState {
@@ -64,6 +65,8 @@ export interface AppState {
   showContours: boolean;
   hour12: boolean;
   calibOff: boolean;
+  /** 首屏照片模式：off 原深空 / band M2 报头带 / full M3 全幅 */
+  heroPhotoMode: "off" | "band" | "full";
   folds: Record<string, boolean>;
 }
 
@@ -133,6 +136,7 @@ export const state = reactive<AppState>({
   showContours: prefBool("showContours", false),
   hour12: prefBool("hour12", false),
   calibOff: prefBool("calibOff", false),
+  heroPhotoMode: prefStr<"off" | "band" | "full">("heroPhotoMode", "off"),
   folds: (() => {
     const out: Record<string, boolean> = {};
     for (const k of FOLD_KEYS) out[k] = prefBool(k, FOLD_DEFAULT[k]);
@@ -159,6 +163,7 @@ export function savePrefs(): void {
       units: state.units,
       mapDim: state.mapDim,
       mapModel: state.mapModel,
+      heroPhotoMode: state.heroPhotoMode,
       calibOff: state.calibOff
     };
     for (const k of PREF_BOOL) {
