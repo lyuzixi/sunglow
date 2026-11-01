@@ -473,7 +473,7 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
               <td><b>Sunglow Spectrum Edition（V2）</b> <span class="ref">v2/</span></td>
               <td>Vue 3.5 + Vite 6 + TS 5.7（hash 路由）</td>
               <td><code>vite build</code> → <code>emit-single.mjs</code> → <code>publish-root.mjs</code></td>
-              <td><strong>仓库根 9 个文件</strong>（index/404/tutorial/sw/manifest/图标×4）</td>
+              <td><strong>仓库根 10 个文件</strong>（index/404/tutorial/sw/manifest/图标×5）</td>
               <td><strong>当前主线</strong>：视觉重做，算法口径与 Sunglow Classic Edition（V1）逐点对齐</td>
             </tr>
             <tr>
@@ -502,7 +502,7 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
         <div class="it"><div class="d">2026-10-21</div><div class="x"><b>git HEAD = 8900cf9</b>：Sunglow Spectrum Edition（V2）之后有大量未提交改动（本文无法在本机核验 git，引用既有文档结论）。</div></div>
         <div class="it"><div class="d">2026-10-22 ~ 10-23</div><div class="x"><b>Sunglow Spectrum Edition（V2）色面二次返工</b>：全光谱 <code>GLOW_ANCHORS</code>、自适应核 Shepard、距离淡出、可信度降饱和；教训是「深蓝 + 中 alpha = 脏紫滤镜」。</div></div>
         <div class="it"><div class="d">2026-10-25</div><div class="x"><b>仓库重整</b>：Sunglow Classic Edition（V1）整体迁入 <code>V1/</code>，Sunglow Spectrum Edition（V2）明确为当前主线。</div></div>
-        <div class="it"><div class="d">2026-10-26</div><div class="x"><b>交付物落根</b>：Sunglow Spectrum Edition（V2）构建链新增 <code>publish-root</code>，9 个交付文件带 sha256 校验发布到仓库根，根路径即 GitHub Pages 入口。</div></div>
+        <div class="it"><div class="d">2026-10-26</div><div class="x"><b>交付物落根</b>：Sunglow Spectrum Edition（V2）构建链新增 <code>publish-root</code>，10 个交付文件带 sha256 校验发布到仓库根，根路径即 GitHub Pages 入口。</div></div>
       </div>
 
       <h3 id="constraints">2.5 贯穿全项目的四条硬约束</h3>
@@ -610,7 +610,7 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
           <div class="arrows">→</div>
           <div class="fnode acc2"><div class="h">emit-single.mjs</div><div class="b">输出 v2/index.html，删中间目录</div></div>
           <div class="arrows">→</div>
-          <div class="fnode ok"><div class="h">publish-root.mjs</div><div class="b">9 文件拷到仓库根，逐文件 sha256 + 跨目录链接回归检查</div></div>
+          <div class="fnode ok"><div class="h">publish-root.mjs</div><div class="b">10 文件拷到仓库根，逐文件 sha256 + 跨目录链接回归检查</div></div>
           <div class="arrows">→</div>
           <div class="fnode ok"><div class="h">GitHub Pages 根</div><div class="b">根 index.html 即线上入口</div></div>
         </div>
@@ -1036,7 +1036,7 @@ PWA=1 SITE_BASE=sunglow python assemble.py  <span class="c"># 可选 PWA 四件�
           <div class="arrows">→</div>
           <div class="fnode"><div class="h">emit-single.mjs</div><div class="b">校验零外链；PWA 引用改稳定名；写 v2/index.html；删中间目录</div></div>
           <div class="arrows">→</div>
-          <div class="fnode acc2"><div class="h">publish-root.mjs</div><div class="b">9 文件拷到仓库根，逐文件 sha256；检查 ../V1/ 等跨目录链接</div></div>
+          <div class="fnode acc2"><div class="h">publish-root.mjs</div><div class="b">10 文件拷到仓库根，逐文件 sha256；检查 ../V1/ 等跨目录链接</div></div>
           <div class="arrows">→</div>
           <div class="fnode ok"><div class="h">仓库根</div><div class="b">Pages 入口；根副本与源码分离</div></div>
         </div>
@@ -1048,7 +1048,7 @@ PWA=1 SITE_BASE=sunglow python assemble.py  <span class="c"># 可选 PWA 四件�
           <thead><tr><th>npm script</th><th>命令</th><th>作用</th></tr></thead>
           <tbody>
             <tr><td><code>dev</code></td><td><code>vite</code></td><td>开发服务器；打开 <code>/app.html</code>（源码入口不对外）</td></tr>
-            <tr><td><code>build</code></td><td><code>node scripts/check-consistency.mjs &amp;&amp; vite build &amp;&amp; node scripts/emit-single.mjs &amp;&amp; node scripts/publish-root.mjs</code></td><td>文档一致性校验 + 单文件产物并自动发布 9 文件到仓库根</td></tr>
+            <tr><td><code>build</code></td><td><code>node scripts/check-consistency.mjs &amp;&amp; vite build &amp;&amp; node scripts/emit-single.mjs &amp;&amp; node scripts/publish-root.mjs</code></td><td>文档一致性校验 + 单文件产物并自动发布 10 文件到仓库根</td></tr>
             <tr><td><code>typecheck</code></td><td><code>tsc --noEmit</code></td><td>类型检查</td></tr>
             <tr><td><code>check:docs</code></td><td><code>node scripts/check-consistency.mjs</code></td><td>文档 / 交付清单一致性门禁（build 前置）</td></tr>
             <tr><td><code>probe</code></td><td><code>node scripts/probe.mjs</code></td><td><span class="badge b-p0">失效</span> 该文件不存在（见 §5.7）</td></tr>
@@ -1057,11 +1057,11 @@ PWA=1 SITE_BASE=sunglow python assemble.py  <span class="c"># 可选 PWA 四件�
         </table>
       </div>
 
-      <h4>5.1.1 发布文件全集（9 个）</h4>
-      <p><span class="ref">v2/scripts/publish-root.mjs:23-31</span> 定义了写死的 9 文件清单：
+      <h4>5.1.1 发布文件全集（10 个）</h4>
+      <p><span class="ref">v2/scripts/publish-root.mjs:23-33</span> 定义了写死的 10 文件清单：
         <code>index.html</code> · <code>404.html</code> · <code>tutorial.html</code> · <code>sw.js</code> ·
         <code>manifest.webmanifest</code> · <code>favicon-192.png</code> · <code>icon-192.png</code> ·
-        <code>icon-512.png</code> · <code>icon-maskable-512.png</code>。
+        <code>icon-512.png</code> · <code>icon-maskable-512.png</code> · <code>apple-touch-icon-180.png</code>。
         源码工程留在 <code>v2/</code>，仓库根只是发布副本；<code>v2/index.html</code> 是构建中间产物。
       </p>
       <div class="table-wrap">
@@ -1070,7 +1070,7 @@ PWA=1 SITE_BASE=sunglow python assemble.py  <span class="c"># 可选 PWA 四件�
           <tbody>
             <tr><td>产物不能有外链脚本/样式</td><td><span class="ref">v2/scripts/emit-single.mjs:20-23</span></td><td><code>exit 2</code></td></tr>
             <tr><td>PWA 附属文件必须存在且为稳定名</td><td><span class="ref">v2/scripts/emit-single.mjs:28-46</span></td><td><code>exit 3/4</code></td></tr>
-            <tr><td>9 文件逐个 sha256 比对</td><td><span class="ref">v2/scripts/publish-root.mjs:50-56</span></td><td>构建失败（<code>exit 1</code>）</td></tr>
+            <tr><td>10 文件逐个 sha256 比对</td><td><span class="ref">v2/scripts/publish-root.mjs:50-56</span></td><td>构建失败（<code>exit 1</code>）</td></tr>
             <tr><td>根 index.html 不得残留 <code>../V1/</code> 等跨目录链接</td><td><span class="ref">v2/scripts/publish-root.mjs:36-66</span></td><td>构建失败</td></tr>
           </tbody>
         </table>
@@ -1314,7 +1314,7 @@ npm run dev          <span class="c"># 打开 http://localhost:5173/app.html（�
 
 <span class="c"># 类型检查 / 构建 / 发布</span>
 npm run typecheck
-npm run build        <span class="c"># check-consistency → vite → emit-single → publish-root，自动更新仓库根 9 文件</span>
+npm run build        <span class="c"># check-consistency → vite → emit-single → publish-root，自动更新仓库根 10 文件</span>
 
 <span class="c"># 探针</span>
 npm run probe:ui

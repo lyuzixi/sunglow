@@ -55,14 +55,14 @@ v2/
 | 产物 | 路径 | 怎么打开 |
 |---|---|---|
 | **唯一交付** | 仓库根 `index.html` | **直接双击**，断网可用。JS/CSS/字体内联，约 0.8MB |
-| 发布伴随 | 根 `404.html` / `tutorial.html` / `sw.js` / `manifest.webmanifest` / 图标×4 | `npm run build` 自动发布 |
+| 发布伴随 | 根 `404.html` / `tutorial.html` / `sw.js` / `manifest.webmanifest` / 图标×5 | `npm run build` 自动发布 |
 | 开发 | 源码入口 `v2/app.html`（不对外） | `cd v2 && npm run dev` → 打开 `/app.html` |
 
 ```bash
 cd v2
 npm install
 npm run dev                # 开发服务器
-npm run build              # 单文件产物 + publish-root 自动发布 9 个文件到仓库根
+npm run build              # 单文件产物 + publish-root 自动发布 10 个文件到仓库根
 ```
 
 > 为什么不直接双击源码入口 `v2/app.html`：Vite 默认产物是 ES module 多文件，

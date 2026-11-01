@@ -30,6 +30,7 @@ const FILES = [
   "icon-192.png",
   "icon-512.png",
   "icon-maskable-512.png",
+  "apple-touch-icon-180.png",
 ];
 
 /* 根副本位于仓库根，同级目录（V1/、Skyglow/）都不该出现 ../ 前缀链接；

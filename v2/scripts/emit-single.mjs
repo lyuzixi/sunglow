@@ -29,19 +29,23 @@ const RENAME = [
   [/\.\/manifest-[A-Za-z0-9_-]+\.webmanifest/g, "./manifest.webmanifest"],
   [/\.\/favicon-192-[A-Za-z0-9_-]+\.png/g, "./favicon-192.png"],
   [/\.\/icon-192-[A-Za-z0-9_-]+\.png/g, "./icon-192.png"],
-  [/\.\/icon-512-[A-Za-z0-9_-]+\.png/g, "./icon-512.png"]
+  [/\.\/icon-512-[A-Za-z0-9_-]+\.png/g, "./icon-512.png"],
+  [/\.\/apple-touch-icon-180-[A-Za-z0-9_-]+\.png/g, "./apple-touch-icon-180.png"]
 ];
 let html = raw;
 for (const [re, to] of RENAME) html = html.replace(re, to);
 
 /* 引用必须能在同目录找到实体文件，否则宁可构建失败也别上线一个装不了的 PWA */
-for (const f of ["manifest.webmanifest", "favicon-192.png", "icon-192.png", "icon-512.png"]) {
+for (const f of ["manifest.webmanifest", "favicon-192.png", "icon-192.png", "icon-512.png", "apple-touch-icon-180.png"]) {
   if (html.includes("./" + f) && !fs.existsSync(path.join(root, f))) {
     console.error("emit-single: 引用了 " + f + "，但 " + root + " 下没有这个文件");
     process.exit(3);
   }
 }
-if (/\.\/[a-z0-9-]+-[A-Za-z0-9_-]{6,}\.(webmanifest|png)/i.test(html)) {
+/* 稳定名本身也可能带连字符（apple-touch-icon-180.png），先剔除已还原的引用再查残留哈希 */
+let residual = html;
+for (const [, stable] of RENAME) residual = residual.split(stable).join("");
+if (/\.\/[a-z0-9-]+-[A-Za-z0-9_-]{6,}\.(webmanifest|png)/i.test(residual)) {
   console.error("emit-single: 仍有带哈希的附属文件引用，已中止");
   process.exit(4);
 }

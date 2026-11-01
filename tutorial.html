@@ -333,11 +333,11 @@ footer{border-top:1px solid var(--line2);margin-top:44px}
     <h2><span class="no">01</span><span data-i18n="形态与构建链">形态与构建链</span></h2>
     <p data-i18n="源码在 v2/，交付物是一个自包含单文件。一条命令跑完构建与发布：">源码在 v2/，交付物是一个自包含单文件。一条命令跑完构建与发布：</p>
     <div class="code" data-i18n="cd v2 &amp;&amp; npm run build">cd v2 &amp;&amp; npm run build</div>
-    <p data-i18n="三段接力：vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 9 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。">三段接力：vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 9 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。</p>
+    <p data-i18n="三段接力：vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 10 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。">三段接力：vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 10 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。</p>
     <div class="kv">
       <div class="c"><div class="n">vite build</div><div class="d" data-i18n="多文件 → app.html 全内联">多文件 → app.html 全内联</div></div>
       <div class="c"><div class="n">emit-single</div><div class="d" data-i18n="稳定文件名 + 零外链校验">稳定文件名 + 零外链校验</div></div>
-      <div class="c"><div class="n">publish-root</div><div class="d" data-i18n="9 个交付文件落仓库根">9 个交付文件落仓库根</div></div>
+      <div class="c"><div class="n">publish-root</div><div class="d" data-i18n="10 个交付文件落仓库根">10 个交付文件落仓库根</div></div>
     </div>
   </section>
 
@@ -556,10 +556,10 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "形态与构建链": "形態與建構鏈",
     "源码在 v2/，交付物是一个自包含单文件。一条命令跑完构建与发布：": "源碼在 v2/，交付物是一個自包含單檔案。一條命令跑完建構與發布：",
     "cd v2 && npm run build": "cd v2 &amp;&amp; npm run build",
-    "三段接力：vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 9 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。": "三段接力：vite build 把 JS/CSS/字型全部內聯進 app.html；emit-single.mjs 落成 v2/index.html 並把引用還原成穩定檔案名（殘留雜湊即建構失敗）；publish-root.mjs 把 9 個交付檔案發布到倉庫根並逐檔案 sha256 校驗。產物禁手改；根 index.html 即 GitHub Pages 入口。",
+    "三段接力：vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 10 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。": "三段接力：vite build 把 JS/CSS/字型全部內聯進 app.html；emit-single.mjs 落成 v2/index.html 並把引用還原成穩定檔案名（殘留雜湊即建構失敗）；publish-root.mjs 把 10 個交付檔案發布到倉庫根並逐檔案 sha256 校驗。產物禁手改；根 index.html 即 GitHub Pages 入口。",
     "多文件 → app.html 全内联": "多檔案 → app.html 全內聯",
     "稳定文件名 + 零外链校验": "穩定檔案名 + 零外部連結校驗",
-    "9 个交付文件落仓库根": "9 個交付檔案落倉庫根",
+    "10 个交付文件落仓库根": "10 個交付檔案落倉庫根",
     "源码结构": "源碼結構",
     "src/core 的 TS 模块按职责分层：取数与编排（api / forecast / trend / mapload）、算法（scoring / physics / astro / refmodel / skyband / verdict）、地图（mapdata / maprender / ramp / popover）、状态与协议（state / snap / urlstate / cache / calib）、展示辅助（i18n / city / citylang / cityname / units / tz / series / sharecard / compare / math）。": "src/core 的 TS 模組按職責分層：取數與編排（api / forecast / trend / mapload）、算法（scoring / physics / astro / refmodel / skyband / verdict）、地圖（mapdata / maprender / ramp / popover）、狀態與協定（state / snap / urlstate / cache / calib）、展示輔助（i18n / city / citylang / cityname / units / tz / series / sharecard / compare / math）。",
     "vendor/src-verbatim/ 是 V1 七脚本的冻结副本：不参与构建、不加载，只作口径 diff 基线。V1 算法若演进，先 diff 该目录再同步 src/core。": "vendor/src-verbatim/ 是 V1 七腳本的凍結副本：不參與建構、不載入，只作口徑 diff 基線。V1 算法若演進，先 diff 該目錄再同步 src/core。",
@@ -693,10 +693,10 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "形态与构建链": "Form & build chain",
     "源码在 v2/，交付物是一个自包含单文件。一条命令跑完构建与发布：": "Source lives in v2/; the deliverable is one self-contained single file. One command builds and publishes:",
     "cd v2 && npm run build": "cd v2 &amp;&amp; npm run build",
-    "三段接力：vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 9 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。": "Three-stage relay: vite build inlines all JS/CSS/fonts into app.html; emit-single.mjs lands v2/index.html and restores stable filenames for every reference (a residual hash fails the build); publish-root.mjs publishes 9 deliverable files to the repo root with per-file sha256 verification. Never hand-edit the output; the root index.html is the GitHub Pages entry.",
+    "三段接力：vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 10 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。": "Three-stage relay: vite build inlines all JS/CSS/fonts into app.html; emit-single.mjs lands v2/index.html and restores stable filenames for every reference (a residual hash fails the build); publish-root.mjs publishes 10 deliverable files to the repo root with per-file sha256 verification. Never hand-edit the output; the root index.html is the GitHub Pages entry.",
     "多文件 → app.html 全内联": "Multi-file → app.html fully inlined",
     "稳定文件名 + 零外链校验": "Stable filenames + zero-external-link check",
-    "9 个交付文件落仓库根": "9 deliverable files to the repo root",
+    "10 个交付文件落仓库根": "10 deliverable files to the repo root",
     "源码结构": "Source layout",
     "src/core 的 TS 模块按职责分层：取数与编排（api / forecast / trend / mapload）、算法（scoring / physics / astro / refmodel / skyband / verdict）、地图（mapdata / maprender / ramp / popover）、状态与协议（state / snap / urlstate / cache / calib）、展示辅助（i18n / city / citylang / cityname / units / tz / series / sharecard / compare / math）。": "The TS modules in src/core are layered by role: fetching & orchestration (api / forecast / trend / mapload), algorithms (scoring / physics / astro / refmodel / skyband / verdict), map (mapdata / maprender / ramp / popover), state & protocol (state / snap / urlstate / cache / calib), and presentation helpers (i18n / city / citylang / cityname / units / tz / series / sharecard / compare / math).",
     "vendor/src-verbatim/ 是 V1 七脚本的冻结副本：不参与构建、不加载，只作口径 diff 基线。V1 算法若演进，先 diff 该目录再同步 src/core。": "vendor/src-verbatim/ is a frozen copy of V1's seven scripts: not built, not loaded — only a diff baseline for calibration. If V1's algorithms evolve, diff that directory first, then sync src/core.",

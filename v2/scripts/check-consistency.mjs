@@ -24,7 +24,7 @@ if (!filesBlock) {
   process.exit(2);
 }
 const FILES = [...filesBlock[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
-const ICON_COUNT = FILES.filter((f) => /^(favicon|icon)-/.test(f)).length;
+const ICON_COUNT = FILES.filter((f) => /^(favicon|icon|apple-touch-icon)-/.test(f)).length;
 
 /* ---------- 被扫描的文档 ---------- */
 const DOCS = [

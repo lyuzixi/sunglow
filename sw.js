@@ -7,7 +7,7 @@
      · 一切跨域请求（open-meteo、map.qq.com）：直接放行，不进缓存
    版本号变更即在 activate 里清掉旧缓存。
    ========================================================================= */
-const VERSION = "glowcast-v2-pwa-4";
+const VERSION = "glowcast-v2-pwa-5";
 const CORE = [
   "./",
   "./index.html",
@@ -16,7 +16,8 @@ const CORE = [
   "./manifest.webmanifest",
   "./favicon-192.png",
   "./icon-192.png",
-  "./icon-512.png"
+  "./icon-512.png",
+  "./apple-touch-icon-180.png"
 ];
 
 self.addEventListener("install", (e) => {

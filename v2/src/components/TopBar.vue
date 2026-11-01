@@ -434,10 +434,10 @@ const themeIcon = () =>
           </button>
           <div v-if="verOpen" class="menu-pop ver-pop" role="menu" :aria-label="t('其他版本')">
             <a role="menuitem" href="V1/index.html">
-              <span class="ver-tx"><span class="ver-l1">{{ t("Sunglow Classic Edition") }}</span><span class="ver-l2">{{ t("经典原版") }}</span></span><i class="arw">↗</i>
+              <span class="ver-tx">{{ t("Sunglow 经典原版") }}</span><i class="arw">↗</i>
             </a>
             <a role="menuitem" href="Skyglow/index.html">
-              <span class="ver-tx"><span class="ver-l1">{{ t("Skyglow Enhanced Edition") }}</span><span class="ver-l2">{{ t("Skyglow移植增强版") }}</span></span><i class="arw">↗</i>
+              <span class="ver-tx">{{ t("Skyglow 移植增强版") }}</span><i class="arw">↗</i>
             </a>
           </div>
         </div>
@@ -504,12 +504,12 @@ const themeIcon = () =>
       <a class="ext" href="./tutorial.html"><span>{{ t("使用教程") }}</span><i class="arw">↗</i></a>
     </div>
 
-    <!-- 其他版本（2026-10-27）：与桌面下拉同口径，写两行正式版名；
+    <!-- 其他版本（2026-10-27）：与桌面下拉同口径，写单行版名（随界面语言）；
          真链接、根位置（publish-root 禁止 ../），点它直接离开首页。 -->
     <div class="md-group">
       <h4>{{ t("其他版本") }}</h4>
-      <a class="ext" href="V1/index.html"><span class="ver-tx"><span class="ver-l1">{{ t("Sunglow Classic Edition") }}</span><span class="ver-l2">{{ t("经典原版") }}</span></span><i class="arw">↗</i></a>
-      <a class="ext" href="Skyglow/index.html"><span class="ver-tx"><span class="ver-l1">{{ t("Skyglow Enhanced Edition") }}</span><span class="ver-l2">{{ t("Skyglow移植增强版") }}</span></span><i class="arw">↗</i></a>
+      <a class="ext" href="V1/index.html"><span class="ver-tx">{{ t("Sunglow 经典原版") }}</span><i class="arw">↗</i></a>
+      <a class="ext" href="Skyglow/index.html"><span class="ver-tx">{{ t("Skyglow 移植增强版") }}</span><i class="arw">↗</i></a>
     </div>
   </aside>
 </template>
