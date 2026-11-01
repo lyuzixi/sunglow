@@ -7,7 +7,7 @@
      · 一切跨域请求（open-meteo、map.qq.com）：直接放行，不进缓存
    版本号变更即在 activate 里清掉旧缓存。
    ========================================================================= */
-const VERSION = "glowcast-v2-pwa-5";
+const VERSION = "glowcast-v2-pwa-6";
 const CORE = [
   "./",
   "./index.html",
