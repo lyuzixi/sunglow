@@ -84,8 +84,6 @@ body{
 .mnav-group a.active:before{content:"";position:absolute;left:8px;top:9px;bottom:9px;width:2px;
   border-radius:2px;background:linear-gradient(180deg,var(--accent),var(--accent2))}
 .mnav-group a .arw{margin-left:auto;font-style:normal;font-size:11px;color:var(--muted2)}
-.mnav-group a.ext .ext-copy{display:flex;flex-direction:column;gap:1px;line-height:1.35}
-.mnav-group a.ext .ext-cn{font-size:11px;color:var(--muted2);letter-spacing:.02em}
 body.mnav-open{overflow:hidden}
 @media (max-width:980px){.mnav-btn{display:flex}}
 
@@ -289,8 +287,7 @@ table.src th{color:var(--muted2);font-weight:500;font-size:10.5px}
 .foot a{color:var(--muted);text-decoration:underline;text-decoration-color:rgba(255,255,255,.18)}
 .foot a:hover{color:var(--accent)}
 .foot-vers{display:flex;flex-wrap:wrap;gap:6px 16px}
-.foot-vers a{display:flex;flex-direction:column;line-height:1.45}
-.foot-vers .ver-cn{font-size:10.5px;color:var(--muted2)}
+.foot-vers a{line-height:1.45}
 .attribution{font-size:10.5px;color:var(--muted2);margin-top:5px}
 .attribution a{color:var(--muted);text-decoration:underline;text-decoration-color:rgba(255,255,255,.18)}
 .attribution a:hover{color:var(--accent)}
@@ -608,8 +605,8 @@ table.src-table tr:hover td{background:rgba(255,255,255,.02)}
   </div>
   <div class="mnav-group">
     <h4>其他版本</h4>
-    <a class="ext" href="../V1/index.html"><span class="ext-copy"><span>Sunglow Classic Edition</span><span class="ext-cn">经典原版</span></span><i class="arw">↗</i></a>
-    <a class="ext" href="../index.html"><span class="ext-copy"><span>Sunglow Spectrum Edition</span><span class="ext-cn">光谱观测版</span></span><i class="arw">↗</i></a>
+    <a class="ext" href="../V1/index.html"><span>Sunglow 经典原版</span><i class="arw">↗</i></a>
+    <a class="ext" href="../index.html"><span>Sunglow 光谱观测版</span><i class="arw">↗</i></a>
   </div>
 </aside>
 
@@ -1025,7 +1022,7 @@ table.src-table tr:hover td{background:rgba(255,255,255,.02)}
            ../ 指向上级 —— 仓库根 index.html 即线上 V2，V1/ 与本目录同级，
            所以 file:// 双击与静态托管两种打开方式下都成立。不放进 #footMeta：
            那一格由 JS 写模型版本，探针按内容读它。 -->
-      <div class="fine foot-vers"><a href="../V1/index.html"><span>Sunglow Classic Edition</span><span class="ver-cn">经典原版 →</span></a><a href="../index.html"><span>Sunglow Spectrum Edition</span><span class="ver-cn">光谱观测版 →</span></a></div>
+      <div class="fine foot-vers"><a href="../V1/index.html">Sunglow 经典原版 →</a><a href="../index.html">Sunglow 光谱观测版 →</a></div>
     </div>
     <div id="footMeta">数据：ERA5 / CAMS / Open-Meteo · 标签：sunsetbot 再分析记录</div>
   </footer>

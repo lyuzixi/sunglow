@@ -72,10 +72,10 @@ const I18N_ZH_HANT = {
   "指南": "指南",
   /* 版本切换：目录「其他版本」分组的标题（两个版本出口改用下面的正式名） */
   "其他版本": "其他版本",
-  /* 版本正式名（2026-10-31）：顶栏第二行 + 页脚/目录「其他版本」的中文小字 */
+  /* 版本正式名（2026-11-02）：单行版名，随界面语言切换（同 V2「其他版本」口径） */
   "经典原版": "經典原版",
-  "光谱观测版": "光譜觀測版",
-  "Skyglow移植增强版": "Skyglow移植增強版",
+  "Sunglow 光谱观测版": "Sunglow 光譜觀測版",
+  "Skyglow 移植增强版": "Skyglow 移植增強版",
   "SUNGLOW · Classic Edition · 经典原版": "SUNGLOW · Classic Edition · 經典原版",
 
   "主结果": "主結果",
@@ -637,10 +637,10 @@ const I18N_EN = {
   "指南": "Guide",
   /* 版本切换：目录「其他版本」分组的标题（两个版本出口改用下面的正式名） */
   "其他版本": "Other versions",
-  /* 版本正式名（2026-10-31）：顶栏第二行 + 页脚/目录「其他版本」的中文小字 */
+  /* 版本正式名（2026-11-02）：单行版名，随界面语言切换（同 V2「其他版本」口径） */
   "经典原版": "Classic Edition",
-  "光谱观测版": "Spectrum Edition",
-  "Skyglow移植增强版": "Enhanced Edition",
+  "Sunglow 光谱观测版": "Sunglow Spectrum Edition",
+  "Skyglow 移植增强版": "Skyglow Enhanced Edition",
   "SUNGLOW · Classic Edition · 经典原版": "SUNGLOW · Classic Edition",
 
   "主结果": "Main results",

@@ -75,8 +75,6 @@ body{
 .mnav-group a.active:before{content:"";position:absolute;left:8px;top:9px;bottom:9px;width:2px;
   border-radius:2px;background:linear-gradient(180deg,var(--accent),var(--accent2))}
 .mnav-group a .arw{margin-left:auto;font-style:normal;font-size:11px;color:var(--muted2)}
-.mnav-group a.ext .ext-copy{display:flex;flex-direction:column;gap:1px;line-height:1.35}
-.mnav-group a.ext .ext-cn{font-size:11px;color:var(--muted2);letter-spacing:.02em}
 body.mnav-open{overflow:hidden}
 @media (max-width:980px){.mnav-btn{display:flex}}
 
@@ -280,8 +278,7 @@ table.src th{color:var(--muted2);font-weight:500;font-size:10.5px}
 .foot a{color:var(--muted);text-decoration:underline;text-decoration-color:rgba(255,255,255,.18)}
 .foot a:hover{color:var(--accent)}
 .foot-vers{display:flex;flex-wrap:wrap;gap:6px 16px}
-.foot-vers a{display:flex;flex-direction:column;line-height:1.45}
-.foot-vers .ver-cn{font-size:10.5px;color:var(--muted2)}
+.foot-vers a{line-height:1.45}
 .attribution{font-size:10.5px;color:var(--muted2);margin-top:5px}
 .attribution a{color:var(--muted);text-decoration:underline;text-decoration-color:rgba(255,255,255,.18)}
 .attribution a:hover{color:var(--accent)}

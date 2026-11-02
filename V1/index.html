@@ -1065,12 +1065,10 @@ footer summary{cursor:pointer;font-weight:600;color:var(--tx);font-size:13px}
 footer .body{padding-top:9px}
 footer ul{margin:7px 0;padding-left:19px}
 footer li{margin:3px 0}
-/* 版本链接（2026-10-31）：英文正式名主行 + 中文小字，页脚与目录两处共用。
-   仍是真的 <a>（不改跳转、不是按钮）；两行左对齐，整块交给外层居中。 */
-.vlnk{display:inline-flex;flex-direction:column;align-items:flex-start;line-height:1.3;
-  text-decoration:none}
-.vlnk .v-en{font-size:13px}
-.vlnk .v-zh{font-size:10.5px;color:var(--tx3);letter-spacing:.04em}
+/* 版本链接（2026-11-02）：单行版名，随界面语言切换（对齐 V2「其他版本」口径）。
+   仍是真的 <a>（不改跳转、不是按钮）；整块交给外层居中。 */
+.vlnk{display:inline-flex;align-items:baseline;line-height:1.3;text-decoration:none;
+  font-size:13px}
 .vlnks{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 22px;padding-top:6px}
 
 /* ---------- 环境输入条（F7：让单位切换落到实处，也让结论可复核） ---------- */
@@ -1670,8 +1668,8 @@ body.snapmode [data-snaphide]{display:none}
          快照（分享）模式照常显示：它是站内导航，不是会被快照误带出去的开关，所以不打
          data-snaphide；目录抽屉整块已隐，那两条不受影响。 -->
     <div class="vlnks">
-      <a class="vlnk" href="../index.html"><span class="v-en">Sunglow Spectrum Edition →</span><span class="v-zh" data-i18n="光谱观测版">光谱观测版</span></a>
-      <a class="vlnk" href="../Skyglow/index.html"><span class="v-en">Skyglow Enhanced Edition →</span><span class="v-zh" data-i18n="Skyglow移植增强版">Skyglow移植增强版</span></a>
+      <a class="vlnk" href="../index.html"><span data-i18n="Sunglow 光谱观测版">Sunglow 光谱观测版</span><span aria-hidden="true">→</span></a>
+      <a class="vlnk" href="../Skyglow/index.html"><span data-i18n="Skyglow 移植增强版">Skyglow 移植增强版</span><span aria-hidden="true">→</span></a>
     </div>
     <!-- 视觉方案 P1：谚语落款 —— 把应用接回民间观天传统。
          朝霞不出门、晚霞行千里讲的正是这个应用在预报的那件事；安静一行，不参与信息层级。 -->
@@ -1756,10 +1754,10 @@ const I18N_ZH_HANT = {
   "指南": "指南",
   /* 版本切换：目录「其他版本」分组的标题（两个版本出口改用下面的正式名） */
   "其他版本": "其他版本",
-  /* 版本正式名（2026-10-31）：顶栏第二行 + 页脚/目录「其他版本」的中文小字 */
+  /* 版本正式名（2026-11-02）：单行版名，随界面语言切换（同 V2「其他版本」口径） */
   "经典原版": "經典原版",
-  "光谱观测版": "光譜觀測版",
-  "Skyglow移植增强版": "Skyglow移植增強版",
+  "Sunglow 光谱观测版": "Sunglow 光譜觀測版",
+  "Skyglow 移植增强版": "Skyglow 移植增強版",
   "SUNGLOW · Classic Edition · 经典原版": "SUNGLOW · Classic Edition · 經典原版",
 
   "主结果": "主結果",
@@ -2321,10 +2319,10 @@ const I18N_EN = {
   "指南": "Guide",
   /* 版本切换：目录「其他版本」分组的标题（两个版本出口改用下面的正式名） */
   "其他版本": "Other versions",
-  /* 版本正式名（2026-10-31）：顶栏第二行 + 页脚/目录「其他版本」的中文小字 */
+  /* 版本正式名（2026-11-02）：单行版名，随界面语言切换（同 V2「其他版本」口径） */
   "经典原版": "Classic Edition",
-  "光谱观测版": "Spectrum Edition",
-  "Skyglow移植增强版": "Enhanced Edition",
+  "Sunglow 光谱观测版": "Sunglow Spectrum Edition",
+  "Skyglow 移植增强版": "Skyglow Enhanced Edition",
   "SUNGLOW · Classic Edition · 经典原版": "SUNGLOW · Classic Edition",
 
   "主结果": "Main results",
@@ -7284,8 +7282,8 @@ function shareCard() {
        data-goto。相对地址里 ../ 指向上级：仓库根的 index.html 就是线上 V2，Skyglow/
        与本目录同级，所以本地双击和静态托管两种打开方式下都成立。 -->
   <div class="toc-g" data-i18n="其他版本">其他版本</div>
-  <a class="toc-i" href="../index.html"><span class="vlnk"><span class="v-en">Sunglow Spectrum Edition</span><span class="v-zh" data-i18n="光谱观测版">光谱观测版</span></span><span class="toc-tag" aria-hidden="true">↗</span></a>
-  <a class="toc-i" href="../Skyglow/index.html"><span class="vlnk"><span class="v-en">Skyglow Enhanced Edition</span><span class="v-zh" data-i18n="Skyglow移植增强版">Skyglow移植增强版</span></span><span class="toc-tag" aria-hidden="true">↗</span></a>
+  <a class="toc-i" href="../index.html"><span class="vlnk" data-i18n="Sunglow 光谱观测版">Sunglow 光谱观测版</span><span class="toc-tag" aria-hidden="true">↗</span></a>
+  <a class="toc-i" href="../Skyglow/index.html"><span class="vlnk" data-i18n="Skyglow 移植增强版">Skyglow 移植增强版</span><span class="toc-tag" aria-hidden="true">↗</span></a>
 </nav>
 <div class="tocveil" id="tocVeil" hidden></div>
 
