@@ -377,7 +377,8 @@ export const HANT_EXTRA: Record<string, string> = {
   "照片背景": "照片背景",
   "报头带": "報頭帶",
   "全幅": "全幅",
-  "照片模式：报头带在首屏顶部显示实拍照片；全幅用同一张照片铺满首屏。": "照片模式：報頭帶在首屏頂部顯示實拍照片；全幅用同一張照片鋪滿首屏。",
+  "天幕窗": "天幕窗",
+  "照片模式：报头带在首屏顶部显示实拍照片；全幅铺满首屏；天幕窗把照片收进右侧玻璃窗。": "照片模式：報頭帶在首屏頂部顯示實拍照片；全幅鋪滿首屏；天幕窗把照片收進右側玻璃窗。",
   "广州 · 珠江 · 实拍": "廣州 · 珠江 · 實拍"
 };
 
@@ -754,6 +755,7 @@ export const EN_EXTRA: Record<string, string> = {
   "照片背景": "Photo Background",
   "报头带": "Masthead",
   "全幅": "Full-bleed",
-  "照片模式：报头带在首屏顶部显示实拍照片；全幅用同一张照片铺满首屏。": "Photo mode: Masthead places the field photo at the top of the hero; Full-bleed covers the entire hero with the same photo.",
+  "天幕窗": "Sky Window",
+  "照片模式：报头带在首屏顶部显示实拍照片；全幅铺满首屏；天幕窗把照片收进右侧玻璃窗。": "Photo mode: Masthead shows the field photo at the top; Full-bleed covers the hero; Sky Window frames it in the right-hand glass panel.",
   "广州 · 珠江 · 实拍": "Guangzhou · Pearl River · Field photo"
 };

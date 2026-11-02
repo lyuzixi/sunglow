@@ -17,6 +17,7 @@ const P = computed(() => (res.value ? Math.round(res.value.P) : null));
 const Q = computed(() => (res.value ? Math.round(res.value.Q) : null));
 const bandOn = computed(() => state.heroPhotoMode === "band");
 const fullOn = computed(() => state.heroPhotoMode === "full");
+const windowOn = computed(() => state.heroPhotoMode === "window");
 
 function onInput() {
   suggestions.value = q.value.trim() ? searchCity(q.value, 8) : [];
@@ -52,7 +53,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="hero" :class="{ 'photo-hero': bandOn, 'photo-hero-full': fullOn }">
+  <section class="hero" :class="{ 'photo-hero': bandOn, 'photo-hero-full': fullOn, 'photo-hero-window': windowOn }">
     <div
       v-if="bandOn"
       class="photo-band"
@@ -151,7 +152,12 @@ onMounted(() => {
         </div>
       </div>
 
-      <div class="hero-dial anim-rise anim-rise-2" aria-live="polite">
+      <div
+        class="hero-dial anim-rise anim-rise-2"
+        aria-live="polite"
+        :style="windowOn ? { backgroundImage: `url(${heroPhoto})` } : undefined"
+      >
+        <span v-if="windowOn" class="window-cap">{{ t("广州 · 珠江 · 实拍") }}</span>
         <div class="dial">
           <svg viewBox="0 0 220 220" class="dial-svg">
             <defs>
@@ -299,6 +305,66 @@ onMounted(() => {
 .photo-hero-full .dial-center span,
 .photo-hero .metric .lab,
 .photo-hero-full .metric .lab { color: var(--tx-2); }
+/* ---- M4：右侧天幕窗 ---- */
+.photo-hero-window .hero-bg { display: none; }
+.photo-hero-window .hero-dial {
+  position: relative;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 440px;
+  padding: 22px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--stroke-2);
+  overflow: hidden;
+  background-size: cover;
+  background-position: 58% 55%;
+  box-shadow: var(--card-sh);
+}
+.photo-hero-window .hero-dial::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--photo-window-veil);
+  pointer-events: none;
+}
+.photo-hero-window .dial,
+.photo-hero-window .dial-side { position: relative; z-index: 2; }
+.photo-hero-window .dial { width: min(220px, 52vw); }
+.photo-hero-window .dial-side {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 10px 20px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--stroke);
+  background: var(--photo-window-metric-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.photo-hero-window .dial-side .hairline {
+  width: 1px;
+  height: 30px;
+  margin: 0;
+  background: var(--stroke-2);
+}
+.photo-hero-window .dial-center span { color: var(--tx-2); }
+.window-cap {
+  position: absolute;
+  left: 22px;
+  top: 18px;
+  z-index: 2;
+  font-size: var(--fs-tiny);
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 12px rgba(2, 6, 16, 0.92);
+}
+@media (max-width: 980px) {
+  .photo-hero-window .hero-dial {
+    min-height: 400px;
+    width: 100%;
+    padding: 40px 22px 22px;
+  }
+}
 .hero-bg {
   position: absolute; inset: 0;
   pointer-events: none;

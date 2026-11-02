@@ -27,7 +27,7 @@ function setUnits(u: "metric" | "imperial") {
   state.units = u;
   savePrefs();
 }
-function setHeroMode(m: "off" | "band" | "full") {
+function setHeroMode(m: "off" | "band" | "full" | "window") {
   state.heroPhotoMode = m;
   savePrefs();
 }
@@ -46,7 +46,7 @@ function setHeroMode(m: "off" | "band" | "full") {
       <div class="grp">
         <div class="grp-h">{{ t("外观") }}</div>
         <div class="sub-h">{{ t("照片背景") }}</div>
-        <div class="seg" role="group" :aria-label="t('照片背景')">
+        <div class="seg seg-photo" role="group" :aria-label="t('照片背景')">
           <button :class="{ on: state.heroPhotoMode === 'off' }" @click="setHeroMode('off')">
             {{ t("关闭") }}
           </button>
@@ -56,8 +56,11 @@ function setHeroMode(m: "off" | "band" | "full") {
           <button :class="{ on: state.heroPhotoMode === 'full' }" @click="setHeroMode('full')">
             {{ t("全幅") }}
           </button>
+          <button :class="{ on: state.heroPhotoMode === 'window' }" @click="setHeroMode('window')">
+            {{ t("天幕窗") }}
+          </button>
         </div>
-        <p class="note">{{ t("照片模式：报头带在首屏顶部显示实拍照片；全幅用同一张照片铺满首屏。") }}</p>
+        <p class="note">{{ t("照片模式：报头带在首屏顶部显示实拍照片；全幅铺满首屏；天幕窗把照片收进右侧玻璃窗。") }}</p>
       </div>
 
       <div class="grp">
@@ -196,6 +199,15 @@ function setHeroMode(m: "off" | "band" | "full") {
 .seg button.on {
   background: var(--spectrum);
   color: var(--tx-inv);
+}
+.seg-photo {
+  display: flex;
+  width: 100%;
+}
+.seg-photo button {
+  flex: 1 1 auto;
+  padding: 6px 8px;
+  white-space: nowrap;
 }
 .cstat {
   display: flex;

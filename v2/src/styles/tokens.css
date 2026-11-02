@@ -95,6 +95,11 @@
     radial-gradient(820px 520px at 16% 34%, rgba(7,11,20,.88), rgba(7,11,20,.4) 56%, transparent 78%),
     linear-gradient(180deg, rgba(7,11,20,.9) 0%, rgba(7,11,20,.55) 26%, rgba(7,11,20,.14) 58%, rgba(7,11,20,.52) 84%, var(--bg-base) 100%);
   --photo-full-veil-sm: var(--photo-full-veil);
+  /* M4 天幕窗：局部压暗 + 底部沉降 */
+  --photo-window-veil:
+    linear-gradient(180deg, rgba(7,11,20,.32), rgba(7,11,20,.05) 40%, rgba(7,11,20,.82) 100%),
+    radial-gradient(closest-side at 50% 42%, rgba(5,9,18,.52), transparent 100%);
+  --photo-window-metric-bg: rgba(10,16,28,.55);
 }
 
 /* ===================== 浅色 · 晨光实验室 ===================== */
@@ -154,4 +159,9 @@
   --photo-full-veil-sm:
     radial-gradient(760px 520px at 10% 40%, rgba(242,245,251,.95), rgba(242,245,251,.68) 48%, rgba(242,245,251,.14) 78%, transparent 90%),
     linear-gradient(180deg, rgba(242,245,251,.92) 0%, rgba(242,245,251,.6) 26%, rgba(242,245,251,.16) 54%, rgba(242,245,251,.62) 84%, var(--bg-base) 100%);
+  /* M4 天幕窗：局部白纱 */
+  --photo-window-veil:
+    linear-gradient(180deg, rgba(242,245,251,.32), rgba(242,245,251,.06) 40%, rgba(242,245,251,.88) 100%),
+    radial-gradient(closest-side at 50% 42%, rgba(242,245,251,.72), transparent 100%);
+  --photo-window-metric-bg: rgba(255,255,255,.72);
 }
