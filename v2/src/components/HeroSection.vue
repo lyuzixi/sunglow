@@ -275,6 +275,10 @@ onMounted(() => {
   background-size: cover;
   background-position: 50% 8%;
   overflow: hidden;
+  /* 下缘淡到透明，而不是淡进一个实色：页面背景是固定的霞光环 + 星尘（main.css body::before/::after），
+     用实色收口会在交界处切出一块与页面不同的底板。 */
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 60%, rgba(0, 0, 0, 0.62) 78%, rgba(0, 0, 0, 0.24) 91%, rgba(0, 0, 0, 0.06) 97%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 60%, rgba(0, 0, 0, 0.62) 78%, rgba(0, 0, 0, 0.24) 91%, rgba(0, 0, 0, 0.06) 97%, transparent 100%);
 }
 .photo-full::after {
   content: "";

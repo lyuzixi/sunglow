@@ -22,8 +22,11 @@ import { uAlt, uDist } from "./units";
 import { mixedIndex, QUALITY_BANDS } from "./scoring";
 import { isNum } from "./math";
 import { isForeignTz, tzLabel } from "./tz";
+import heroPhoto from "../assets/hero-photo.webp";
 
 const W = 780, H = 400, S = 2;
+/** 顶部实拍报头带高度（与首屏 M2 报头带同一套照片与署名） */
+const BAND_H = 88;
 
 /* 字体栈与 tokens.css 的 --font-display / --font-body 同源（canvas 读不到 CSS 变量，
    只能写同一串字面量；改栈时两处一起改）。构建把 woff2 内联进单文件，族名照可用。 */
@@ -105,8 +108,23 @@ export function shareFileName(r: ForecastResult): string {
 }
 
 /* ---------- 绘制 ---------- */
+/** 实拍报头图：产物里是 base64 data URL，加载一次缓存复用 */
+let photoPromise: Promise<HTMLImageElement> | null = null;
+function loadHeroPhoto(): Promise<HTMLImageElement> {
+  if (!photoPromise) {
+    photoPromise = new Promise((resolve, reject) => {
+      const im = new Image();
+      im.onload = () => resolve(im);
+      im.onerror = () => reject(new Error("hero photo load failed"));
+      im.src = heroPhoto;
+    });
+  }
+  return photoPromise;
+}
+
 export function drawShareCard(
-  cv: HTMLCanvasElement, r: ForecastResult, view: VerdictView, nowMs = Date.now()
+  cv: HTMLCanvasElement, r: ForecastResult, view: VerdictView, nowMs = Date.now(),
+  photo?: HTMLImageElement | null
 ): ShareMeta {
   const dark = document.documentElement.dataset.theme === "dark";
   const theme: "dark" | "light" = dark ? "dark" : "light";
@@ -145,6 +163,33 @@ export function drawShareCard(
   sg.addColorStop(0, SP[0]); sg.addColorStop(0.5, SP[1]); sg.addColorStop(1, SP[2]);
   c.fillStyle = sg; c.fillRect(0, 0, W, 3);
 
+  /* 顶部实拍报头带：与首屏 M2 报头同一张照片、同一条署名；
+     下沿渐隐到卡片底色，不做硬边（全幅模式下首屏也用同样的收口方式）。 */
+  if (photo) {
+    const ih = BAND_H - 3;
+    const sc = Math.max(W / photo.width, ih / photo.height);
+    const sw = W / sc, sh = ih / sc;
+    c.drawImage(photo, (photo.width - sw) / 2, (photo.height - sh) * 0.5, sw, sh, 0, 3, W, ih);
+  }
+  const veil = c.createLinearGradient(0, 3, 0, BAND_H);
+  veil.addColorStop(0, dark ? "rgba(7,11,20,.26)" : "rgba(242,245,251,.60)");
+  veil.addColorStop(0.45, dark ? "rgba(7,11,20,.06)" : "rgba(242,245,251,.30)");
+  veil.addColorStop(1, BG);
+  c.fillStyle = veil; c.fillRect(0, 3, W, BAND_H - 3);
+  /* 顶部局部压一层：品牌名与署名压在这条带上，需要一块稳定的底，才不会被天空亮度影响 */
+  const scrim = c.createLinearGradient(0, 3, 0, 46);
+  scrim.addColorStop(0, dark ? "rgba(7,11,20,.52)" : "rgba(255,255,255,.80)");
+  scrim.addColorStop(1, "rgba(" + (dark ? "7,11,20" : "255,255,255") + ",0)");
+  c.fillStyle = scrim; c.fillRect(0, 3, W, 43);
+  c.font = f(600, 11);
+  c.fillStyle = dark ? "rgba(233,238,251,.85)" : "rgba(17,26,44,.85)";
+  c.fillText(t("霞光档案") + " · SUNGLOW", 44, 26);
+  c.font = f(500, 11);
+  c.fillStyle = tokColor("--photo-credit", dark ? "rgba(233,238,251,.62)" : "rgba(17,26,44,.56)");
+  c.textAlign = "right";
+  c.fillText(t("广州 · 珠江 · 实拍"), W - 44, 26);
+  c.textAlign = "left";
+
   const gc = gradeColor(view.grade, dark);
   const isAM = r.period === "am";
   const band = skyBandOf(r, nowMs, r.dateStr);
@@ -152,7 +197,7 @@ export function drawShareCard(
   /* 天色带：与页面同一份 skyBandOf 结果。
      做成内嵌圆角带（而不是满宽）：满宽时最亮的白昼段与最暗的夜间段会跟卡片底色糊在一起，
      整条带看起来像「浮在中间」—— 加一层底衬 + 圆角边界，五段始终读得出。 */
-  const BX = 44, BW = W - 88, BY = 14, BH = 54, BR = 10;
+  const BX = 44, BW = W - 88, BY = BAND_H + 10, BH = 40, BR = 9;
   if (band) {
     const totalM = band.segs.reduce((a, s) => a + s.m, 0) || 1;
     c.save();
@@ -207,7 +252,7 @@ export function drawShareCard(
   }
 
   /* 左栏：概率大字 */
-  const LY = 176;
+  const LY = 252;
   c.fillStyle = TX1; c.font = f(700, 46, true);
   c.fillText(Math.round(view.P) + "%", 44, LY);
   c.fillStyle = TX3; c.font = f(500, 12);
@@ -215,25 +260,25 @@ export function drawShareCard(
 
   /* 右栏：城市 / 日期 / 质量 / 结论 / 细节 */
   const X = 252, maxW = W - X - 44;
-  c.fillStyle = TX1; c.font = f(700, 25, true);
-  c.fillText(fit(c, cityName(r.city.name, getLang()), maxW), X, 106);
+  c.fillStyle = TX1; c.font = f(700, 22, true);
+  c.fillText(fit(c, cityName(r.city.name, getLang()), maxW), 44, 178);
 
   /* 副标题：日期 + 朝/晚霞 + 非 live 标注 + 单模型标注 */
   c.font = f(500, 13); c.fillStyle = TX2;
   let sub = r.dateStr + "　" + t(isAM ? "朝霞" : "晚霞");
   if (r.src === "cache") sub += "　·　" + t("缓存");
-  let subX = X;
-  c.fillText(sub, subX, 128);
+  let subX = 44;
+  c.fillText(sub, subX, 197);
   subX += c.measureText(sub + "　").width;
   if (view.single) {
     const tag = t(view.label);
     c.font = f(600, 12);
     const tw = c.measureText(tag).width + 16;
-    rr(c, subX, 115, tw, 18, 9);
+    rr(c, subX, 184, tw, 18, 9);
     c.fillStyle = withAlpha(ACC, 0.12); c.fill();
     c.strokeStyle = withAlpha(ACC, 0.4); c.lineWidth = 1; c.stroke();
     c.fillStyle = ACC; c.textAlign = "center";
-    c.fillText(tag, subX + tw / 2, 128);
+    c.fillText(tag, subX + tw / 2, 197);
     c.textAlign = "left";
   }
 
@@ -260,7 +305,7 @@ export function drawShareCard(
   c.font = f(500, 18); c.fillStyle = TX1;
   c.fillText(
     fit(c, t(conclWord(view.P)) + " · " + t("概率") + " " + Math.round(view.P) + "%", maxW),
-    X, 210
+    X, 288
   );
 
   /* 四行细节（口径同V1分享卡） */
@@ -287,29 +332,29 @@ export function drawShareCard(
     " · " + t("综合 I {v}", { v: Math.round(mixedIndex(r.P, r.Q)) })
   );
 
-  c.font = f(500, 13.5);
+  c.font = f(500, 12.5);
   rowList.forEach((s, k) => {
     c.fillStyle = k === 2 ? (dark ? cfb.dark.color : cfb.color) : TX2;
-    c.fillText(fit(c, s, maxW), X, 242 + k * 23);
+    c.fillText(fit(c, s, maxW), X, 310 + k * 15);
   });
 
-  /* 品牌 slogan（全站品牌触点之一） */
-  c.font = f(500, 13); c.fillStyle = TX2; c.textAlign = "center";
-  c.fillText(fit(c, t("让每一次追霞，都有迹可循"), W - 120), W / 2, 330);
-  c.textAlign = "left";
+  /* 左栏底部：品牌 slogan。照片报头占了竖向空间后，概率下方留出这块空档，
+     用它压住，比空着更像一张排过版的卡（右栏四行细节不受影响）。 */
+  c.font = f(500, 12); c.fillStyle = TX3;
+  c.fillText(fit(c, t("让每一次追霞，都有迹可循"), 190), 44, 340);
 
   /* 页脚 */
   c.strokeStyle = LINE; c.lineWidth = 1;
-  c.beginPath(); c.moveTo(44, 340); c.lineTo(W - 44, 340); c.stroke();
+  c.beginPath(); c.moveTo(44, 368); c.lineTo(W - 44, 368); c.stroke();
   c.font = f(500, 12); c.fillStyle = TX3;
   c.fillText(
     fit(c, t("霞光档案 · 数据源 Open-Meteo（GFS / ECMWF-IFS / CAMS 气溶胶）· 结论仅供观赏参考"), W - 250),
-    44, 366
+    44, 388
   );
   c.textAlign = "right";
   c.fillText(
     r.leadH > 0 ? t("预报时效约 {n} 小时", { n: Math.round(r.leadH) }) : t("实况 / 历史分析场"),
-    W - 44, 366
+    W - 44, 388
   );
   c.textAlign = "left";
 
@@ -319,7 +364,7 @@ export function drawShareCard(
     const badge = t("演示数据");
     c.font = f(600, 12);
     const bw = c.measureText(badge).width + 22;
-    const bx = 44, by = 236, bh = 26;
+    const bx = 44, by = 292, bh = 26;
     rr(c, bx, by, bw, bh, 13);
     c.fillStyle = withAlpha("#e2b45e", dark ? 0.18 : 0.16); c.fill();
     c.strokeStyle = withAlpha("#e2b45e", 0.55); c.lineWidth = 1; c.stroke();
@@ -374,9 +419,11 @@ export async function saveShareCard(
   r: ForecastResult, view: VerdictView
 ): Promise<ShareOutcome> {
   await ensureFonts();
+  /* 报头照片是 data URL，解码很快；失败也不阻塞出图，只是没有照片带 */
+  const photo = await loadHeroPhoto().catch(() => null);
 
   const cv = document.createElement("canvas");
-  const meta = drawShareCard(cv, r, view);
+  const meta = drawShareCard(cv, r, view, Date.now(), photo);
   /* 供探针读取：canvas 不进 DOM，只能把元信息挂在自身上 */
   cv.dataset.shareMeta = JSON.stringify(meta);
 
