@@ -277,10 +277,10 @@ export async function runForecast(opts: {
     ).catch(() => null);
     sA = await apiAQBatched(ptsLL, dateStr, dateStr, MAP_TZ).catch(() => null);
   } catch (e) {
-    const err = e as { friendly?: string; fatal?: boolean; status?: number };
+    const err = e as { friendly?: string; fatal?: boolean; status?: number; code?: string };
     /* 额度用尽（429）不回退演示数据：一份假的真实预报比没有结果更糟。
        断网 / 超时 / 演示模式（useMock）仍回落确定性 mock。 */
-    if (err && err.status === 429) {
+    if (err && (err.status === 429 || err.code === "429")) {
       const head = err.friendly ||
         "气象接口暂时限流（同一 IP 请求过于频繁），请稍候约 1 分钟后重试。";
       const tail = err.fatal

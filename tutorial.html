@@ -201,12 +201,12 @@ footer{border-top:1px solid var(--line2);margin-top:44px}
     <span class="pill">SUNGLOW · <span data-i18n="使用教程">使用教程</span></span>
     <p class="slogan" data-i18n="让每一次追霞，都有迹可循">让每一次追霞，都有迹可循</p>
     <h1 data-i18n="读懂朝霞与晚霞的预报">读懂朝霞与晚霞的预报</h1>
-    <p class="lead" data-i18n-html="ov.lead">霞光档案 · SUNGLOW Spectrum Edition（光谱观测版）是一个<b>单文件 Web 应用</b>：输入地点与日期，预测朝霞 / 晚霞（火烧云）出现的概率与观赏质量，并在周边 80 km 采样网格上画出霞光分布。这份教程分四档，按身份取用。</p>
+    <p class="lead" data-i18n-html="ov.lead">霞光档案 · SUNGLOW Spectrum Edition（光谱观测版）是一个<b>单文件 Web 应用</b>：输入地点与日期，预测朝霞 / 晚霞（火烧云）出现的概率与观赏质量，并在以查询点为中心、半径约 500 km 的 121 点采样网格上画出霞光分布（格距 80 km）。这份教程分四档，按身份取用。</p>
   </div>
 
   <div class="hl">
     <div class="c"><h3><span class="dot" aria-hidden="true"></span><span data-i18n="三模型综合">三模型综合</span></h3><p data-i18n="GFS 与 ECMWF 两路统计判据加一路光追物理模型，各自打分后按权重几何平均合成；三路分歧度直接换算成可信度。">GFS 与 ECMWF 两路统计判据加一路光追物理模型，各自打分后按权重几何平均合成；三路分歧度直接换算成可信度。</p></div>
-    <div class="c"><h3><span class="dot" aria-hidden="true"></span><span data-i18n="光谱观测场">光谱观测场</span></h3><p data-i18n="以查询点为中心的 121 点网格，全光谱色阶铺色，可切换出现概率 / 观赏质量 / 云量 / 可信度四个维度。">以查询点为中心的 121 点网格，全光谱色阶铺色，可切换出现概率 / 观赏质量 / 云量 / 可信度四个维度。</p></div>
+    <div class="c"><h3><span class="dot" aria-hidden="true"></span><span data-i18n="光谱观测场">光谱观测场</span></h3><p data-i18n="以查询点为中心的 121 点网格（半径约 500 km、格距 80 km），全光谱色阶铺色，可切换综合指数 / 出现概率 / 观赏质量 / 模型分歧四个维度。">以查询点为中心的 121 点网格（半径约 500 km、格距 80 km），全光谱色阶铺色，可切换综合指数 / 出现概率 / 观赏质量 / 模型分歧四个维度。</p></div>
     <div class="c"><h3><span class="dot" aria-hidden="true"></span><span data-i18n="十日趋势">十日趋势</span></h3><p data-i18n="一次取数画十天曲线，朝 / 晚分开看；算好的结果落盘缓存，重开页命中零请求。">一次取数画十天曲线，朝 / 晚分开看；算好的结果落盘缓存，重开页命中零请求。</p></div>
     <div class="c"><h3><span class="dot" aria-hidden="true"></span><span data-i18n="多观测点对比">多观测点对比</span></h3><p data-i18n="最多 4 个机位一次取数横向排序，直接回答「今晚去哪儿拍」。">最多 4 个机位一次取数横向排序，直接回答「今晚去哪儿拍」。</p></div>
     <div class="c wide"><h3><span class="dot" aria-hidden="true"></span><span data-i18n="快照互通">快照互通</span></h3><p data-i18n="结论编码进 URL，对方打开即见快照、零额度零请求；快照格式与 V1 完全互通——两边生成的链接互相能解。">结论编码进 URL，对方打开即见快照、零额度零请求；快照格式与 V1 完全互通——两边生成的链接互相能解。</p></div>
@@ -216,14 +216,14 @@ footer{border-top:1px solid var(--line2);margin-top:44px}
     <h2><span class="no">01</span><span data-i18n="快速开始">快速开始</span></h2>
     <ol class="steps">
       <li><b data-i18n="选地点">选地点</b>：<span data-i18n="搜索城市名，或直接输入「纬度,经度」。">搜索城市名，或直接输入「纬度,经度」。</span></li>
-      <li><b data-i18n="选日期与时段">选日期与时段</b>：<span data-i18n="日期可回看 7 天、前瞻 10 天；朝霞与晚霞分开计算。">日期可回看 7 天、前瞻 10 天；朝霞与晚霞分开计算。</span></li>
+      <li><b data-i18n="选日期与时段">选日期与时段</b>：<span data-i18n="日期可回看 2 天、前瞻 15 天；朝霞与晚霞分开计算。">日期可回看 2 天、前瞻 15 天；朝霞与晚霞分开计算。</span></li>
       <li><b data-i18n="读结论">读结论</b>：<span data-i18n="概率 + 质量分 + 等级 + 可信度；往下拉是十日趋势、观测场与多观测点对比。">概率 + 质量分 + 等级 + 可信度；往下拉是十日趋势、观测场与多观测点对比。</span></li>
     </ol>
   </section>
 
   <section class="sec" id="ov-family">
     <h2><span class="no">02</span><span data-i18n="版本家族">版本家族</span></h2>
-    <p data-i18n="霞光预报家族三套并存、互相隔离：Sunglow Spectrum Edition（V2，本教程所属，当前主线）、Sunglow Classic Edition（V1，单文件 assemble 构建链，算法权威）、Skyglow Enhanced Edition（Skyglow，基于第三方 couletian/Skyglow 的移植增强版）。页脚「其他版本」随时切换。">霞光预报家族三套并存、互相隔离：Sunglow Spectrum Edition（V2，本教程所属，当前主线）、Sunglow Classic Edition（V1，单文件 assemble 构建链，算法权威）、Skyglow Enhanced Edition（Skyglow，基于第三方 couletian/Skyglow 的移植增强版）。页脚「其他版本」随时切换。</p>
+    <p data-i18n="霞光预报家族三套并存、互相隔离：Sunglow Spectrum Edition（V2，本教程所属，当前主线）、Sunglow Classic Edition（V1，单文件 assemble 构建链，已停止大版本更新，仅保留小修小补）、Skyglow Enhanced Edition（Skyglow，基于第三方 couletian/Skyglow 的移植增强版）。页脚「其他版本」随时切换。">霞光预报家族三套并存、互相隔离：Sunglow Spectrum Edition（V2，本教程所属，当前主线）、Sunglow Classic Edition（V1，单文件 assemble 构建链，已停止大版本更新，仅保留小修小补）、Skyglow Enhanced Edition（Skyglow，基于第三方 couletian/Skyglow 的移植增强版）。页脚「其他版本」随时切换。</p>
   </section>
 
   <section class="sec" id="ov-pick">
@@ -261,7 +261,7 @@ footer{border-top:1px solid var(--line2);margin-top:44px}
 
   <section class="sec" id="u-forecast">
     <h2><span class="no">01</span><span data-i18n="查一次预报">查一次预报</span></h2>
-    <p data-i18n="顶部搜索框输入城市名，或直接给「纬度,经度」；日期选择器可切到过去 7 天内的任意一天与未来 10 天；朝霞 / 晚霞在结论卡上方切换。">顶部搜索框输入城市名，或直接给「纬度,经度」；日期选择器可切到过去 7 天内的任意一天与未来 10 天；朝霞 / 晚霞在结论卡上方切换。</p>
+    <p data-i18n="顶部搜索框输入城市名，或直接给「纬度,经度」；日期选择器可切到过去 2 天内的任意一天与未来 15 天；朝霞 / 晚霞在结论卡上方切换。">顶部搜索框输入城市名，或直接给「纬度,经度」；日期选择器可切到过去 2 天内的任意一天与未来 15 天；朝霞 / 晚霞在结论卡上方切换。</p>
     <p data-i18n="位置与日期不写进偏好——每次打开都是新的开始；想带走当前结果，用分享链接。">位置与日期不写进偏好——每次打开都是新的开始；想带走当前结果，用分享链接。</p>
   </section>
 
@@ -279,8 +279,8 @@ footer{border-top:1px solid var(--line2);margin-top:44px}
 
   <section class="sec" id="u-map">
     <h2><span class="no">04</span><span data-i18n="观测场地图">观测场地图</span></h2>
-    <p data-i18n="以当前地点为中心的 121 点采样网格（80 km 间距），四种着色维度：出现概率 / 观赏质量 / 云量 / 可信度。色阶是全光谱形态——颜色即数值，没有凸包硬边界，边缘自然淡出。">以当前地点为中心的 121 点采样网格（80 km 间距），四种着色维度：出现概率 / 观赏质量 / 云量 / 可信度。色阶是全光谱形态——颜色即数值，没有凸包硬边界，边缘自然淡出。</p>
-    <p data-i18n="取数纪律：只有显式点「加载周边地图」才发起请求（约 171 次加权调用）；这个日期已有缓存时会自动画出来。选点有两种方式——直接点格点，或搜城市名；任意点都能一键「加入对比」。">取数纪律：只有显式点「加载周边地图」才发起请求（约 171 次加权调用）；这个日期已有缓存时会自动画出来。选点有两种方式——直接点格点，或搜城市名；任意点都能一键「加入对比」。</p>
+    <p data-i18n="以当前地点为中心的 121 点采样网格（半径约 500 km、80 km 间距），四种着色维度：综合指数 / 出现概率 / 观赏质量 / 模型分歧。色阶是全光谱形态——颜色即数值，没有凸包硬边界，边缘自然淡出。热力图目前为测试功能，结果仅供参考。">以当前地点为中心的 121 点采样网格（半径约 500 km、80 km 间距），四种着色维度：综合指数 / 出现概率 / 观赏质量 / 模型分歧。色阶是全光谱形态——颜色即数值，没有凸包硬边界，边缘自然淡出。热力图目前为测试功能，结果仅供参考。</p>
+    <p data-i18n="取数纪律：只有显式点「加载地图」才发起请求（约 171 次加权调用）；这个日期已有缓存时会自动画出来。选点有两种方式——直接点格点，或搜城市名；任意点都能一键「加入对比」。">取数纪律：只有显式点「加载地图」才发起请求（约 171 次加权调用）；这个日期已有缓存时会自动画出来。选点有两种方式——直接点格点，或搜城市名；任意点都能一键「加入对比」。</p>
   </section>
 
   <section class="sec" id="u-cmp">
@@ -300,12 +300,12 @@ footer{border-top:1px solid var(--line2);margin-top:44px}
 
   <section class="sec" id="u-pref">
     <h2><span class="no">08</span><span data-i18n="偏好与外观">偏好与外观</span></h2>
-    <p data-i18n="设置面板里：主题（大气光谱观测站·深色 / 晨光实验室·浅色 / 跟随系统）、语言（简体 / 繁體 / English）、单位（公制 km·m·℃ / 英制 mi·ft·℉）、时间格式（12 / 24 小时制）。偏好写本机 localStorage，与本教程页共享同一份。">设置面板里：主题（大气光谱观测站·深色 / 晨光实验室·浅色 / 跟随系统）、语言（简体 / 繁體 / English）、单位（公制 km·m·℃ / 英制 mi·ft·℉）、时间格式（12 / 24 小时制）。偏好写本机 localStorage，与本教程页共享同一份。</p>
+    <p data-i18n="设置面板里：主题（大气光谱观测站·深色 / 晨光实验室·浅色 / 跟随系统）、语言（简体 / 繁體 / English）、单位（公制 km·m·℃ / 英制 mi·ft·℉）、时间格式（12 / 24 小时制）；开篇照片背景另有 关 / 天色带 / 全幅 / 窗口 四种模式，默认关闭。偏好写本机 localStorage，与本教程页共享同一份。">设置面板里：主题（大气光谱观测站·深色 / 晨光实验室·浅色 / 跟随系统）、语言（简体 / 繁體 / English）、单位（公制 km·m·℃ / 英制 mi·ft·℉）、时间格式（12 / 24 小时制）；开篇照片背景另有 关 / 天色带 / 全幅 / 窗口 四种模式，默认关闭。偏好写本机 localStorage，与本教程页共享同一份。</p>
   </section>
 
   <section class="sec" id="u-quota">
     <h2><span class="no">09</span><span data-i18n="缓存、额度与离线">缓存、额度与离线</span></h2>
-    <p data-i18n="所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度，遇到 429 时限流不自动重试。网络不可用（预算 9 秒）会回落到确定性 mock，界面左上角标注 MOCK——别把 mock 当预报。装了 PWA 的话，断网也能看已缓存的结果。">所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度，遇到 429 时限流不自动重试。网络不可用（预算 9 秒）会回落到确定性 mock，界面左上角标注 MOCK——别把 mock 当预报。装了 PWA 的话，断网也能看已缓存的结果。</p>
+    <p data-i18n="所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度：日额度耗尽（429）会直接报错并提示次日重置，不再回退演示数据；短时限流则提示约一分钟恢复，不自动重试。网络不可用或超时（预算 12 秒）才回落到确定性 mock，界面左上角标注 MOCK——别把 mock 当预报。装了 PWA 的话，断网也能看已缓存的结果。">所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度：日额度耗尽（429）会直接报错并提示次日重置，不再回退演示数据；短时限流则提示约一分钟恢复，不自动重试。网络不可用或超时（预算 12 秒）才回落到确定性 mock，界面左上角标注 MOCK——别把 mock 当预报。装了 PWA 的话，断网也能看已缓存的结果。</p>
   </section>
 
   <section class="sec" id="u-terms">
@@ -333,8 +333,9 @@ footer{border-top:1px solid var(--line2);margin-top:44px}
     <h2><span class="no">01</span><span data-i18n="形态与构建链">形态与构建链</span></h2>
     <p data-i18n="源码在 v2/，交付物是一个自包含单文件。一条命令跑完构建与发布：">源码在 v2/，交付物是一个自包含单文件。一条命令跑完构建与发布：</p>
     <div class="code" data-i18n="cd v2 &amp;&amp; npm run build">cd v2 &amp;&amp; npm run build</div>
-    <p data-i18n="三段接力：vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 10 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。">三段接力：vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 10 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。</p>
+    <p data-i18n="四段接力：先跑 check-consistency.mjs 口径门禁（V1↔v2 采样对拍不通过即失败）；vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 10 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。">四段接力：先跑 check-consistency.mjs 口径门禁（V1↔v2 采样对拍不通过即失败）；vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 10 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。</p>
     <div class="kv">
+      <div class="c"><div class="n">check-consistency</div><div class="d" data-i18n="V1↔v2 口径对拍门禁">V1↔v2 口径对拍门禁</div></div>
       <div class="c"><div class="n">vite build</div><div class="d" data-i18n="多文件 → app.html 全内联">多文件 → app.html 全内联</div></div>
       <div class="c"><div class="n">emit-single</div><div class="d" data-i18n="稳定文件名 + 零外链校验">稳定文件名 + 零外链校验</div></div>
       <div class="c"><div class="n">publish-root</div><div class="d" data-i18n="10 个交付文件落仓库根">10 个交付文件落仓库根</div></div>
@@ -343,8 +344,8 @@ footer{border-top:1px solid var(--line2);margin-top:44px}
 
   <section class="sec" id="d-src">
     <h2><span class="no">02</span><span data-i18n="源码结构">源码结构</span></h2>
-    <p data-i18n="src/core 的 TS 模块按职责分层：取数与编排（api / forecast / trend / mapload）、算法（scoring / physics / astro / refmodel / skyband / verdict）、地图（mapdata / maprender / ramp / popover）、状态与协议（state / snap / urlstate / cache / calib）、展示辅助（i18n / city / citylang / cityname / units / tz / series / sharecard / compare / math）。">src/core 的 TS 模块按职责分层：取数与编排（api / forecast / trend / mapload）、算法（scoring / physics / astro / refmodel / skyband / verdict）、地图（mapdata / maprender / ramp / popover）、状态与协议（state / snap / urlstate / cache / calib）、展示辅助（i18n / city / citylang / cityname / units / tz / series / sharecard / compare / math）。</p>
-    <p data-i18n="vendor/src-verbatim/ 是 V1 七脚本的冻结副本：不参与构建、不加载，只作口径 diff 基线。V1 算法若演进，先 diff 该目录再同步 src/core。">vendor/src-verbatim/ 是 V1 七脚本的冻结副本：不参与构建、不加载，只作口径 diff 基线。V1 算法若演进，先 diff 该目录再同步 src/core。</p>
+    <p data-i18n="src/core 的 TS 模块按职责分层：取数与编排（api / forecast / trend / mapload）、算法（scoring / physics / astro / refmodel / skyband / verdict / factors）、地图（mapdata / maprender / ramp / popover）、协议与缓存（snap / urlstate / cache / calib）、展示辅助（i18n / i18n-extra / city / citylang / cityname / citydata / units / tz / series / sharecard / compare / math）；应用状态在 src/state.ts（不在 core 下）。">src/core 的 TS 模块按职责分层：取数与编排（api / forecast / trend / mapload）、算法（scoring / physics / astro / refmodel / skyband / verdict / factors）、地图（mapdata / maprender / ramp / popover）、协议与缓存（snap / urlstate / cache / calib）、展示辅助（i18n / i18n-extra / city / citylang / cityname / citydata / units / tz / series / sharecard / compare / math）；应用状态在 src/state.ts（不在 core 下）。</p>
+    <p data-i18n="vendor/src-verbatim/ 是 V1 七脚本的冻结副本：不参与构建、不加载，只作口径 diff 基线。V1 已停更，基线保持冻结；v2 口径演进时只改 src/core，不要回改基线。">vendor/src-verbatim/ 是 V1 七脚本的冻结副本：不参与构建、不加载，只作口径 diff 基线。V1 已停更，基线保持冻结；v2 口径演进时只改 src/core，不要回改基线。</p>
   </section>
 
   <section class="sec" id="d-algo">
@@ -355,12 +356,12 @@ W_ENS = GFS 0.30 / ECMWF 0.34 / 光追 0.36（几何平均）
 可信度 = 三路极差分档：&lt;18 高、&lt;35 中、≥35 低">mixedIndex = 0.55·P + 0.45·Q
 W_ENS = GFS 0.30 / ECMWF 0.34 / 光追 0.36（几何平均）
 可信度 = 三路极差分档：&lt;18 高、&lt;35 中、≥35 低</div>
-    <p data-i18n="一切口径与 V1 逐点对齐；任何改变 P/Q 数值的改动必须双落（V1 _p*.js 与 v2 src/core 同步改），并由探针守着。">一切口径与 V1 逐点对齐；任何改变 P/Q 数值的改动必须双落（V1 _p*.js 与 v2 src/core 同步改），并由探针守着。</p>
+    <p data-i18n="口径基线冻结在 vendor/src-verbatim/（V1 已停更，仅保留小修小补）。任何改变 P/Q 数值的改动只改 v2 src/core，并由 probe:consist 与冻结基线对拍守着——基线不该跟着改。">口径基线冻结在 vendor/src-verbatim/（V1 已停更，仅保留小修小补）。任何改变 P/Q 数值的改动只改 v2 src/core，并由 probe:consist 与冻结基线对拍守着——基线不该跟着改。</p>
   </section>
 
   <section class="sec" id="d-v1">
     <h2><span class="no">04</span><span data-i18n="与 V1 的关系">与 V1 的关系</span></h2>
-    <p data-i18n="算法权威在 V1（仓库根 V1/ 目录）。probe:consist 不重写公式，而是从两边源码把同一表达式原样抽出来 eval，在 16 个采样网格上对拍——任何一边改了口径，脚本立刻报差异，相当于一条活的口径守卫。">算法权威在 V1（仓库根 V1/ 目录）。probe:consist 不重写公式，而是从两边源码把同一表达式原样抽出来 eval，在 16 个采样网格上对拍——任何一边改了口径，脚本立刻报差异，相当于一条活的口径守卫。</p>
+    <p data-i18n="口径基线在 vendor/src-verbatim/（V1 源码冻结副本，V1 本身已停更）。probe:consist 不重写公式，而是从基线与 v2 源码把同一表达式原样抽出来 eval，在 16 个采样网格上对拍——任何一边改了口径，脚本立刻报差异，相当于一条活的口径守卫。">口径基线在 vendor/src-verbatim/（V1 源码冻结副本，V1 本身已停更）。probe:consist 不重写公式，而是从基线与 v2 源码把同一表达式原样抽出来 eval，在 16 个采样网格上对拍——任何一边改了口径，脚本立刻报差异，相当于一条活的口径守卫。</p>
     <p data-i18n="两侧状态完全隔离：localStorage 键 sunsetbot.*（V1）vs SUNGLOW.v2.*（v2）；快照 SNAP_VER=1 双向互通，任一侧生成的 ?snap= 链接对方可解。">两侧状态完全隔离：localStorage 键 sunsetbot.*（V1）vs SUNGLOW.v2.*（v2）；快照 SNAP_VER=1 双向互通，任一侧生成的 ?snap= 链接对方可解。</p>
   </section>
 
@@ -369,10 +370,10 @@ W_ENS = GFS 0.30 / ECMWF 0.34 / 光追 0.36（几何平均）
     <div class="kv">
       <div class="c"><div class="n">121 点 / 80 km</div><div class="d" data-i18n="采样网格规模与间距">采样网格规模与间距</div></div>
       <div class="c"><div class="n">Shepard</div><div class="d" data-i18n="自适应核，R=第 9 近邻×1.06">自适应核，R=第 9 近邻×1.06</div></div>
-      <div class="c"><div class="n">SPECTRUM_RAMP</div><div class="d" data-i18n="11 锚点全光谱，低值不归零">11 锚点全光谱，低值不归零</div></div>
+      <div class="c"><div class="n">SPECTRUM_RAMP</div><div class="d" data-i18n="8 锚点全光谱，低值不归零">8 锚点全光谱，低值不归零</div></div>
       <div class="c"><div class="n">fadeOf 60→320</div><div class="d" data-i18n="km 距离淡出，无凸包硬裁切">km 距离淡出，无凸包硬裁切</div></div>
     </div>
-    <p data-i18n="场重建用自适应核 Shepard（R＝第 9 近邻×1.06，过点但不长平台）；色面铺到视口外、靠距离淡出收边；显示平滑把因子场的二值台阶摊成坡（只进栅格，卡片与探针仍是原始值）。三层分工：色面（场）、遮挡层（occ）、可信度（只降饱和）——后两者默认关。">场重建用自适应核 Shepard（R＝第 9 近邻×1.06，过点但不长平台）；色面铺到视口外、靠距离淡出收边；显示平滑把因子场的二值台阶摊成坡（只进栅格，卡片与探针仍是原始值）。三层分工：色面（场）、遮挡层（occ）、可信度（只降饱和）——后两者默认关。</p>
+    <p data-i18n="场重建用自适应核 Shepard（R＝第 9 近邻×1.06，过点但不长平台）；色面铺到视口外、靠距离淡出收边；显示平滑把因子场的二值台阶摊成坡（只进栅格，卡片与探针仍是原始值）。三层分工：色面（场）、遮挡层（occ）、可信度（只降饱和）——色面默认开，其余叠加层（经纬网、数值直标、采样点、等值线、遮挡、可信度）默认全部关闭。">场重建用自适应核 Shepard（R＝第 9 近邻×1.06，过点但不长平台）；色面铺到视口外、靠距离淡出收边；显示平滑把因子场的二值台阶摊成坡（只进栅格，卡片与探针仍是原始值）。三层分工：色面（场）、遮挡层（occ）、可信度（只降饱和）——色面默认开，其余叠加层（经纬网、数值直标、采样点、等值线、遮挡、可信度）默认全部关闭。</p>
   </section>
 
   <section class="sec" id="d-quota">
@@ -384,7 +385,7 @@ W_ENS = GFS 0.30 / ECMWF 0.34 / 光追 0.36（几何平均）
       <div class="c"><div class="n">≈102</div><div class="d" data-i18n="十日趋势一次拉完">十日趋势一次拉完</div></div>
       <div class="c"><div class="n">6 h</div><div class="d" data-i18n="缓存 TTL，键=日期+时段+坐标">缓存 TTL，键=日期+时段+坐标</div></div>
     </div>
-    <p data-i18n="取数只许显式触发，「缓存命中自动绘制」是唯一例外；429 双分类（日额度耗尽劝退 / 短时限流退避），不无脑重试。">取数只许显式触发，「缓存命中自动绘制」是唯一例外；429 双分类（日额度耗尽劝退 / 短时限流退避），不无脑重试。</p>
+    <p data-i18n="取数只许显式触发，「缓存命中自动绘制」是唯一例外；429 分两类处理：日额度耗尽直接报错并提示次日重置（不回退演示数据），短时限流提示约一分钟恢复、不自动重试。">取数只许显式触发，「缓存命中自动绘制」是唯一例外；429 分两类处理：日额度耗尽直接报错并提示次日重置（不回退演示数据），短时限流提示约一分钟恢复、不自动重试。</p>
   </section>
 
   <section class="sec" id="d-snap">
@@ -409,7 +410,7 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
   <section class="sec" id="d-deploy">
     <h2><span class="no">09</span><span data-i18n="部署">部署</span></h2>
     <p data-i18n="交付物在仓库根（publish-root 每次构建自动刷新）。GitHub Pages 项目页开在子路径，单文件形态 base 为相对路径，任意静态托管都能开。">交付物在仓库根（publish-root 每次构建自动刷新）。GitHub Pages 项目页开在子路径，单文件形态 base 为相对路径，任意静态托管都能开。</p>
-    <p data-i18n="地图代理占位符 __TMAP_SERVICE_HOST__ 由构建期环境变量 VITE_TMAP_SERVICE_HOST 注入，产物不含任何密钥；未注入时回落占位符——地图不可用，但查询 / 趋势 / 分享卡全可用。PWA 注册靠 link[rel=manifest] 存在性判断，SW 绝不缓存气象响应，缓存名随产物内容哈希自动作废。">地图代理占位符 __TMAP_SERVICE_HOST__ 由构建期环境变量 VITE_TMAP_SERVICE_HOST 注入，产物不含任何密钥；未注入时回落占位符——地图不可用，但查询 / 趋势 / 分享卡全可用。PWA 注册靠 link[rel=manifest] 存在性判断，SW 绝不缓存气象响应，缓存名随产物内容哈希自动作废。</p>
+    <p data-i18n="地图代理占位符 __TMAP_SERVICE_HOST__ 在源码里是字面常量，部署时替换成实际代理地址，产物不含任何密钥；未替换时地图不可用，但查询 / 趋势 / 分享卡全可用。PWA 注册靠 link[rel=manifest] 存在性判断，SW 绝不缓存气象响应，缓存名随产物内容哈希自动作废。">地图代理占位符 __TMAP_SERVICE_HOST__ 在源码里是字面常量，部署时替换成实际代理地址，产物不含任何密钥；未替换时地图不可用，但查询 / 趋势 / 分享卡全可用。PWA 注册靠 link[rel=manifest] 存在性判断，SW 绝不缓存气象响应，缓存名随产物内容哈希自动作废。</p>
   </section>
 </section>
 
@@ -426,7 +427,7 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     <ol class="steps">
       <li><b data-i18n="十日趋势挑日子">十日趋势挑日子</b>：<span data-i18n="概率与质量双高的那天值得专程出门；只看概率会赶上「有霞但不好看」。">概率与质量双高的那天值得专程出门；只看概率会赶上「有霞但不好看」。</span></li>
       <li><b data-i18n="结论卡卡时间">结论卡卡时间</b>：<span data-i18n="天色带四道线里找你的窗口——晚霞黄金 10–25 分钟，朝霞赶在天亮前；「此刻」游标告诉你还剩多少准备时间。">天色带四道线里找你的窗口——晚霞黄金 10–25 分钟，朝霞赶在天亮前；「此刻」游标告诉你还剩多少准备时间。</span></li>
-      <li><b data-i18n="观测场挑点位">观测场挑点位</b>：<span data-i18n="切到质量维度找颜色最亮的格子，切云量维度绕开灰的——点位选对，等于提前一小时到位。">切到质量维度找颜色最亮的格子，切云量维度绕开灰的——点位选对，等于提前一小时到位。</span></li>
+      <li><b data-i18n="观测场挑点位">观测场挑点位</b>：<span data-i18n="切到观赏质量维度找颜色最亮的格子，切模型分歧维度绕开不确定的——点位选对，等于提前一小时到位。">切到观赏质量维度找颜色最亮的格子，切模型分歧维度绕开不确定的——点位选对，等于提前一小时到位。</span></li>
     </ol>
   </section>
 
@@ -490,12 +491,12 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "doc.title": "使用教程 · SUNGLOW Spectrum Edition · 光譜觀測版",
     "让每一次追霞，都有迹可循": "讓每一次追霞，都有跡可循",
     "doc.desc": "霞光檔案 · SUNGLOW Spectrum Edition · 光譜觀測版（朝霞 / 晚霞火燒雲概率與質量預報）使用教程：四檔合一 —— 概覽、用戶版、開發者版、創作者版。",
-    "ov.lead": "霞光檔案 · SUNGLOW Spectrum Edition（光譜觀測版）是一個<b>單檔案 Web 應用</b>：輸入地點與日期，預測朝霞 / 晚霞（火燒雲）出現的概率與觀賞質量，並在周邊 80 km 取樣網格上畫出霞光分布。這份教程分四檔，按身份取用。",
+    "ov.lead": "霞光檔案 · SUNGLOW Spectrum Edition（光譜觀測版）是一個<b>單檔案 Web 應用</b>：輸入地點與日期，預測朝霞 / 晚霞（火燒雲）出現的概率與觀賞質量，並在以查詢點為中心、半徑約 500 km 的 121 點取樣網格上畫出霞光分布（格距 80 km）。這份教程分四檔，按身份取用。",
     "读懂朝霞与晚霞的预报": "讀懂朝霞與晚霞的預報",
     "三模型综合": "三模型綜合",
     "GFS 与 ECMWF 两路统计判据加一路光追物理模型，各自打分后按权重几何平均合成；三路分歧度直接换算成可信度。": "GFS 與 ECMWF 兩路統計判據加一路光追物理模型，各自打分後按權重幾何平均合成；三路分歧度直接換算成可信度。",
     "光谱观测场": "光譜觀測場",
-    "以查询点为中心的 121 点网格，全光谱色阶铺色，可切换出现概率 / 观赏质量 / 云量 / 可信度四个维度。": "以查詢點為中心的 121 點網格，全光譜色階鋪色，可切換出現概率 / 觀賞質量 / 雲量 / 可信度四個維度。",
+    "以查询点为中心的 121 点网格（半径约 500 km、格距 80 km），全光谱色阶铺色，可切换综合指数 / 出现概率 / 观赏质量 / 模型分歧四个维度。": "以查詢點為中心的 121 點網格（半徑約 500 km、格距 80 km），全光譜色階鋪色，可切換綜合指數 / 出現概率 / 觀賞質量 / 模型分歧四個維度。",
     "十日趋势": "十日趨勢",
     "一次取数画十天曲线，朝 / 晚分开看；算好的结果落盘缓存，重开页命中零请求。": "一次取數畫十天曲線，朝 / 晚分開看；算好的結果落盤快取，重開頁命中零請求。",
     "多观测点对比": "多觀測點對比",
@@ -506,11 +507,11 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "选地点": "選地點",
     "搜索城市名，或直接输入「纬度,经度」。": "搜尋城市名，或直接輸入「緯度,經度」。",
     "选日期与时段": "選日期與時段",
-    "日期可回看 7 天、前瞻 10 天；朝霞与晚霞分开计算。": "日期可回看 7 天、前瞻 10 天；朝霞與晚霞分開計算。",
+    "日期可回看 2 天、前瞻 15 天；朝霞与晚霞分开计算。": "日期可回看 2 天、前瞻 15 天；朝霞與晚霞分開計算。",
     "读结论": "讀結論",
     "概率 + 质量分 + 等级 + 可信度；往下拉是十日趋势、观测场与多观测点对比。": "概率 + 質量分 + 等級 + 可信度；往下拉是十日趨勢、觀測場與多觀測點對比。",
     "版本家族": "版本家族",
-    "霞光预报家族三套并存、互相隔离：Sunglow Spectrum Edition（V2，本教程所属，当前主线）、Sunglow Classic Edition（V1，单文件 assemble 构建链，算法权威）、Skyglow Enhanced Edition（Skyglow，基于第三方 couletian/Skyglow 的移植增强版）。页脚「其他版本」随时切换。": "霞光預報家族三套並存、互相隔離：Sunglow Spectrum Edition（V2，本教程所屬，當前主線）、Sunglow Classic Edition（V1，單檔案 assemble 建構鏈，算法權威）、Skyglow Enhanced Edition（Skyglow，基於第三方 couletian/Skyglow 的移植增強版）。頁腳「其他版本」隨時切換。",
+    "霞光预报家族三套并存、互相隔离：Sunglow Spectrum Edition（V2，本教程所属，当前主线）、Sunglow Classic Edition（V1，单文件 assemble 构建链，已停止大版本更新，仅保留小修小补）、Skyglow Enhanced Edition（Skyglow，基于第三方 couletian/Skyglow 的移植增强版）。页脚「其他版本」随时切换。": "霞光預報家族三套並存、互相隔離：Sunglow Spectrum Edition（V2，本教程所屬，當前主線）、Sunglow Classic Edition（V1，單檔案 assemble 建構鏈，已停止大版本更新，僅保留小修小補）、Skyglow Enhanced Edition（Skyglow，基於第三方 couletian/Skyglow 的移植增強版）。頁腳「其他版本」隨時切換。",
     "按身份取用": "按身份取用",
     "从查预报到读结论，每个功能怎么用、数字怎么看。": "從查預報到讀結論，每個功能怎麼用、數字怎麼看。",
     "进入 →": "進入 →",
@@ -519,7 +520,7 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "十分钟看懂这份霞光预报": "十分鐘看懂這份霞光預報",
     "每个功能怎么用、每个数字怎么读。不需要任何气象背景。": "每個功能怎麼用、每個數字怎麼讀。不需要任何氣象背景。",
     "查一次预报": "查一次預報",
-    "顶部搜索框输入城市名，或直接给「纬度,经度」；日期选择器可切到过去 7 天内的任意一天与未来 10 天；朝霞 / 晚霞在结论卡上方切换。": "頂部搜尋框輸入城市名，或直接給「緯度,經度」；日期選擇器可切到過去 7 天內的任意一天與未來 10 天；朝霞 / 晚霞在結論卡上方切換。",
+    "顶部搜索框输入城市名，或直接给「纬度,经度」；日期选择器可切到过去 2 天内的任意一天与未来 15 天；朝霞 / 晚霞在结论卡上方切换。": "頂部搜尋框輸入城市名，或直接給「緯度,經度」；日期選擇器可切到過去 2 天內的任意一天與未來 15 天；朝霞 / 晚霞在結論卡上方切換。",
     "位置与日期不写进偏好——每次打开都是新的开始；想带走当前结果，用分享链接。": "位置與日期不寫進偏好——每次打開都是新的開始；想帶走當前結果，用分享連結。",
     "读懂结论卡": "讀懂結論卡",
     "出现概率＝今晚「有没有霞」；观赏质量＝「好不好看」（0–100 分，优 ≥80、良 ≥65、一般 ≥45）。两个维度独立：概率高可能质量平平（闷烧），概率低也可能一旦出现极惊艳。": "出現概率＝今晚「有沒有霞」；觀賞質量＝「好不好看」（0–100 分，優 ≥80、良 ≥65、一般 ≥45）。兩個維度獨立：概率高可能質量平平（悶燒），概率低也可能一旦出現極驚豔。",
@@ -527,17 +528,17 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "三张模型卡（GFS / ECMWF / 光追）可逐张对照：结论越一致，可信度徽标越稳；分歧大时，宁可当「可能有」对待。": "三張模型卡（GFS / ECMWF / 光追）可逐張對照：結論越一致，可信度徽章越穩；分歧大時，寧可當「可能有」對待。",
     "点「加载趋势」显式取数（约 102 次加权调用，34 个坐标 × 10 天一次拉完），之后朝 / 晚两条概率曲线加质量分柱状列。算好的结果落盘缓存 6 小时，重开页命中直接画出，零请求。": "點「載入趨勢」顯式取數（約 102 次加權呼叫，34 個座標 × 10 天一次拉完），之後朝 / 晚兩條概率曲線加質量分柱狀列。算好的結果落盤快取 6 小時，重開頁命中直接畫出，零請求。",
     "观测场地图": "觀測場地圖",
-    "以当前地点为中心的 121 点采样网格（80 km 间距），四种着色维度：出现概率 / 观赏质量 / 云量 / 可信度。色阶是全光谱形态——颜色即数值，没有凸包硬边界，边缘自然淡出。": "以當前地點為中心的 121 點取樣網格（80 km 間距），四種著色維度：出現概率 / 觀賞質量 / 雲量 / 可信度。色階是全光譜形態——顏色即數值，沒有凸包硬邊界，邊緣自然淡出。",
-    "取数纪律：只有显式点「加载周边地图」才发起请求（约 171 次加权调用）；这个日期已有缓存时会自动画出来。选点有两种方式——直接点格点，或搜城市名；任意点都能一键「加入对比」。": "取數紀律：只有顯式點「載入周邊地圖」才發起請求（約 171 次加權呼叫）；這個日期已有快取時會自動畫出來。選點有兩種方式——直接點格點，或搜城市名；任意點都能一鍵「加入對比」。",
+    "以当前地点为中心的 121 点采样网格（半径约 500 km、80 km 间距），四种着色维度：综合指数 / 出现概率 / 观赏质量 / 模型分歧。色阶是全光谱形态——颜色即数值，没有凸包硬边界，边缘自然淡出。热力图目前为测试功能，结果仅供参考。": "以當前地點為中心的 121 點取樣網格（半徑約 500 km、80 km 間距），四種著色維度：綜合指數 / 出現概率 / 觀賞質量 / 模型分歧。色階是全光譜形態——顏色即數值，沒有凸包硬邊界，邊緣自然淡出。熱力圖目前為測試功能，結果僅供參考。",
+    "取数纪律：只有显式点「加载地图」才发起请求（约 171 次加权调用）；这个日期已有缓存时会自动画出来。选点有两种方式——直接点格点，或搜城市名；任意点都能一键「加入对比」。": "取數紀律：只有顯式點「載入地圖」才發起請求（約 171 次加權呼叫）；這個日期已有快取時會自動畫出來。選點有兩種方式——直接點格點，或搜城市名；任意點都能一鍵「加入對比」。",
     "最多 4 个点。从地图格点加入的免额度（读已取数的场）；搜索加入的每个点约 51 次加权调用，缓存 6 小时。一次取数后按质量分横向排序——「今晚去哪儿拍」就此有答案。": "最多 4 個點。從地圖格點加入的免額度（讀已取數的場）；搜尋加入的每個點約 51 次加權呼叫，快取 6 小時。一次取數後按質量分橫向排序——「今晚去哪兒拍」就此有答案。",
     "保存图片与快照链接": "儲存圖片與快照連結",
     "结论卡的「保存图片」导出 PNG 结论卡（纯 canvas 绘制，配色跟随当前主题）；「复制链接」把当前结果编码进 URL（base64url，SNAP_VER=1），对方打开即见快照，不消耗任何接口额度。格式与 V1 互通——V1 生成的快照这里能解，反之亦然。": "結論卡的「儲存圖片」匯出 PNG 結論卡（純 canvas 繪製，配色跟隨當前主題）；「複製連結」把當前結果編碼進 URL（base64url，SNAP_VER=1），對方打開即見快照，不消耗任何介面額度。格式與 V1 互通——V1 生成的快照這裡能解，反之亦然。",
     "实况校准": "實況校準",
     "看完霞回来标注「看到了 / 没看到 / 无法判断」。本机在你的区域加同档概率下累计样本，≥8 条且本档 ≥3 条时展示观测偏差。校准只在本机展示，绝不回改预报模型；关掉标注开关不会删除已有样本。": "看完霞回來標註「看到了 / 沒看到 / 無法判斷」。本機在你的區域加同檔概率下累積樣本，≥8 條且本檔 ≥3 條時展示觀測偏差。校準只在本機展示，絕不回改預報模型；關掉標註開關不會刪除已有樣本。",
     "偏好与外观": "偏好與外觀",
-    "设置面板里：主题（大气光谱观测站·深色 / 晨光实验室·浅色 / 跟随系统）、语言（简体 / 繁體 / English）、单位（公制 km·m·℃ / 英制 mi·ft·℉）、时间格式（12 / 24 小时制）。偏好写本机 localStorage，与本教程页共享同一份。": "設置面板裡：主題（大氣光譜觀測站·深色 / 晨光實驗室·淺色 / 跟隨系統）、語言（簡體 / 繁體 / English）、單位（公制 km·m·℃ / 英制 mi·ft·℉）、時間格式（12 / 24 小時制）。偏好寫本機 localStorage，與本教程頁共享同一份。",
+    "设置面板里：主题（大气光谱观测站·深色 / 晨光实验室·浅色 / 跟随系统）、语言（简体 / 繁體 / English）、单位（公制 km·m·℃ / 英制 mi·ft·℉）、时间格式（12 / 24 小时制）；开篇照片背景另有 关 / 天色带 / 全幅 / 窗口 四种模式，默认关闭。偏好写本机 localStorage，与本教程页共享同一份。": "設置面板裡：主題（大氣光譜觀測站·深色 / 晨光實驗室·淺色 / 跟隨系統）、語言（簡體 / 繁體 / English）、單位（公制 km·m·℃ / 英制 mi·ft·℉）、時間格式（12 / 24 小時制）；開篇照片背景另有 關 / 天色帶 / 全幅 / 視窗 四種模式，預設關閉。偏好寫本機 localStorage，與本教程頁共享同一份。",
     "缓存、额度与离线": "快取、額度與離線",
-    "所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度，遇到 429 时限流不自动重试。网络不可用（预算 9 秒）会回落到确定性 mock，界面左上角标注 MOCK——别把 mock 当预报。装了 PWA 的话，断网也能看已缓存的结果。": "所有結果按「日期 + 時段 + 座標」分鍵快取 6 小時，設置裡可看條數、一鍵清除。數據源 Open-Meteo 免費層按訪客 IP 計額度，遇到 429 時限流不自動重試。網路不可用（預算 9 秒）會回落到確定性 mock，介面左上角標註 MOCK——別把 mock 當預報。裝了 PWA 的話，斷網也能看已快取的結果。",
+    "所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度：日额度耗尽（429）会直接报错并提示次日重置，不再回退演示数据；短时限流则提示约一分钟恢复，不自动重试。网络不可用或超时（预算 12 秒）才回落到确定性 mock，界面左上角标注 MOCK——别把 mock 当预报。装了 PWA 的话，断网也能看已缓存的结果。": "所有結果按「日期 + 時段 + 座標」分鍵快取 6 小時，設置裡可看條數、一鍵清除。數據源 Open-Meteo 免費層按訪客 IP 計額度：日額度耗盡（429）會直接報錯並提示次日重置，不再回退演示數據；短時限流則提示約一分鐘恢復，不自動重試。網路不可用或超時（預算 12 秒）才回落到確定性 mock，介面左上角標註 MOCK——別把 mock 當預報。裝了 PWA 的話，斷網也能看已快取的結果。",
     "术语速查": "術語速查",
     "气溶胶光学厚度，衡量大气浑浊度（0.1 清澈 → 1+ 重霾）。": "氣溶膠光學厚度，衡量大氣渾濁度（0.1 清澈 → 1+ 重霾）。",
     "云底高度": "雲底高度",
@@ -556,33 +557,34 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "形态与构建链": "形態與建構鏈",
     "源码在 v2/，交付物是一个自包含单文件。一条命令跑完构建与发布：": "源碼在 v2/，交付物是一個自包含單檔案。一條命令跑完建構與發布：",
     "cd v2 && npm run build": "cd v2 &amp;&amp; npm run build",
-    "三段接力：vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 10 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。": "三段接力：vite build 把 JS/CSS/字型全部內聯進 app.html；emit-single.mjs 落成 v2/index.html 並把引用還原成穩定檔案名（殘留雜湊即建構失敗）；publish-root.mjs 把 10 個交付檔案發布到倉庫根並逐檔案 sha256 校驗。產物禁手改；根 index.html 即 GitHub Pages 入口。",
+    "四段接力：先跑 check-consistency.mjs 口径门禁（V1↔v2 采样对拍不通过即失败）；vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 10 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。": "四段接力：先跑 check-consistency.mjs 口徑門禁（V1↔v2 取樣對拍不通過即失敗）；vite build 把 JS/CSS/字型全部內聯進 app.html；emit-single.mjs 落成 v2/index.html 並把引用還原成穩定檔案名（殘留雜湊即建構失敗）；publish-root.mjs 把 10 個交付檔案發布到倉庫根並逐檔案 sha256 校驗。產物禁手改；根 index.html 即 GitHub Pages 入口。",
+    "V1↔v2 口径对拍门禁": "V1↔v2 口徑對拍門禁",
     "多文件 → app.html 全内联": "多檔案 → app.html 全內聯",
     "稳定文件名 + 零外链校验": "穩定檔案名 + 零外部連結校驗",
     "10 个交付文件落仓库根": "10 個交付檔案落倉庫根",
     "源码结构": "源碼結構",
-    "src/core 的 TS 模块按职责分层：取数与编排（api / forecast / trend / mapload）、算法（scoring / physics / astro / refmodel / skyband / verdict）、地图（mapdata / maprender / ramp / popover）、状态与协议（state / snap / urlstate / cache / calib）、展示辅助（i18n / city / citylang / cityname / units / tz / series / sharecard / compare / math）。": "src/core 的 TS 模組按職責分層：取數與編排（api / forecast / trend / mapload）、算法（scoring / physics / astro / refmodel / skyband / verdict）、地圖（mapdata / maprender / ramp / popover）、狀態與協定（state / snap / urlstate / cache / calib）、展示輔助（i18n / city / citylang / cityname / units / tz / series / sharecard / compare / math）。",
-    "vendor/src-verbatim/ 是 V1 七脚本的冻结副本：不参与构建、不加载，只作口径 diff 基线。V1 算法若演进，先 diff 该目录再同步 src/core。": "vendor/src-verbatim/ 是 V1 七腳本的凍結副本：不參與建構、不載入，只作口徑 diff 基線。V1 算法若演進，先 diff 該目錄再同步 src/core。",
+    "src/core 的 TS 模块按职责分层：取数与编排（api / forecast / trend / mapload）、算法（scoring / physics / astro / refmodel / skyband / verdict / factors）、地图（mapdata / maprender / ramp / popover）、协议与缓存（snap / urlstate / cache / calib）、展示辅助（i18n / i18n-extra / city / citylang / cityname / citydata / units / tz / series / sharecard / compare / math）；应用状态在 src/state.ts（不在 core 下）。": "src/core 的 TS 模組按職責分層：取數與編排（api / forecast / trend / mapload）、演算法（scoring / physics / astro / refmodel / skyband / verdict / factors）、地圖（mapdata / maprender / ramp / popover）、協議與快取（snap / urlstate / cache / calib）、展示輔助（i18n / i18n-extra / city / citylang / cityname / citydata / units / tz / series / sharecard / compare / math）；應用狀態在 src/state.ts（不在 core 下）。",
+    "vendor/src-verbatim/ 是 V1 七脚本的冻结副本：不参与构建、不加载，只作口径 diff 基线。V1 已停更，基线保持冻结；v2 口径演进时只改 src/core，不要回改基线。": "vendor/src-verbatim/ 是 V1 七腳本的凍結副本：不參與建構、不載入，只作口徑 diff 基線。V1 已停更，基線保持凍結；v2 口徑演進時只改 src/core，不要回改基線。",
     "算法口径": "算法口徑",
     "统计判据路（GFS / ECMWF）：云量、云型、云底高度、气溶胶等要素加权打分（因素面板列全 13 项判据，末项为模式一致性）→ P；光追路：沿地球曲率的抛物线光路做逐波长消光积分，用 CIE 1931 色度函数算出真实色彩 → Q。两路先合成 mixedIndex，再三路集合：": "統計判據路（GFS / ECMWF）：雲量、雲型、雲底高度、氣溶膠等要素加權打分（因素面板列全 13 項判據，末項為模式一致性）→ P；光追路：沿地球曲率的拋物線光路做逐波長消光積分，用 CIE 1931 色度函數算出真實色彩 → Q。兩路先合成 mixedIndex，再三路集合：",
     "mixedIndex = 0.55·P + 0.45·Q\nW_ENS = GFS 0.30 / ECMWF 0.34 / 光追 0.36（几何平均）\n可信度 = 三路极差分档：<18 高、<35 中、≥35 低": "mixedIndex = 0.55·P + 0.45·Q\nW_ENS = GFS 0.30 / ECMWF 0.34 / 光追 0.36（幾何平均）\n可信度 = 三路極差分檔：&lt;18 高、&lt;35 中、≥35 低",
-    "一切口径与 V1 逐点对齐；任何改变 P/Q 数值的改动必须双落（V1 _p*.js 与 v2 src/core 同步改），并由探针守着。": "一切口徑與 V1 逐點對齊；任何改變 P/Q 數值的改動必須雙落（V1 _p*.js 與 v2 src/core 同步改），並由探針守著。",
+    "一切口径与 V1 逐点对齐；任何改变 P/Q 数值的改动必须双落（V1 _p*.js 与 v2 src/core 同步改），并由探针守着。": "口徑基線凍結在 vendor/src-verbatim/（V1 已停更，僅保留小修小補）。任何改變 P/Q 數值的改動只改 v2 src/core，並由 probe:consist 與凍結基線對拍守著——基線不該跟著改。",
     "与 V1 的关系": "與 V1 的關係",
-    "算法权威在 V1（仓库根 V1/ 目录）。probe:consist 不重写公式，而是从两边源码把同一表达式原样抽出来 eval，在 16 个采样网格上对拍——任何一边改了口径，脚本立刻报差异，相当于一条活的口径守卫。": "算法權威在 V1（倉庫根 V1/ 目錄）。probe:consist 不重寫公式，而是從兩邊源碼把同一表達式原樣抽出來 eval，在 16 個取樣網格上對拍——任何一邊改了口徑，腳本立刻報差異，相當於一條活的口徑守衛。",
+    "口径基线在 vendor/src-verbatim/（V1 源码冻结副本，V1 本身已停更）。probe:consist 不重写公式，而是从基线与 v2 源码把同一表达式原样抽出来 eval，在 16 个采样网格上对拍——任何一边改了口径，脚本立刻报差异，相当于一条活的口径守卫。": "口徑基線在 vendor/src-verbatim/（V1 原始碼凍結副本，V1 本身已停更）。probe:consist 不重寫公式，而是從基線與 v2 原始碼把同一表達式原樣抽出來 eval，在 16 個取樣網格上對拍——任何一邊改了口徑，腳本立刻報差異，相當於一條活的口徑守衛。",
     "两侧状态完全隔离：localStorage 键 sunsetbot.*（V1）vs SUNGLOW.v2.*（v2）；快照 SNAP_VER=1 双向互通，任一侧生成的 ?snap= 链接对方可解。": "兩側狀態完全隔離：localStorage 鍵 sunsetbot.*（V1）vs SUNGLOW.v2.*（v2）；快照 SNAP_VER=1 雙向互通，任一側生成的 ?snap= 連結對方可解。",
     "观测场渲染": "觀測場渲染",
     "采样网格规模与间距": "取樣網格規模與間距",
     "自适应核，R=第 9 近邻×1.06": "自適應核，R=第 9 近鄰×1.06",
-    "11 锚点全光谱，低值不归零": "11 錨點全光譜，低值不歸零",
+    "8 锚点全光谱，低值不归零": "8 錨點全光譜，低值不歸零",
     "km 距离淡出，无凸包硬裁切": "km 距離淡出，無凸包硬裁切",
-    "场重建用自适应核 Shepard（R＝第 9 近邻×1.06，过点但不长平台）；色面铺到视口外、靠距离淡出收边；显示平滑把因子场的二值台阶摊成坡（只进栅格，卡片与探针仍是原始值）。三层分工：色面（场）、遮挡层（occ）、可信度（只降饱和）——后两者默认关。": "場重建用自適應核 Shepard（R＝第 9 近鄰×1.06，過點但不長平台）；色面鋪到視口外、靠距離淡出收邊；顯示平滑把因子場的二值台階攤成坡（只進柵格，卡片與探針仍是原始值）。三層分工：色面（場）、遮擋層（occ）、可信度（只降飽和）——後兩者預設關。",
+    "场重建用自适应核 Shepard（R＝第 9 近邻×1.06，过点但不长平台）；色面铺到视口外、靠距离淡出收边；显示平滑把因子场的二值台阶摊成坡（只进栅格，卡片与探针仍是原始值）。三层分工：色面（场）、遮挡层（occ）、可信度（只降饱和）——色面默认开，其余叠加层（经纬网、数值直标、采样点、等值线、遮挡、可信度）默认全部关闭。": "場重建用自適應核 Shepard（R＝第 9 近鄰×1.06，過點但不長平台）；色面鋪到視口外、靠距離淡出收邊；顯示平滑把因子場的二值台階攤成坡（只進柵格，卡片與探針仍是原始值）。三層分工：色面（場）、遮擋層（occ）、可信度（只降飽和）——色面預設開，其餘疊加層（經緯網、數值直標、取樣點、等值線、遮擋、可信度）預設全部關閉。",
     "时区与取数账目": "時區與取數賬目",
     "单点预报加权调用": "單點預報加權呼叫",
     "观测场全量": "觀測場全量",
     "十日趋势一次拉完": "十日趨勢一次拉完",
     "缓存 TTL，键=日期+时段+坐标": "快取 TTL，鍵=日期+時段+座標",
     "一切时间按城市当地钟（API_TZ=auto，序列存真实 epoch，偏移量先取整再算）。取数账目与纪律：": "一切時間按城市當地鐘（API_TZ=auto，序列存真實 epoch，偏移量先取整再算）。取數賬目與紀律：",
-    "取数只许显式触发，「缓存命中自动绘制」是唯一例外；429 双分类（日额度耗尽劝退 / 短时限流退避），不无脑重试。": "取數只許顯式觸發，「快取命中自動繪製」是唯一例外；429 雙分類（日額度耗盡勸退 / 短時限流退避），不無腦重試。",
+    "取数只许显式触发，「缓存命中自动绘制」是唯一例外；429 分两类处理：日额度耗尽直接报错并提示次日重置（不回退演示数据），短时限流提示约一分钟恢复、不自动重试。": "取數只許顯式觸發，「快取命中自動繪製」是唯一例外；429 分兩類處理：日額度耗盡直接報錯並提示次日重置（不回退演示數據），短時限流提示約一分鐘恢復、不自動重試。",
     "快照与 URL 协议": "快照與 URL 協定",
     "?snap= 后接 base64url 编码的结论快照（SNAP_VER=1），零气象请求还原整张结论卡；语言进 URL（?lang=zh/hant/en），主题不进——分享链接即对方能看懂的版本。": "?snap= 後接 base64url 編碼的結論快照（SNAP_VER=1），零氣象請求還原整張結論卡；語言進 URL（?lang=zh/hant/en），主題不進——分享連結即對方能看懂的版本。",
     "质量门：探针与纪律": "質量門：探針與紀律",
@@ -590,7 +592,7 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "全仓 LF 行尾；改产物必须重跑构建；探针跑的是构建产物，不是源码——忘重建等于测旧代码。": "全倉 LF 行尾；改產物必須重跑建構；探針跑的是建構產物，不是源碼——忘重建等於測舊程式碼。",
     "部署": "部署",
     "交付物在仓库根（publish-root 每次构建自动刷新）。GitHub Pages 项目页开在子路径，单文件形态 base 为相对路径，任意静态托管都能开。": "交付物在倉庫根（publish-root 每次建構自動刷新）。GitHub Pages 專案頁開在子路徑，單檔案形態 base 為相對路徑，任意靜態託管都能開。",
-    "地图代理占位符 __TMAP_SERVICE_HOST__ 由构建期环境变量 VITE_TMAP_SERVICE_HOST 注入，产物不含任何密钥；未注入时回落占位符——地图不可用，但查询 / 趋势 / 分享卡全可用。PWA 注册靠 link[rel=manifest] 存在性判断，SW 绝不缓存气象响应，缓存名随产物内容哈希自动作废。": "地圖代理佔位符 __TMAP_SERVICE_HOST__ 由建構期環境變數 VITE_TMAP_SERVICE_HOST 注入，產物不含任何金鑰；未注入時回落佔位符——地圖不可用，但查詢 / 趨勢 / 分享卡全可用。PWA 註冊靠 link[rel=manifest] 存在性判斷，SW 絕不快取氣象響應，快取名隨產物內容雜湊自動作廢。",
+    "地图代理占位符 __TMAP_SERVICE_HOST__ 在源码里是字面常量，部署时替换成实际代理地址，产物不含任何密钥；未替换时地图不可用，但查询 / 趋势 / 分享卡全可用。PWA 注册靠 link[rel=manifest] 存在性判断，SW 绝不缓存气象响应，缓存名随产物内容哈希自动作废。": "地圖代理佔位符 __TMAP_SERVICE_HOST__ 在原始碼裡是字面常量，部署時替換成實際代理位址，產物不含任何密鑰；未替換時地圖不可用，但查詢 / 趨勢 / 分享卡全可用。PWA 註冊靠 link[rel=manifest] 存在性判斷，SW 絕不快取氣象響應，快取名隨產物內容雜湊自動作廢。",
     "用预报数据规划一次拍摄": "用預報數據規劃一次拍攝",
     "从选日子到出图，把霞光预报变成你的拍摄计划表。": "從選日子到出圖，把霞光預報變成你的拍攝計畫表。",
     "三步挑一个拍摄夜": "三步挑一個拍攝夜",
@@ -599,7 +601,7 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "结论卡卡时间": "結論卡卡時間",
     "天色带四道线里找你的窗口——晚霞黄金 10–25 分钟，朝霞赶在天亮前；「此刻」游标告诉你还剩多少准备时间。": "天色帶四道線裡找你的窗口——晚霞黃金 10–25 分鐘，朝霞趕在天亮前；「此刻」游標告訴你還剩多少準備時間。",
     "观测场挑点位": "觀測場挑點位",
-    "切到质量维度找颜色最亮的格子，切云量维度绕开灰的——点位选对，等于提前一小时到位。": "切到質量維度找顏色最亮的格子，切雲量維度繞開灰的——點位選對，等於提前一小時到位。",
+    "切到观赏质量维度找颜色最亮的格子，切模型分歧维度绕开不确定的——点位选对，等于提前一小时到位。": "切到觀賞質量維度找顏色最亮的格子，切模型分歧維度繞開不確定的——點位選對，等於提前一小時到位。",
     "结论卡导出": "結論卡匯出",
     "结论卡的「保存图片」一键导出 PNG：概率大字、天色带、三模型结论都在一张图上，纯 canvas 绘制、配色跟随当前主题。深色 Spectrum 卡适合直接发社交平台；浅色晨光卡适合打印或贴进拍摄计划表。": "結論卡的「儲存圖片」一鍵匯出 PNG：概率大字、天色帶、三模型結論都在一張圖上，純 canvas 繪製、配色跟隨當前主題。深色 Spectrum 卡適合直接發社交平臺；淺色晨光卡適合列印或貼進拍攝計畫表。",
     "快照链接做内容": "快照連結做內容",
@@ -627,12 +629,12 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "doc.title": "Tutorial · SUNGLOW Spectrum Edition",
     "让每一次追霞，都有迹可循": "Every glow chase leaves a trace.",
     "doc.desc": "SUNGLOW Spectrum Edition (dawn / dusk glow probability and quality forecast) tutorial: four tracks — overview, users, developers, creators.",
-    "ov.lead": "SUNGLOW Spectrum Edition is a <b>single-file web app</b>: enter a place and a date to forecast the probability and viewing quality of dawn / dusk glow (fire clouds), plotted across an 80 km sampling grid around you. This tutorial comes in four tracks — pick the one that fits you.",
+    "ov.lead": "SUNGLOW Spectrum Edition is a <b>single-file web app</b>: enter a place and a date to forecast the probability and viewing quality of dawn / dusk glow (fire clouds), plotted across a 121-point sampling grid centred on your location (about 500 km radius, 80 km spacing). This tutorial comes in four tracks — pick the one that fits you.",
     "读懂朝霞与晚霞的预报": "Reading the dawn & dusk forecast",
     "三模型综合": "Three-model ensemble",
     "GFS 与 ECMWF 两路统计判据加一路光追物理模型，各自打分后按权重几何平均合成；三路分歧度直接换算成可信度。": "Two statistical judges (GFS, ECMWF) plus one ray-tracing physics model score independently, then combine as a weighted geometric mean; the spread between the three becomes the confidence badge.",
     "光谱观测场": "Spectrum field map",
-    "以查询点为中心的 121 点网格，全光谱色阶铺色，可切换出现概率 / 观赏质量 / 云量 / 可信度四个维度。": "A 121-point grid around your location, painted with a full-spectrum ramp; switch between probability / quality / cloud cover / confidence.",
+    "以查询点为中心的 121 点网格（半径约 500 km、格距 80 km），全光谱色阶铺色，可切换综合指数 / 出现概率 / 观赏质量 / 模型分歧四个维度。": "A 121-point grid centred on your query (about 500 km radius, 80 km spacing), painted with a full-spectrum ramp; switch between composite index / probability / quality / model spread.",
     "十日趋势": "10-day trend",
     "一次取数画十天曲线，朝 / 晚分开看；算好的结果落盘缓存，重开页命中零请求。": "One fetch draws ten days of curves, dawn and dusk separately; results are cached, so reopening hits zero requests.",
     "多观测点对比": "Multi-spot compare",
@@ -643,11 +645,11 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "选地点": "Pick a place",
     "搜索城市名，或直接输入「纬度,经度」。": "Search a city name, or type 'lat,lon' directly.",
     "选日期与时段": "Pick date & period",
-    "日期可回看 7 天、前瞻 10 天；朝霞与晚霞分开计算。": "Dates go back 7 days and forward 10; dawn and dusk are computed separately.",
+    "日期可回看 2 天、前瞻 15 天；朝霞与晚霞分开计算。": "Dates go back 2 days and forward 15; dawn and dusk are computed separately.",
     "读结论": "Read the verdict",
     "概率 + 质量分 + 等级 + 可信度；往下拉是十日趋势、观测场与多观测点对比。": "Probability + quality score + grade + confidence; scroll on for the 10-day trend, field map and multi-spot compare.",
     "版本家族": "The family",
-    "霞光预报家族三套并存、互相隔离：Sunglow Spectrum Edition（V2，本教程所属，当前主线）、Sunglow Classic Edition（V1，单文件 assemble 构建链，算法权威）、Skyglow Enhanced Edition（Skyglow，基于第三方 couletian/Skyglow 的移植增强版）。页脚「其他版本」随时切换。": "Three builds coexist, fully isolated: Sunglow Spectrum Edition (V2, this tutorial's home, the current mainline), Sunglow Classic Edition (V1, single-file assemble chain, the algorithm authority) and Skyglow Enhanced Edition (Skyglow, a port and enhancement of the third-party couletian/Skyglow project). Use 'Other versions' in the footer to switch anytime.",
+    "霞光预报家族三套并存、互相隔离：Sunglow Spectrum Edition（V2，本教程所属，当前主线）、Sunglow Classic Edition（V1，单文件 assemble 构建链，已停止大版本更新，仅保留小修小补）、Skyglow Enhanced Edition（Skyglow，基于第三方 couletian/Skyglow 的移植增强版）。页脚「其他版本」随时切换。": "Three builds coexist, fully isolated: Sunglow Spectrum Edition (V2, this tutorial's home, the current mainline), Sunglow Classic Edition (V1, single-file assemble chain, no longer receiving major updates — only small fixes) and Skyglow Enhanced Edition (Skyglow, a port and enhancement of the third-party couletian/Skyglow project). Use 'Other versions' in the footer to switch anytime.",
     "按身份取用": "Pick your track",
     "从查预报到读结论，每个功能怎么用、数字怎么看。": "From running a forecast to reading the verdict — what every feature does and what the numbers mean.",
     "进入 →": "Enter →",
@@ -656,7 +658,7 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "十分钟看懂这份霞光预报": "Understand this glow forecast in ten minutes",
     "每个功能怎么用、每个数字怎么读。不需要任何气象背景。": "What each feature does, what each number means. No meteorology background needed.",
     "查一次预报": "Run a forecast",
-    "顶部搜索框输入城市名，或直接给「纬度,经度」；日期选择器可切到过去 7 天内的任意一天与未来 10 天；朝霞 / 晚霞在结论卡上方切换。": "Type a city in the top search box, or give 'lat,lon' directly; the date picker covers any day from 7 back to 10 ahead; switch dawn / dusk above the verdict card.",
+    "顶部搜索框输入城市名，或直接给「纬度,经度」；日期选择器可切到过去 2 天内的任意一天与未来 15 天；朝霞 / 晚霞在结论卡上方切换。": "Type a city in the top search box, or give 'lat,lon' directly; the date picker covers any day from 2 back to 15 ahead; switch dawn / dusk above the verdict card.",
     "位置与日期不写进偏好——每次打开都是新的开始；想带走当前结果，用分享链接。": "Place and date are never saved to preferences — every open is a fresh start. To take the current result with you, use a share link.",
     "读懂结论卡": "Reading the verdict card",
     "出现概率＝今晚「有没有霞」；观赏质量＝「好不好看」（0–100 分，优 ≥80、良 ≥65、一般 ≥45）。两个维度独立：概率高可能质量平平（闷烧），概率低也可能一旦出现极惊艳。": "Probability = 'will there be glow tonight'; quality = 'will it be stunning' (0–100; great ≥80, good ≥65, fair ≥45). The two are independent: high probability can be flat (a smolder), low probability can still be spectacular if it shows.",
@@ -664,17 +666,17 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "三张模型卡（GFS / ECMWF / 光追）可逐张对照：结论越一致，可信度徽标越稳；分歧大时，宁可当「可能有」对待。": "Three model cards (GFS / ECMWF / ray-trace) can be compared one by one: the more they agree, the steadier the confidence badge. When they diverge widely, treat it as 'maybe'.",
     "点「加载趋势」显式取数（约 102 次加权调用，34 个坐标 × 10 天一次拉完），之后朝 / 晚两条概率曲线加质量分柱状列。算好的结果落盘缓存 6 小时，重开页命中直接画出，零请求。": "Click 'Load trend' to fetch explicitly (~102 weighted calls; 34 coordinates × 10 days in one go), then dawn / dusk probability curves plus a quality-score column. Results cache for 6 hours — reopening draws them instantly, zero requests.",
     "观测场地图": "The field map",
-    "以当前地点为中心的 121 点采样网格（80 km 间距），四种着色维度：出现概率 / 观赏质量 / 云量 / 可信度。色阶是全光谱形态——颜色即数值，没有凸包硬边界，边缘自然淡出。": "A 121-point sampling grid (80 km spacing) around your location with four coloring modes: probability / quality / cloud cover / confidence. The ramp is full-spectrum — color is the value, with no hard hull boundary; edges fade out naturally.",
-    "取数纪律：只有显式点「加载周边地图」才发起请求（约 171 次加权调用）；这个日期已有缓存时会自动画出来。选点有两种方式——直接点格点，或搜城市名；任意点都能一键「加入对比」。": "Fetch discipline: requests fire only when you explicitly click 'Load surrounding map' (~171 weighted calls); if this date is already cached, it draws automatically. Two ways to pick a spot — tap a grid point directly, or search a city name; any point can be added to compare in one tap.",
+    "以当前地点为中心的 121 点采样网格（半径约 500 km、80 km 间距），四种着色维度：综合指数 / 出现概率 / 观赏质量 / 模型分歧。色阶是全光谱形态——颜色即数值，没有凸包硬边界，边缘自然淡出。热力图目前为测试功能，结果仅供参考。": "A 121-point sampling grid centred on your location (about 500 km radius, 80 km spacing) with four coloring modes: composite index / probability / quality / model spread. The ramp is full-spectrum — color is the value, with no hard hull boundary; edges fade out naturally. The heat map is still a test feature; results are for reference only.",
+    "取数纪律：只有显式点「加载地图」才发起请求（约 171 次加权调用）；这个日期已有缓存时会自动画出来。选点有两种方式——直接点格点，或搜城市名；任意点都能一键「加入对比」。": "Fetch discipline: requests fire only when you explicitly click 'Load map' (~171 weighted calls); if this date is already cached, it draws automatically. Two ways to pick a spot — tap a grid point directly, or search a city name; any point can be added to compare in one tap.",
     "最多 4 个点。从地图格点加入的免额度（读已取数的场）；搜索加入的每个点约 51 次加权调用，缓存 6 小时。一次取数后按质量分横向排序——「今晚去哪儿拍」就此有答案。": "Up to 4 spots. Points added from the map grid cost no quota (they read the already-fetched field); each searched point costs ~51 weighted calls, cached for 6 hours. After one fetch they rank side by side by quality score — 'where to shoot tonight', answered.",
     "保存图片与快照链接": "Save image & snapshot link",
     "结论卡的「保存图片」导出 PNG 结论卡（纯 canvas 绘制，配色跟随当前主题）；「复制链接」把当前结果编码进 URL（base64url，SNAP_VER=1），对方打开即见快照，不消耗任何接口额度。格式与 V1 互通——V1 生成的快照这里能解，反之亦然。": "'Save image' on the verdict card exports a PNG (pure canvas, colors follow your theme); 'Copy link' encodes the current result into the URL (base64url, SNAP_VER=1) — the recipient opens the snapshot directly, costing zero API quota. The format interoperates with V1: snapshots from either side decode on the other.",
     "实况校准": "Reality calibration",
     "看完霞回来标注「看到了 / 没看到 / 无法判断」。本机在你的区域加同档概率下累计样本，≥8 条且本档 ≥3 条时展示观测偏差。校准只在本机展示，绝不回改预报模型；关掉标注开关不会删除已有样本。": "After the show, tag 'saw it / didn't / can't tell'. Your device accumulates samples within your region and probability band, and shows the observed deviation once you have ≥8 entries and ≥3 in that band. Calibration is display-only on your device — it never rewrites the forecast model; turning the tagging switch off does not delete existing samples.",
     "偏好与外观": "Preferences & appearance",
-    "设置面板里：主题（大气光谱观测站·深色 / 晨光实验室·浅色 / 跟随系统）、语言（简体 / 繁體 / English）、单位（公制 km·m·℃ / 英制 mi·ft·℉）、时间格式（12 / 24 小时制）。偏好写本机 localStorage，与本教程页共享同一份。": "In the settings panel: theme (Spectrum Observatory dark / Dawn Lab light / system), language (简体 / 繁體 / English), units (metric km·m·℃ / imperial mi·ft·℉) and clock format (12 / 24-hour). Preferences live in this device's localStorage, shared with this tutorial page.",
+    "设置面板里：主题（大气光谱观测站·深色 / 晨光实验室·浅色 / 跟随系统）、语言（简体 / 繁體 / English）、单位（公制 km·m·℃ / 英制 mi·ft·℉）、时间格式（12 / 24 小时制）；开篇照片背景另有 关 / 天色带 / 全幅 / 窗口 四种模式，默认关闭。偏好写本机 localStorage，与本教程页共享同一份。": "In the settings panel: theme (Spectrum Observatory dark / Dawn Lab light / system), language (简体 / 繁體 / English), units (metric km·m·℃ / imperial mi·ft·℉) and clock format (12 / 24-hour). The hero photo backdrop has four modes — off / sky band / full / window — off by default. Preferences live in this device's localStorage, shared with this tutorial page.",
     "缓存、额度与离线": "Cache, quota & offline",
-    "所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度，遇到 429 时限流不自动重试。网络不可用（预算 9 秒）会回落到确定性 mock，界面左上角标注 MOCK——别把 mock 当预报。装了 PWA 的话，断网也能看已缓存的结果。": "All results cache for 6 hours, keyed by date + period + coordinates; the settings panel shows the count and clears everything in one tap. Data comes from Open-Meteo's free tier, metered per visitor IP; a 429 rate-limit is never auto-retried. If the network is unavailable (9-second budget), the app falls back to deterministic mock data, flagged MOCK in the top-left — don't mistake mock for a forecast. With the PWA installed, cached results open even offline.",
+    "所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度：日额度耗尽（429）会直接报错并提示次日重置，不再回退演示数据；短时限流则提示约一分钟恢复，不自动重试。网络不可用或超时（预算 12 秒）才回落到确定性 mock，界面左上角标注 MOCK——别把 mock 当预报。装了 PWA 的话，断网也能看已缓存的结果。": "All results cache for 6 hours, keyed by date + period + coordinates; the settings panel shows the count and clears everything in one tap. Data comes from Open-Meteo's free tier, metered per visitor IP: an exhausted daily quota (429) errors out immediately and tells you it resets tomorrow — it no longer falls back to demo data; a short-term throttle asks you to retry in about a minute and never auto-retries. Only an unavailable network or a timeout (12-second budget) falls back to deterministic mock data, flagged MOCK in the top-left — don't mistake mock for a forecast. With the PWA installed, cached results open even offline.",
     "术语速查": "Glossary",
     "气溶胶光学厚度，衡量大气浑浊度（0.1 清澈 → 1+ 重霾）。": "Aerosol optical depth — how murky the air is (0.1 clear → 1+ heavy haze).",
     "云底高度": "Cloud-base height",
@@ -693,33 +695,34 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "形态与构建链": "Form & build chain",
     "源码在 v2/，交付物是一个自包含单文件。一条命令跑完构建与发布：": "Source lives in v2/; the deliverable is one self-contained single file. One command builds and publishes:",
     "cd v2 && npm run build": "cd v2 &amp;&amp; npm run build",
-    "三段接力：vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 10 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。": "Three-stage relay: vite build inlines all JS/CSS/fonts into app.html; emit-single.mjs lands v2/index.html and restores stable filenames for every reference (a residual hash fails the build); publish-root.mjs publishes 10 deliverable files to the repo root with per-file sha256 verification. Never hand-edit the output; the root index.html is the GitHub Pages entry.",
+    "四段接力：先跑 check-consistency.mjs 口径门禁（V1↔v2 采样对拍不通过即失败）；vite build 把 JS/CSS/字体全部内联进 app.html；emit-single.mjs 落成 v2/index.html 并把引用还原成稳定文件名（残留哈希即构建失败）；publish-root.mjs 把 10 个交付文件发布到仓库根并逐文件 sha256 校验。产物禁手改；根 index.html 即 GitHub Pages 入口。": "Four-stage relay: check-consistency.mjs runs the calibration gate first (a failed V1↔v2 sampling diff stops the build); vite build inlines all JS/CSS/fonts into app.html; emit-single.mjs lands v2/index.html and restores stable filenames for every reference (a residual hash fails the build); publish-root.mjs publishes 10 deliverable files to the repo root with per-file sha256 verification. Never hand-edit the output; the root index.html is the GitHub Pages entry.",
+    "V1↔v2 口径对拍门禁": "V1↔v2 calibration diff gate",
     "多文件 → app.html 全内联": "Multi-file → app.html fully inlined",
     "稳定文件名 + 零外链校验": "Stable filenames + zero-external-link check",
     "10 个交付文件落仓库根": "10 deliverable files to the repo root",
     "源码结构": "Source layout",
-    "src/core 的 TS 模块按职责分层：取数与编排（api / forecast / trend / mapload）、算法（scoring / physics / astro / refmodel / skyband / verdict）、地图（mapdata / maprender / ramp / popover）、状态与协议（state / snap / urlstate / cache / calib）、展示辅助（i18n / city / citylang / cityname / units / tz / series / sharecard / compare / math）。": "The TS modules in src/core are layered by role: fetching & orchestration (api / forecast / trend / mapload), algorithms (scoring / physics / astro / refmodel / skyband / verdict), map (mapdata / maprender / ramp / popover), state & protocol (state / snap / urlstate / cache / calib), and presentation helpers (i18n / city / citylang / cityname / units / tz / series / sharecard / compare / math).",
-    "vendor/src-verbatim/ 是 V1 七脚本的冻结副本：不参与构建、不加载，只作口径 diff 基线。V1 算法若演进，先 diff 该目录再同步 src/core。": "vendor/src-verbatim/ is a frozen copy of V1's seven scripts: not built, not loaded — only a diff baseline for calibration. If V1's algorithms evolve, diff that directory first, then sync src/core.",
+    "src/core 的 TS 模块按职责分层：取数与编排（api / forecast / trend / mapload）、算法（scoring / physics / astro / refmodel / skyband / verdict / factors）、地图（mapdata / maprender / ramp / popover）、协议与缓存（snap / urlstate / cache / calib）、展示辅助（i18n / i18n-extra / city / citylang / cityname / citydata / units / tz / series / sharecard / compare / math）；应用状态在 src/state.ts（不在 core 下）。": "The TS modules in src/core are layered by role: fetching & orchestration (api / forecast / trend / mapload), algorithms (scoring / physics / astro / refmodel / skyband / verdict / factors), map (mapdata / maprender / ramp / popover), protocol & cache (snap / urlstate / cache / calib), and presentation helpers (i18n / i18n-extra / city / citylang / cityname / citydata / units / tz / series / sharecard / compare / math). App state lives in src/state.ts (not under core).",
+    "vendor/src-verbatim/ 是 V1 七脚本的冻结副本：不参与构建、不加载，只作口径 diff 基线。V1 已停更，基线保持冻结；v2 口径演进时只改 src/core，不要回改基线。": "vendor/src-verbatim/ is a frozen copy of V1's seven scripts: not built, not loaded — only a diff baseline for calibration. V1 is no longer updated, so the baseline stays frozen; evolve calibration in src/core only, never by editing the baseline.",
     "算法口径": "Algorithm details",
     "统计判据路（GFS / ECMWF）：云量、云型、云底高度、气溶胶等要素加权打分（因素面板列全 13 项判据，末项为模式一致性）→ P；光追路：沿地球曲率的抛物线光路做逐波长消光积分，用 CIE 1931 色度函数算出真实色彩 → Q。两路先合成 mixedIndex，再三路集合：": "Statistical judges (GFS / ECMWF): weighted scoring over cloud cover, cloud type, cloud-base height, aerosols and more (the factors panel lists all 13 criteria, the last being model agreement) → P. Ray tracing: per-wavelength extinction integration along a parabolic path following Earth's curvature, run through the CIE 1931 color functions for true color → Q. The two merge into mixedIndex, then the three-way ensemble:",
     "mixedIndex = 0.55·P + 0.45·Q\nW_ENS = GFS 0.30 / ECMWF 0.34 / 光追 0.36（几何平均）\n可信度 = 三路极差分档：<18 高、<35 中、≥35 低": "mixedIndex = 0.55·P + 0.45·Q\nW_ENS = GFS 0.30 / ECMWF 0.34 / ray-trace 0.36 (geometric mean)\nConfidence = spread bands: &lt;18 high, &lt;35 medium, ≥35 low",
-    "一切口径与 V1 逐点对齐；任何改变 P/Q 数值的改动必须双落（V1 _p*.js 与 v2 src/core 同步改），并由探针守着。": "Every calibration detail matches V1 point by point; any change to P/Q values must land on both sides (V1 _p*.js and v2 src/core together), guarded by probes.",
+    "一切口径与 V1 逐点对齐；任何改变 P/Q 数值的改动必须双落（V1 _p*.js 与 v2 src/core 同步改），并由探针守着。": "The calibration baseline is frozen in vendor/src-verbatim/ (V1 is no longer updated — only small fixes). Any change to P/Q values goes into v2 src/core only, guarded by probe:consist against the frozen baseline — the baseline should never follow.",
     "与 V1 的关系": "Relationship with V1",
-    "算法权威在 V1（仓库根 V1/ 目录）。probe:consist 不重写公式，而是从两边源码把同一表达式原样抽出来 eval，在 16 个采样网格上对拍——任何一边改了口径，脚本立刻报差异，相当于一条活的口径守卫。": "The algorithm authority is V1 (the V1/ directory at the repo root). probe:consist doesn't rewrite formulas — it extracts the same expressions verbatim from both sources and evals them on a 16-point sampling grid. If either side drifts, the script reports it immediately: a living calibration guard.",
+    "口径基线在 vendor/src-verbatim/（V1 源码冻结副本，V1 本身已停更）。probe:consist 不重写公式，而是从基线与 v2 源码把同一表达式原样抽出来 eval，在 16 个采样网格上对拍——任何一边改了口径，脚本立刻报差异，相当于一条活的口径守卫。": "The calibration baseline lives in vendor/src-verbatim/ (a frozen copy of V1's sources; V1 itself is no longer updated). probe:consist doesn't rewrite formulas — it extracts the same expressions verbatim from the baseline and the v2 sources and evals them on a 16-point sampling grid. If either side drifts, the script reports it immediately: a living calibration guard.",
     "两侧状态完全隔离：localStorage 键 sunsetbot.*（V1）vs SUNGLOW.v2.*（v2）；快照 SNAP_VER=1 双向互通，任一侧生成的 ?snap= 链接对方可解。": "State is fully isolated: localStorage keys sunsetbot.* (V1) vs SUNGLOW.v2.* (v2). Snapshots (SNAP_VER=1) are bidirectional — a ?snap= link from either side decodes on the other.",
     "观测场渲染": "Field rendering",
     "采样网格规模与间距": "Sampling grid size & spacing",
     "自适应核，R=第 9 近邻×1.06": "Adaptive kernel, R = 9th nearest neighbor × 1.06",
-    "11 锚点全光谱，低值不归零": "11-anchor full spectrum; low values never zeroed",
+    "8 锚点全光谱，低值不归零": "8-anchor full spectrum; low values never zeroed",
     "km 距离淡出，无凸包硬裁切": "km distance fade-out; no hard hull clipping",
-    "场重建用自适应核 Shepard（R＝第 9 近邻×1.06，过点但不长平台）；色面铺到视口外、靠距离淡出收边；显示平滑把因子场的二值台阶摊成坡（只进栅格，卡片与探针仍是原始值）。三层分工：色面（场）、遮挡层（occ）、可信度（只降饱和）——后两者默认关。": "Field reconstruction uses an adaptive Shepard kernel (R = 9th nearest neighbor × 1.06 — passes through points without flat plateaus). The color surface extends past the viewport and is bounded by distance fade-out; display smoothing turns the factor field's binary steps into slopes (raster only — cards and probes keep raw values). Three layers, separate jobs: color surface (field), occlusion (occ), confidence (desaturate only) — the latter two are off by default.",
+    "场重建用自适应核 Shepard（R＝第 9 近邻×1.06，过点但不长平台）；色面铺到视口外、靠距离淡出收边；显示平滑把因子场的二值台阶摊成坡（只进栅格，卡片与探针仍是原始值）。三层分工：色面（场）、遮挡层（occ）、可信度（只降饱和）——色面默认开，其余叠加层（经纬网、数值直标、采样点、等值线、遮挡、可信度）默认全部关闭。": "Field reconstruction uses an adaptive Shepard kernel (R = 9th nearest neighbor × 1.06 — passes through points without flat plateaus). The color surface extends past the viewport and is bounded by distance fade-out; display smoothing turns the factor field's binary steps into slopes (raster only — cards and probes keep raw values). Three layers, separate jobs: color surface (field), occlusion (occ), confidence (desaturate only) — the color surface is on by default; every other overlay (graticule, value labels, sample points, contours, occlusion, confidence) starts off.",
     "时区与取数账目": "Time zones & fetch accounting",
     "单点预报加权调用": "Weighted calls, single-point forecast",
     "观测场全量": "Field map, full load",
     "十日趋势一次拉完": "10-day trend, one pull",
     "缓存 TTL，键=日期+时段+坐标": "Cache TTL; key = date + period + coordinates",
     "一切时间按城市当地钟（API_TZ=auto，序列存真实 epoch，偏移量先取整再算）。取数账目与纪律：": "All times follow the city's local clock (API_TZ=auto; series store true epochs, offsets floored before use). Fetch accounting and discipline:",
-    "取数只许显式触发，「缓存命中自动绘制」是唯一例外；429 双分类（日额度耗尽劝退 / 短时限流退避），不无脑重试。": "Fetches must be explicitly triggered; 'draw automatically on cache hit' is the only exception. 429s are double-classified (daily quota exhausted → discourage; short-term throttle → back off), never blindly retried.",
+    "取数只许显式触发，「缓存命中自动绘制」是唯一例外；429 分两类处理：日额度耗尽直接报错并提示次日重置（不回退演示数据），短时限流提示约一分钟恢复、不自动重试。": "Fetches must be explicitly triggered; 'draw automatically on cache hit' is the only exception. 429s are handled in two ways: an exhausted daily quota errors out immediately and says it resets tomorrow (no fallback to demo data); a short-term throttle asks you to retry in about a minute and is never auto-retried.",
     "快照与 URL 协议": "Snapshot & URL protocol",
     "?snap= 后接 base64url 编码的结论快照（SNAP_VER=1），零气象请求还原整张结论卡；语言进 URL（?lang=zh/hant/en），主题不进——分享链接即对方能看懂的版本。": "?snap= carries a base64url-encoded verdict snapshot (SNAP_VER=1); the whole verdict card is restored with zero weather requests. Language goes into the URL (?lang=zh/hant/en), theme doesn't — a share link is a version the recipient can read.",
     "质量门：探针与纪律": "Quality gates: probes & discipline",
@@ -727,7 +730,7 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "全仓 LF 行尾；改产物必须重跑构建；探针跑的是构建产物，不是源码——忘重建等于测旧代码。": "Repo-wide LF line endings; any change to the output requires a rebuild. Probes run the build output, not the source — forgetting to rebuild means testing old code.",
     "部署": "Deployment",
     "交付物在仓库根（publish-root 每次构建自动刷新）。GitHub Pages 项目页开在子路径，单文件形态 base 为相对路径，任意静态托管都能开。": "Deliverables live at the repo root (publish-root refreshes them on every build). GitHub Pages project sites serve from a subpath; the single-file form uses a relative base, so any static host works.",
-    "地图代理占位符 __TMAP_SERVICE_HOST__ 由构建期环境变量 VITE_TMAP_SERVICE_HOST 注入，产物不含任何密钥；未注入时回落占位符——地图不可用，但查询 / 趋势 / 分享卡全可用。PWA 注册靠 link[rel=manifest] 存在性判断，SW 绝不缓存气象响应，缓存名随产物内容哈希自动作废。": "The map-proxy placeholder __TMAP_SERVICE_HOST__ is injected at build time from the VITE_TMAP_SERVICE_HOST env var; the output contains no keys. Without it the placeholder remains — the map is unavailable, but forecast / trend / share card all work. PWA registration is inferred from the presence of link[rel=manifest]; the service worker never caches weather responses, and the cache name auto-expires with the output's content hash.",
+    "地图代理占位符 __TMAP_SERVICE_HOST__ 在源码里是字面常量，部署时替换成实际代理地址，产物不含任何密钥；未替换时地图不可用，但查询 / 趋势 / 分享卡全可用。PWA 注册靠 link[rel=manifest] 存在性判断，SW 绝不缓存气象响应，缓存名随产物内容哈希自动作废。": "The map-proxy placeholder __TMAP_SERVICE_HOST__ is a literal constant in the source; replace it with the real proxy address when deploying, and the output carries no keys. Left unreplaced, the map is unavailable, but forecast / trend / share card all work. PWA registration is inferred from the presence of link[rel=manifest]; the service worker never caches weather responses, and the cache name auto-expires with the output's content hash.",
     "用预报数据规划一次拍摄": "Plan a shoot with forecast data",
     "从选日子到出图，把霞光预报变成你的拍摄计划表。": "From picking the day to exporting the image — turn the glow forecast into your shoot plan.",
     "三步挑一个拍摄夜": "Three steps to a shoot night",
@@ -736,7 +739,7 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "结论卡卡时间": "The verdict card times it",
     "天色带四道线里找你的窗口——晚霞黄金 10–25 分钟，朝霞赶在天亮前；「此刻」游标告诉你还剩多少准备时间。": "Find your window between the four sky-band lines — dusk glow's golden 10–25 minutes, dawn glow before first light. The 'now' cursor tells you how much setup time is left.",
     "观测场挑点位": "The field map picks the spot",
-    "切到质量维度找颜色最亮的格子，切云量维度绕开灰的——点位选对，等于提前一小时到位。": "Switch to quality mode for the brightest cells, then cloud mode to dodge the gray ones — the right spot buys you an extra hour on site.",
+    "切到观赏质量维度找颜色最亮的格子，切模型分歧维度绕开不确定的——点位选对，等于提前一小时到位。": "Switch to quality mode for the brightest cells, then model-spread mode to dodge the uncertain ones — the right spot buys you an extra hour on site.",
     "结论卡导出": "Exporting the verdict card",
     "结论卡的「保存图片」一键导出 PNG：概率大字、天色带、三模型结论都在一张图上，纯 canvas 绘制、配色跟随当前主题。深色 Spectrum 卡适合直接发社交平台；浅色晨光卡适合打印或贴进拍摄计划表。": "'Save image' exports a PNG in one tap: the big probability number, sky band and three-model verdicts on a single card, pure canvas, colors following your theme. The dark Spectrum card is ready to post; the light Dawn Lab card prints well for your shoot planner.",
     "快照链接做内容": "Snapshot links as content",

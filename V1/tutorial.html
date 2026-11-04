@@ -405,7 +405,7 @@ footer{border-top:1px solid var(--line);margin-top:20px}
   </div>
 
   <section class="sec">
-    <h2 data-i18n="三档教程，各取所需">三档教程，各取所需</h2>
+    <h2 data-i18n="四档教程，各取所需">四档教程，各取所需</h2>
     <div class="panels">
       <a class="panel" href="#users">
         <span class="k" data-i18n="给使用者">给使用者</span>
@@ -422,7 +422,7 @@ footer{border-top:1px solid var(--line);margin-top:20px}
       <a class="panel" href="#creator">
         <span class="k" data-i18n="给创作者">给创作者</span>
         <h3 data-i18n="创作者版">创作者版</h3>
-        <p data-i18n="最值得讲的五个亮点、演示叙事线、可放心引用的卖点。">最值得讲的五个亮点、演示叙事线、可放心引用的卖点。</p>
+        <p data-i18n="最值得讲的六个亮点、演示叙事线、可放心引用的卖点。">最值得讲的六个亮点、演示叙事线、可放心引用的卖点。</p>
         <span class="go" data-i18n="演示素材">演示素材</span>
       </a>
     </div>
@@ -481,7 +481,7 @@ footer{border-top:1px solid var(--line);margin-top:20px}
       <li><b data-i18n="读结论卡。">读结论卡。</b><span data-i18n="核心三格：概率 %、质量评分、等级（优 / 良 / 一般 / 差）。下方「主要影响因素」逐项分解，告诉你这次是云量、湿度还是能见度在拖后腿。">核心三格：概率 %、质量评分、等级（优 / 良 / 一般 / 差）。下方「主要影响因素」逐项分解，告诉你这次是云量、湿度还是能见度在拖后腿。</span></li>
       <li><b data-i18n="看多模型。">看多模型。</b><span data-i18n="卡内列出 GFS / ECMWF / 光追三路各自的分数与合成结果；模型之间分歧大时，悬停信息里会提示不确定性。">卡内列出 GFS / ECMWF / 光追三路各自的分数与合成结果；模型之间分歧大时，悬停信息里会提示不确定性。</span></li>
     </ol>
-    <div class="note" data-i18n-html="u1.note">首屏只取<b>单点</b>结果（约 65 个加权调用）。地图数据必须由你显式点击才取，所以初次打开不会悄悄花掉你的额度。</div>
+    <div class="note" data-i18n-html="u1.note">首屏只取<b>单点</b>结果（约 65 个加权调用）。地图默认必须由你显式点击「刷新地图」才取；只有打开「地图跟随查询自动刷新」开关后，换查询才会在无缓存时自动取数。所以初次打开不会悄悄花掉你的额度。</div>
   </section>
 
   <section class="sec" id="u2">
@@ -499,7 +499,7 @@ footer{border-top:1px solid var(--line);margin-top:20px}
       <div><dt data-i18n="色面">色面</dt>
         <dd data-i18n="采样点插值出的霞光强度，白 → 黄 → 橙 → 红分档。色阶是固定的 0–100 绝对刻度，所以同一片区域的深浅可以跨日期直接对比。">采样点插值出的霞光强度，白 → 黄 → 橙 → 红分档。色阶是固定的 0–100 绝对刻度，所以同一片区域的深浅可以跨日期直接对比。</dd></div>
       <div><dt data-i18n="云纹">云纹</dt>
-        <dd data-i18n="采样点上的云量，按四档画成斜纹。晴天不画（否则整张图都是纹路，等于没有信息），有云才显形。">采样点上的云量，按四档画成斜纹。晴天不画（否则整张图都是纹路，等于没有信息），有云才显形。</dd></div>
+        <dd data-i18n="采样点上的云量，按四档铺成半透明的纯色云影色块（纯色平铺，不是斜纹）。晴天不铺（否则整张图都是色块，等于没有信息），有云才显形。">采样点上的云量，按四档铺成半透明的纯色云影色块（纯色平铺，不是斜纹）。晴天不铺（否则整张图都是色块，等于没有信息），有云才显形。</dd></div>
       <div><dt data-i18n="等值线">等值线</dt>
         <dd data-i18n="档与档之间一条 1px 线（屏幕空间矢量，放大不变粗），帮你看清梯度往哪边走。">档与档之间一条 1px 线（屏幕空间矢量，放大不变粗），帮你看清梯度往哪边走。</dd></div>
       <div><dt data-i18n="数据范围虚线">数据范围虚线</dt>
@@ -512,9 +512,9 @@ footer{border-top:1px solid var(--line);margin-top:20px}
     <p data-i18n="数值直标 / 采样点 / 云纹 / 经纬网 —— 按需开关，偏好写进本地存储，重开页恢复。">数值直标 / 采样点 / 云纹 / 经纬网 —— 按需开关，偏好写进本地存储，重开页恢复。</p>
 
     <h3 data-i18n="交互">交互</h3>
-    <p data-i18n="地图面板里可切时段、日期、模型与着色依据；鼠标悬停或点击出具体数值，外推区会附「离最近采样点多远」的距离口径；右下角可全屏。">地图面板里可切时段、日期、模型与着色依据；鼠标悬停或点击出具体数值，外推区会附「离最近采样点多远」的距离口径；右下角可全屏。</p>
+    <p data-i18n="地图面板里可切时段、日期、模型与着色依据；鼠标悬停或点击出具体数值，外推区会附「离最近采样点多远」的距离口径；全屏按钮在地图卡标题栏右上角。">地图面板里可切时段、日期、模型与着色依据；鼠标悬停或点击出具体数值，外推区会附「离最近采样点多远」的距离口径；全屏按钮在地图卡标题栏右上角。</p>
 
-    <div class="note warn" data-i18n-html="u2.warn"><b>可信范围别混用两个量：</b>「在不在采样区里」（凸包）和「离最近采样点多远」是两个不同的概念。包内实测最远 85 km，贴着凸包顶点外侧只有 1.4 km 却已经是外推。</div>
+    <div class="note warn" data-i18n-html="u2.warn"><b>可信范围别混用两个量：</b>「在不在采样区里」（凸包）和「离最近采样点多远」是两个不同的概念。包内实测最远 85 km，贴着凸包顶点外侧只有 1.4 km 却已经是外推。热力图目前为测试功能，结果仅供参考。</div>
   </section>
 
   <section class="sec" id="u3">
@@ -619,7 +619,8 @@ footer{border-top:1px solid var(--line);margin-top:20px}
     <div class="code"><pre><span class="c"># 源（改这些）</span>
 tpl/template.html     版式来源（HTML + CSS + 4 个内联 &lt;script&gt; 占位块）
 tpl/404.html          404 页模板（第二个产物，共用设计令牌）
-_p2.js … _p6.js       业务代码片段
+_p2.js … _p5b.js      业务代码片段（与 _pi18n.js 同属一号脚本块）
+_p6.js                地图模块（单独一个脚本块）
 _pi18n.js             多语言词典（简 / 繁 / 英）
 refs/*.txt            内联数据（城市表 / 地名别名 / 0.5° 高程网格 b64）
 tutorial.html         本教程（独立文件，不参与拼装）
@@ -699,7 +700,7 @@ python _check/all.py -k cdp     <span class="c"># 只跑名字含 cdp 的</span>
         <tr><td><b>tutorialprobe</b></td><td data-i18n="本教程：三语键覆盖、主题三态、窄屏无溢出、四档切换、偏好共享">本教程：三语键覆盖、主题三态、窄屏无溢出、四档切换、偏好共享</td></tr>
       </tbody>
     </table>
-    <div class="note warn" data-i18n-html="d4.note">探针一律跑 <code>_check/preview.html</code>。<b>改了源码忘了重新生成 preview，整套断言测的就是旧代码</b> —— 本项目踩过多次的坑。</div>
+    <div class="note warn" data-i18n-html="d4.note">交互类探针（CDP）跑 <code>_check/preview.html</code>；<b>改了源码忘了重新生成 preview，整套断言测的就是旧代码</b> —— 本项目踩过多次的坑。另有少数探针直接读源码或产物：<code>syntax.py</code> 读 <code>index.html</code>，<code>globals.js</code> 读 <code>_p2 ~ _p6</code> 源码，<code>tutorialprobe.js</code> 测 <code>tutorial.html</code> 与 <code>index.html</code>。</div>
     <p class="muted" data-i18n-html="d4.p">不进一键序列（会花真实额度或依赖实时接口）：<code>consistency.js</code> / <code>shotdefault.js</code> / <code>tzprobe.js</code> 等。</p>
   </section>
 
@@ -707,11 +708,11 @@ python _check/all.py -k cdp     <span class="c"># 只跑名字含 cdp 的</span>
     <h2 data-i18n="5 · 已知边界（改动前必读）">5 · 已知边界（改动前必读）</h2>
     <dl class="terms">
       <div><dt data-i18n="额度">额度</dt>
-        <dd data-i18n-html="d5.t1">首屏只取单点（约 65）。地图必须由用户显式点击才取（约 171）。唯一例外是缓存命中自动画（零请求、零额度）—— 由「缓存快路径之后、网络调用之前」的一行提前返回保证。</dd></div>
+        <dd data-i18n-html="d5.t1">首屏只取单点（约 65）。地图默认必须由用户显式点击「刷新地图」才取（约 171）；例外有两处：缓存命中自动画（零请求、零额度），以及打开「地图跟随查询自动刷新」后换查询且无缓存时自动取数。缓存命中的零请求由「缓存快路径之后、网络调用之前」的一行提前返回保证。</dd></div>
       <div><dt data-i18n="色面与范围">色面与范围</dt>
         <dd data-i18n="色面值域是固定的 0–100 绝对刻度（不做当日拉伸），边缘取采样点凸包并仅向外羽化；凸包之外即外推，用虚线标出。悬停卡另有「离最近采样点多远」的口径 —— 与「在不在采样区」是两个量。">色面值域是固定的 0–100 绝对刻度（不做当日拉伸），边缘取采样点凸包并仅向外羽化；凸包之外即外推，用虚线标出。悬停卡另有「离最近采样点多远」的口径 —— 与「在不在采样区」是两个量。</dd></div>
       <div><dt data-i18n="云纹">云纹</dt>
-        <dd data-i18n="按云量分四档画斜纹，晴档不画（否则整张图都变闷）。档界同时是图例边界；图例里「晴」是空心描边，代表「这里没有纹路是因为没有云」。">按云量分四档画斜纹，晴档不画（否则整张图都变闷）。档界同时是图例边界；图例里「晴」是空心描边，代表「这里没有纹路是因为没有云」。</dd></div>
+        <dd data-i18n="按云量分四档铺半透明纯色云影（同一种深蓝，深浅只由 alpha 表达，不是斜纹），晴档不铺（否则整张图都变闷）。档界同时是图例边界；图例里「晴」是空心描边，代表「这里没有色块是因为没有云」。">按云量分四档铺半透明纯色云影（同一种深蓝，深浅只由 alpha 表达，不是斜纹），晴档不铺（否则整张图都变闷）。档界同时是图例边界；图例里「晴」是空心描边，代表「这里没有色块是因为没有云」。</dd></div>
       <div><dt data-i18n="模型分歧">模型分歧</dt>
         <dd data-i18n="地图的「模型分歧」只取三套模型的极差；少于两套有值时返回「无数据」而不是 0。">地图的「模型分歧」只取三套模型的极差；少于两套有值时返回「无数据」而不是 0。</dd></div>
       <div><dt data-i18n="偏好持久化">偏好持久化</dt>
@@ -746,7 +747,7 @@ python _check/all.py -k cdp     <span class="c"># 只跑名字含 cdp 的</span>
     <p class="lead" data-i18n="面向自媒体与内容创作者：最值得讲的亮点、演示叙事线，以及可以放心引用的卖点。">面向自媒体与内容创作者：最值得讲的亮点、演示叙事线，以及可以放心引用的卖点。</p>
     <ol class="sectoc">
       <li><a href="#c1"><span class="n">1</span><span data-i18n="一句话开场">一句话开场</span></a></li>
-      <li><a href="#c2"><span class="n">2</span><span data-i18n="五个亮点">五个亮点</span></a></li>
+      <li><a href="#c2"><span class="n">2</span><span data-i18n="六个亮点">六个亮点</span></a></li>
       <li><a href="#c3"><span class="n">3</span><span data-i18n="适合的题材">适合的题材</span></a></li>
       <li><a href="#c4"><span class="n">4</span><span data-i18n="演示叙事线">演示叙事线</span></a></li>
       <li><a href="#c5"><span class="n">5</span><span data-i18n="可引用的卖点">可引用的卖点</span></a></li>
@@ -761,7 +762,7 @@ python _check/all.py -k cdp     <span class="c"># 只跑名字含 cdp 的</span>
   </section>
 
   <section class="sec" id="c2">
-    <h2 data-i18n="2 · 最值得讲的五个亮点">2 · 最值得讲的五个亮点</h2>
+    <h2 data-i18n="2 · 最值得讲的六个亮点">2 · 最值得讲的六个亮点</h2>
     <div class="grid2">
       <div class="lit">
         <span class="tag" data-i18n="结论卡">结论卡</span>
@@ -771,7 +772,7 @@ python _check/all.py -k cdp     <span class="c"># 只跑名字含 cdp 的</span>
       <div class="lit">
         <span class="tag" data-i18n="地图">地图</span>
         <h3 data-i18n="周边 500 km 霞光分布">周边 500 km 霞光分布</h3>
-        <p data-i18n="热力图把「去哪个方向拍」画出来。白 → 黄 → 橙 → 红色阶 + 等值线 + 数据范围虚线，演示时直接说「红色那片就是今晚最该去的地方」。">热力图把「去哪个方向拍」画出来。白 → 黄 → 橙 → 红色阶 + 等值线 + 数据范围虚线，演示时直接说「红色那片就是今晚最该去的地方」。</p>
+        <p data-i18n="热力图把「去哪个方向拍」画出来。白 → 黄 → 橙 → 红色阶 + 等值线 + 数据范围虚线，演示时可以说「红色那片很可能就是今晚最该去的地方」—— 热力图目前仍是测试功能，结果仅供参考，不要说成确定结论。">热力图把「去哪个方向拍」画出来。白 → 黄 → 橙 → 红色阶 + 等值线 + 数据范围虚线，演示时可以说「红色那片很可能就是今晚最该去的地方」—— 热力图目前仍是测试功能，结果仅供参考，不要说成确定结论。</p>
       </div>
       <div class="lit">
         <span class="tag" data-i18n="最佳窗口">最佳窗口</span>
@@ -844,6 +845,8 @@ python _check/all.py -k cdp     <span class="c"># 只跑名字含 cdp 的</span>
         <dd data-i18n="中国境内展示地图需测绘资质，项目用的腾讯地图是合规方案；不要为省事换成境外底图。">中国境内展示地图需测绘资质，项目用的腾讯地图是合规方案；不要为省事换成境外底图。</dd></div>
       <div><dt data-i18n="概率指的是霞光">概率指的是霞光</dt>
         <dd data-i18n="避免观众误解 —— 它预报的是低空霞光出现的可能性与质量，不是晴雨。">避免观众误解 —— 它预报的是低空霞光出现的可能性与质量，不是晴雨。</dd></div>
+      <div><dt data-i18n="热力图仍在测试">热力图仍在测试</dt>
+        <dd data-i18n="地图热力图目前为测试功能，结果仅供参考；演示时请避免把它说成确定的结论。">地图热力图目前为测试功能，结果仅供参考；演示时请避免把它说成确定的结论。</dd></div>
     </dl>
   </section>
 
@@ -889,7 +892,7 @@ var ZH_HANT_1 = {
   "天文暮光": "天文暮光",
   "霞光只发生在太阳落到地平线以下几度到十几度之间。朝霞与晚霞的大气条件不同，所以应用分开预报、可分别切换。": "霞光只發生在太陽落到地平線下幾度到十幾度之間。朝霞與晚霞的大氣條件不同，所以應用程式分開預報、可分別切換。",
 
-  "三档教程，各取所需": "三檔教學，各取所需",
+  "四档教程，各取所需": "四檔教學，各取所需",
   "给使用者": "給使用者",
   "怎么查一次预报、怎么看地图与趋势、怎么分享、怎么在手机上用。": "怎麼查一次預報、怎麼看地圖與趨勢、怎麼分享、怎麼在手機上用。",
   "上手指南": "上手指南",
@@ -897,7 +900,7 @@ var ZH_HANT_1 = {
   "源码结构、拼装流程、回归套件、三种部署方式与已知边界。": "原始碼結構、拼裝流程、回歸套件、三種部署方式與已知邊界。",
   "工程说明": "工程說明",
   "给创作者": "給創作者",
-  "最值得讲的五个亮点、演示叙事线、可放心引用的卖点。": "最值得講的五個亮點、示範敘事線、可放心引用的賣點。",
+  "最值得讲的六个亮点、演示叙事线、可放心引用的卖点。": "最值得講的六個亮點、示範敘事線、可放心引用的賣點。",
   "演示素材": "示範素材",
 
   "它到底在算什么": "它到底在算什麼",
@@ -941,7 +944,7 @@ var ZH_HANT_1 = {
   "核心三格：概率 %、质量评分、等级（优 / 良 / 一般 / 差）。下方「主要影响因素」逐项分解，告诉你这次是云量、湿度还是能见度在拖后腿。": "核心三格：機率 %、品質評分、等級（優 / 良 / 一般 / 差）。下方「主要影響因素」逐項分解，告訴你這次是雲量、濕度還是能見度在拖後腿。",
   "看多模型。": "看多模型。",
   "卡内列出 GFS / ECMWF / 光追三路各自的分数与合成结果；模型之间分歧大时，悬停信息里会提示不确定性。": "卡內列出 GFS / ECMWF / 光追三路各自的分數與合成結果；模型之間分歧大時，懸停資訊裡會提示不確定性。",
-  "u1.note": "首屏只取<b>單點</b>結果（約 65 個加權呼叫）。地圖資料必須由你明確點擊才取，所以初次開啟不會悄悄花掉你的額度。",
+  "u1.note": "首屏只取<b>單點</b>結果（約 65 個加權呼叫）。地圖預設必須由你明確點擊「重新整理地圖」才取；只有開啟「地圖跟隨查詢自動重新整理」開關後，換查詢才會在無快取時自動取數。所以初次開啟不會悄悄花掉你的額度。",
 
   "2 · 看懂周边地图": "2 · 看懂周邊地圖",
   "u2.p": "地圖把查詢點周邊 <b>500 km</b> 的霞光強度畫成熱力圖，是「今天去哪個方向拍」最直觀的答案。",
@@ -952,8 +955,8 @@ var ZH_HANT_1 = {
   "色面": "色面",
   "采样点插值出的霞光强度，白 → 黄 → 橙 → 红分档。色阶是固定的 0–100 绝对刻度，所以同一片区域的深浅可以跨日期直接对比。": "取樣點插值出的霞光強度，白 → 黃 → 橙 → 紅分檔。色階是固定的 0–100 絕對刻度，所以同一片區域的深淺可以跨日期直接比較。",
   "云纹": "雲紋",
-  "采样点上的云量，按四档画成斜纹。晴天不画（否则整张图都是纹路，等于没有信息），有云才显形。": "取樣點上的雲量，依四檔畫成斜紋。晴天不畫（否則整張圖都是紋路，等於沒有資訊），有雲才顯形。",
-  "按云量分四档画斜纹，晴档不画（否则整张图都变闷）。档界同时是图例边界；图例里「晴」是空心描边，代表「这里没有纹路是因为没有云」。": "依雲量分四檔畫斜紋，晴檔不畫（否則整張圖都變悶）。檔界同時是圖例邊界；圖例裡「晴」是空心描邊，代表「這裡沒有紋路是因為沒有雲」。",
+  "采样点上的云量，按四档铺成半透明的纯色云影色块（纯色平铺，不是斜纹）。晴天不铺（否则整张图都是色块，等于没有信息），有云才显形。": "取樣點上的雲量，依四檔鋪成半透明的純色雲影色塊（純色平鋪，不是斜紋）。晴天不鋪（否則整張圖都是色塊，等於沒有資訊），有雲才顯形。",
+  "按云量分四档铺半透明纯色云影（同一种深蓝，深浅只由 alpha 表达，不是斜纹），晴档不铺（否则整张图都变闷）。档界同时是图例边界；图例里「晴」是空心描边，代表「这里没有色块是因为没有云」。": "依雲量分四檔鋪半透明純色雲影（同一種深藍，深淺只由 alpha 表達，不是斜紋），晴檔不鋪（否則整張圖都變悶）。檔界同時是圖例邊界；圖例裡「晴」是空心描邊，代表「這裡沒有色塊是因為沒有雲」。",
   "等值线": "等值線",
   "档与档之间一条 1px 线（屏幕空间矢量，放大不变粗），帮你看清梯度往哪边走。": "檔與檔之間一條 1px 線（螢幕空間向量，放大不變粗），幫你看清梯度往哪邊走。",
   "数据范围虚线": "資料範圍虛線",
@@ -963,8 +966,8 @@ var ZH_HANT_1 = {
   "四个显示层开关": "四個顯示層開關",
   "数值直标 / 采样点 / 云纹 / 经纬网 —— 按需开关，偏好写进本地存储，重开页恢复。": "數值直標 / 取樣點 / 雲紋 / 經緯網 —— 依需要開關，偏好寫進本機儲存，重開頁恢復。",
   "交互": "互動",
-  "地图面板里可切时段、日期、模型与着色依据；鼠标悬停或点击出具体数值，外推区会附「离最近采样点多远」的距离口径；右下角可全屏。": "地圖面板裡可切時段、日期、模型與著色依據；滑鼠懸停或點擊出具體數值，外推區會附「離最近取樣點多遠」的距離口徑；右下角可全螢幕。",
-  "u2.warn": "<b>可信範圍別混用兩個量：</b>「在不在取樣區裡」（凸包）和「離最近取樣點多遠」是兩個不同的概念。包內實測最遠 85 km，貼著凸包頂點外側只有 1.4 km 卻已經是外推。",
+  "地图面板里可切时段、日期、模型与着色依据；鼠标悬停或点击出具体数值，外推区会附「离最近采样点多远」的距离口径；全屏按钮在地图卡标题栏右上角。": "地圖面板裡可切時段、日期、模型與著色依據；滑鼠懸停或點擊出具體數值，外推區會附「離最近取樣點多遠」的距離口徑；全螢幕按鈕在地圖卡標題列右上角。",
+  "u2.warn": "<b>可信範圍別混用兩個量：</b>「在不在取樣區裡」（凸包）和「離最近取樣點多遠」是兩個不同的概念。包內實測最遠 85 km，貼著凸包頂點外側只有 1.4 km 卻已經是外推。熱力圖目前為測試功能，結果僅供參考。",
 
   "3 · 趋势与最佳窗口": "3 · 趨勢與最佳窗口",
   "趋势曲线": "趨勢曲線",
@@ -1067,15 +1070,15 @@ var ZH_HANT_2 = {
   "F3 / F2 额度纪律；快照零请求；F4 校准": "F3 / F2 額度紀律；快照零請求；F4 校準",
   "XSS 防护；404 页；文档↔代码一致性": "XSS 防護；404 頁；文件↔程式碼一致性",
   "本教程：三语键覆盖、主题三态、窄屏无溢出、四档切换、偏好共享": "本教學：三語鍵涵蓋、主題三態、窄螢幕無溢出、四檔切換、偏好共享",
-  "d4.note": "探針一律跑 <code>_check/preview.html</code>。<b>改了原始碼忘了重新產生 preview，整套斷言測的就是舊程式碼</b> —— 本專案踩過多次的坑。",
+  "d4.note": "互動類探針（CDP）跑 <code>_check/preview.html</code>；<b>改了原始碼忘了重新產生 preview，整套斷言測的就是舊程式碼</b> —— 本專案踩過多次的坑。另有少數探針直接讀原始碼或產物：<code>syntax.py</code> 讀 <code>index.html</code>，<code>globals.js</code> 讀 <code>_p2 ~ _p6</code> 原始碼，<code>tutorialprobe.js</code> 測 <code>tutorial.html</code> 與 <code>index.html</code>。",
   "d4.p": "不進一鍵序列（會花真實額度或依賴即時介面）：<code>consistency.js</code> / <code>shotdefault.js</code> / <code>tzprobe.js</code> 等。",
 
   "5 · 已知边界（改动前必读）": "5 · 已知邊界（改動前必讀）",
   "额度": "額度",
-  "d5.t1": "首屏只取單點（約 65）。地圖必須由使用者明確點擊才取（約 171）。唯一例外是快取命中自動畫（零請求、零額度）—— 由「快取快路徑之後、網路呼叫之前」的一行提前回傳保證。",
+  "d5.t1": "首屏只取單點（約 65）。地圖預設必須由使用者明確點擊「重新整理地圖」才取（約 171）；例外有兩處：快取命中自動畫（零請求、零額度），以及開啟「地圖跟隨查詢自動重新整理」後換查詢且無快取時自動取數。快取命中的零請求由「快取快路徑之後、網路呼叫之前」的一行提前回傳保證。",
   "色面与范围": "色面與範圍",
   "色面值域是固定的 0–100 绝对刻度（不做当日拉伸），边缘取采样点凸包并仅向外羽化；凸包之外即外推，用虚线标出。悬停卡另有「离最近采样点多远」的口径 —— 与「在不在采样区」是两个量。": "色面值域是固定的 0–100 絕對刻度（不做當日拉伸），邊緣取取樣點凸包並僅向外羽化；凸包之外即外推，用虛線標出。懸停卡另有「離最近取樣點多遠」的口徑 —— 與「在不在取樣區」是兩個量。",
-  "按云量分四档画斜纹，晴档不画（否则整张图都变闷）。档界同时是图例边界；图例里「晴」是空心描边，代表「这里没有纹路是因为没有云」。": "依雲量分四檔畫斜紋，晴檔不畫（否則整張圖都變悶）。檔界同時是圖例邊界；圖例裡「晴」是空心描邊，代表「這裡沒有紋路是因為沒有雲」。",
+  "按云量分四档铺半透明纯色云影（同一种深蓝，深浅只由 alpha 表达，不是斜纹），晴档不铺（否则整张图都变闷）。档界同时是图例边界；图例里「晴」是空心描边，代表「这里没有色块是因为没有云」。": "依雲量分四檔鋪半透明純色雲影（同一種深藍，深淺只由 alpha 表達，不是斜紋），晴檔不鋪（否則整張圖都變悶）。檔界同時是圖例邊界；圖例裡「晴」是空心描邊，代表「這裡沒有色塊是因為沒有雲」。",
   "模型分歧": "模型分歧",
   "地图的「模型分歧」只取三套模型的极差；少于两套有值时返回「无数据」而不是 0。": "地圖的「模型分歧」只取三套模型的極差；少於兩套有值時回傳「無資料」而不是 0。",
   "偏好持久化": "偏好持久化",
@@ -1099,7 +1102,7 @@ var ZH_HANT_2 = {
   "怎么把霞光预报讲给人看": "怎麼把霞光預報講給人看",
   "面向自媒体与内容创作者：最值得讲的亮点、演示叙事线，以及可以放心引用的卖点。": "面向自媒體與內容創作者：最值得講的亮點、示範敘事線，以及可以放心引用的賣點。",
   "一句话开场": "一句話開場",
-  "五个亮点": "五個亮點",
+  "六个亮点": "六個亮點",
   "适合的题材": "適合的題材",
   "演示叙事线": "示範敘事線",
   "可引用的卖点": "可引用的賣點",
@@ -1109,13 +1112,13 @@ var ZH_HANT_2 = {
   "「它是一个把『今晚有没有火烧云』从玄学变成概率和评分的工具 —— 而且免费、不用注册、纯网页。」": "「它是一個把『今晚有沒有火燒雲』從玄學變成機率和評分的工具 —— 而且免費、不用註冊、純網頁。」",
   "这句同时覆盖了差异化（量化而非玄学）与易得性（免费 / 无注册 / 纯前端），适合做短视频开头或图文首段。": "這句同時涵蓋了差異化（量化而非玄學）與易得性（免費 / 無註冊 / 純前端），適合做短影音開頭或圖文首段。",
 
-  "2 · 最值得讲的五个亮点": "2 · 最值得講的五個亮點",
+  "2 · 最值得讲的六个亮点": "2 · 最值得講的六個亮點",
   "结论卡": "結論卡",
   "概率 + 质量评分，衬线大字": "機率 + 品質評分，襯線大字",
   "结论卡用大号衬线数字呈现概率 % 与质量分，配优 / 良 / 一般 / 差等级与「主要影响因素」分解 —— 截图即干货，观众一眼看懂。": "結論卡用大號襯線數字呈現機率 % 與品質分，配優 / 良 / 一般 / 差等級與「主要影響因素」分解 —— 截圖即乾貨，觀眾一眼看懂。",
   "地图": "地圖",
   "周边 500 km 霞光分布": "周邊 500 km 霞光分布",
-  "热力图把「去哪个方向拍」画出来。白 → 黄 → 橙 → 红色阶 + 等值线 + 数据范围虚线，演示时直接说「红色那片就是今晚最该去的地方」。": "熱力圖把「去哪個方向拍」畫出來。白 → 黃 → 橙 → 紅色階 + 等值線 + 資料範圍虛線，示範時直接說「紅色那片就是今晚最該去的地方」。",
+  "热力图把「去哪个方向拍」画出来。白 → 黄 → 橙 → 红色阶 + 等值线 + 数据范围虚线，演示时可以说「红色那片很可能就是今晚最该去的地方」—— 热力图目前仍是测试功能，结果仅供参考，不要说成确定结论。": "熱力圖把「去哪個方向拍」畫出來。白 → 黃 → 橙 → 紅色階 + 等值線 + 資料範圍虛線，示範時可以說「紅色那片很可能就是今晚最該去的地方」—— 熱力圖目前仍是測試功能，結果僅供參考，不要說成確定結論。",
   "最佳窗口": "最佳窗口",
   "哪天去，日历直接排好": "哪天去，日曆直接排好",
   "未来几天按「哪天值得去」排成日历格并标出前三名。适合做「未来一周什么时候拍照最好」这类选题。": "未來幾天依「哪天值得去」排成日曆格並標出前三名。適合做「未來一週什麼時候拍照最好」這類選題。",
@@ -1170,6 +1173,8 @@ var ZH_HANT_2 = {
   "中国境内展示地图需测绘资质，项目用的腾讯地图是合规方案；不要为省事换成境外底图。": "中國境內展示地圖需測繪資質，專案用的騰訊地圖是合規方案；不要為省事換成境外底圖。",
   "概率指的是霞光": "機率指的是霞光",
   "避免观众误解 —— 它预报的是低空霞光出现的可能性与质量，不是晴雨。": "避免觀眾誤解 —— 它預報的是低空霞光出現的可能性與品質，不是晴雨。",
+  "热力图仍在测试": "熱力圖仍在測試",
+  "地图热力图目前为测试功能，结果仅供参考；演示时请避免把它说成确定的结论。": "地圖熱力圖目前為測試功能，結果僅供參考；示範時請避免把它說成確定的結論。",
 
   "霞光预报 · 使用教程（概览 / 用户 / 开发者 / 创作者）": "霞光預報 · 使用教學（概覽 / 使用者 / 開發者 / 創作者）",
   "数据源：Open-Meteo · 阿里云 DataV · 腾讯位置服务 ｜ 仅用于学习与个人使用": "資料來源：Open-Meteo · 阿里雲 DataV · 騰訊位置服務 ｜ 僅用於學習與個人使用"
@@ -1205,7 +1210,7 @@ var EN_1 = {
   "天文暮光": "Astronomical",
   "霞光只发生在太阳落到地平线以下几度到十几度之间。朝霞与晚霞的大气条件不同，所以应用分开预报、可分别切换。": "Glow only happens while the sun sits a few degrees below the horizon. Morning and evening glow depend on different atmospheric conditions, so the app forecasts them separately.",
 
-  "三档教程，各取所需": "Three tracks, pick one",
+  "四档教程，各取所需": "Four tracks, pick one",
   "给使用者": "For users",
   "怎么查一次预报、怎么看地图与趋势、怎么分享、怎么在手机上用。": "How to run a forecast, read the map and trend, share a result, and use it on a phone.",
   "上手指南": "Getting started",
@@ -1213,7 +1218,7 @@ var EN_1 = {
   "源码结构、拼装流程、回归套件、三种部署方式与已知边界。": "Source layout, build pipeline, regression suite, three deployment modes and known limits.",
   "工程说明": "Engineering notes",
   "给创作者": "For creators",
-  "最值得讲的五个亮点、演示叙事线、可放心引用的卖点。": "Five highlights worth showing, a demo storyline, and claims you can quote.",
+  "最值得讲的六个亮点、演示叙事线、可放心引用的卖点。": "Six highlights worth showing, a demo storyline, and claims you can quote.",
   "演示素材": "Demo material",
 
   "它到底在算什么": "What it actually computes",
@@ -1257,7 +1262,7 @@ var EN_1 = {
   "核心三格：概率 %、质量评分、等级（优 / 良 / 一般 / 差）。下方「主要影响因素」逐项分解，告诉你这次是云量、湿度还是能见度在拖后腿。": "Three numbers: probability %, quality score and grade (excellent / good / fair / poor). Below them the factor breakdown tells you whether cloud, humidity or visibility is holding this one back.",
   "看多模型。": "Check the individual models. ",
   "卡内列出 GFS / ECMWF / 光追三路各自的分数与合成结果；模型之间分歧大时，悬停信息里会提示不确定性。": "The card lists GFS, ECMWF and the ray-traced model with their own scores plus the blend; when the models disagree, the hover text flags the uncertainty.",
-  "u1.note": "The first screen only fetches the <b>single point</b> (about 65 weighted calls). Map data is fetched only when you click for it, so opening the app never quietly spends your quota.",
+  "u1.note": "The first screen only fetches the <b>single point</b> (about 65 weighted calls). By default the map is fetched only when you press “Refresh map”; only after you enable “Refresh the map with the query” does changing the query fetch it automatically when there is no cache. So opening the app never quietly spends your quota.",
 
   "2 · 看懂周边地图": "2 · Read the surrounding map",
   "u2.p": "The map draws glow intensity across the <b>500 km</b> around your point — the most direct answer to “which way should I drive tonight”.",
@@ -1267,9 +1272,9 @@ var EN_1 = {
   "图上是什么": "What is on the map",
   "色面": "Colour field",
   "采样点插值出的霞光强度，白 → 黄 → 橙 → 红分档。色阶是固定的 0–100 绝对刻度，所以同一片区域的深浅可以跨日期直接对比。": "Glow intensity interpolated between sample points, in white → yellow → orange → red bands. The scale is a fixed 0–100 absolute range, so shades stay comparable across dates.",
-  "云纹": "Cloud hatching",
-  "采样点上的云量，按四档画成斜纹。晴天不画（否则整张图都是纹路，等于没有信息），有云才显形。": "Cloud cover at the sample points, drawn as hatching in four bands. Clear cells stay blank — hatching everything would carry no information at all. Clouds are what make it appear.",
-  "按云量分四档画斜纹，晴档不画（否则整张图都变闷）。档界同时是图例边界；图例里「晴」是空心描边，代表「这里没有纹路是因为没有云」。": "Cloud cover at the sample points, drawn as hatching in four bands. Clear cells are left blank — hatching everything would only make the map noisy. The band edges are the legend edges; “clear” in the legend is a hollow swatch, meaning “no hatch because no cloud”.",
+  "云纹": "Cloud shading",
+  "采样点上的云量，按四档铺成半透明的纯色云影色块（纯色平铺，不是斜纹）。晴天不铺（否则整张图都是色块，等于没有信息），有云才显形。": "Cloud cover at the sample points, painted as translucent solid cloud-shade blocks in four bands (a flat tint, not hatching). Clear cells stay blank — painting everything would carry no information at all. Clouds are what make it appear.",
+  "按云量分四档铺半透明纯色云影（同一种深蓝，深浅只由 alpha 表达，不是斜纹），晴档不铺（否则整张图都变闷）。档界同时是图例边界；图例里「晴」是空心描边，代表「这里没有色块是因为没有云」。": "Cloud is painted in four translucent solid bands of one dark blue, with depth expressed only by alpha — not hatching. The clear band is left unpainted (painting everything would only muddy the map). Band edges double as legend edges; the “clear” legend swatch is hollow, meaning “no fill because no cloud”.",
   "等值线": "Isolines",
   "档与档之间一条 1px 线（屏幕空间矢量，放大不变粗），帮你看清梯度往哪边走。": "A 1px line between bands, drawn in screen space so it never thickens when you zoom. It shows which way the gradient runs.",
   "数据范围虚线": "Data-extent dashes",
@@ -1279,8 +1284,8 @@ var EN_1 = {
   "四个显示层开关": "Four layer switches",
   "数值直标 / 采样点 / 云纹 / 经纬网 —— 按需开关，偏好写进本地存储，重开页恢复。": "Number labels, sample points, cloud hatching and graticule — toggle as needed; the choice is stored locally and restored next time.",
   "交互": "Interaction",
-  "地图面板里可切时段、日期、模型与着色依据；鼠标悬停或点击出具体数值，外推区会附「离最近采样点多远」的距离口径；右下角可全屏。": "The map panel switches period, date, model and colour basis. Hover or tap for exact values; extrapolated areas also report how far the nearest sample point is. The lower-right control goes full screen.",
-  "u2.warn": "<b>Two different distances — don't mix them:</b> “inside the sampled area” (the hull) and “distance to the nearest sample” are separate measures. Inside the hull the farthest sample is 85 km away, while a spot 1.4 km outside a hull vertex is already extrapolation.",
+  "地图面板里可切时段、日期、模型与着色依据；鼠标悬停或点击出具体数值，外推区会附「离最近采样点多远」的距离口径；全屏按钮在地图卡标题栏右上角。": "The map panel switches period, date, model and colour basis. Hover or tap for exact values; extrapolated areas also report how far the nearest sample point is. The full-screen button sits at the top right of the map card header.",
+  "u2.warn": "<b>Two different distances — don't mix them:</b> “inside the sampled area” (the hull) and “distance to the nearest sample” are separate measures. Inside the hull the farthest sample is 85 km away, while a spot 1.4 km outside a hull vertex is already extrapolation. The heat map is still a test feature; results are for reference only.",
 
   "3 · 趋势与最佳窗口": "3 · Trend and best windows",
   "趋势曲线": "Trend curve",
@@ -1383,15 +1388,15 @@ var EN_2 = {
   "F3 / F2 额度纪律；快照零请求；F4 校准": "F3 / F2 quota discipline; snapshot zero-request; F4 calibration",
   "XSS 防护；404 页；文档↔代码一致性": "XSS protection; the 404 page; docs-to-code consistency",
   "本教程：三语键覆盖、主题三态、窄屏无溢出、四档切换、偏好共享": "This guide: three-language key coverage, three theme states, no narrow-screen overflow, four-track switching, shared preferences",
-  "d4.note": "Probes always run against <code>_check/preview.html</code>. <b>Forgetting to regenerate preview after a source change makes the entire suite test old code</b> — a trap this project has hit more than once.",
+  "d4.note": "Interactive (CDP) probes run against <code>_check/preview.html</code>; <b>forgetting to regenerate preview after a source change makes the entire suite test old code</b> — a trap this project has hit more than once. A few probes read sources or products directly: <code>syntax.py</code> reads <code>index.html</code>, <code>globals.js</code> reads the <code>_p2 ~ _p6</code> sources, and <code>tutorialprobe.js</code> tests <code>tutorial.html</code> plus <code>index.html</code>.",
   "d4.p": "Not in the one-shot sequence (they spend real quota or depend on live APIs): <code>consistency.js</code>, <code>shotdefault.js</code>, <code>tzprobe.js</code> and friends.",
 
   "5 · 已知边界（改动前必读）": "5 · Known limits (read before changing anything)",
   "额度": "Quota",
-  "d5.t1": "The first screen fetches only the single point (about 65). The map is fetched only on an explicit click (about 171). The sole exception is an automatic draw from cache (zero requests, zero quota) — guaranteed by an early return placed after the cache fast path and before the network call.",
+  "d5.t1": "The first screen fetches only the single point (about 65). By default the map is fetched only on an explicit press of “Refresh map” (about 171); there are two exceptions: an automatic draw from cache (zero requests, zero quota), and an automatic fetch when the query changes with no cache after “Refresh the map with the query” is enabled. The zero-request cache hit is guaranteed by an early return placed after the cache fast path and before the network call.",
   "色面与范围": "Colour field and extent",
   "色面值域是固定的 0–100 绝对刻度（不做当日拉伸），边缘取采样点凸包并仅向外羽化；凸包之外即外推，用虚线标出。悬停卡另有「离最近采样点多远」的口径 —— 与「在不在采样区」是两个量。": "The field uses a fixed 0–100 absolute scale (no per-day stretching). Its edge follows the convex hull of the sample points with outward feathering only; anything outside the hull is extrapolation, marked with dashes. The hover card separately reports distance to the nearest sample — a different measure from “inside the sampled area”.",
-  "按云量分四档画斜纹，晴档不画（否则整张图都变闷）。档界同时是图例边界；图例里「晴」是空心描边，代表「这里没有纹路是因为没有云」。": "Cloud is hatched in four bands, with the clear band left unhatched (hatching everything would only muddy the map). Band edges double as legend edges; the “clear” legend swatch is hollow, meaning “no hatch because no cloud”.",
+  "按云量分四档铺半透明纯色云影（同一种深蓝，深浅只由 alpha 表达，不是斜纹），晴档不铺（否则整张图都变闷）。档界同时是图例边界；图例里「晴」是空心描边，代表「这里没有色块是因为没有云」。": "Cloud is painted in four translucent solid bands of one dark blue, with depth expressed only by alpha — not hatching. The clear band is left unpainted (painting everything would only muddy the map). Band edges double as legend edges; the “clear” legend swatch is hollow, meaning “no fill because no cloud”.",
   "模型分歧": "Model spread",
   "地图的「模型分歧」只取三套模型的极差；少于两套有值时返回「无数据」而不是 0。": "Map “model spread” is the range across the three models; with fewer than two values it returns “no data” rather than 0.",
   "偏好持久化": "Preference persistence",
@@ -1415,7 +1420,7 @@ var EN_2 = {
   "怎么把霞光预报讲给人看": "How to present the glow forecast",
   "面向自媒体与内容创作者：最值得讲的亮点、演示叙事线，以及可以放心引用的卖点。": "For publishers and content creators: the highlights worth showing, a demo storyline, and claims you can quote safely.",
   "一句话开场": "One-line opener",
-  "五个亮点": "Five highlights",
+  "六个亮点": "Six highlights",
   "适合的题材": "Formats that fit",
   "演示叙事线": "Demo storyline",
   "可引用的卖点": "Quotable claims",
@@ -1425,13 +1430,13 @@ var EN_2 = {
   "「它是一个把『今晚有没有火烧云』从玄学变成概率和评分的工具 —— 而且免费、不用注册、纯网页。」": "“A tool that turns ‘will there be fire clouds tonight’ from folklore into a probability and a score — free, no sign-up, and just a web page.”",
   "这句同时覆盖了差异化（量化而非玄学）与易得性（免费 / 无注册 / 纯前端），适合做短视频开头或图文首段。": "It covers both the difference (quantified, not folklore) and the ease (free, no sign-up, pure front end) — good as a short-video hook or a first paragraph.",
 
-  "2 · 最值得讲的五个亮点": "2 · Five highlights worth showing",
+  "2 · 最值得讲的六个亮点": "2 · Six highlights worth showing",
   "结论卡": "Verdict card",
   "概率 + 质量评分，衬线大字": "Probability and quality in large serif figures",
   "结论卡用大号衬线数字呈现概率 % 与质量分，配优 / 良 / 一般 / 差等级与「主要影响因素」分解 —— 截图即干货，观众一眼看懂。": "The card sets probability and quality in large serif figures beside the grade and a factor breakdown — a screenshot alone carries the point.",
   "地图": "Map",
   "周边 500 km 霞光分布": "Glow field across 500 km",
-  "热力图把「去哪个方向拍」画出来。白 → 黄 → 橙 → 红色阶 + 等值线 + 数据范围虚线，演示时直接说「红色那片就是今晚最该去的地方」。": "The heat map answers “which direction to shoot”. White → yellow → orange → red bands, isolines and a dashed data extent let you say, on camera, “that red patch is where to go tonight”.",
+  "热力图把「去哪个方向拍」画出来。白 → 黄 → 橙 → 红色阶 + 等值线 + 数据范围虚线，演示时可以说「红色那片很可能就是今晚最该去的地方」—— 热力图目前仍是测试功能，结果仅供参考，不要说成确定结论。": "The heat map answers “which direction to shoot”. White → yellow → orange → red bands, isolines and a dashed data extent let you say, on camera, “that red patch is most likely where to go tonight” — the heat map is still a test feature, so present it as a reference, not a firm conclusion.",
   "最佳窗口": "Best window",
   "哪天去，日历直接排好": "The calendar ranks the days for you",
   "未来几天按「哪天值得去」排成日历格并标出前三名。适合做「未来一周什么时候拍照最好」这类选题。": "The coming days are laid out as calendar cells ranked by “worth going”, with the top three marked. Fits “when to shoot this week” videos.",
@@ -1486,6 +1491,8 @@ var EN_2 = {
   "中国境内展示地图需测绘资质，项目用的腾讯地图是合规方案；不要为省事换成境外底图。": "Maps shown in mainland China require a licensed survey provider; Tencent Maps is the compliant choice here. Do not swap in an overseas basemap to save effort.",
   "概率指的是霞光": "The probability is about glow",
   "避免观众误解 —— 它预报的是低空霞光出现的可能性与质量，不是晴雨。": "Avoid a common misreading: it forecasts low-altitude glow, not sunshine or rain.",
+  "热力图仍在测试": "Heat map still in testing",
+  "地图热力图目前为测试功能，结果仅供参考；演示时请避免把它说成确定的结论。": "The map heat map is still a test feature and is for reference only; avoid presenting it as a firm conclusion when demoing.",
 
   "霞光预报 · 使用教程（概览 / 用户 / 开发者 / 创作者）": "Sunset Glow Forecast · User guide (overview / users / developers / creators)",
   "数据源：Open-Meteo · 阿里云 DataV · 腾讯位置服务 ｜ 仅用于学习与个人使用": "Data: Open-Meteo · Alibaba Cloud DataV · Tencent Location Service — for learning and personal use"

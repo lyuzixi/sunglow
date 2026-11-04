@@ -64,8 +64,20 @@ async function jget(url: string, tries = 2, timeoutMs = 6000): Promise<unknown> 
     try {
       const r = await fetch(url, { mode: "cors", signal: ac.signal });
       if (r.status === 429) {
-        const e = new Error("rate-limited") as Error & { code: string };
+        let body = "";
+        try { body = await r.text(); } catch { /* ignore */ }
+        const e = new Error("rate-limited") as Error & {
+          code: string; status: number; friendly?: string; fatal?: boolean;
+        };
         e.code = "429";
+        e.status = 429;
+        if (/daily/i.test(body) && /limit|exceed|quota|rate/i.test(body)) {
+          e.fatal = true;
+          e.friendly =
+            "今日气象数据额度已用尽。Open-Meteo 免费层按「出口 IP」计（每日 10,000 次 / 每小时 5,000 次），不是按账号 —— 若你在公司、学校或代理等共享网络下，很可能是同一出口 IP 的其他使用者消耗掉的。额度会在次日重置，之后即可恢复。";
+        } else {
+          e.friendly = "气象接口暂时限流（短时并发过高），约一分钟内会自动恢复。";
+        }
         throw e;
       }
       if (!r.ok) throw new Error("http " + r.status);
