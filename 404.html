@@ -150,9 +150,44 @@ h1{font-size:clamp(19px,2.6vw,24px); margin:0 0 10px; letter-spacing:-.01em}
   .brand-tx em{display:none}
   .topbar-in{padding:8px 14px; gap:12px}
 }
+/* ---- 实拍铺底（广州 · 珠江）：整页照片 + 玻璃卡浮在上面 ---- */
+html{background:var(--bg-base)}
+body{background:transparent}
+:root,html[data-theme="dark"]{
+  --ph-veil:
+    radial-gradient(760px 520px at 26% 40%, rgba(7,11,20,.62), rgba(7,11,20,.16) 62%, transparent 84%),
+    linear-gradient(180deg, rgba(7,11,20,.70) 0%, rgba(7,11,20,.30) 42%, rgba(7,11,20,.18) 66%, rgba(7,11,20,.55) 88%, var(--bg-base) 100%);
+  --ph-credit:rgba(233,238,251,.72);
+  --ph-card:rgba(13,20,35,.80);
+  --ph-bar:rgba(7,11,20,.42);
+}
+html[data-theme="light"]{
+  --ph-veil:
+    radial-gradient(760px 520px at 26% 40%, rgba(255,255,255,.80), rgba(255,255,255,.42) 62%, transparent 84%),
+    linear-gradient(180deg, rgba(255,255,255,.82) 0%, rgba(255,255,255,.55) 42%, rgba(255,255,255,.45) 66%, rgba(255,255,255,.70) 88%, var(--bg-base) 100%);
+  --ph-credit:rgba(17,26,44,.62);
+  --ph-card:rgba(255,255,255,.88);
+  --ph-bar:rgba(255,255,255,.55);
+}
+.ph-bg{position:fixed; inset:0; z-index:-1; background:url("./hero-photo.webp") 50% 52%/cover no-repeat}
+.ph-bg::after{content:""; position:absolute; inset:0; background:var(--ph-veil)}
+.ph-credit{
+  position:fixed; right:18px; bottom:14px; z-index:2;
+  font-size:11px; letter-spacing:.06em; color:var(--ph-credit);
+  text-shadow:0 1px 12px rgba(2,6,16,.92);
+}
+html[data-theme="light"] .ph-credit{text-shadow:0 1px 10px rgba(255,255,255,.85)}
+.card{
+  background:var(--ph-card);
+  backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+}
+.topbar{background:var(--ph-bar)}
 </style>
 </head>
 <body>
+
+<div class="ph-bg" aria-hidden="true"></div>
+<span class="ph-credit">广州 · 珠江 · 实拍</span>
 
 <header class="topbar">
   <div class="topbar-in">
