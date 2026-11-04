@@ -76,7 +76,7 @@ const I18N_ZH_HANT = {
   "经典原版": "經典原版",
   "Sunglow 光谱观测版": "Sunglow 光譜觀測版",
   "Skyglow 移植增强版": "Skyglow 移植增強版",
-  "SUNGLOW · Classic Edition · 经典原版": "SUNGLOW · Classic Edition · 經典原版",
+  "SUNGLOW · 经典原版": "SUNGLOW · 經典原版",
 
   "主结果": "主結果",
   "未来趋势": "未來趨勢",
@@ -641,7 +641,7 @@ const I18N_EN = {
   "经典原版": "Classic Edition",
   "Sunglow 光谱观测版": "Sunglow Spectrum Edition",
   "Skyglow 移植增强版": "Skyglow Enhanced Edition",
-  "SUNGLOW · Classic Edition · 经典原版": "SUNGLOW · Classic Edition",
+  "SUNGLOW · 经典原版": "SUNGLOW · Classic Edition",
 
   "主结果": "Main results",
   "未来趋势": "Outlook",

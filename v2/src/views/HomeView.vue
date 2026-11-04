@@ -38,6 +38,7 @@ async function run(force = false) {
     if (!r.ok) {
       state.error = r.error;
       state.result = null;
+      snapUrl.value = ""; /* 本次没有结果，别把上一轮的快照链接留在页面上 */
     } else {
       state.result = r;
       refreshSnap();

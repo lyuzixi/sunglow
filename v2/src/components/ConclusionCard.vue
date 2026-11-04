@@ -78,7 +78,7 @@ const geomTxt = computed(() => {
         </div>
       </div>
 
-      <div v-if="state.error" class="glass" style="padding: 18px 22px; color: var(--q-bad)">
+      <div v-if="state.error" class="glass err-note">
         {{ state.error }}
       </div>
 
@@ -211,6 +211,16 @@ const geomTxt = computed(() => {
   color: var(--tx-2);
   position: relative;
   overflow: hidden;
+}
+/* 取数失败（含额度用尽）：head 与 tail 两段用换行分隔 */
+.err-note {
+  padding: 18px 22px;
+  color: var(--q-bad);
+  white-space: pre-line;
+  font-weight: 500;
+  border-color: var(--q-bad);
+  border-color: color-mix(in srgb, var(--q-bad) 38%, transparent);
+  background: color-mix(in srgb, var(--q-bad) 8%, transparent);
 }
 .empty-ring {
   width: 90px; height: 90px;
