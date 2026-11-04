@@ -433,8 +433,12 @@ const themeIcon = () =>
             </svg>
           </button>
           <div v-if="verOpen" class="menu-pop ver-pop" role="menu" :aria-label="t('其他版本')">
-            <a role="menuitem" href="V1/index.html">
-              <span class="ver-tx">{{ t("Sunglow 经典原版") }}</span><i class="arw">↗</i>
+            <a
+              role="menuitem"
+              href="V1/index.html"
+              :title="t('经典原版已停止更新，仅保留小修小补')"
+            >
+              <span class="ver-tx">{{ t("Sunglow 经典原版") }}<em class="ver-stale">{{ t("已停更") }}</em></span><i class="arw">↗</i>
             </a>
             <a role="menuitem" href="Skyglow/index.html">
               <span class="ver-tx">{{ t("Skyglow 移植增强版") }}</span><i class="arw">↗</i>
@@ -508,7 +512,11 @@ const themeIcon = () =>
          真链接、根位置（publish-root 禁止 ../），点它直接离开首页。 -->
     <div class="md-group">
       <h4>{{ t("其他版本") }}</h4>
-      <a class="ext" href="V1/index.html"><span class="ver-tx">{{ t("Sunglow 经典原版") }}</span><i class="arw">↗</i></a>
+      <a
+        class="ext"
+        href="V1/index.html"
+        :title="t('经典原版已停止更新，仅保留小修小补')"
+      ><span class="ver-tx">{{ t("Sunglow 经典原版") }}<em class="ver-stale">{{ t("已停更") }}</em></span><i class="arw">↗</i></a>
       <a class="ext" href="Skyglow/index.html"><span class="ver-tx">{{ t("Skyglow 移植增强版") }}</span><i class="arw">↗</i></a>
     </div>
   </aside>

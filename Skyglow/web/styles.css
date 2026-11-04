@@ -279,6 +279,11 @@ table.src th{color:var(--muted2);font-weight:500;font-size:10.5px}
 .foot a:hover{color:var(--accent)}
 .foot-vers{display:flex;flex-wrap:wrap;gap:6px 16px}
 .foot-vers a{line-height:1.45}
+/* V1 停更标识（2026-11-04）：目录与页脚共用，沿用 Skyglow 的橙色与等宽小字 */
+.stale{display:inline-block;margin-left:6px;padding:0 4px;border:1px solid rgba(255,138,76,.38);
+  border-radius:999px;background:rgba(255,138,76,.10);color:var(--accent);font-size:10px;
+  font-style:normal;font-weight:600;line-height:16px;letter-spacing:.02em;white-space:nowrap;
+  text-decoration:none;vertical-align:1px}
 .attribution{font-size:10.5px;color:var(--muted2);margin-top:5px}
 .attribution a{color:var(--muted);text-decoration:underline;text-decoration-color:rgba(255,255,255,.18)}
 .attribution a:hover{color:var(--accent)}

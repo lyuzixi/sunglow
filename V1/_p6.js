@@ -4059,8 +4059,43 @@ function relang() {
   } catch (e) { softWarn("语言切换后的重渲染失败", e); }
 }
 
+/* 热力图测试提示（D）：提示条首次可见，关闭后写入独立偏好键。
+   A 的图例脚注是模板静态文本，始终可见，不在这里管。 */
+const MAP_TEST_NOTE_KEY = "sunsetbot.mapTestNote.v1";
+function initMapTestNote() {
+  const bar = $("#lgTestBar");
+  if (!bar) return;
+  let off = false;
+  try { off = localStorage.getItem(MAP_TEST_NOTE_KEY) === "1"; } catch (e) { /* 隐私模式：按未关闭处理 */ }
+  if (off) return;
+  bar.hidden = false;
+  const x = $("#lgTestClose");
+  if (x) x.addEventListener("click", () => {
+    bar.hidden = true;
+    try { localStorage.setItem(MAP_TEST_NOTE_KEY, "1"); } catch (e) { /* 配额/隐私模式，忽略 */ }
+  });
+}
+
+/* 停更公告（A）：提示条可关闭并记住；页脚全文与导航标记不依赖这段 JS。 */
+const CLASSIC_DEP_KEY = "sunsetbot.classicDeprecated.v1";
+function initClassicDepNotice() {
+  const bar = $("#depBar");
+  if (!bar) return;
+  let off = false;
+  try { off = localStorage.getItem(CLASSIC_DEP_KEY) === "1"; } catch (e) { /* 隐私模式：按未关闭处理 */ }
+  if (off) return;
+  bar.hidden = false;
+  const x = $("#depClose");
+  if (x) x.addEventListener("click", () => {
+    bar.hidden = true;
+    try { localStorage.setItem(CLASSIC_DEP_KEY, "1"); } catch (e) { /* 配额/隐私模式，忽略 */ }
+  });
+}
+
 /* ---- 启动 ---- */
 window.addEventListener("DOMContentLoaded", () => {
+  initClassicDepNotice();
+  initMapTestNote();
   initUI();
   initMap();
 });

@@ -194,6 +194,14 @@ code{font-family:var(--mono);font-size:.9em;background:var(--soft);border:1px so
   line-height:1.26;margin:0;letter-spacing:.6px;color:var(--hero-tx)}
 .hero .lead{color:var(--hero-tx2);margin:16px 0 0;max-width:58ch;font-size:16.5px}
 .hero .lead b{color:#fff;font-weight:600}
+/* 停更说明：教程首块，沿用主页公告条的强调色浅底与教程圆角 */
+.depnote{margin:20px 0 24px;padding:14px 16px;border:1px solid var(--accbd);
+  border-radius:var(--r2);background:var(--accbg)}
+.depnote b{display:block;margin-bottom:5px;font-family:var(--serif);font-size:15px;font-weight:600;color:var(--acc2)}
+.depnote p{margin:0;font-size:13px;line-height:1.8;color:var(--tx2)}
+.depgo{display:inline-block;margin-top:9px;padding:4px 10px;border-radius:999px;
+  background:var(--acc);color:#fff;font-size:12px;font-weight:600;text-decoration:none}
+.depgo:hover{opacity:.9}
 .stats{display:flex;gap:34px;flex-wrap:wrap;margin:26px 0 0;padding:0;list-style:none}
 .stats b{display:block;font-family:var(--serif);font-size:25px;font-weight:600;
   color:var(--hero-tx);line-height:1.2}
@@ -358,6 +366,13 @@ footer{border-top:1px solid var(--line);margin-top:20px}
 </div>
 
 <main class="wrap">
+
+<!-- 停更说明（2026-11-04）：教程面向经典原版编写，顶部先说明维护状态并给出新版入口。 -->
+<div class="depnote">
+  <b data-i18n="经典原版已停止更新">经典原版已停止更新</b>
+  <p data-i18n="此版本「经典原版」为老版本，现在已经停止更新，后续不再进行大更新和改动。后续建议使用新版「光谱观测版」（在导航目录或者底栏有跳转链接）。如有特别需要的用户仍可继续使用经典原版，此版本保留开放。">此版本「经典原版」为老版本，现在已经停止更新，后续不再进行大更新和改动。后续建议使用新版「光谱观测版」（在导航目录或者底栏有跳转链接）。如有特别需要的用户仍可继续使用经典原版，此版本保留开放。</p>
+  <a class="depgo" href="../index.html"><span data-i18n="前往光谱观测版">前往光谱观测版</span><span aria-hidden="true"> ↗</span></a>
+</div>
 
 <!-- ==================== 概览 ==================== -->
 <section class="view" id="overview">
@@ -859,6 +874,9 @@ var ZH_HANT_1 = {
   "用户版": "使用者版",
   "开发者版": "開發者版",
   "创作者版": "創作者版",
+  "经典原版已停止更新": "經典原版已停止更新",
+  "此版本「经典原版」为老版本，现在已经停止更新，后续不再进行大更新和改动。后续建议使用新版「光谱观测版」（在导航目录或者底栏有跳转链接）。如有特别需要的用户仍可继续使用经典原版，此版本保留开放。": "此版本「經典原版」為老版本，現在已經停止更新，後續不再進行大更新和改動。後續建議使用新版「光譜觀測版」（在導航目錄或者底欄有跳轉連結）。如有特別需要的使用者仍可繼續使用經典原版，此版本保留開放。",
+  "前往光谱观测版": "前往光譜觀測版",
 
   "读懂朝霞与晚霞的预报": "讀懂朝霞與晚霞的預報",
   "ov.lead": "霞光預報是一個<b>單檔案 Web 應用程式</b>：輸入地點與日期，預測朝霞 / 晚霞（火燒雲）出現的機率與觀賞品質，並在周邊 500 km 畫出霞光分布。這份教學分四檔，依身分取用。",
@@ -1172,6 +1190,9 @@ var EN_1 = {
   "用户版": "For users",
   "开发者版": "For developers",
   "创作者版": "For creators",
+  "经典原版已停止更新": "Classic Edition is no longer updated",
+  "此版本「经典原版」为老版本，现在已经停止更新，后续不再进行大更新和改动。后续建议使用新版「光谱观测版」（在导航目录或者底栏有跳转链接）。如有特别需要的用户仍可继续使用经典原版，此版本保留开放。": "This “Classic Edition” is the older version. It is no longer updated and will not receive major changes. Please use the newer “Spectrum Edition” (linked in the navigation drawer and footer). If you specifically need it, Classic Edition remains available.",
+  "前往光谱观测版": "Open Spectrum Edition",
 
   "读懂朝霞与晚霞的预报": "Reading the glow forecast",
   "ov.lead": "<b>Sunset Glow Forecast</b> is a single-file web app: give it a place and a date and it estimates how likely morning or evening glow (fire clouds) is, and how good it will look, then draws the glow field across a 500 km radius. This guide has four tracks — read the one that fits you.",

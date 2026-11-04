@@ -245,6 +245,8 @@ a{color:var(--blue)}
 /* 报头第二行（2026-10-31）：标明这是 Sunglow Classic Edition / 经典原版。
    只作身份标识，字号取 10px；颜色沿用现有的次级说明变量 --tx3，不新造色板。 */
 .top-ed{font-size:10px;line-height:1.4;letter-spacing:.04em;color:var(--tx3)}
+.top-ed-tag{display:inline-block;margin-left:6px;padding:0 4px;border:1px solid var(--accbd);border-radius:3px;
+  background:var(--accbg);color:var(--acc2);font-size:10px;line-height:1.5}
 /* 标题列必须有 min-width:0 —— flex 子项默认 min-width:auto，而 h1 是
    white-space:nowrap，其 min-content = 整行标题的宽度 ⇒ 标题列**不许收缩**，
    窄屏上会把 flex:0 0 auto 的 badge 顶出容器右缘（实测 390 视口下 badge
@@ -897,6 +899,9 @@ button.sm{padding:5px 10px;font-size:12px;font-weight:600;border-radius:7px}
 .legend .bar2{height:12px;border-radius:4px;border:1px solid var(--line);overflow:hidden;display:flex}
 .legend .bar2 i{flex:1}
 .legend .ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--tx3);margin-top:5px;font-family:var(--mono);letter-spacing:.2px}
+/* 热力图测试提示 A：图例脚注常驻，11.5px 元信息字号，不抢色条读数 */
+.lgtest{display:flex;gap:5px;margin-top:6px;font-size:11.5px;line-height:1.6;color:var(--tx3)}
+.lgtest .lt-dot{color:var(--warn);font-size:9px;line-height:1.6}
 .lgm-rows{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:11.5px;color:var(--tx2)}
 .lgm-rows span{display:inline-flex;align-items:center;gap:6px}
 /* M2-3 · 长文折叠：默认收起，别让它把地图卡片撑到 1713 px */
@@ -923,6 +928,14 @@ button.sm{padding:5px 10px;font-size:12px;font-weight:600;border-radius:7px}
    的余量里（该行原本只有 4 个复选框、本来就空着一大截）。 */
 .maptool select{width:auto;min-width:112px;font-size:12px;padding:5px 8px;border-radius:7px;background:var(--card)}
 .maptool input[type=checkbox]{min-width:0;width:13px;height:13px;padding:0;margin:0;flex:0 0 auto}
+/* 热力图测试提示 D：控制条下方首次提示，关闭后写入 sunsetbot.mapTestNote.v1 */
+.testnote{display:flex;align-items:center;gap:8px;margin:0 0 10px;padding:7px 10px;
+  border:1px solid var(--warnbd);border-radius:var(--r2);background:var(--warnbg);color:var(--warn);
+  font-size:12px;line-height:1.6}
+.testnote[hidden]{display:none}
+.testnote .tn-x{margin-left:auto;padding:0 2px;border:0;background:none;color:inherit;
+  opacity:.65;font-size:13px;line-height:1;cursor:pointer}
+.testnote .tn-x:hover{opacity:1}
 .rank{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
 .rank h4{font-size:12.5px;margin-bottom:8px;letter-spacing:.2px;font-weight:600}
 /* M1 · 榜单每行都可点：与"点击地图上任意一点"走同一条通路（gotoLatLng + 单点查询），
@@ -1047,6 +1060,7 @@ a.toc-i:hover{text-decoration:none}
 /* 当前项：圆角色块高亮（同参考截图），色用主题强调色 */
 .toc-i[aria-current="true"]{color:var(--acc2);font-weight:600;background:var(--hover)}
 .toc-tag{margin-left:auto;font-size:12px;color:var(--tx3);font-weight:400}
+.toc-tag.rec{color:var(--acc2);font-weight:600}
 /* 抽屉入场：自左轻滑入；reduce 时禁用 */
 .tocpanel:not([hidden]){animation:tocIn .2s cubic-bezier(.2,.8,.2,1) both}
 @keyframes tocIn{from{transform:translateX(-14px);opacity:0}to{transform:none;opacity:1}}
@@ -1070,6 +1084,12 @@ footer li{margin:3px 0}
 .vlnk{display:inline-flex;align-items:baseline;line-height:1.3;text-decoration:none;
   font-size:13px}
 .vlnks{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 22px;padding-top:6px}
+.vlnk-rec{margin-left:5px;padding:0 4px;border:1px solid var(--accbd);border-radius:3px;
+  background:var(--accbg);color:var(--acc2);font-size:10px;line-height:1.5}
+/* 停更状态说明：页脚第一块，关掉顶部公告后仍能查到完整原因；快照页隐藏。 */
+.verstale{margin:0 0 14px;padding:0 0 14px;border-bottom:1px solid var(--line)}
+.verstale b{display:block;margin-bottom:4px;font-family:var(--serif);font-size:13px;font-weight:600;color:var(--tx2)}
+.verstale p{margin:0;font-size:12px;line-height:1.75;color:var(--tx3)}
 
 /* ---------- 环境输入条（F7：让单位切换落到实处，也让结论可复核） ---------- */
 .envstrip{margin-top:12px;border:1px solid var(--line2);border-radius:8px;padding:9px 11px;background:var(--soft)}
@@ -1158,6 +1178,20 @@ footer li{margin:3px 0}
   font-size:12px;line-height:1.55;padding:7px 14px;text-align:center}
 .netbar[hidden]{display:none}
 .netbar b{font-weight:700}
+
+/* 停更公告条：与离线条同为 body 级全宽，配色沿用强调色的浅底；hidden 显式兜底。 */
+.depbar{background:var(--accbg);border-bottom:1px solid var(--accbd);color:var(--acc2);
+  font-size:12px;line-height:1.6;padding:8px 14px}
+.depbar[hidden]{display:none}
+.depbar-in{max-width:1080px;margin:0 auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.depbar-tx{flex:1 1 260px;min-width:0}
+.depbar-tx b{display:block;font-size:13px;font-weight:700}
+.depbar-tx span{display:block;color:var(--tx2)}
+.depbar-go{flex:0 0 auto;padding:3px 9px;border-radius:999px;background:var(--acc);color:#fff;
+  font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap}
+.depbar-x{flex:0 0 auto;border:0;background:none;color:var(--tx3);font-size:14px;line-height:1;
+  padding:2px;cursor:pointer}
+.depbar-x:hover{color:var(--tx)}
 
 /* ---------- F5 结果快照 ---------- */
 /* 快照模式：模型/因素/光追/提示这四张卡依赖**完整结果对象**，而快照只带了摘要。
@@ -1343,7 +1377,7 @@ body.snapmode [data-snaphide]{display:none}
     <div class="logo"></div>
     <div class="top-tx">
       <h1 data-i18n="霞光预报">霞光预报</h1>
-      <div class="top-ed" data-i18n="SUNGLOW · 经典原版">SUNGLOW · 经典原版</div>
+      <div class="top-ed"><span data-i18n="SUNGLOW · 经典原版">SUNGLOW · 经典原版</span><span class="top-ed-tag" data-i18n="已停更">已停更</span></div>
     </div>
     <div class="spacer"></div>
     <!-- 使用教程（2026-10-19）：独立文件 tutorial.html，与本站同目录，所以写相对地址 ——
@@ -1363,6 +1397,20 @@ body.snapmode [data-snaphide]{display:none}
     <button type="button" class="topbtn" id="themeBtn" data-snaphide aria-haspopup="true"
       aria-expanded="false" aria-controls="themeMenu" aria-label="主题" data-i18n-aria="主题"><span class="ico" aria-hidden="true">◐</span></button>
     <div class="badge" id="topBadge">等待计算</div>
+  </div>
+</div>
+
+<!-- 停更公告（2026-11-04）：经典原版转为维护态，提示改用光谱观测版。
+     可关闭并记住（sunsetbot.classicDeprecated.v1）；快照页隐藏，避免分享页变公告页。
+     完整说明固定在页脚，关掉这条后仍然查得到。 -->
+<div id="depBar" class="depbar" hidden data-snaphide>
+  <div class="depbar-in">
+    <div class="depbar-tx">
+      <b data-i18n="经典原版已停止更新">经典原版已停止更新</b>
+      <span data-i18n="建议使用新版「光谱观测版」；本版本仍可继续使用。">建议使用新版「光谱观测版」；本版本仍可继续使用。</span>
+    </div>
+    <a class="depbar-go" href="../index.html"><span data-i18n="前往新版">前往新版</span><span aria-hidden="true"> ↗</span></a>
+    <button type="button" class="depbar-x" id="depClose" aria-label="关闭" data-i18n-aria="关闭">✕</button>
   </div>
 </div>
 
@@ -1586,6 +1634,11 @@ body.snapmode [data-snaphide]{display:none}
           </div>
         </div>
         <div class="hint" id="modelNote" style="display:none;margin:-2px 0 9px"></div>
+        <div class="testnote" id="lgTestBar" hidden>
+          <span aria-hidden="true">●</span>
+          <span data-i18n="热力图为测试功能，结果仅供参考">热力图为测试功能，结果仅供参考</span>
+          <button type="button" class="tn-x" id="lgTestClose" aria-label="关闭" data-i18n-aria="关闭">✕</button>
+        </div>
         <div class="mapwrap">
           <div id="map" role="application" aria-label="周边霞光热力图" data-i18n-aria="周边霞光热力图"></div>
           <div class="mload" id="mapLoad"><div class="spin"></div><span id="mapLoadTxt">地图资源加载中…</span></div>
@@ -1609,6 +1662,7 @@ body.snapmode [data-snaphide]{display:none}
                方案原打算把整段图例长文一起折掉 —— 那等于把当年修掉的缺陷请回来，
                所以拆成"一句常驻 + 其余可折"。 -->
           <div class="hint" style="margin-top:9px" id="lgMask"></div>
+          <div class="lgtest"><span class="lt-dot" aria-hidden="true">●</span><span data-i18n="热力图测试中 · 结果仅供参考">热力图测试中 · 结果仅供参考</span></div>
           <!-- M1/M2-3 + 第五轮 UI：色条 + 刻度 + 等级行 + 上面那句掩膜说明＝"图例"的本体，
                **必须留在外面**（功能需求第 4 条就是"清晰图例"）。剩下的长文（值域拉伸为什么这么算、
                五个勾选项各自做什么、换地点会不会重取数……）第一次读需要、之后再也不看，
@@ -1637,6 +1691,11 @@ body.snapmode [data-snaphide]{display:none}
   </div>
 
   <footer>
+    <!-- 停更状态说明（2026-11-04）：公告条可关闭，这段常驻；快照页隐藏，分享结果仍保持只读。 -->
+    <div class="verstale" data-snaphide>
+      <b data-i18n="版本说明">版本说明</b>
+      <p data-i18n="此版本「经典原版」为老版本，现在已经停止更新，后续不再进行大更新和改动。后续建议使用新版「光谱观测版」（在导航目录或者底栏有跳转链接）。如有特别需要的用户仍可继续使用经典原版，此版本保留开放。">此版本「经典原版」为老版本，现在已经停止更新，后续不再进行大更新和改动。后续建议使用新版「光谱观测版」（在导航目录或者底栏有跳转链接）。如有特别需要的用户仍可继续使用经典原版，此版本保留开放。</p>
+    </div>
     <details open>
       <summary data-i18n="算法原理与计算流程（提炼自公开的火烧云定量预报教程）">算法原理与计算流程（提炼自公开的火烧云定量预报教程）</summary>
       <div class="body">
@@ -1668,7 +1727,7 @@ body.snapmode [data-snaphide]{display:none}
          快照（分享）模式照常显示：它是站内导航，不是会被快照误带出去的开关，所以不打
          data-snaphide；目录抽屉整块已隐，那两条不受影响。 -->
     <div class="vlnks">
-      <a class="vlnk" href="../index.html"><span data-i18n="Sunglow 光谱观测版">Sunglow 光谱观测版</span><span aria-hidden="true">→</span></a>
+      <a class="vlnk" href="../index.html"><span data-i18n="Sunglow 光谱观测版">Sunglow 光谱观测版</span><span class="vlnk-rec" data-i18n="推荐">推荐</span><span aria-hidden="true">→</span></a>
       <a class="vlnk" href="../Skyglow/index.html"><span data-i18n="Skyglow 移植增强版">Skyglow 移植增强版</span><span aria-hidden="true">→</span></a>
     </div>
     <!-- 视觉方案 P1：谚语落款 —— 把应用接回民间观天传统。
@@ -1706,7 +1765,7 @@ body.snapmode [data-snaphide]{display:none}
        data-goto。相对地址里 ../ 指向上级：仓库根的 index.html 就是线上 V2，Skyglow/
        与本目录同级，所以本地双击和静态托管两种打开方式下都成立。 -->
   <div class="toc-g" data-i18n="其他版本">其他版本</div>
-  <a class="toc-i" href="../index.html"><span class="vlnk" data-i18n="Sunglow 光谱观测版">Sunglow 光谱观测版</span><span class="toc-tag" aria-hidden="true">↗</span></a>
+  <a class="toc-i" href="../index.html"><span class="vlnk" data-i18n="Sunglow 光谱观测版">Sunglow 光谱观测版</span><span class="toc-tag rec"><span data-i18n="推荐">推荐</span><span aria-hidden="true"> ↗</span></span></a>
   <a class="toc-i" href="../Skyglow/index.html"><span class="vlnk" data-i18n="Skyglow 移植增强版">Skyglow 移植增强版</span><span class="toc-tag" aria-hidden="true">↗</span></a>
 </nav>
 <div class="tocveil" id="tocVeil" hidden></div>

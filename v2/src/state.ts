@@ -97,6 +97,21 @@ export const hasSavedCity = (): boolean =>
 function prefBool(k: string, dflt: boolean): boolean {
   return typeof prefs[k] === "boolean" ? (prefs[k] as boolean) : dflt;
 }
+/* 经纬网默认改为关闭（2026-11）。旧偏好里的 true 多半沿自旧默认值而非用户主动开启，
+   所以首次加载做一次迁移把经纬网置为关；之后用户手动打开仍会正常持久化。 */
+const GRID_OFF_MIGRATED_KEY = "SUNGLOW.v2.gridOffMigrated";
+function prefShowGrid(): boolean {
+  try {
+    if (!localStorage.getItem(GRID_OFF_MIGRATED_KEY)) {
+      localStorage.setItem(GRID_OFF_MIGRATED_KEY, "1");
+      /* 立刻把迁移结果写回偏好，否则下一次刷新又会读到旧的 true */
+      prefs.showGrid = false;
+      localStorage.setItem(PREF_KEY, JSON.stringify(prefs));
+      return false;
+    }
+  } catch { /* 隐私模式：不做迁移，沿用已存偏好 */ }
+  return prefBool("showGrid", false);
+}
 function prefStr<T extends string>(k: string, dflt: T): T {
   const list = PREF_STR[k];
   return list && list.indexOf(prefs[k] as string) >= 0 ? (prefs[k] as T) : dflt;
@@ -132,7 +147,7 @@ export const state = reactive<AppState>({
   showPts: prefBool("showPts", false),
   /* 遮挡层 / 等值线默认关：先保住色面本体不被打扰，要查细节再自己打开 */
   showTx: prefBool("showTx", false),
-  showGrid: prefBool("showGrid", true),
+  showGrid: prefShowGrid(),
   showContours: prefBool("showContours", false),
   hour12: prefBool("hour12", false),
   calibOff: prefBool("calibOff", false),

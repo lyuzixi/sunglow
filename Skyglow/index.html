@@ -288,6 +288,11 @@ table.src th{color:var(--muted2);font-weight:500;font-size:10.5px}
 .foot a:hover{color:var(--accent)}
 .foot-vers{display:flex;flex-wrap:wrap;gap:6px 16px}
 .foot-vers a{line-height:1.45}
+/* V1 停更标识（2026-11-04）：目录与页脚共用，沿用 Skyglow 的橙色与等宽小字 */
+.stale{display:inline-block;margin-left:6px;padding:0 4px;border:1px solid rgba(255,138,76,.38);
+  border-radius:999px;background:rgba(255,138,76,.10);color:var(--accent);font-size:10px;
+  font-style:normal;font-weight:600;line-height:16px;letter-spacing:.02em;white-space:nowrap;
+  text-decoration:none;vertical-align:1px}
 .attribution{font-size:10.5px;color:var(--muted2);margin-top:5px}
 .attribution a{color:var(--muted);text-decoration:underline;text-decoration-color:rgba(255,255,255,.18)}
 .attribution a:hover{color:var(--accent)}
@@ -605,7 +610,7 @@ table.src-table tr:hover td{background:rgba(255,255,255,.02)}
   </div>
   <div class="mnav-group">
     <h4>其他版本</h4>
-    <a class="ext" href="../V1/index.html"><span>Sunglow 经典原版</span><i class="arw">↗</i></a>
+    <a class="ext" href="../V1/index.html" title="经典原版已停止更新，仅保留小修小补"><span>Sunglow 经典原版<em class="stale">已停更</em></span><i class="arw">↗</i></a>
     <a class="ext" href="../index.html"><span>Sunglow 光谱观测版</span><i class="arw">↗</i></a>
   </div>
 </aside>
@@ -1022,7 +1027,7 @@ table.src-table tr:hover td{background:rgba(255,255,255,.02)}
            ../ 指向上级 —— 仓库根 index.html 即线上 V2，V1/ 与本目录同级，
            所以 file:// 双击与静态托管两种打开方式下都成立。不放进 #footMeta：
            那一格由 JS 写模型版本，探针按内容读它。 -->
-      <div class="fine foot-vers"><a href="../V1/index.html">Sunglow 经典原版 →</a><a href="../index.html">Sunglow 光谱观测版 →</a></div>
+      <div class="fine foot-vers"><a href="../V1/index.html" title="经典原版已停止更新，仅保留小修小补">Sunglow 经典原版<em class="stale">已停更</em> →</a><a href="../index.html">Sunglow 光谱观测版 →</a></div>
     </div>
     <div id="footMeta">数据：ERA5 / CAMS / Open-Meteo · 标签：sunsetbot 再分析记录</div>
   </footer>

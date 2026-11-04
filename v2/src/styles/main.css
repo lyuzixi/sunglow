@@ -784,6 +784,20 @@ table.data tr:last-child td { border-bottom: 0; }
 .foot-brand { display: flex; flex-direction: column; gap: 3px; }
 .foot-sub { font-size: var(--fs-tiny); }
 .foot-ver { line-height: 1.25; }
+/* V1 停更状态：页脚版本入口的胶囊徽标，沿用 V2 的字号与发丝线 */
+.ver-stale {
+  display: inline-block;
+  margin-left: 5px;
+  padding: 0 4px;
+  border: 1px solid var(--stroke-2);
+  border-radius: 999px;
+  color: var(--acc-2);
+  font-size: var(--fs-tiny);
+  font-style: normal;
+  line-height: 1.45;
+  vertical-align: 1px;
+  white-space: nowrap;
+}
 
 .center-screen {
   min-height: calc(100vh - 62px);

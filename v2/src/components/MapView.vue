@@ -602,6 +602,14 @@ watch(
 watch(pinCity, () => schedulePaint());
 const fs = ref(false);
 const rankAll = ref(false);
+/* 热力图测试提示：提示条首次出现，关掉后记住；图例脚注始终常驻。 */
+const TEST_NOTE_KEY = "SUNGLOW.v2.mapTestNote.v1";
+const testNoteOff = ref(false);
+try { testNoteOff.value = localStorage.getItem(TEST_NOTE_KEY) === "1"; } catch { /* 隐私模式 */ }
+function dismissTestNote() {
+  testNoteOff.value = true;
+  try { localStorage.setItem(TEST_NOTE_KEY, "1"); } catch { /* ignore */ }
+}
 
 const ranked = computed(() => {
   const arr = curPts.value
@@ -1229,6 +1237,12 @@ function fmtV(v: number | null): string {
           <label><input v-model="state.showContours" type="checkbox" />{{ t("等值线") }}</label>
         </div>
 
+        <div v-if="!testNoteOff" class="map-testnote" role="note">
+          <span class="dot">●</span>
+          <span>{{ t("热力图为测试功能，结果仅供参考") }}</span>
+          <button type="button" :aria-label="t('关闭')" @click="dismissTestNote">✕</button>
+        </div>
+
         <!-- 图面 -->
         <div class="canvas-host">
           <div
@@ -1371,6 +1385,10 @@ function fmtV(v: number | null): string {
               </div>
               <div class="grad" :style="{ background: glowGradientCss() }" />
               <div class="ticks"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+              <div class="legend-note">
+                <span class="dot">●</span>
+                <span>{{ t("热力图测试中 · 结果仅供参考") }}</span>
+              </div>
               <div v-if="state.showTx" class="tx-key">
                 <span v-for="(n, i) in OCC_BAND_NAMES" :key="n">
                   <i :style="{ opacity: [0.06, 0.32, 0.58, 0.9][i] }" />{{ t(n) }}
@@ -1501,6 +1519,31 @@ function fmtV(v: number | null): string {
   cursor: pointer;
 }
 .map-opts input { accent-color: var(--acc-1); }
+.map-testnote {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: -2px 0 10px;
+  padding: 7px 10px;
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  background: var(--bg-glass-2);
+  font-size: var(--fs-tiny);
+  line-height: 1.5;
+  color: var(--tx-2);
+}
+.map-testnote .dot { color: var(--acc-2); }
+.map-testnote button {
+  margin-left: auto;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--tx-3);
+  font-size: var(--fs-small);
+  line-height: 1;
+  cursor: pointer;
+}
+.map-testnote button:hover { color: var(--tx-1); }
 .tip {
   position: absolute;
   z-index: 40;
@@ -1617,6 +1660,15 @@ function fmtV(v: number | null): string {
   color: var(--tx-3);
   margin-top: 3px;
 }
+.legend-note {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 0.66rem;
+  line-height: 1.5;
+  color: var(--tx-3);
+}
+.legend-note .dot { color: var(--acc-2); }
 .tx-key {
   display: flex;
   gap: 10px;

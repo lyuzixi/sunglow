@@ -31,7 +31,11 @@ watchEffect(() => {
              禁止根产物里出现 ../ 跨目录链接）。V2 交付物发布到仓库根，所以 V1/ 与
              Skyglow/ 就是同级目录 —— 根副本正确，v2/ 工程目录里预览时这两条会指错，
              与既有版本切换入口同一条已拍板的已知限制。 -->
-        <a class="foot-ver" href="V1/index.html">{{ t("Sunglow 经典原版") }}</a>
+        <a
+          class="foot-ver"
+          href="V1/index.html"
+          :title="t('经典原版已停止更新，仅保留小修小补')"
+        >{{ t("Sunglow 经典原版") }}<em class="ver-stale">{{ t("已停更") }}</em></a>
         <a class="foot-ver" href="Skyglow/index.html">{{ t("Skyglow 移植增强版") }}</a>
         <span>© {{ year }}</span>
       </div>
