@@ -2,6 +2,26 @@
 <html lang="zh-CN" data-theme="dark">
 <head>
 <meta charset="utf-8">
+<!-- 站点根推导：404 页会被托管平台套在**任意错误路径**下返回，纯相对地址在那里
+     会按错链解析（越深越错）。这里先按部署形态推出站点根并注入 <base>，让本页
+     后续所有相对地址（图标 / 背景照片 / 导航 / 按钮）自动落到正确位置。
+     本地 file:// 双击不注入：相对地址本来就在同目录。 -->
+<script>
+(function () {
+  if (location.protocol === "file:") return;
+  var base = "/";
+  /* GitHub Pages 项目页的站点根是 /仓库名/；仓库改名或被 fork 后仓库名会变，
+     所以取实际路径的第一段，而不是写死仓库名。自定义域名部署时域名不是
+     *.github.io，站点根就是 /。 */
+  if (/\.github\.io$/i.test(location.hostname || "")) {
+    var seg = location.pathname.split("/")[1] || "";
+    if (seg) base = "/" + seg + "/";
+  }
+  var el = document.createElement("base");
+  el.href = base;
+  document.head.insertBefore(el, document.currentScript);
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>页面不存在 · SUNGLOW Spectrum Edition · 光谱观测版</title>
 <meta name="robots" content="noindex">
@@ -404,36 +424,15 @@ html[data-theme="light"] .ph-credit{text-shadow:0 1px 10px rgba(242,245,251,.90)
     }
   }
 
-  /* ---------------- 站点入口推导（任意深度兜底） ---------------- */
-  function deriveEntry() {
-    if (location.protocol === "file:") return "./";
-    var p = location.pathname;
-    var bases = ["/sunglow/v2/dist", "/sunglow/v2"];
-    for (var i = 0; i < bases.length; i++) {
-      var b = bases[i], k = p.indexOf(b);
-      if (k >= 0) {
-        var after = p.slice(k + b.length);
-        if (after === "" || after.charAt(0) === "/") return p.slice(0, k + b.length) + "/";
-      }
-    }
-    return "/";
-  }
-
-  /* ---------------- 绑定 ---------------- */
-  var entry = deriveEntry();
-  var home = entry + "index.html" + (location.hash || "");
+  /* ---------------- 绑定 ---------------------------- */
+  /* 本页所有站内地址都写相对形式：http(s) 下由页面顶部注入的 <base> 统一落到
+     站点根（GitHub Pages 项目页也能用，且不依赖仓库名）；file:// 双击时没有
+     <base>，相对地址本来就在同目录。 */
+  var home = "index.html" + (location.hash || "");
   var btnHome = document.getElementById("btnHome");
   if (btnHome) btnHome.setAttribute("href", home);
   var brand = document.getElementById("brand");
   if (brand) brand.setAttribute("href", home);
-
-  /* 导航里的相对地址统一按部署根重算（深层路径也不会跑偏） */
-  var navLinks = document.querySelectorAll("#nav a, .foot a");
-  for (var n = 0; n < navLinks.length; n++) {
-    var raw = navLinks[n].getAttribute("href");
-    if (!raw) continue;
-    navLinks[n].setAttribute("href", entry + raw.replace(/^\.\//, ""));
-  }
 
   /* 请求地址只走 textContent（路径是用户可控输入） */
   var path = location.pathname + (location.search || "");
