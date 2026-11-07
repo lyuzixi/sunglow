@@ -21,6 +21,7 @@ import { cityName } from "./citylang";
 import { uAlt, uDist } from "./units";
 import { mixedIndex, QUALITY_BANDS } from "./scoring";
 import { isNum } from "./math";
+import type { TrendRow } from "./trend";
 import { isForeignTz, tzLabel } from "./tz";
 import heroPhoto from "../assets/hero-photo.webp";
 
@@ -415,6 +416,39 @@ function isMobileLike(): boolean {
 
 export type ShareOutcome = "shared" | "downloaded" | "cancelled";
 
+/** 落地：手机优先唤起系统分享面板（可直接发微信/存相册），
+    桌面、以及不支持带文件分享的浏览器，回退到下载。 */
+async function deliverBlob(blob: Blob, fileName: string): Promise<ShareOutcome> {
+  const nav = navigator as Navigator & {
+    canShare?: (d?: ShareData) => boolean;
+    share?: (d?: ShareData) => Promise<void>;
+  };
+  const canTryShare =
+    isMobileLike() && typeof File !== "undefined" && !!nav.share && !!nav.canShare;
+  if (canTryShare) {
+    const file = new File([blob], fileName, { type: "image/png" });
+    if (nav.canShare!({ files: [file] })) {
+      try {
+        await nav.share!({ files: [file], title: t("霞光档案"), text: fileName });
+        return "shared";
+      } catch (e) {
+        if ((e as Error)?.name === "AbortError") return "cancelled";
+        /* 其它错误（权限/被策略拦）继续走下载 */
+      }
+    }
+  }
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  return "downloaded";
+}
+
 export async function saveShareCard(
   r: ForecastResult, view: VerdictView
 ): Promise<ShareOutcome> {
@@ -428,37 +462,223 @@ export async function saveShareCard(
   cv.dataset.shareMeta = JSON.stringify(meta);
 
   const blob = await canvasToBlob(cv);
-
-  /* 手机优先唤起系统分享面板（可直接发微信/存相册）；
-     桌面、以及不支持带文件分享的浏览器，回退到下载。 */
-  const nav = navigator as Navigator & {
-    canShare?: (d?: ShareData) => boolean;
-    share?: (d?: ShareData) => Promise<void>;
-  };
-  const canTryShare =
-    isMobileLike() && typeof File !== "undefined" && !!nav.share && !!nav.canShare;
-  if (canTryShare) {
-    const file = new File([blob], meta.fileName, { type: "image/png" });
-    if (nav.canShare!({ files: [file] })) {
-      try {
-        await nav.share!({ files: [file], title: t("霞光档案"), text: meta.fileName });
-        return "shared";
-      } catch (e) {
-        if ((e as Error)?.name === "AbortError") return "cancelled";
-        /* 其它错误（权限/被策略拦）继续走下载 */
-      }
-    }
-  }
-
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = meta.fileName;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 5000);
-  return "downloaded";
+  return deliverBlob(blob, meta.fileName);
 }
 
-export { W as SHARE_CARD_W, H as SHARE_CARD_H };
+/* =========================================================================
+   十日趋势分享卡（横版 780×600）
+   顶部 150 章首抬头：实拍照片铺底、大标题压在上面（与教程页 T1、结论卡
+   报头带同一套语言）；两列并排、每列 5 天；每天 朝 / 晚 各一行，只留数字
+   （概率 / 质量），不画概率条、不带等级 —— 转发到聊天里不会被拉成一条竖长图。
+   数字直接取趋势表的同一份 rows，图与页面不会说出两套数。
+   ========================================================================= */
+const TW = 780, TH = 600, T_BAND = 150;
+
+export interface TrendDay {
+  date: string;
+  am?: TrendRow;
+  pm?: TrendRow;
+}
+
+export interface TrendCardMeta {
+  w: number; h: number;
+  theme: "dark" | "light";
+  src: string;
+  days: number;
+  rows: number;
+  fileName: string;
+}
+
+const WEEK = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+
+function weekdayOf(date: string): string {
+  const [Y, M, D] = date.split("-").map(Number);
+  return t(WEEK[new Date(Date.UTC(Y, M - 1, D)).getUTCDay()]);
+}
+
+/** 文件名：霞光档案_城市_起始日期_十日趋势.png */
+export function trendShareFileName(city: string, firstDate: string): string {
+  return t("霞光档案") + "_" + safeName(city) + "_" + firstDate + "_" + t("十日趋势") + ".png";
+}
+
+export function drawTrendCard(
+  cv: HTMLCanvasElement, daysIn: TrendDay[], opts: { city: string; src: "cache" | "live" | "" },
+  photo?: HTMLImageElement | null
+): TrendCardMeta {
+  const dark = document.documentElement.dataset.theme === "dark";
+  const theme: "dark" | "light" = dark ? "dark" : "light";
+
+  cv.width = TW * S; cv.height = TH * S;
+  const c = cv.getContext("2d");
+  if (!c) throw new Error("canvas 2d unavailable");
+  /* 嵌套的 line() 里也要拿到非空上下文：TS 不会把外层 narrowing 带进闭包 */
+  const ctx = c;
+
+  const BG = tokColor("--bg-card-solid", dark ? "#101a2e" : "#ffffff");
+  const TX1 = tokColor("--tx-1", dark ? "#e9eefb" : "#111a2c");
+  const TX2 = tokColor("--tx-2", dark ? "#a0b1cd" : "#46556f");
+  const TX3 = tokColor("--tx-3", dark ? "#5c6c8c" : "#8693ab");
+  const LINE = tokColor("--stroke", dark ? "rgba(148,178,232,.14)" : "rgba(40,60,100,.10)");
+  const SP = [
+    tokColor("--spectrum-1", "#ff4d82"),
+    tokColor("--spectrum-2", "#ff9c3f"),
+    tokColor("--spectrum-3", "#2ed5e8")
+  ];
+
+  c.scale(S, S);
+  c.textBaseline = "alphabetic";
+  c.textAlign = "left";
+  c.fillStyle = BG; c.fillRect(0, 0, TW, TH);
+
+  /* 顶部光谱线：与页面、结论卡同一条识别 */
+  const sg = c.createLinearGradient(0, 0, TW, 0);
+  sg.addColorStop(0, SP[0]); sg.addColorStop(0.5, SP[1]); sg.addColorStop(1, SP[2]);
+  c.fillStyle = sg; c.fillRect(0, 0, TW, 3);
+
+  const days = daysIn.slice(0, 10);
+  const first = days[0]?.date ?? "";
+  const last = days[days.length - 1]?.date ?? "";
+  const range = first ? first + " → " + last.slice(5) : "";
+  const count = days.reduce((n, d) => n + (d.am ? 1 : 0) + (d.pm ? 1 : 0), 0);
+  const srcTxt =
+    opts.src === "cache" ? t("缓存数据") : opts.src === "live" ? t("实时数据") : "";
+
+  /* 章首抬头：实拍照片铺底，下沿渐隐到卡片底色（不做硬边）；
+     大标题压在下半段，靠渐隐层本身给足对比 */
+  if (photo) {
+    const ih = T_BAND - 3;
+    const sc = Math.max(TW / photo.width, ih / photo.height);
+    const sw = TW / sc, sh = ih / sc;
+    c.drawImage(photo, (photo.width - sw) / 2, (photo.height - sh) * 0.58, sw, sh,
+      0, 3, TW, ih);
+  }
+  const veil = c.createLinearGradient(0, 3, 0, T_BAND);
+  veil.addColorStop(0, dark ? "rgba(7,11,20,.30)" : "rgba(242,245,251,.55)");
+  veil.addColorStop(0.4, dark ? "rgba(7,11,20,.06)" : "rgba(242,245,251,.18)");
+  veil.addColorStop(0.74, dark ? "rgba(7,11,20,.45)" : "rgba(242,245,251,.45)");
+  veil.addColorStop(1, BG);
+  c.fillStyle = veil; c.fillRect(0, 3, TW, T_BAND - 3);
+  /* 顶部压一层：品牌名与署名压在这条带上，需要一块稳定的底 */
+  const scrim = c.createLinearGradient(0, 3, 0, 47);
+  scrim.addColorStop(0, dark ? "rgba(7,11,20,.52)" : "rgba(255,255,255,.80)");
+  scrim.addColorStop(1, "rgba(" + (dark ? "7,11,20" : "255,255,255") + ",0)");
+  c.fillStyle = scrim; c.fillRect(0, 3, TW, 44);
+
+  /* 报头：品牌 / 署名（压在照片带的顶部） */
+  c.font = f(600, 11); c.fillStyle = dark ? "rgba(233,238,251,.85)" : "rgba(17,26,44,.85)";
+  c.fillText(t("霞光档案") + " · SUNGLOW", 44, 26);
+  c.textAlign = "right"; c.font = f(500, 11);
+  c.fillStyle = tokColor("--photo-credit", dark ? "rgba(233,238,251,.62)" : "rgba(17,26,44,.56)");
+  c.fillText(t("广州 · 珠江 · 实拍"), TW - 44, 26);
+  c.textAlign = "left";
+
+  c.font = f(700, 30, true); c.fillStyle = TX1;
+  c.fillText(t("十日趋势"), 44, 124);
+
+  c.font = f(500, 11.5); c.fillStyle = TX3;
+  c.fillText(t("朝") + " / " + t("晚") + "　" + count + " " + t("条实算结果"), 44, 178);
+
+  c.textAlign = "right"; c.font = f(500, 11.5); c.fillStyle = TX2;
+  c.fillText(
+    fit(c, opts.city + "　" + range + (srcTxt ? "　·　" + srcTxt : ""), 470),
+    TW - 44, 178
+  );
+  c.textAlign = "left";
+
+  c.strokeStyle = LINE; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(44, 196); c.lineTo(TW - 44, 196); c.stroke();
+
+  /* 体：两列 × 5 天，中间一条竖线 */
+  const COLX = [44, 404], COLW = 334, ROWH = 60, Y0 = 248, HDRY = 220;
+  c.strokeStyle = LINE;
+  c.beginPath(); c.moveTo(390, 208); c.lineTo(390, 516); c.stroke();
+
+  c.font = f(500, 10.5); c.fillStyle = TX3;
+  COLX.forEach((x) => {
+    c.textAlign = "left";
+    c.fillText(t("日期"), x, HDRY);
+    c.fillText(t("时段"), x + 96, HDRY);
+    c.textAlign = "right";
+    c.fillText(t("概率"), x + 264, HDRY);
+    c.fillText(t("质量"), x + COLW, HDRY);
+  });
+  c.textAlign = "left";
+
+  /* 朝/晚一行：概率右对齐到 x+264，质量右对齐到列尾 */
+  function line(row: TrendRow | undefined, label: string, x: number, y: number) {
+    ctx.font = f(500, 11); ctx.fillStyle = TX3;
+    ctx.textAlign = "left";
+    ctx.fillText(label, x + 96, y);
+    ctx.textAlign = "right";
+    if (row) {
+      ctx.font = f(700, 18, true); ctx.fillStyle = TX1;
+      ctx.fillText(Math.round(row.P) + "%", x + 264, y);
+      ctx.font = f(500, 15); ctx.fillStyle = TX2;
+      ctx.fillText(Math.round(row.Q) + "", x + COLW, y);
+    } else {
+      ctx.font = f(500, 15); ctx.fillStyle = TX3;
+      ctx.fillText("—", x + 264, y);
+      ctx.fillText("—", x + COLW, y);
+    }
+    ctx.textAlign = "left";
+  }
+
+  days.forEach((d, idx) => {
+    const col = idx < 5 ? 0 : 1;
+    const i = idx % 5;
+    const x = COLX[col];
+    const base = Y0 + i * ROWH;
+
+    /* 隔行底衬：5 天两列，长图里靠它把行读出来 */
+    if (i % 2 === 1) {
+      c.fillStyle = withAlpha(TX1, dark ? 0.035 : 0.028);
+      rr(c, x - 8, base - 21, COLW + 8, 50, 7);
+      c.fill();
+    }
+
+    c.font = f(700, 15, true); c.fillStyle = TX1;
+    c.fillText(d.date.slice(5), x, base);
+    const dw = c.measureText(d.date.slice(5)).width;
+    c.font = f(500, 11); c.fillStyle = TX3;
+    c.fillText(weekdayOf(d.date), x + dw + 7, base);
+
+    line(d.am, t("朝"), x, base);
+    line(d.pm, t("晚"), x, base + 20);
+  });
+
+  /* 页脚：口径 + 数据源 */
+  c.strokeStyle = LINE;
+  c.beginPath(); c.moveTo(44, 530); c.lineTo(TW - 44, 530); c.stroke();
+  c.font = f(500, 11); c.fillStyle = TX3;
+  c.fillText(
+    fit(c, "P " + t("出现概率") + "　　Q " + t("观赏质量") + "　　·　　" + t("数据源") + " Open-Meteo", 540),
+    44, 556
+  );
+  c.textAlign = "right"; c.font = f(600, 11); c.fillStyle = TX3;
+  c.fillText("SUNGLOW V2", TW - 44, 556);
+  c.textAlign = "left";
+
+  return {
+    w: cv.width, h: cv.height, theme,
+    src: opts.src || "live",
+    days: days.length,
+    rows: count,
+    fileName: trendShareFileName(opts.city, first)
+  };
+}
+
+export async function saveTrendCard(
+  days: TrendDay[], opts: { city: string; src: "cache" | "live" | "" }
+): Promise<ShareOutcome> {
+  await ensureFonts();
+  /* 照片加载失败不阻断导出：退回无照片版，只少一条抬头 */
+  let photo: HTMLImageElement | null = null;
+  try { photo = await loadHeroPhoto(); } catch { photo = null; }
+  const cv = document.createElement("canvas");
+  const meta = drawTrendCard(cv, days, opts, photo);
+  cv.dataset.shareMeta = JSON.stringify(meta);
+  const blob = await canvasToBlob(cv);
+  return deliverBlob(blob, meta.fileName);
+}
+
+export { W as SHARE_CARD_W, H as SHARE_CARD_H, TW as TREND_CARD_W, TH as TREND_CARD_H };

@@ -215,8 +215,11 @@ onMounted(() => {
   width: 100%;
   height: clamp(380px, 52vh, 520px);
   background-size: cover;
-  background-position: 50% 70%;
+  background-position: 50% 58%;
   overflow: hidden;
+  /* 下缘淡到透明（统一曲线）：页面背景是固定的霞光环 + 星尘，淡进实色会切出假底板 */
+  -webkit-mask-image: linear-gradient(180deg, #000 46%, rgba(0, 0, 0, 0.86) 62%, rgba(0, 0, 0, 0.58) 76%, rgba(0, 0, 0, 0.26) 89%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 46%, rgba(0, 0, 0, 0.86) 62%, rgba(0, 0, 0, 0.58) 76%, rgba(0, 0, 0, 0.26) 89%, transparent 100%);
 }
 .photo-band::after {
   content: "";
@@ -273,7 +276,7 @@ onMounted(() => {
   inset: 0;
   z-index: 0;
   background-size: cover;
-  background-position: 50% 8%;
+  background-position: 50% 30%;
   overflow: hidden;
   /* 下缘淡到透明，而不是淡进一个实色：页面背景是固定的霞光环 + 星尘（main.css body::before/::after），
      用实色收口会在交界处切出一块与页面不同的底板。 */
@@ -321,7 +324,7 @@ onMounted(() => {
   border: 1px solid var(--stroke-2);
   overflow: hidden;
   background-size: cover;
-  background-position: 58% 55%;
+  background-position: 50% 58%;
   box-shadow: var(--card-sh);
 }
 .photo-hero-window .hero-dial::before {

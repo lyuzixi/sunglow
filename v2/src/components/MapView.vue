@@ -5,7 +5,7 @@ import { t, ageText } from "../core/i18n";
 import { clamp, isNum, haversineKm } from "../core/math";
 import {
   glowColor, glowRgb, glowAlpha, glowBandOf, glowGradientCss,
-  GLOW_ANCHORS, GLOW_BANDS, LOW_CUT, LOW_FADE, CONTOUR_LEVELS
+  GLOW_BANDS, LOW_CUT, LOW_FADE, CONTOUR_LEVELS
 } from "../core/ramp";
 import { nearestCity, CITIES, cityTier, type City } from "../core/city";
 import { pointName, regionName } from "../core/citylang";
@@ -288,6 +288,10 @@ const curBox = computed(() => {
 });
 const curPts = computed<MapPoint[]>(() => curBox.value?.pts ?? []);
 const curModel = computed(() => currentModel({ pts: curPts.value }, state.mapModel));
+/* 缺数提示可能由多条拼成（ECMWF + 气溶胶），拆开各自过词典 */
+const curNoteText = computed(() =>
+  curBox.value?.note ? curBox.value.note.split("；").map((n) => t(n)).join("；") : ""
+);
 
 function valOf(p: MapPoint): number | null {
   return dimOf(p, state.mapDim as MapDim, curModel.value);
@@ -975,10 +979,39 @@ function onPtEvent(e: { clientX: number; clientY: number }) {
   selectAt(e.clientX - r.left, e.clientY - r.top);
 }
 
-function onClick(e: MouseEvent) { onPtEvent(e); }
+/* 触屏点按 vs 拖图 / 捏合：只有「几乎没位移、按得很短」才选点。
+   早前 touchend 无条件选点，实测每次平移松手都弹一张定格卡（手机端最大困扰）。 */
+let touchOrigin: { x: number; y: number; t: number } | null = null;
+let touchMulti = false;
+let lastTouchAt = 0;
+function onTouchStart(e: TouchEvent) {
+  lastTouchAt = Date.now();
+  if (e.touches.length > 1) { touchMulti = true; touchOrigin = null; return; }
+  const t = e.touches[0];
+  touchOrigin = t ? { x: t.clientX, y: t.clientY, t: Date.now() } : null;
+  touchMulti = false;
+}
 function onTouchEnd(e: TouchEvent) {
+  lastTouchAt = Date.now();
+  const multi = touchMulti || e.touches.length > 1 || e.changedTouches.length > 1;
+  const o = touchOrigin;
+  touchOrigin = null;
+  touchMulti = false;
+  if (multi || !o) return;
   const t = e.changedTouches && e.changedTouches[0];
-  if (t) onPtEvent(t); /* 拖图结束的 touchend 浏览器不派发 click，这里兜住点按即选 */
+  if (!t) return;
+  /* 10px / 600ms 以内算点按；拖图与长按都不选点 */
+  if (Math.hypot(t.clientX - o.x, t.clientY - o.y) > 10 || Date.now() - o.t > 600) return;
+  onPtEvent(t); /* 拖图结束的 touchend 浏览器不派发 click，这里兜住点按即选 */
+}
+function onTouchCancel() {
+  touchOrigin = null;
+  touchMulti = false;
+}
+function onClick(e: MouseEvent) {
+  /* 触屏的合成 click 已由 touchend 处理；拖图后即便派发 click 也不该选点 */
+  if (Date.now() - lastTouchAt < 700) return;
+  onPtEvent(e);
 }
 function onLeave() { tip.on = false; tip.p = null; tipCity.value = null; hoverMark.value = null; }
 
@@ -1191,8 +1224,20 @@ function fmtV(v: number | null): string {
         <h2>{{ t("观测场") }}</h2>
         <div class="sub">
           {{ t(DIM_LABEL[state.mapDim]) }} · {{ t(MODEL_LABEL2[curModel]) }}
-          <span v-if="curBox?.note" class="note-dot" :title="curBox.note">●</span>
         </div>
+      </div>
+
+      <!-- 触屏也要看得见的提示：气溶胶/ECMWF 缺数、底图未就绪。
+           旧做法只在 ● 上用 title，手机没有 hover，等于没有提示。 -->
+      <div v-if="curBox?.note || sdkFail" class="map-notices">
+        <p v-if="curBox?.note" class="map-note" role="note">
+          <span class="dot">●</span>
+          <span>{{ curNoteText }}</span>
+        </p>
+        <p v-if="sdkFail" class="map-note map-note-warn" role="note">
+          <span class="dot">●</span>
+          <span>{{ t("底图未加载，已用矢量层显示；热力图仍可查看。") }}</span>
+        </p>
       </div>
 
       <div class="map-panel glass" :class="{ fs }">
@@ -1228,6 +1273,24 @@ function fmtV(v: number | null): string {
           <button class="btn btn-ghost" @click="toggleFs">{{ fs ? t("退出全屏") : t("全屏") }}</button>
         </div>
 
+        <!-- 状态条紧贴控制条：加载进度与失败提示必须出现在按钮附近，
+             不能再沉到排行榜下面（手机上失败时那一屏根本看不到） -->
+        <div class="status" role="status" aria-live="polite">
+          <template v-if="loading">
+            <span class="dot-live" />{{ progress || t("取数中…") }}
+          </template>
+          <template v-else-if="error">
+            <span class="err">{{ error }}</span>
+            <button v-if="retryable" class="btn btn-ghost sm" @click="load(true)">{{ t("重试") }}</button>
+          </template>
+          <template v-else-if="curPts.length">
+            {{ curPts.length }} {{ t("个网格点") }} · {{ t(MODEL_LABEL2[curModel]) }}
+          </template>
+          <template v-else>
+            <span class="hint">{{ t("该日期尚未取数，点「加载地图」开始（显式触发，不自动烧额度）") }}</span>
+          </template>
+        </div>
+
         <!-- 地图显示开关：统一放在观测场内（不再进全局设置） -->
         <div class="map-opts">
           <label><input v-model="state.showTx" type="checkbox" />{{ t("遮挡层") }}</label>
@@ -1251,6 +1314,8 @@ function fmtV(v: number | null): string {
             @mousemove="onMove"
             @mouseleave="onLeave"
             @click="onClick"
+            @touchstart="onTouchStart"
+            @touchcancel="onTouchCancel"
             @touchend="onTouchEnd"
           >
             <div ref="mapHost" class="map-host" />
@@ -1405,26 +1470,6 @@ function fmtV(v: number | null): string {
             </FoldNote>
           </div>
         </div>
-
-        <!-- 状态条 -->
-        <div class="status">
-          <template v-if="loading">
-            <span class="dot-live" />{{ progress || t("取数中…") }}
-          </template>
-          <template v-else-if="error">
-            <span class="err">{{ error }}</span>
-            <button v-if="retryable" class="btn btn-ghost sm" @click="load(true)">{{ t("重试") }}</button>
-          </template>
-          <template v-else-if="curPts.length">
-            {{ curPts.length }} {{ t("个网格点") }} · {{ t("缓存") }} {{ t(MODEL_LABEL2[curModel]) }} ·
-            {{ t("色阶") }} GLOW（{{ GLOW_ANCHORS.length }} {{ t("锚点") }} · {{ t("连续") }}）·
-            {{ t("SDK 已就绪") }} / {{ t("SDK 未就绪（矢量层可用）") }} ·
-            {{ t("代理") }} {{ TMAP_HOST || "__TMAP_SERVICE_HOST__" }}
-          </template>
-          <template v-else>
-            <span class="hint">{{ t("该日期尚未取数，点「加载地图」开始（显式触发，不自动烧额度）") }}</span>
-          </template>
-        </div>
       </div>
     </div>
   </section>
@@ -1441,6 +1486,18 @@ function fmtV(v: number | null): string {
   z-index: 2100;
   border-radius: 0;
   padding: 12px;
+  /* 手机上控件+地图+排行榜一定超过一屏：必须能滚，否则底部永远够不着 */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+/* 全屏时控件在手机上会折成 3–4 行，地图高度要把这块让出来，别再按 150px 算 */
+@media (max-width: 860px) {
+  .map-panel.fs .map-box {
+    height: calc(100vh - 300px);
+    height: calc(100dvh - 300px);
+    min-height: 280px;
+  }
 }
 .ctl {
   display: flex;
@@ -1482,6 +1539,8 @@ function fmtV(v: number | null): string {
   background: #0a1322;
   height: 480px;
   cursor: crosshair;
+  /* 地图内的触摸归地图：否则 SDK 还没挂上手势时，拖图会滚页、双指会把整页放大 */
+  touch-action: none;
 }
 /* 底图宿主：SDK 渲染在这里。深色主题反相 —— 与V1 .mapwrap.dark 同口径
    invert(1) hue-rotate(180deg)；只翻底图，叠加画布（.overlay）不在其内。
@@ -1519,6 +1578,23 @@ function fmtV(v: number | null): string {
   cursor: pointer;
 }
 .map-opts input { accent-color: var(--acc-1); }
+/* 触屏可见的缺数/底图提示：一条实心小字，放在分区标题下 */
+.map-notices { display: grid; gap: 6px; margin: 0 0 10px; }
+.map-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  background: var(--bg-glass-2);
+  font-size: var(--fs-small);
+  line-height: 1.5;
+  color: var(--tx-2);
+}
+.map-note .dot { color: var(--q-mid); flex: none; }
+.map-note-warn .dot { color: var(--acc-2); }
 .map-testnote {
   display: flex;
   align-items: center;
@@ -1684,8 +1760,9 @@ function fmtV(v: number | null): string {
   border-radius: 2px;
 }
 .status {
-  margin-top: 10px;
-  font-size: var(--fs-tiny);
+  /* 紧贴控制条（ctl 自身有 12px 下边距，这里补 10px 并压掉多余空隙） */
+  margin: -2px 0 10px;
+  font-size: var(--fs-small);
   color: var(--tx-3);
   display: flex;
   gap: 10px;
@@ -1700,7 +1777,6 @@ function fmtV(v: number | null): string {
   animation: pulseGlow 1.6s infinite;
 }
 .sm { padding: 3px 10px; font-size: var(--fs-tiny); }
-.note-dot { color: var(--q-mid); margin-left: 6px; }
 .hint { color: var(--tx-3); }
 /* 缓存来源小字 + 「重新取数」文字入口（旁路，不占主按钮位） */
 .fresh {
@@ -1721,4 +1797,27 @@ function fmtV(v: number | null): string {
 }
 .linkbtn:hover { color: var(--acc-1); }
 .linkbtn:disabled { opacity: 0.5; }
+
+/* 触屏：可点控件统一抬到 44px（iOS/Android 的最小可靠命中高度）。
+   旧尺寸：加载 37、全屏 39、日期 35、测试提示 ✕ 15×13、选点卡按钮 25。 */
+@media (pointer: coarse) {
+  .ctl .btn,
+  .ctl :deep(.sel),
+  .ctl .seg button,
+  .rank-h .btn,
+  .status .btn,
+  .tip-add,
+  .map-testnote button {
+    min-height: 44px;
+  }
+  .ctl .btn,
+  .ctl :deep(.sel),
+  .ctl .seg button {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  .ctl .seg button { padding-left: 14px; padding-right: 14px; }
+  .map-testnote button { min-width: 44px; padding: 0; margin-right: -8px; }
+  .linkbtn { min-height: 44px; display: inline-flex; align-items: center; }
+}
 </style>

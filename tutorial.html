@@ -160,6 +160,37 @@ footer{border-top:1px solid var(--line2);margin-top:44px}
   .terms dd{border-top:0;padding-top:0}
   .brand{display:none}
 }
+/* ---- 章首实拍抬头（广州 · 珠江） ---- */
+.hero{padding-top:0}
+.hero > .ph-band{
+  position:relative; height:150px;
+  margin:0 -20px 6px;
+  background:url("./hero-photo.webp") 50% 58%/cover no-repeat;
+  -webkit-mask-image:linear-gradient(180deg,#000 46%,rgba(0,0,0,.86) 62%,rgba(0,0,0,.58) 76%,rgba(0,0,0,.26) 89%,transparent 100%);
+  mask-image:linear-gradient(180deg,#000 46%,rgba(0,0,0,.86) 62%,rgba(0,0,0,.58) 76%,rgba(0,0,0,.26) 89%,transparent 100%);
+}
+.hero > .ph-band::after{
+  content:""; position:absolute; inset:0;
+  background:linear-gradient(180deg, rgba(7,11,20,.30) 0%, rgba(7,11,20,.06) 40%, rgba(7,11,20,.45) 74%, transparent 100%);
+}
+.hero > .ph-band::before{
+  content:""; position:absolute; inset:0 0 auto 0; height:44px; z-index:1;
+  background:linear-gradient(180deg, rgba(7,11,20,.52), rgba(7,11,20,0));
+}
+.hero > .ph-band .ph-credit{
+  position:absolute; right:18px; top:14px; z-index:2;
+  font-size:11px; letter-spacing:.06em; color:rgba(233,238,251,.62);
+  text-shadow:0 1px 12px rgba(2,6,16,.90);
+}
+html[data-theme="light"] .hero > .ph-band::after{
+  background:linear-gradient(180deg, rgba(242,245,251,.55) 0%, rgba(242,245,251,.18) 40%, rgba(242,245,251,.45) 74%, transparent 100%);
+}
+html[data-theme="light"] .hero > .ph-band::before{
+  background:linear-gradient(180deg, rgba(255,255,255,.80), rgba(255,255,255,0));
+}
+html[data-theme="light"] .hero > .ph-band .ph-credit{
+  color:rgba(17,26,44,.56); text-shadow:0 1px 10px rgba(242,245,251,.90);
+}
 </style>
 </head>
 <body>
@@ -198,6 +229,7 @@ footer{border-top:1px solid var(--line2);margin-top:44px}
 <!-- ==================== 概览 ==================== -->
 <section class="view" id="overview">
   <div class="hero">
+    <div class="ph-band"><span class="ph-credit" data-i18n="广州 · 珠江 · 实拍">广州 · 珠江 · 实拍</span></div>
     <span class="pill">SUNGLOW · <span data-i18n="使用教程">使用教程</span></span>
     <p class="slogan" data-i18n="让每一次追霞，都有迹可循">让每一次追霞，都有迹可循</p>
     <h1 data-i18n="读懂朝霞与晚霞的预报">读懂朝霞与晚霞的预报</h1>
@@ -254,6 +286,7 @@ footer{border-top:1px solid var(--line2);margin-top:44px}
 <!-- ==================== 用户版 ==================== -->
 <section class="view" id="users" hidden>
   <div class="hero">
+    <div class="ph-band"><span class="ph-credit" data-i18n="广州 · 珠江 · 实拍">广州 · 珠江 · 实拍</span></div>
     <span class="pill" data-i18n="用户版">用户版</span>
     <h1 data-i18n="十分钟看懂这份霞光预报">十分钟看懂这份霞光预报</h1>
     <p class="lead" data-i18n="每个功能怎么用、每个数字怎么读。不需要任何气象背景。">每个功能怎么用、每个数字怎么读。不需要任何气象背景。</p>
@@ -324,6 +357,7 @@ footer{border-top:1px solid var(--line2);margin-top:44px}
 <!-- ==================== 开发者版 ==================== -->
 <section class="view" id="dev" hidden>
   <div class="hero">
+    <div class="ph-band"><span class="ph-credit" data-i18n="广州 · 珠江 · 实拍">广州 · 珠江 · 实拍</span></div>
     <span class="pill" data-i18n="开发者版">开发者版</span>
     <h1 data-i18n="构建、口径与质量门">构建、口径与质量门</h1>
     <p class="lead" data-i18n="从一条构建命令到三套算法的口径细节，读懂 SUNGLOW v2 的全部机制。">从一条构建命令到三套算法的口径细节，读懂 SUNGLOW v2 的全部机制。</p>
@@ -417,6 +451,7 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
 <!-- ==================== 创作者版 ==================== -->
 <section class="view" id="creator" hidden>
   <div class="hero">
+    <div class="ph-band"><span class="ph-credit" data-i18n="广州 · 珠江 · 实拍">广州 · 珠江 · 实拍</span></div>
     <span class="pill" data-i18n="创作者版">创作者版</span>
     <h1 data-i18n="用预报数据规划一次拍摄">用预报数据规划一次拍摄</h1>
     <p class="lead" data-i18n="从选日子到出图，把霞光预报变成你的拍摄计划表。">从选日子到出图，把霞光预报变成你的拍摄计划表。</p>
@@ -480,6 +515,7 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "使用教程": "使用教程",
     "语言": "語言",
     "主题": "主題",
+    "广州 · 珠江 · 实拍": "廣州 · 珠江 · 實拍",
     "教程分档": "教程分檔",
     "概览": "概覽",
     "用户版": "用戶版",
@@ -618,6 +654,7 @@ npm run probe:consist  # V1↔v2 口径对拍 16 采样点</div>
     "使用教程": "Tutorial",
     "语言": "Language",
     "主题": "Theme",
+    "广州 · 珠江 · 实拍": "Guangzhou · Pearl River · Photo",
     "教程分档": "Tutorial sections",
     "概览": "Overview",
     "用户版": "For Users",

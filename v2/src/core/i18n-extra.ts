@@ -353,6 +353,8 @@ export const HANT_EXTRA: Record<string, string> = {
   "保存图片": "儲存圖片",
   "正在生成…": "正在產生…",
   "生成图片失败，请重试。": "產生圖片失敗，請重試。",
+  "实时数据": "即時資料",
+  "缓存数据": "快取資料",
   "演示数据": "示範資料",
   "载霞云层 {v}": "載霞雲層 {v}",
   "覆盖 {v}": "覆蓋 {v}",
@@ -381,7 +383,11 @@ export const HANT_EXTRA: Record<string, string> = {
   "全幅": "全幅",
   "天幕窗": "天幕窗",
   "照片模式：报头带在首屏顶部显示实拍照片；全幅铺满首屏；天幕窗把照片收进右侧玻璃窗。": "照片模式：報頭帶在首屏頂部顯示實拍照片；全幅鋪滿首屏；天幕窗把照片收進右側玻璃窗。",
-  "广州 · 珠江 · 实拍": "廣州 · 珠江 · 實拍"
+  "广州 · 珠江 · 实拍": "廣州 · 珠江 · 實拍",
+  "本次没有取到气溶胶数据，颜色浓淡按默认值估算，实际霞光可能比预报更淡或更浓。": "本次沒有取到氣溶膠數據，顏色濃淡按預設值估算，實際霞光可能比預報更淡或更濃。",
+  "气溶胶数据缺失，颜色浓淡已按默认值估算": "氣溶膠數據缺失，顏色濃淡已按預設值估算",
+  "ECMWF-IFS 模式本次未能取到数据": "ECMWF-IFS 模式本次未能取到數據",
+  "底图未加载，已用矢量层显示；热力图仍可查看。": "底圖未載入，已用向量層顯示；熱力圖仍可查看。"
 };
 
 export const EN_EXTRA: Record<string, string> = {
@@ -734,6 +740,8 @@ export const EN_EXTRA: Record<string, string> = {
   "保存图片": "Save image",
   "正在生成…": "Rendering…",
   "生成图片失败，请重试。": "Could not render the image. Please try again.",
+  "实时数据": "Live data",
+  "缓存数据": "Cached data",
   "演示数据": "Demo data",
   "载霞云层 {v}": "Glow cloud {v}",
   "覆盖 {v}": "Cover {v}",
@@ -761,5 +769,9 @@ export const EN_EXTRA: Record<string, string> = {
   "全幅": "Full-bleed",
   "天幕窗": "Sky Window",
   "照片模式：报头带在首屏顶部显示实拍照片；全幅铺满首屏；天幕窗把照片收进右侧玻璃窗。": "Photo mode: Masthead shows the field photo at the top; Full-bleed covers the hero; Sky Window frames it in the right-hand glass panel.",
-  "广州 · 珠江 · 实拍": "Guangzhou · Pearl River · Field photo"
+  "广州 · 珠江 · 实拍": "Guangzhou · Pearl River · Field photo",
+  "本次没有取到气溶胶数据，颜色浓淡按默认值估算，实际霞光可能比预报更淡或更浓。": "Aerosol data was unavailable this time, so colour intensity is estimated from a default value — the actual glow may be lighter or richer than forecast.",
+  "气溶胶数据缺失，颜色浓淡已按默认值估算": "Aerosol data was unavailable; colour intensity is estimated from a default value.",
+  "ECMWF-IFS 模式本次未能取到数据": "ECMWF-IFS data was unavailable this time.",
+  "底图未加载，已用矢量层显示；热力图仍可查看。": "Basemap unavailable; showing the vector layer instead. The heat map still works."
 };

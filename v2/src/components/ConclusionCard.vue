@@ -118,6 +118,10 @@ const geomTxt = computed(() => {
               {{ t("等级") }} <b>{{ t(view!.grade) }}</b>。
               {{ t(res.conf.hint) }}
             </p>
+            <!-- 气溶胶没取到：评分实际用了 0.25 兜底（与V1同一口径），只在兜底时出现 -->
+            <p v-if="res.aodFallback" class="aod-note">
+              {{ t("本次没有取到气溶胶数据，颜色浓淡按默认值估算，实际霞光可能比预报更淡或更浓。") }}
+            </p>
 
             <div class="v-grid">
               <div class="metric">
@@ -285,6 +289,18 @@ const geomTxt = computed(() => {
   font-size: 1.02rem;
 }
 .v-desc b { color: var(--tx-1); }
+/* 气溶胶兜底提示：紧贴说明行，克制的小字，不抢主数字 */
+.aod-note {
+  display: inline-block;
+  margin: -8px 0 18px;
+  padding: 4px 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid color-mix(in srgb, var(--q-mid) 35%, transparent);
+  background: color-mix(in srgb, var(--q-mid) 8%, transparent);
+  color: var(--q-mid);
+  font-size: var(--fs-tiny);
+  line-height: 1.5;
+}
 .v-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

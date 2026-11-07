@@ -156,27 +156,31 @@ body{background:transparent}
 :root,html[data-theme="dark"]{
   --ph-veil:
     radial-gradient(760px 520px at 26% 40%, rgba(7,11,20,.62), rgba(7,11,20,.16) 62%, transparent 84%),
-    linear-gradient(180deg, rgba(7,11,20,.70) 0%, rgba(7,11,20,.30) 42%, rgba(7,11,20,.18) 66%, rgba(7,11,20,.55) 88%, var(--bg-base) 100%);
-  --ph-credit:rgba(233,238,251,.72);
+    linear-gradient(180deg, rgba(7,11,20,.30) 0%, rgba(7,11,20,.06) 40%, rgba(7,11,20,.45) 74%, transparent 100%);
+  --ph-credit:rgba(233,238,251,.62);
   --ph-card:rgba(13,20,35,.80);
   --ph-bar:rgba(7,11,20,.42);
 }
 html[data-theme="light"]{
   --ph-veil:
     radial-gradient(760px 520px at 26% 40%, rgba(255,255,255,.80), rgba(255,255,255,.42) 62%, transparent 84%),
-    linear-gradient(180deg, rgba(255,255,255,.82) 0%, rgba(255,255,255,.55) 42%, rgba(255,255,255,.45) 66%, rgba(255,255,255,.70) 88%, var(--bg-base) 100%);
-  --ph-credit:rgba(17,26,44,.62);
+    linear-gradient(180deg, rgba(242,245,251,.55) 0%, rgba(242,245,251,.18) 40%, rgba(242,245,251,.45) 74%, transparent 100%);
+  --ph-credit:rgba(17,26,44,.56);
   --ph-card:rgba(255,255,255,.88);
   --ph-bar:rgba(255,255,255,.55);
 }
-.ph-bg{position:fixed; inset:0; z-index:-1; background:url("./hero-photo.webp") 50% 52%/cover no-repeat}
+.ph-bg{position:fixed; inset:0; z-index:-1; background:url("./hero-photo.webp") 50% 30%/cover no-repeat}
 .ph-bg::after{content:""; position:absolute; inset:0; background:var(--ph-veil)}
+/* 浅色：右下角是深色水面，署名是深色字，需要把底边提亮一点才读得清 */
+html[data-theme="light"] .ph-bg::after{
+  background:var(--ph-veil), linear-gradient(180deg, transparent 78%, rgba(242,245,251,.55) 100%);
+}
 .ph-credit{
   position:fixed; right:18px; bottom:14px; z-index:2;
   font-size:11px; letter-spacing:.06em; color:var(--ph-credit);
-  text-shadow:0 1px 12px rgba(2,6,16,.92);
+  text-shadow:0 1px 12px rgba(2,6,16,.90);
 }
-html[data-theme="light"] .ph-credit{text-shadow:0 1px 10px rgba(255,255,255,.85)}
+html[data-theme="light"] .ph-credit{text-shadow:0 1px 10px rgba(242,245,251,.90)}
 .card{
   background:var(--ph-card);
   backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
@@ -187,7 +191,7 @@ html[data-theme="light"] .ph-credit{text-shadow:0 1px 10px rgba(255,255,255,.85)
 <body>
 
 <div class="ph-bg" aria-hidden="true"></div>
-<span class="ph-credit">广州 · 珠江 · 实拍</span>
+<span class="ph-credit" data-i18n="广州 · 珠江 · 实拍">广州 · 珠江 · 实拍</span>
 
 <header class="topbar">
   <div class="topbar-in">
@@ -276,7 +280,8 @@ html[data-theme="light"] .ph-credit{text-shadow:0 1px 10px rgba(255,255,255,.85)
       "页面不存在 · SUNGLOW Spectrum Edition · 光谱观测版": "頁面不存在 · SUNGLOW Spectrum Edition · 光譜觀測版",
       "Spectrum Edition · 光谱观测版": "Spectrum Edition · 光譜觀測版",
       "语言": "語言",
-      "主题": "主題"
+      "主题": "主題",
+      "广州 · 珠江 · 实拍": "廣州 · 珠江 · 實拍"
     },
     en: {
       "霞光档案": "霞光档案",
@@ -300,7 +305,8 @@ html[data-theme="light"] .ph-credit{text-shadow:0 1px 10px rgba(255,255,255,.85)
       "页面不存在 · SUNGLOW Spectrum Edition · 光谱观测版": "Page not found · SUNGLOW Spectrum Edition",
       "Spectrum Edition · 光谱观测版": "Spectrum Edition",
       "语言": "Language",
-      "主题": "Theme"
+      "主题": "Theme",
+      "广州 · 珠江 · 实拍": "Guangzhou · Pearl River · Photo"
     }
   };
 

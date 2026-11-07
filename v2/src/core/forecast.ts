@@ -60,6 +60,8 @@ export interface ForecastResult {
   conf: EnsBand;
   factorRows: FacRow[];
   src: "live" | "mock" | "cache";
+  /** 本次没取到气溶胶（AOD），评分实际用了 0.25 兜底值 —— 首屏据此给用户提示 */
+  aodFallback: boolean;
 }
 export interface ForecastFail { ok: false; error: string }
 
@@ -161,6 +163,8 @@ export function pointCacheGet(
     if (typeof o.P !== "number" || typeof o.Q !== "number") return null;
     if (!Array.isArray(o.models) || !o.models.length) return null;
     if (o.dateStr !== dateStr || o.period !== period) return null;
+    /* 旧结构没有气溶胶兜底标记：无法判断那次是否用了默认值，当作没缓存重取一次 */
+    if (typeof o.aodFallback !== "boolean") return null;
     /* 时区字段缺失 = 跨版本的旧结构，时刻不可信；偏移不是 15 分钟整数倍的
        是算坏的脏缓存，同样作废 */
     const z = o.tz as TzInfo | undefined;
@@ -306,6 +310,8 @@ export async function runForecast(opts: {
 
   const aodRow = (sA && sA[0] ? sA[0].at("aerosol_optical_depth", evMs) : null);
   const aodUse = isNum(aodRow) ? clamp(aodRow, 0.005, 5) : 0.25;
+  /* 没取到真值才算兜底：只要有数（哪怕极小）就不是默认值 */
+  const aodFallback = !isNum(aodRow);
 
   /* 样带：d=0 真实值，其余点按各自取数（17 点全真实）—— 各模型各建一条 */
   const trOf = (sers: (Series | null)[] | null) => {
@@ -416,7 +422,8 @@ export async function runForecast(opts: {
     spread, spreadQ,
     conf,
     factorRows,
-    src
+    src,
+    aodFallback
   };
   /* 只有真实取数的结果才落缓存（mock 不写，避免"假数据被当成真预报"） */
   if (src === "live") pointCachePut(city.lat, city.lon, dateStr, period, out);

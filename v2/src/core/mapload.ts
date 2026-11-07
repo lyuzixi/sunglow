@@ -10,7 +10,7 @@ import {
   mapCacheGet, mapCachePut,
   type GridPt, type MapDateBox, type MapPeriodBox, type MapPoint, type PointMeta
 } from "./mapdata";
-import { API_AQ } from "./scoring";
+import { API_AQ, API_FORECAST } from "./scoring";
 import { cityTz, rememberTz } from "./tz";
 import { t } from "./i18n";
 
@@ -111,7 +111,9 @@ async function jget(url: string): Promise<unknown> {
 type Pt = { lat: number; lon: number };
 
 function batchUrl(
-  model: string | null, pts: Pt[], startD: string, endD: string, tz: string, vars: string
+  model: string | null, pts: Pt[], startD: string, endD: string, tz: string, vars: string,
+  /* 数据源基地址：默认预报接口；气溶胶必须走空气质量接口（预报接口不提供该字段） */
+  base = API_FORECAST
 ): string {
   const p = new URLSearchParams({
     latitude: pts.map((x) => x.lat.toFixed(4)).join(","),
@@ -122,18 +124,19 @@ function batchUrl(
     timezone: tz
   });
   if (model) p.set("models", model);
-  return "https://api.open-meteo.com/v1/forecast?" + p.toString();
+  return base + "?" + p.toString();
 }
 
 /** 多点批量取数：单请求多坐标（Open-Meteo 逗号多点），>30 点分批，批间留白 */
 async function batched(
-  model: string | null, pts: Pt[], startD: string, endD: string, tz: string, vars: string
+  model: string | null, pts: Pt[], startD: string, endD: string, tz: string, vars: string,
+  base = API_FORECAST
 ): Promise<unknown[]> {
   const out: unknown[] = [];
   const N = 30;
   for (let i = 0; i < pts.length; i += N) {
     const part = pts.slice(i, i + N);
-    const j = await jget(batchUrl(model, part, startD, endD, tz, vars));
+    const j = await jget(batchUrl(model, part, startD, endD, tz, vars, base));
     out.push(...(Array.isArray(j) ? j : [j]));
     if (i + N < pts.length) await sleep(300);
   }
@@ -150,13 +153,13 @@ export async function apiForecastBatched(
 export async function apiAQBatched(
   pts: Pt[], startD: string, endD: string, tz: string
 ): Promise<(Series | null)[]> {
-  const j = await batched(null, pts, startD, endD, tz, "aerosol_optical_depth");
+  /* aerosol_optical_depth 只在空气质量接口上提供；打到预报接口只会回 24 个空值 */
+  const j = await batched(null, pts, startD, endD, tz, "aerosol_optical_depth", API_AQ);
   return j.map((x) => {
     const s = makeSeries(x as { hourly?: Record<string, unknown> });
     return s.raw["aerosol_optical_depth"] ? s : null;
   });
 }
-void API_AQ;
 
 /* =========================================================================
    loadMapData：一次完整取数（121 点 × GFS/EC/AQ）→ am/pm 两时段点集
@@ -225,7 +228,7 @@ export async function loadMapData(
 
     const notes: string[] = [];
     if (!sE) notes.push("ECMWF-IFS 模式本次未能取到数据");
-    if (!sA) notes.push("气溶胶（AOD）数据缺失，已按默认值 0.25 估算");
+    if (!sA) notes.push("气溶胶数据缺失，颜色浓淡已按默认值估算");
     const note = notes.join("；");
 
     const box: MapDateBox = {

@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
 import { state } from "../state";
-import { t, ageText } from "../core/i18n";
+import { t, ageText, getLang } from "../core/i18n";
+import { cityName } from "../core/citylang";
 import { rampColor } from "../core/ramp";
+import { saveTrendCard } from "../core/sharecard";
 import { loadTrend, type TrendRow } from "../core/trend";
 import FoldNote from "./FoldNote.vue";
 
 const rows = ref<TrendRow[]>([]);
 const loading = ref(false);
+const busy = ref(false);
 const error = ref("");
 const token = ref(0);
 /* 来源：cache = 吃缓存（带年龄小字 + 重取入口）/ live = 刚取 */
@@ -64,6 +67,22 @@ const byDay = computed(() => {
   }
   return [...map.values()].sort((a, b) => a.date.localeCompare(b.date));
 });
+
+/* 保存趋势图为图片：与结论卡同一套落地逻辑（手机唤起系统分享，桌面下载） */
+async function saveImg() {
+  if (!byDay.value.length || busy.value || loading.value) return;
+  busy.value = true;
+  try {
+    await saveTrendCard(byDay.value, {
+      city: cityName(state.city.name, getLang()),
+      src: srcKind.value
+    });
+  } catch {
+    alert(t("生成图片失败，请重试。"));
+  } finally {
+    busy.value = false;
+  }
+}
 </script>
 
 <template>
@@ -75,6 +94,15 @@ const byDay = computed(() => {
           {{ rows.length ? rows.length + " " + t("条实算结果") : t("暂无数据") }}
           <button class="btn btn-ghost sm" style="margin-left: 10px" :disabled="loading" @click="go('click')">
             {{ loading ? t("取数中…") : rows.length ? t("重新加载趋势") : t("加载趋势") }}
+          </button>
+          <button
+            v-if="rows.length"
+            class="btn btn-ghost sm"
+            style="margin-left: 8px"
+            :disabled="loading || busy"
+            @click="saveImg"
+          >
+            {{ busy ? t("正在生成…") : t("保存图片") }}
           </button>
           <span v-if="srcKind && !loading" class="fresh">
             <span class="fresh-t">
