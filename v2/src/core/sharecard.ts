@@ -23,6 +23,11 @@ import { mixedIndex, QUALITY_BANDS } from "./scoring";
 import { isNum } from "./math";
 import type { TrendRow } from "./trend";
 import { isForeignTz, tzLabel } from "./tz";
+import {
+  paintField, drawCityLabels, drawAziLayer,
+  type FieldPt, type FieldCache, type CityLabel, type Proj, type Rect4
+} from "./maprender";
+import { glowColor, glowRgb, glowAlpha, GLOW_BANDS } from "./ramp";
 import heroPhoto from "../assets/hero-photo.webp";
 
 const W = 780, H = 400, S = 2;
@@ -681,4 +686,395 @@ export async function saveTrendCard(
   return deliverBlob(blob, meta.fileName);
 }
 
+/* =========================================================================
+   观测场分享卡（横版 780×660）
+   -------------------------------------------------------------------------
+   观测场是「腾讯 GL 底图 + 自绘覆盖层」。分享图优先直接截屏上的合成图
+   （MapView 在 GL 开启 preserveDrawingBuffer 后取像素，底图与覆盖层一起），
+   这样底图、地名、色面都跟用户看到的一模一样；截不到时（跨域污染、
+   缓冲没保留、SDK 没起来）再回退到用同一份 core/maprender 口径重画 ——
+   色面 / 等值线 / 方位线 / 距离环 / 地名按同一份采样点与同一套投影画出，
+   只是没有底图，地理参照由经纬网 + 城市名 + 距离环给出。
+   ========================================================================= */
+const MW = 780, MH = 660, M_BAND = 88;
+/* 图面区（CSS px） */
+const MX = 44, MY = 156, MWB = 692, MHB = 400;
+const LAT2KM = 110.574;
+
+export interface MapCardLabel {
+  text: string;
+  lat: number;
+  lon: number;
+  tier: 0 | 1 | 2;
+}
+
+export interface MapCardOpts {
+  /** 已按当前语言翻好的城市名 */
+  city: string;
+  date: string;
+  period: "am" | "pm";
+  /** 已翻好的维度名 / 模型名 */
+  dimLabel: string;
+  modelLabel: string;
+  src: "cache" | "live" | "";
+  /** 与屏上同一份采样点（v = 当前维度的值） */
+  pts: FieldPt[];
+  labels: MapCardLabel[];
+  center: { lat: number; lon: number };
+  /** 图面纵向跨度（km），与屏上 visibleSpanKm() 同源 */
+  spanKm: number;
+  az: number | null;
+  /** 方位文案（已翻好），无方位时为空串 */
+  azHead: string;
+  showOcclusion: boolean;
+  showContours: boolean;
+  showPts: boolean;
+  /** 屏上「底图 + 覆盖层」的合成截图；拿不到（跨域污染 / 空图）时传 null，走重画 */
+  base?: HTMLCanvasElement | null;
+  /** 屏上那份色面缓存：栅格在地理空间里固定，直接复用即可，不重复插值 */
+  cache: FieldCache;
+}
+
+export interface MapCardMeta {
+  w: number; h: number;
+  theme: "dark" | "light";
+  src: string;
+  pts: number;
+  labels: number;
+  spanKm: number;
+  fileName: string;
+  /** capture = 用了屏上真地图截图；redraw = 回退到自绘色面 */
+  base: "capture" | "redraw";
+}
+
+/** 文件名：霞光档案_城市_日期_晚霞_观测场.png */
+export function mapShareFileName(city: string, date: string, period: "am" | "pm"): string {
+  return t("霞光档案") + "_" + safeName(city) + "_" + date + "_" +
+    t(period === "am" ? "朝霞" : "晚霞") + "_" + t("观测场") + ".png";
+}
+
+/** 球面落点：从中心沿方位角走 km 公里（与屏上方位层同一几何） */
+function dest(
+  center: { lat: number; lon: number }, az: number, km: number
+): { lat: number; lon: number } {
+  const rad = (az * Math.PI) / 180;
+  return {
+    lat: center.lat + (km * Math.cos(rad)) / LAT2KM,
+    lon: center.lon + (km * Math.sin(rad)) / (LAT2KM * Math.max(0.2, Math.cos((center.lat * Math.PI) / 180)))
+  };
+}
+
+export function drawMapCard(
+  cv: HTMLCanvasElement, o: MapCardOpts, photo?: HTMLImageElement | null
+): MapCardMeta {
+  const dark = document.documentElement.dataset.theme === "dark";
+  const theme: "dark" | "light" = dark ? "dark" : "light";
+
+  cv.width = MW * S; cv.height = MH * S;
+  const c = cv.getContext("2d");
+  if (!c) throw new Error("canvas 2d unavailable");
+
+  const BG = tokColor("--bg-card-solid", dark ? "#101a2e" : "#ffffff");
+  const TX1 = tokColor("--tx-1", dark ? "#e9eefb" : "#111a2c");
+  const TX2 = tokColor("--tx-2", dark ? "#a0b1cd" : "#46556f");
+  const TX3 = tokColor("--tx-3", dark ? "#5c6c8c" : "#8693ab");
+  const LINE = tokColor("--stroke", dark ? "rgba(148,178,232,.14)" : "rgba(40,60,100,.10)");
+  const ACC = tokColor("--acc-1", "#ff4d82");
+  const SP = [
+    tokColor("--spectrum-1", "#ff4d82"),
+    tokColor("--spectrum-2", "#ff9c3f"),
+    tokColor("--spectrum-3", "#2ed5e8")
+  ];
+  /* 图面底衬：没有底图，色面直接压在卡片上会糊掉边界，先给一层稳定的场底 */
+  const PLATE = dark ? ["#0b1424", "#080d19"] : ["#f3f7fd", "#e8eef8"];
+
+  c.scale(S, S);
+  c.textBaseline = "alphabetic";
+  c.textAlign = "left";
+
+  c.fillStyle = BG; c.fillRect(0, 0, MW, MH);
+  const sg = c.createLinearGradient(0, 0, MW, 0);
+  sg.addColorStop(0, SP[0]); sg.addColorStop(0.5, SP[1]); sg.addColorStop(1, SP[2]);
+  c.fillStyle = sg; c.fillRect(0, 0, MW, 3);
+
+  /* 顶部实拍报头带：与结论卡 / 十日趋势卡同一张照片、同一条署名 */
+  if (photo) {
+    const ih = M_BAND - 3;
+    const sc = Math.max(MW / photo.width, ih / photo.height);
+    const sw = MW / sc, sh = ih / sc;
+    c.drawImage(photo, (photo.width - sw) / 2, (photo.height - sh) * 0.5, sw, sh, 0, 3, MW, ih);
+  }
+  const veil = c.createLinearGradient(0, 3, 0, M_BAND);
+  veil.addColorStop(0, dark ? "rgba(7,11,20,.26)" : "rgba(242,245,251,.60)");
+  veil.addColorStop(0.45, dark ? "rgba(7,11,20,.06)" : "rgba(242,245,251,.30)");
+  veil.addColorStop(1, BG);
+  c.fillStyle = veil; c.fillRect(0, 3, MW, M_BAND - 3);
+  const scrim = c.createLinearGradient(0, 3, 0, 46);
+  scrim.addColorStop(0, dark ? "rgba(7,11,20,.52)" : "rgba(255,255,255,.80)");
+  scrim.addColorStop(1, "rgba(" + (dark ? "7,11,20" : "255,255,255") + ",0)");
+  c.fillStyle = scrim; c.fillRect(0, 3, MW, 43);
+  c.font = f(600, 11);
+  c.fillStyle = dark ? "rgba(233,238,251,.85)" : "rgba(17,26,44,.85)";
+  c.fillText(t("霞光档案") + " · SUNGLOW", 44, 26);
+  c.font = f(500, 11);
+  c.fillStyle = tokColor("--photo-credit", dark ? "rgba(233,238,251,.62)" : "rgba(17,26,44,.56)");
+  c.textAlign = "right";
+  c.fillText(t("广州 · 珠江 · 实拍"), MW - 44, 26);
+  c.textAlign = "left";
+
+  /* 抬头：标题 + 城市 / 日期时段 / 维度与模型 */
+  c.font = f(700, 26, true); c.fillStyle = TX1;
+  c.fillText(t("观测场"), 44, 122);
+  c.font = f(500, 11.5); c.fillStyle = TX3;
+  c.fillText(
+    fit(c, o.dimLabel + " · " + o.modelLabel + " · " + t(o.period === "am" ? "朝霞" : "晚霞"), 380),
+    44, 141
+  );
+  c.textAlign = "right";
+  c.font = f(700, 15, true); c.fillStyle = TX1;
+  c.fillText(fit(c, o.city, 270), MW - 44, 120);
+  c.font = f(500, 12); c.fillStyle = TX2;
+  c.fillText(o.date, MW - 44, 139);
+  c.textAlign = "left";
+
+  /* ---------- 图面区 ---------- */
+  const spanKm = Math.max(120, o.spanKm || 1120);
+  const kmPerLon = 111.32 * Math.max(0.2, Math.cos((o.center.lat * Math.PI) / 180));
+  const scale = MHB / spanKm;
+  const proj: Proj = (lat, lon) => ({
+    x: MWB / 2 + (lon - o.center.lon) * kmPerLon * scale,
+    y: MHB / 2 - (lat - o.center.lat) * LAT2KM * scale
+  });
+
+  c.save();
+  rr(c, MX, MY, MWB, MHB, 12);
+  c.clip();
+  const plate = c.createLinearGradient(0, MY, 0, MY + MHB);
+  plate.addColorStop(0, PLATE[0]); plate.addColorStop(1, PLATE[1]);
+  c.fillStyle = plate; c.fillRect(MX, MY, MWB, MHB);
+
+  /* 有屏上截图就贴截图（居中裁成图框比例，保证不变形），
+     否则保留自绘分支：没有底图时至少还有经纬网 + 地名 + 方位环。 */
+  const live = !o.base;
+  if (o.base) {
+    const img = o.base;
+    const targetAspect = MWB / MHB;
+    const imgAspect = img.width / img.height;
+    let sw = img.width, sh = img.height, sx = 0, sy = 0;
+    if (imgAspect > targetAspect) {
+      sw = img.height * targetAspect;
+      sx = (img.width - sw) / 2;
+    } else {
+      sh = img.width / targetAspect;
+      sy = (img.height - sh) / 2;
+    }
+    c.imageSmoothingEnabled = true;
+    c.imageSmoothingQuality = "high";
+    c.drawImage(img, sx, sy, sw, sh, MX, MY, MWB, MHB);
+    /* GL 画布不带 DOM 里的腾讯 logo 与审图号，分享图自己补一条版权 */
+    c.font = f(600, 9);
+    c.textAlign = "right";
+    const credit = "© 腾讯地图";
+    const cw = c.measureText(credit).width;
+    c.fillStyle = "rgba(8,12,20,.42)";
+    rr(c, MX + MWB - cw - 15, MY + MHB - 21, cw + 10, 15, 4);
+    c.fill();
+    c.fillStyle = "rgba(245,248,255,.88)";
+    c.fillText(credit, MX + MWB - 10, MY + MHB - 10);
+    c.textAlign = "left";
+  }
+
+  /* 画布原点挪到图面左上角：后续所有绘制都用图面局部坐标 */
+  c.translate(MX, MY);
+
+  /* 经纬网：跨度决定密度（1°/2°/5°），在左右下缘标坐标 */
+  const latHalf = spanKm / 2 / LAT2KM;
+  const lonHalf = spanKm / 2 / kmPerLon;
+  const step = latHalf * 2 > 24 || lonHalf * 2 > 24 ? 5 : latHalf * 2 > 10 || lonHalf * 2 > 10 ? 2 : 1;
+  const gridCol = dark ? "rgba(200,216,244,.10)" : "rgba(40,60,100,.10)";
+  const tickCol = dark ? "rgba(200,216,244,.34)" : "rgba(40,60,100,.34)";
+  c.strokeStyle = gridCol; c.lineWidth = 1;
+  c.font = f(500, 9); c.fillStyle = tickCol;
+  if (live) {
+    for (let lon = Math.ceil((o.center.lon - lonHalf) / step) * step; lon <= o.center.lon + lonHalf; lon += step) {
+      const x = proj(o.center.lat, lon).x;
+      c.beginPath(); c.moveTo(x, 0); c.lineTo(x, MHB); c.stroke();
+      if (x > 36 && x < MWB - 36) c.fillText(Math.abs(lon) + "°" + (lon >= 0 ? "E" : "W"), x + 3, MHB - 6);
+    }
+    for (let lat = Math.ceil((o.center.lat - latHalf) / step) * step; lat <= o.center.lat + latHalf; lat += step) {
+      const y = proj(lat, o.center.lon).y;
+      c.beginPath(); c.moveTo(0, y); c.lineTo(MWB, y); c.stroke();
+      if (y > 16 && y < MHB - 14) c.fillText(Math.abs(lat) + "°" + (lat >= 0 ? "N" : "S"), 5, y - 4);
+    }
+  }
+
+  if (live && o.pts.length) {
+    paintField(c, {
+      pts: o.pts, proj, w: MWB, h: MHB, dark, dpr: S,
+      showOcclusion: o.showOcclusion,
+      showContours: o.showContours,
+      cache: o.cache
+    });
+  }
+
+  /* 距离环 + 方位线：口径与屏上 drawAziLayer 一致（400 km 射线、100–400 km 环）；
+     环标签只留 200 / 400 km 两档 —— 缩到 900 km 跨度时四档会挤在一起。
+     方位为空（该日期太阳事件不存在）时不画，与屏上一致。 */
+  const azAvoid: Rect4[] = [];
+  if (live && o.az != null) {
+    drawAziLayer(c, proj, {
+      lat: o.center.lat, lon: o.center.lon, az: o.az,
+      head: o.azHead,
+      ringLabel: (km) => (km === 200 || km === 400 ? km + " km" : ""),
+      dark, w: MWB, h: MHB
+    });
+    /* 方位层先画、地名后画：把它的文字占位交给地名层避让，
+       否则「晚霞方位 西 262°」会被城市名压掉（屏上也有这问题）。 */
+    c.font = f(600, 10);
+    const ringW = c.measureText("400 km").width;
+    for (const km of [200, 400]) {
+      const p = dest(o.center, o.az, km);
+      const s = proj(p.lat, p.lon);
+      azAvoid.push([s.x + 4, s.y - 14, s.x + 8 + ringW, s.y + 3]);
+    }
+    const tip = proj(dest(o.center, o.az, 400).lat, dest(o.center, o.az, 400).lon);
+    c.font = f(700, 11);
+    azAvoid.push([tip.x + 6, tip.y + 2, tip.x + 10 + c.measureText(o.azHead).width, tip.y + 18]);
+  }
+
+  /* 地名：先给当前城市钉一个标签，再把它当避让区交给自绘地名层 */
+  let labelCount = 0;
+  if (live) {
+    const centerPt = proj(o.center.lat, o.center.lon);
+    c.font = f(700, 12.5);
+    const homeText = fit(c, o.city, 200);
+    const homeW = c.measureText(homeText).width;
+    const homeX = centerPt.x + 10;
+    const homeY = centerPt.y - 9;
+    const avoid: Rect4[] = [
+      [Math.min(centerPt.x - 9, homeX - 2), homeY - 9, homeX + homeW + 2, homeY + 9],
+      ...azAvoid
+    ];
+    const labels: CityLabel[] = o.labels.map((l) => {
+      const p = proj(l.lat, l.lon);
+      return { text: l.text, x: p.x, y: p.y, tier: l.tier };
+    }).sort((a, b) => a.tier - b.tier);
+    drawCityLabels(c, { labels, dark, w: MWB, h: MHB, avoid });
+    labelCount = labels.length;
+
+    /* 当前城市：实心点 + 光环，文字带描边，压在色面上也读得出 */
+    c.beginPath(); c.arc(centerPt.x, centerPt.y, 6.5, 0, Math.PI * 2);
+    c.strokeStyle = withAlpha(ACC, 0.55); c.lineWidth = 2; c.stroke();
+    c.beginPath(); c.arc(centerPt.x, centerPt.y, 3.2, 0, Math.PI * 2);
+    c.fillStyle = ACC; c.fill();
+    c.font = f(700, 12.5);
+    c.textAlign = "left";
+    c.lineJoin = "round";
+    c.strokeStyle = dark ? "rgba(6,10,20,.85)" : "rgba(255,255,255,.92)";
+    c.lineWidth = 3;
+    c.strokeText(homeText, homeX, homeY + 4);
+    c.fillStyle = TX1;
+    c.fillText(homeText, homeX, homeY + 4);
+  }
+
+  /* 采样点：只在用户屏上打开了这一层时才画，保持「图上即屏上」 */
+  if (live && o.showPts && o.pts.length) {
+    const core = dark ? "rgba(242,246,255,0.88)" : "rgba(16,24,40,0.88)";
+    const halo = dark ? "rgba(4,8,16,0.55)" : "rgba(255,255,255,0.9)";
+    for (const p of o.pts) {
+      const s = proj(p.lat, p.lon);
+      if (s.x < 0 || s.x > MWB || s.y < 0 || s.y > MHB) continue;
+      c.beginPath(); c.arc(s.x, s.y, 3, 0, Math.PI * 2);
+      c.strokeStyle = halo; c.lineWidth = 1.4; c.stroke();
+      c.beginPath(); c.arc(s.x, s.y, 1.6, 0, Math.PI * 2);
+      c.fillStyle = core; c.fill();
+    }
+  }
+  c.restore();
+
+  /* 图面描边（画在裁剪之外，圆角不会被色面吃掉） */
+  c.strokeStyle = LINE; c.lineWidth = 1;
+  rr(c, MX + 0.5, MY + 0.5, MWB - 1, MHB - 1, 12);
+  c.stroke();
+
+  /* ---------- 图例：与屏上同一套分级与色阶 ---------- */
+  const DOTS = [12, 44, 70, 90];
+  c.font = f(500, 11); c.fillStyle = TX3;
+  let lx = 44;
+  GLOW_BANDS.forEach((b, i) => {
+    c.beginPath(); c.arc(lx + 4, 584, 4, 0, Math.PI * 2);
+    c.fillStyle = glowColor(DOTS[i]); c.fill();
+    const name = t(b.key);
+    c.fillStyle = TX3;
+    c.fillText(name, lx + 13, 588);
+    lx += 13 + c.measureText(name).width + 18;
+  });
+  c.textAlign = "right";
+  c.font = f(500, 10.5);
+  c.fillText(t("热力图测试中 · 结果仅供参考"), MW - 44, 588);
+  c.textAlign = "left";
+
+  const barY = 598, barH = 8;
+  const track = c.createLinearGradient(44, 0, MW - 44, 0);
+  for (let v = 0; v <= 100; v += 4) {
+    const rgb = glowRgb(v);
+    track.addColorStop(v / 100, "rgba(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + "," + glowAlpha(v) + ")");
+  }
+  rr(c, 44, barY, MW - 88, barH, 4);
+  c.fillStyle = withAlpha(TX1, dark ? 0.05 : 0.04);
+  c.fill();
+  c.fillStyle = track;
+  c.fill();
+  c.strokeStyle = LINE; c.lineWidth = 1;
+  rr(c, 44.5, barY + 0.5, MW - 89, barH - 1, 4);
+  c.stroke();
+
+  c.font = f(500, 9.5); c.fillStyle = TX3;
+  c.textAlign = "left"; c.fillText("0", 44, 622);
+  c.textAlign = "center";
+  [25, 50, 75].forEach((v) => c.fillText(String(v), 44 + ((MW - 88) * v) / 100, 622));
+  c.textAlign = "right"; c.fillText("100", MW - 44, 622);
+
+  /* 页脚：数据源 + 数据来源（实时 / 缓存）+ 采样点数 */
+  c.strokeStyle = LINE; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(44, 634); c.lineTo(MW - 44, 634); c.stroke();
+  c.textAlign = "left";
+  c.font = f(500, 11); c.fillStyle = TX3;
+  c.fillText(
+    fit(c, t("霞光档案 · 数据源 Open-Meteo（GFS / ECMWF-IFS / CAMS 气溶胶）· 结论仅供观赏参考"), 460),
+    44, 650
+  );
+  c.textAlign = "right";
+  c.font = f(500, 11);
+  const srcTxt = o.src === "cache" ? t("缓存数据") : o.src === "live" ? t("实时数据") : "";
+  c.fillText(
+    fit(c, [srcTxt, o.pts.length + " " + t("个网格点")].filter(Boolean).join("　·　"), 210),
+    MW - 44, 650
+  );
+  c.textAlign = "left";
+
+  return {
+    w: cv.width, h: cv.height, theme,
+    src: o.src || "live",
+    pts: o.pts.length,
+    labels: labelCount,
+    spanKm: Math.round(spanKm),
+    fileName: mapShareFileName(o.city, o.date, o.period),
+    base: o.base ? "capture" : "redraw"
+  };
+}
+
+export async function saveMapCard(o: MapCardOpts): Promise<ShareOutcome> {
+  await ensureFonts();
+  /* 照片加载失败不阻断导出：退回无照片版，只少一条抬头 */
+  let photo: HTMLImageElement | null = null;
+  try { photo = await loadHeroPhoto(); } catch { photo = null; }
+  const cv = document.createElement("canvas");
+  const meta = drawMapCard(cv, o, photo);
+  cv.dataset.shareMeta = JSON.stringify(meta);
+  const blob = await canvasToBlob(cv);
+  return deliverBlob(blob, meta.fileName);
+}
+
 export { W as SHARE_CARD_W, H as SHARE_CARD_H, TW as TREND_CARD_W, TH as TREND_CARD_H };
+

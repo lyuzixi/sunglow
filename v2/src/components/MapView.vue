@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
 import { state, savePrefs, mapBox } from "../state";
-import { t, ageText } from "../core/i18n";
+import { t, ageText, getLang } from "../core/i18n";
 import { clamp, isNum, haversineKm } from "../core/math";
 import {
   glowColor, glowRgb, glowAlpha, glowBandOf, glowGradientCss,
   GLOW_BANDS, LOW_CUT, LOW_FADE, CONTOUR_LEVELS
 } from "../core/ramp";
 import { nearestCity, CITIES, cityTier, type City } from "../core/city";
-import { pointName, regionName } from "../core/citylang";
+import { pointName, regionName, cityName } from "../core/citylang";
 import {
   buildLocalGrid, dimOf, divergeOf, currentModel, mapCacheAge, MAP_GRID_KM,
   type GridPt, type MapPoint, type MapDateBox, type MapDim
@@ -26,6 +26,7 @@ import {
 } from "../core/maprender";
 import { eventAzimuth, dirWordOf } from "../core/astro";
 import { typeDetail } from "../core/physics";
+import { saveMapCard, type MapCardLabel } from "../core/sharecard";
 
 /* ---------------- 地图实例 / 投影 ---------------- */
 const box = ref<HTMLDivElement | null>(null);
@@ -615,6 +616,96 @@ function dismissTestNote() {
   try { localStorage.setItem(TEST_NOTE_KEY, "1"); } catch { /* ignore */ }
 }
 
+/* 保存观测场图片：与结论卡 / 十日趋势同一套落地逻辑（手机唤起系统分享，桌面下载）。
+   图面由 core/maprender 用同一份采样点重画，屏上的色面缓存直接复用，不重复插值。 */
+const saveBusy = ref(false);
+
+/** 导出图上的城市名候选：与屏上同一套分级与排序，地理坐标交给 sharecard 投影 */
+function exportLabels(): MapCardLabel[] {
+  const maxTier = labelTierMax(visibleSpanKm());
+  const out: MapCardLabel[] = [];
+  for (const c of CITIES) {
+    const tier = cityTier(c.name);
+    if (tier > maxTier) continue;
+    out.push({ text: pointName(c.name, state.lang), lat: c.lat, lon: c.lon, tier });
+  }
+  out.sort((a, b) => a.tier - b.tier);
+  return out.slice(0, LABEL_MAX);
+}
+
+/* 把「底图 + 覆盖层」截成一张位图：分享图直接用屏幕上的真实地图。
+   腾讯 GL 要 preserveDrawingBuffer 才能读像素；跨域瓦片若污染画布，
+   getImageData 会抛 SecurityError —— 返回 null 让分享卡回退到自绘版本。 */
+function captureMapComposite(): HTMLCanvasElement | null {
+  const host = mapHost.value, overlay = cv.value;
+  if (!host || !overlay) return null;
+  /* SDK 可能把底图与注记放在不同画布上，按 DOM 顺序叠一遍最稳 */
+  const layers = Array.from(host.querySelectorAll("canvas")) as HTMLCanvasElement[];
+  if (!layers.length) return null;
+  const w = layers[0].width, h = layers[0].height;
+  if (w < 2 || h < 2) return null;
+  try {
+    const out = document.createElement("canvas");
+    out.width = w; out.height = h;
+    const c = out.getContext("2d");
+    if (!c) return null;
+    for (const layer of layers) {
+      if (layer.width > 1 && layer.height > 1) c.drawImage(layer, 0, 0, w, h);
+    }
+    /* 先验底图：缓冲没保留时整张全透明，抽四点都空就按失败处理 */
+    let opaque = 0;
+    for (const [x, y] of [[4, 4], [w - 5, 4], [w >> 1, h >> 1], [4, h - 5]]) {
+      if (c.getImageData(x, y, 1, 1).data[3] > 0) opaque++;
+    }
+    if (opaque < 2) return null;
+    c.drawImage(overlay, 0, 0, w, h);
+    return out;
+  } catch {
+    return null;
+  }
+}
+
+async function saveImg() {
+  if (!curPts.value.length || saveBusy.value || loading.value) return;
+  saveBusy.value = true;
+  try {
+    /* 等一帧：确保覆盖层最新一帧已经落笔再截 */
+    await nextTick();
+    await new Promise<void>((r) => requestAnimationFrame(() => r()));
+    const base = captureMapComposite();
+    const center = gridCenter.value;
+    const az = eventAzimuth(state.mapDateS, state.mapPeriod, center.lat, center.lon);
+    const head = az != null
+      ? `${state.mapPeriod === "am" ? t("朝霞方位") : t("晚霞方位")} ${t(dirWordOf(az))} ${Math.round(az)}°`
+      : "";
+    await saveMapCard({
+      city: cityName(state.city.name, getLang()),
+      date: state.mapDateS,
+      period: state.mapPeriod,
+      dimLabel: t(DIM_LABEL[state.mapDim]),
+      modelLabel: t(MODEL_LABEL2[curModel.value]),
+      src: srcKind.value,
+      pts: curPts.value.map((p) => ({
+        lat: p.lat, lon: p.lon, v: valOf(p), cld: p.cld, occ: p.occ, gap: p.refGap
+      })),
+      labels: exportLabels(),
+      center,
+      spanKm: visibleSpanKm(),
+      az,
+      azHead: head,
+      showOcclusion: !!state.showTx,
+      showContours: !!state.showContours,
+      showPts: !!state.showPts,
+      base,
+      cache: fieldCache
+    });
+  } catch {
+    alert(t("生成图片失败，请重试。"));
+  } finally {
+    saveBusy.value = false;
+  }
+}
+
 const ranked = computed(() => {
   const arr = curPts.value
     .map((p) => ({ p, v: valOf(p) }))
@@ -1043,6 +1134,9 @@ onMounted(async () => {
         center: new TMapNS.LatLng(gridCenter.value.lat, gridCenter.value.lon),
         zoom: 6,
         viewMode: "2D",
+        /* 导出分享图要读 GL 画布像素：官方为 dom-to-image / html2canvas 这类
+           导出场景提供的开关，默认 false 时读出来是空图。 */
+        preserveDrawingBuffer: true,
         baseMap: baseMapConf(state.lang)
       });
       relocateChrome();
@@ -1270,6 +1364,9 @@ function fmtV(v: number | null): string {
               {{ t("重新取数") }}
             </button>
           </div>
+          <button v-if="curPts.length && !loading" class="btn btn-ghost" :disabled="saveBusy" @click="saveImg">
+            {{ saveBusy ? t("正在生成…") : t("保存图片") }}
+          </button>
           <button class="btn btn-ghost" @click="toggleFs">{{ fs ? t("退出全屏") : t("全屏") }}</button>
         </div>
 
