@@ -62,7 +62,7 @@ const I18N_ZH_HANT = {
   "已停更": "已停更",
   "推荐": "推薦",
   "版本说明": "版本說明",
-  "此版本「经典原版」为老版本，现在已经停止更新，后续不再进行大更新和改动。后续建议使用新版「光谱观测版」（在导航目录或者底栏有跳转链接）。如有特别需要的用户仍可继续使用经典原版，此版本保留开放。": "此版本「經典原版」為老版本，現在已經停止更新，後續不再進行大更新和改動。後續建議使用新版「光譜觀測版」（在導航目錄或者底欄有跳轉連結）。如有特別需要的使用者仍可繼續使用經典原版，此版本保留開放。",
+  "此版本「经典原版」为老版本，现在已经停止更新，后续不再进行大更新和改动。后续建议使用新版「光谱观测版」（首页「更多项目」菜单与页脚都有入口）。Skyglow 是基于第三方 couletian/Skyglow 的独立移植增强项目，不属于 Sunglow / 霞光预报，也不是霞光预报的一个版本。如有特别需要的用户仍可继续使用经典原版，此版本保留开放。": "此版本「經典原版」為老版本，現在已經停止更新，後續不再進行大更新和改動。後續建議使用新版「光譜觀測版」（首頁「更多項目」選單與頁腳都有入口）。Skyglow 是基於第三方 couletian/Skyglow 的獨立移植增強項目，不屬於 Sunglow / 霞光預報，也不是霞光預報的一個版本。如有特別需要的使用者仍可繼續使用經典原版，此版本保留開放。",
   "天色带：{ev} {t} 前后的曙暮光分段（民用 / 航海 / 天文）；薄纱表示低/中云遮挡": "天色帶：{ev} {t} 前後的曙暮光分段（民用 / 航海 / 天文）",
   "白昼余晖": "白晝餘暉",
   "民用曙暮光": "民用曙暮光",
@@ -80,10 +80,10 @@ const I18N_ZH_HANT = {
   /* 教程入口（2026-10-19）：顶栏图标 + 抽屉「指南」组各一条，两处共用同两个键 */
   "使用教程": "使用教學",
   "指南": "指南",
-  /* 版本切换：目录「其他版本」分组的标题（两个版本出口改用下面的正式名） */
-  "其他版本": "其他版本",
-  /* 版本正式名（2026-11-02）：单行版名，随界面语言切换（同 V2「其他版本」口径） */
-  "经典原版": "經典原版",
+  /* 项目切换：目录「更多项目」分组的标题（两个出口改用下面的正式名） */
+  "更多项目": "更多項目",
+  "独立项目": "獨立項目",
+  /* 版本正式名（2026-11-02）：单行版名，随界面语言切换（同 V2「更多项目」口径） */
   "Sunglow 光谱观测版": "Sunglow 光譜觀測版",
   "Skyglow 移植增强版": "Skyglow 移植增強版",
   "SUNGLOW · 经典原版": "SUNGLOW · 經典原版",
@@ -637,7 +637,7 @@ const I18N_EN = {
   "已停更": "Legacy",
   "推荐": "New",
   "版本说明": "Version note",
-  "此版本「经典原版」为老版本，现在已经停止更新，后续不再进行大更新和改动。后续建议使用新版「光谱观测版」（在导航目录或者底栏有跳转链接）。如有特别需要的用户仍可继续使用经典原版，此版本保留开放。": "This “Classic Edition” is the older version. It is no longer updated and will not receive major changes. Please use the newer “Spectrum Edition” (linked in the navigation drawer and footer). If you specifically need it, Classic Edition remains available.",
+  "此版本「经典原版」为老版本，现在已经停止更新，后续不再进行大更新和改动。后续建议使用新版「光谱观测版」（首页「更多项目」菜单与页脚都有入口）。Skyglow 是基于第三方 couletian/Skyglow 的独立移植增强项目，不属于 Sunglow / 霞光预报，也不是霞光预报的一个版本。如有特别需要的用户仍可继续使用经典原版，此版本保留开放。": "This “Classic Edition” is the older version. It is no longer updated and will not receive major changes. Please use the newer “Spectrum Edition” (available from the “More projects” menu and the footer on the home page). Skyglow is an independent enhanced port based on the third-party couletian/Skyglow project; it does not belong to Sunglow / Sunset Glow Forecast, nor is it a version of it. If you specifically need it, Classic Edition remains available.",
   "天色带：{ev} {t} 前后的曙暮光分段（民用 / 航海 / 天文）；薄纱表示低/中云遮挡": "Sky band: twilight phases (civil / nautical / astronomical) around {ev} {t}",
   "白昼余晖": "Daylight",
   "民用曙暮光": "Civil twilight",
@@ -655,10 +655,10 @@ const I18N_EN = {
   /* 教程入口（2026-10-19）：顶栏图标 + 抽屉「指南」组各一条，两处共用同两个键 */
   "使用教程": "User guide",
   "指南": "Guide",
-  /* 版本切换：目录「其他版本」分组的标题（两个版本出口改用下面的正式名） */
-  "其他版本": "Other versions",
-  /* 版本正式名（2026-11-02）：单行版名，随界面语言切换（同 V2「其他版本」口径） */
-  "经典原版": "Classic Edition",
+  /* 项目切换：目录「更多项目」分组的标题（两个出口改用下面的正式名） */
+  "更多项目": "More projects",
+  "独立项目": "Independent project",
+  /* 版本正式名（2026-11-02）：单行版名，随界面语言切换（同 V2「更多项目」口径） */
   "Sunglow 光谱观测版": "Sunglow Spectrum Edition",
   "Skyglow 移植增强版": "Skyglow Enhanced Edition",
   "SUNGLOW · 经典原版": "SUNGLOW · Classic Edition",

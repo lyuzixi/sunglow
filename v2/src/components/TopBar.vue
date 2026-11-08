@@ -42,7 +42,7 @@ const settingsOpen = ref(false);
 const langOpen = ref(false);
 const themeOpen = ref(false);
 /* 版本菜单（2026-10-27）：桌面顶栏右侧，条目写正式版名（两行：英文全名 + 中文名），
-   手机极简档隐藏按钮，入口交给目录抽屉的「其他版本」组。 */
+   手机极简档隐藏按钮，入口交给目录抽屉的「更多项目」组。 */
 const verOpen = ref(false);
 const rootEl = ref<HTMLElement | null>(null);
 
@@ -416,12 +416,12 @@ const themeIcon = () =>
 
         <!-- 版本切换（2026-10-27）：桌面右侧下拉，两条按**根位置**写（与页脚同口径，
              publish-root 禁止根产物出现 ../ 跨目录链接）。收紧档与手机极简档隐藏
-             （收紧档的宽度预算放不下第五个按钮），入口交给页脚与目录抽屉「其他版本」组。 -->
+             （收紧档的宽度预算放不下第五个按钮），入口交给页脚与目录抽屉「更多项目」组。 -->
         <div class="ver-wrap" style="position: relative">
           <button
             class="icon-btn ver-btn"
-            :aria-label="t('版本')"
-            :title="t('版本')"
+            :aria-label="t('更多项目')"
+            :title="t('更多项目')"
             :aria-expanded="verOpen"
             @click.stop="toggleVer"
           >
@@ -432,7 +432,7 @@ const themeIcon = () =>
               <path d="m3 16 9 5 9-5" />
             </svg>
           </button>
-          <div v-if="verOpen" class="menu-pop ver-pop" role="menu" :aria-label="t('其他版本')">
+          <div v-if="verOpen" class="menu-pop ver-pop" role="menu" :aria-label="t('更多项目')">
             <a
               role="menuitem"
               href="V1/index.html"
@@ -441,7 +441,7 @@ const themeIcon = () =>
               <span class="ver-tx">{{ t("Sunglow 经典原版") }}<em class="ver-stale">{{ t("已停更") }}</em></span><i class="arw">↗</i>
             </a>
             <a role="menuitem" href="Skyglow/index.html">
-              <span class="ver-tx">{{ t("Skyglow 移植增强版") }}</span><i class="arw">↗</i>
+              <span class="ver-tx">{{ t("Skyglow 移植增强版") }}<em class="ver-ind">{{ t("独立项目") }}</em></span><i class="arw">↗</i>
             </a>
           </div>
         </div>
@@ -508,16 +508,16 @@ const themeIcon = () =>
       <a class="ext" href="./tutorial.html"><span>{{ t("使用教程") }}</span><i class="arw">↗</i></a>
     </div>
 
-    <!-- 其他版本（2026-10-27）：与桌面下拉同口径，写单行版名（随界面语言）；
+    <!-- 更多项目（2026-10-27）：与桌面下拉同口径，写单行版名（随界面语言）；
          真链接、根位置（publish-root 禁止 ../），点它直接离开首页。 -->
     <div class="md-group">
-      <h4>{{ t("其他版本") }}</h4>
+      <h4>{{ t("更多项目") }}</h4>
       <a
         class="ext"
         href="V1/index.html"
         :title="t('经典原版已停止更新，仅保留小修小补')"
       ><span class="ver-tx">{{ t("Sunglow 经典原版") }}<em class="ver-stale">{{ t("已停更") }}</em></span><i class="arw">↗</i></a>
-      <a class="ext" href="Skyglow/index.html"><span class="ver-tx">{{ t("Skyglow 移植增强版") }}</span><i class="arw">↗</i></a>
+      <a class="ext" href="Skyglow/index.html"><span class="ver-tx">{{ t("Skyglow 移植增强版") }}<em class="ver-ind">{{ t("独立项目") }}</em></span><i class="arw">↗</i></a>
     </div>
   </aside>
 </template>

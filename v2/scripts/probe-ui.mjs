@@ -349,8 +349,8 @@ ok("抽屉顶部补出状态行（城市 · 日期 · 朝/晚霞）",
 ok("状态行在「目录」标题之上且不出界",
   !!mdStatus && mdStatus.top < mdStatus.pre && mdStatus.l >= 0 && mdStatus.r <= 390,
   JSON.stringify(mdStatus && [mdStatus.top, mdStatus.pre, mdStatus.l, mdStatus.r]));
-ok("抽屉有「其他版本」组，V1 / Skyglow 两条真链接",
-  ev(`(()=>{const h=[...document.querySelectorAll('.mdrawer .md-group h4')].some(x=>x.textContent.trim()==='其他版本');
+ok("抽屉有「更多项目」组，经典原版 / Skyglow 独立项目 两条真链接",
+  ev(`(()=>{const h=[...document.querySelectorAll('.mdrawer .md-group h4')].some(x=>x.textContent.trim()==='更多项目');
     return h && !!document.querySelector('.mdrawer a[href="V1/index.html"]')
       && !!document.querySelector('.mdrawer a[href="Skyglow/index.html"]');})()`) === true);
 ev(`document.querySelector('.mdrawer-mask')?.click()`);

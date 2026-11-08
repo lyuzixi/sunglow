@@ -102,7 +102,7 @@ function setHeroMode(m: "off" | "band" | "full" | "window") {
       </div>
 
       <p class="note">
-        {{ t("偏好存 SUNGLOW.v2.pref，与V1 sunsetbot.pref.v1 相互独立。位置、日期与地图时段不持久化。") }}
+        {{ t("偏好只存在本机浏览器，与经典原版的偏好互不影响。位置、日期与地图时段不持久化。") }}
       </p>
     </div>
   </div>

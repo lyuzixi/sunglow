@@ -95,6 +95,7 @@ const HANT: Dict = {
   "Spectrum Edition · 光谱观测版": "Spectrum Edition · 光譜觀測版",
   "Sunglow 经典原版": "Sunglow 經典原版",
   "Skyglow 移植增强版": "Skyglow 移植增強版",
+  "独立项目": "獨立項目",
   "已停更": "已停更",
   "经典原版已停止更新，仅保留小修小补": "經典原版已停止更新，僅保留小修小補",
   "预报": "預報",
@@ -133,7 +134,7 @@ const HANT: Dict = {
   "算法说明": "算法說明",
   "目录": "目錄",
   "版本": "版本",
-  "其他版本": "其他版本",
+  "更多项目": "更多項目",
   "关闭": "關閉",
   "打开菜单": "打開選單"
 };
@@ -217,6 +218,7 @@ const EN: Dict = {
   "Spectrum Edition · 光谱观测版": "Spectrum Edition",
   "Sunglow 经典原版": "Sunglow Classic Edition",
   "Skyglow 移植增强版": "Skyglow Enhanced Edition",
+  "独立项目": "Independent project",
   "已停更": "Legacy",
   "经典原版已停止更新，仅保留小修小补": "Classic Edition is no longer updated; only minor fixes remain",
   "预报": "Forecast",
@@ -255,7 +257,7 @@ const EN: Dict = {
   "算法说明": "Methodology",
   "目录": "Contents",
   "版本": "Versions",
-  "其他版本": "Other versions",
+  "更多项目": "More projects",
   "关闭": "Close",
   "打开菜单": "Open menu"
 };

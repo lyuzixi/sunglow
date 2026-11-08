@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
-import { state } from "../state";
+import { state, isDark } from "../state";
 import { t, ageText, getLang } from "../core/i18n";
 import { cityName } from "../core/citylang";
 import { rampColor } from "../core/ramp";
+import { QUALITY_BANDS } from "../core/scoring";
 import { saveTrendCard } from "../core/sharecard";
 import { loadTrend, type TrendRow } from "../core/trend";
 import FoldNote from "./FoldNote.vue";
@@ -68,6 +69,18 @@ const byDay = computed(() => {
   return [...map.values()].sort((a, b) => a.date.localeCompare(b.date));
 });
 
+/* 等级配色：取 QUALITY_BANDS 的按主题色，与模型卡同一口径 */
+function bandOf(grade: string) {
+  const b = QUALITY_BANDS.find((x) => x.key === grade) || QUALITY_BANDS[QUALITY_BANDS.length - 1];
+  return isDark.value ? b.dark : b.color;
+}
+
+/** 质量徽章：底色是等级的淡色，文字与描边同色，一眼分辨好坏 */
+function badgeStyle(grade: string) {
+  const c = bandOf(grade);
+  return { color: c, background: c + "14", borderColor: c + "3d" };
+}
+
 /* 保存趋势图为图片：与结论卡同一套落地逻辑（手机唤起系统分享，桌面下载） */
 async function saveImg() {
   if (!byDay.value.length || busy.value || loading.value) return;
@@ -130,8 +143,10 @@ async function saveImg() {
                 <b class="pv" :style="{ color: rampColor(d.am?.P ?? 0) }">
                   {{ d.am ? Math.round(d.am.P) + "%" : "—" }}
                 </b>
-                <span class="qv">{{ d.am ? Math.round(d.am.Q) : "—" }}</span>
-                <span class="gr">{{ d.am?.grade ?? "" }}</span>
+                <span v-if="d.am" class="qb" :style="badgeStyle(d.am.grade)">
+                  <b>{{ t(d.am.grade) }}</b><em>{{ Math.round(d.am.Q) }}</em>
+                </span>
+                <span v-else class="qb empty">—</span>
               </div>
               <div class="t-row">
                 <span class="per">{{ t("晚") }}</span>
@@ -139,8 +154,10 @@ async function saveImg() {
                 <b class="pv" :style="{ color: rampColor(d.pm?.P ?? 0) }">
                   {{ d.pm ? Math.round(d.pm.P) + "%" : "—" }}
                 </b>
-                <span class="qv">{{ d.pm ? Math.round(d.pm.Q) : "—" }}</span>
-                <span class="gr">{{ d.pm?.grade ?? "" }}</span>
+                <span v-if="d.pm" class="qb" :style="badgeStyle(d.pm.grade)">
+                  <b>{{ t(d.pm.grade) }}</b><em>{{ Math.round(d.pm.Q) }}</em>
+                </span>
+                <span v-else class="qb empty">—</span>
               </div>
             </div>
           </div>
@@ -150,13 +167,13 @@ async function saveImg() {
         </div>
         <div class="trend-key">
           <span><i class="k1" />{{ t("出现概率") }}</span>
-          <span><i class="k2" />{{ t("观赏质量分（右列）") }}</span>
+          <span><i class="k2" />{{ t("质量徽章（右列）") }}</span>
         </div>
 
         <FoldNote fold-key="trendFold" title="说明 · 趋势为什么要手动加载">
           <p>{{ t("趋势一次要取 34 个样带点（朝、晚各 17 点）× 10 天，约 102 次加权调用（34 坐标 × 3 路），额度消耗明显高于单点预报。") }}</p>
           <p>{{ t("所以它不随页面自动触发，需要点「加载趋势」；结果同样缓存 6 小时，重复查看不会再取数。") }}</p>
-          <p>{{ t("每行左侧是出现概率，右侧小字是观赏质量分，朝霞与晚霞分开算，互不参与对方的综合。") }}</p>
+          <p>{{ t("每行左侧是出现概率，右侧徽章是观赏质量等级与分数，徽章颜色即等级；朝霞与晚霞分开算，互不参与对方的综合。") }}</p>
         </FoldNote>
       </div>
     </div>
@@ -187,9 +204,26 @@ async function saveImg() {
 .t-pair { display: grid; gap: 6px; }
 .t-row {
   display: grid;
-  grid-template-columns: 22px 1fr 52px 34px 40px;
+  grid-template-columns: 22px 1fr 52px 62px;
   gap: 10px;
   align-items: center;
+}
+/* 宽屏改为左右两栏：卡片保持与其他板块同宽，单行里条与数字的比例也更平衡 */
+@media (min-width: 900px) {
+  .trend-rows {
+    grid-template-columns: 1fr 1fr;
+    column-gap: 56px;
+    row-gap: 10px;
+  }
+  .t-day { grid-template-columns: 84px minmax(0, 1fr); }
+  .t-day:nth-last-child(-n+2) { border-bottom: 0; }
+  .t-row {
+    grid-template-columns: 22px minmax(0, 1fr) 64px 84px;
+    gap: 10px;
+  }
+  .pv { font-size: var(--fs-body); }
+  .qb { padding: 2px 9px; }
+  .qb b { font-size: var(--fs-small); }
 }
 .per {
   font-size: var(--fs-tiny);
@@ -199,11 +233,27 @@ async function saveImg() {
   font-family: var(--font-display);
   font-variant-numeric: tabular-nums;
 }
-.qv, .gr {
+/* 质量徽章：等级在前、分数在后，颜色即等级 */
+.qb {
+  justify-self: end;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 1px 7px;
+  border: 1px solid transparent;
+  border-radius: var(--r-full);
   font-size: var(--fs-tiny);
-  color: var(--tx-2);
-  text-align: right;
+  line-height: 1.5;
+  white-space: nowrap;
 }
+.qb b { font-weight: 600; }
+.qb em {
+  font-style: normal;
+  font-weight: 500;
+  opacity: 0.72;
+  font-variant-numeric: tabular-nums;
+}
+.qb.empty { border-color: var(--stroke); color: var(--tx-3); }
 .trend-key {
   display: flex;
   gap: 18px;

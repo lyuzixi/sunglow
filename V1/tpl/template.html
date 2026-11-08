@@ -1079,13 +1079,16 @@ footer summary{cursor:pointer;font-weight:600;color:var(--tx);font-size:13px}
 footer .body{padding-top:9px}
 footer ul{margin:7px 0;padding-left:19px}
 footer li{margin:3px 0}
-/* 版本链接（2026-11-02）：单行版名，随界面语言切换（对齐 V2「其他版本」口径）。
+/* 项目链接（2026-11-02）：单行版名，随界面语言切换（对齐 V2「更多项目」口径）。
    仍是真的 <a>（不改跳转、不是按钮）；整块交给外层居中。 */
 .vlnk{display:inline-flex;align-items:baseline;line-height:1.3;text-decoration:none;
   font-size:13px}
 .vlnks{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 22px;padding-top:6px}
 .vlnk-rec{margin-left:5px;padding:0 4px;border:1px solid var(--accbd);border-radius:3px;
   background:var(--accbg);color:var(--acc2);font-size:10px;line-height:1.5}
+/* 独立项目标签（Skyglow）：中性色，与「推荐」区分；与 V2 的 .ver-ind 同义 */
+.vlnk-ind{margin-left:5px;padding:0 4px;border:1px solid var(--line);border-radius:3px;
+  color:var(--tx3);font-size:10px;line-height:1.5}
 /* 停更状态说明：页脚第一块，关掉顶部公告后仍能查到完整原因；快照页隐藏。 */
 .verstale{margin:0 0 14px;padding:0 0 14px;border-bottom:1px solid var(--line)}
 .verstale b{display:block;margin-bottom:4px;font-family:var(--serif);font-size:13px;font-weight:600;color:var(--tx2)}
@@ -1694,7 +1697,7 @@ body.snapmode [data-snaphide]{display:none}
     <!-- 停更状态说明（2026-11-04）：公告条可关闭，这段常驻；快照页隐藏，分享结果仍保持只读。 -->
     <div class="verstale" data-snaphide>
       <b data-i18n="版本说明">版本说明</b>
-      <p data-i18n="此版本「经典原版」为老版本，现在已经停止更新，后续不再进行大更新和改动。后续建议使用新版「光谱观测版」（在导航目录或者底栏有跳转链接）。如有特别需要的用户仍可继续使用经典原版，此版本保留开放。">此版本「经典原版」为老版本，现在已经停止更新，后续不再进行大更新和改动。后续建议使用新版「光谱观测版」（在导航目录或者底栏有跳转链接）。如有特别需要的用户仍可继续使用经典原版，此版本保留开放。</p>
+      <p data-i18n="此版本「经典原版」为老版本，现在已经停止更新，后续不再进行大更新和改动。后续建议使用新版「光谱观测版」（首页「更多项目」菜单与页脚都有入口）。Skyglow 是基于第三方 couletian/Skyglow 的独立移植增强项目，不属于 Sunglow / 霞光预报，也不是霞光预报的一个版本。如有特别需要的用户仍可继续使用经典原版，此版本保留开放。">此版本「经典原版」为老版本，现在已经停止更新，后续不再进行大更新和改动。后续建议使用新版「光谱观测版」（首页「更多项目」菜单与页脚都有入口）。Skyglow 是基于第三方 couletian/Skyglow 的独立移植增强项目，不属于 Sunglow / 霞光预报，也不是霞光预报的一个版本。如有特别需要的用户仍可继续使用经典原版，此版本保留开放。</p>
     </div>
     <details open>
       <summary data-i18n="算法原理与计算流程（提炼自公开的火烧云定量预报教程）">算法原理与计算流程（提炼自公开的火烧云定量预报教程）</summary>
@@ -1728,7 +1731,7 @@ body.snapmode [data-snaphide]{display:none}
          data-snaphide；目录抽屉整块已隐，那两条不受影响。 -->
     <div class="vlnks">
       <a class="vlnk" href="../index.html"><span data-i18n="Sunglow 光谱观测版">Sunglow 光谱观测版</span><span class="vlnk-rec" data-i18n="推荐">推荐</span><span aria-hidden="true">→</span></a>
-      <a class="vlnk" href="../Skyglow/index.html"><span data-i18n="Skyglow 移植增强版">Skyglow 移植增强版</span><span aria-hidden="true">→</span></a>
+      <a class="vlnk" href="../Skyglow/index.html"><span data-i18n="Skyglow 移植增强版">Skyglow 移植增强版</span><span class="vlnk-ind" data-i18n="独立项目">独立项目</span><span aria-hidden="true">→</span></a>
     </div>
     <!-- 视觉方案 P1：谚语落款 —— 把应用接回民间观天传统。
          朝霞不出门、晚霞行千里讲的正是这个应用在预报的那件事；安静一行，不参与信息层级。 -->
@@ -1761,12 +1764,12 @@ body.snapmode [data-snaphide]{display:none}
        所以不需要在 JS 里接 data-goto，也不需要额外收抽屉的代码。 -->
   <div class="toc-g" data-i18n="指南">指南</div>
   <a class="toc-i" id="tocTut" href="tutorial.html"><span data-i18n="使用教程">使用教程</span><span class="toc-tag" aria-hidden="true">↗</span></a>
-  <!-- 其他版本（2026-10-27）：与「指南」同为真链接组 —— 点它直接离开首页，同样不接
+  <!-- 更多项目（2026-10-27）：与「指南」同为真链接组 —— 点它直接离开首页，同样不接
        data-goto。相对地址里 ../ 指向上级：仓库根的 index.html 就是线上 V2，Skyglow/
        与本目录同级，所以本地双击和静态托管两种打开方式下都成立。 -->
-  <div class="toc-g" data-i18n="其他版本">其他版本</div>
+  <div class="toc-g" data-i18n="更多项目">更多项目</div>
   <a class="toc-i" href="../index.html"><span class="vlnk" data-i18n="Sunglow 光谱观测版">Sunglow 光谱观测版</span><span class="toc-tag rec"><span data-i18n="推荐">推荐</span><span aria-hidden="true"> ↗</span></span></a>
-  <a class="toc-i" href="../Skyglow/index.html"><span class="vlnk" data-i18n="Skyglow 移植增强版">Skyglow 移植增强版</span><span class="toc-tag" aria-hidden="true">↗</span></a>
+  <a class="toc-i" href="../Skyglow/index.html"><span class="vlnk" data-i18n="Skyglow 移植增强版">Skyglow 移植增强版</span><span class="toc-tag" data-i18n="独立项目">独立项目</span><span class="toc-tag" aria-hidden="true" style="margin-left:6px">↗</span></a>
 </nav>
 <div class="tocveil" id="tocVeil" hidden></div>
 

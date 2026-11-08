@@ -36,7 +36,7 @@ watchEffect(() => {
           href="V1/index.html"
           :title="t('经典原版已停止更新，仅保留小修小补')"
         >{{ t("Sunglow 经典原版") }}<em class="ver-stale">{{ t("已停更") }}</em></a>
-        <a class="foot-ver" href="Skyglow/index.html">{{ t("Skyglow 移植增强版") }}</a>
+        <a class="foot-ver" href="Skyglow/index.html">{{ t("Skyglow 移植增强版") }}<em class="ver-ind">{{ t("独立项目") }}</em></a>
         <span>© {{ year }}</span>
       </div>
     </div>
