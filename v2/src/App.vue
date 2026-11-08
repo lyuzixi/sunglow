@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import TopBar from "./components/TopBar.vue";
+import PwaUpdatePrompt from "./components/PwaUpdatePrompt.vue";
+import FeedbackDialog from "./components/FeedbackDialog.vue";
 import { state, applyTheme } from "./state";
 import { t } from "./core/i18n";
+import { openFeedback } from "./composables/useFeedback";
 import { computed, watchEffect } from "vue";
 
 const year = new Date().getFullYear();
@@ -27,6 +30,8 @@ watchEffect(() => {
       </div>
       <div style="display: flex; gap: 14px; align-items: center">
         <a href="./tutorial.html">{{ t("使用教程") }}</a>
+        <a href="#feedback" @click.prevent="openFeedback">{{ t("反馈") }}</a>
+        <router-link to="/about">{{ t("关于 / 隐私") }}</router-link>
         <!-- 版本切换（2026-10-27）：两条都按**根位置**写（源码直改，publish-root 校验
              禁止根产物里出现 ../ 跨目录链接）。V2 交付物发布到仓库根，所以 V1/ 与
              Skyglow/ 就是同级目录 —— 根副本正确，v2/ 工程目录里预览时这两条会指错，
@@ -41,4 +46,6 @@ watchEffect(() => {
       </div>
     </div>
   </footer>
+  <PwaUpdatePrompt />
+  <FeedbackDialog />
 </template>

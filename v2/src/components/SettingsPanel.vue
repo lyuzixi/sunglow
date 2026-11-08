@@ -2,6 +2,7 @@
 import { state, savePrefs } from "../state";
 import { t } from "../core/i18n";
 import { cacheReport, clearCache, fmtBytes } from "../core/cache";
+import { openFeedback } from "../composables/useFeedback";
 import { ref as vueRef, onMounted as vueMounted } from "vue";
 
 /* 开合由顶栏统一管（顶栏同一时刻只开一个浮层），这里只声明状态 */
@@ -30,6 +31,14 @@ function setUnits(u: "metric" | "imperial") {
 function setHeroMode(m: "off" | "band" | "full" | "window") {
   state.heroPhotoMode = m;
   savePrefs();
+}
+/** 从设置菜单进入关于 / 反馈前，先收起面板，避免浮层互相压住 */
+function closePanel() {
+  open.value = false;
+}
+function openFeedbackFromSettings() {
+  closePanel();
+  openFeedback();
 }
 </script>
 
@@ -104,19 +113,37 @@ function setHeroMode(m: "off" | "band" | "full" | "window") {
       <p class="note">
         {{ t("偏好只存在本机浏览器，与经典原版的偏好互不影响。位置、日期与地图时段不持久化。") }}
       </p>
+
+      <div class="grp">
+        <div class="grp-h">{{ t("关于与支持") }}</div>
+        <div class="crow">
+          <router-link class="btn btn-ghost sm" to="/about" @click="closePanel">
+            {{ t("关于 / 隐私") }}
+          </router-link>
+          <button class="btn btn-ghost sm" @click="openFeedbackFromSettings">
+            {{ t("反馈") }}
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* 设置面板：液态玻璃（与移动端目录同一配方：高光渐变 + 磨砂提饱和 + 内侧 1px 高光） */
+/* 设置面板：液态玻璃（顶栏磨砂已改由伪元素承担，这里能真正采样页面内容）。
+   两层高光：右上柔光 + 顶部竖向薄光，再压 1px 内侧高光，避免只像一块半透明色块。 */
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .panel {
-    background: linear-gradient(180deg, var(--glass-sheen), transparent 46%) var(--glass);
-    backdrop-filter: saturate(1.55) blur(18px);
-    -webkit-backdrop-filter: saturate(1.55) blur(18px);
+    background:
+      radial-gradient(120% 72% at 18% 0%, var(--glass-sheen), transparent 58%),
+      linear-gradient(180deg, var(--glass-sheen), transparent 46%),
+      var(--glass);
+    backdrop-filter: saturate(1.7) blur(26px);
+    -webkit-backdrop-filter: saturate(1.7) blur(26px);
     border: 1px solid var(--stroke-2);
-    box-shadow: 0 24px 60px -26px rgba(8, 14, 26, 0.5), inset 0 1px 0 var(--glass-hi);
+    box-shadow:
+      0 26px 70px -30px rgba(8, 14, 26, 0.55),
+      inset 0 1px 0 var(--glass-hi);
   }
 }
 .sub-h {
@@ -154,18 +181,21 @@ function setHeroMode(m: "off" | "band" | "full" | "window") {
     max-height: calc(100dvh - 108px);
     z-index: 260;
   }
-  /* 面板挂在 .topbar 里，顶栏自身的 backdrop-filter 形成 backdrop root，
-     子元素的磨砂取样不到顶栏之外的页面内容 —— 半透明玻璃底会把英雄区大字
-     透上来。手机端面板面积大、正压在正文上，这里换成实色卡片底 + 高光渐变。 */
+  /* 手机端面板面积大、正压在正文上：保持同一套玻璃，但顶栏磨砂已拆到
+     伪元素，不再形成 backdrop root —— 这里能真正采样并模糊页面内容。
+     不支持 backdrop-filter 的浏览器在下方退回实色底。 */
+}
+.grp {
+  margin-bottom: 14px;
+}
+/* 不支持 backdrop-filter 时的兜底：实色卡片底 + 高光渐变，避免半透明糊片 */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .panel,
   .panel.glass {
     background: linear-gradient(180deg, var(--glass-sheen), transparent 46%) var(--bg-card-solid);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
-}
-.grp {
-  margin-bottom: 14px;
 }
 .grp-h {
   font-size: var(--fs-tiny);
@@ -217,7 +247,8 @@ function setHeroMode(m: "off" | "band" | "full" | "window") {
   color: var(--tx-2);
   margin-bottom: 8px;
 }
-.crow { display: flex; gap: 8px; margin-bottom: 6px; }
+.crow { display: flex; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+.crow a.btn { text-decoration: none; }
 .ok { margin: 0 0 8px; font-size: var(--fs-tiny); color: var(--q-good); }
 .note {
   margin: 0;

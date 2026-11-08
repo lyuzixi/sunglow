@@ -41,7 +41,7 @@ html[data-theme="dark"]{
 html[data-theme="light"]{
   --bg:#f5f7fb; --bg-deep:#eef1f8; --elev:#ffffff; --card:rgba(255,255,255,.86);
   --glass:rgba(20,40,90,.03); --line:#e3e8f2; --line2:#edf1f8;
-  --tx:#17203a; --tx2:#4a5670; --tx3:#8a94ab; --acc2:#0e8fa8; --accbg:rgba(14,143,168,.08);
+  --tx:#17203a; --tx2:#4a5670; --tx3:#667287; --acc2:#0b7185; --accbg:rgba(14,143,168,.08);
   --accbd:rgba(14,143,168,.28); --codebg:rgba(20,40,90,.045);
 }
 *{box-sizing:border-box}
@@ -153,6 +153,14 @@ footer{border-top:1px solid var(--line2);margin-top:44px}
 .foot{max-width:var(--maxw);margin:0 auto;padding:22px 20px 40px;display:flex;flex-wrap:wrap;
   gap:8px 18px;align-items:center;font-size:12.5px;color:var(--tx3)}
 .foot .spacer{flex:1}
+/* ---- 可达性：键盘焦点与触屏热区 ---- */
+.back:focus-visible,.tab:focus-visible,.tbtn:focus-visible,
+.tmenu button:focus-visible,.panel:focus-visible{
+  outline:2px solid var(--acc2);outline-offset:2px;border-radius:var(--r-sm)}
+@media (pointer:coarse){
+  .back,.tbtn,.tab,.tmenu button{min-height:44px}
+  .tab{display:inline-flex;align-items:center;justify-content:center}
+}
 @media (max-width:720px){
   .hl{grid-template-columns:1fr}
   .panels{grid-template-columns:1fr}
@@ -239,7 +247,7 @@ html[data-theme="light"] .hero > .ph-band .ph-credit{
   <div class="hl">
     <div class="c"><h3><span class="dot" aria-hidden="true"></span><span data-i18n="三模型综合">三模型综合</span></h3><p data-i18n="GFS 与 ECMWF 两路统计判据加一路光追物理模型，各自打分后按权重几何平均合成；三路分歧度直接换算成可信度。">GFS 与 ECMWF 两路统计判据加一路光追物理模型，各自打分后按权重几何平均合成；三路分歧度直接换算成可信度。</p></div>
     <div class="c"><h3><span class="dot" aria-hidden="true"></span><span data-i18n="光谱观测场">光谱观测场</span></h3><p data-i18n="以查询点为中心的 121 点网格（半径约 500 km、格距 80 km），全光谱色阶铺色，可切换综合指数 / 出现概率 / 观赏质量 / 模型分歧四个维度。">以查询点为中心的 121 点网格（半径约 500 km、格距 80 km），全光谱色阶铺色，可切换综合指数 / 出现概率 / 观赏质量 / 模型分歧四个维度。</p></div>
-    <div class="c"><h3><span class="dot" aria-hidden="true"></span><span data-i18n="十日趋势">十日趋势</span></h3><p data-i18n="一次取数画十天曲线，朝 / 晚分开看；算好的结果落盘缓存，重开页命中零请求。">一次取数画十天曲线，朝 / 晚分开看；算好的结果落盘缓存，重开页命中零请求。</p></div>
+    <div class="c"><h3><span class="dot" aria-hidden="true"></span><span data-i18n="十日趋势">十日趋势</span></h3><p data-i18n="一次取数算出未来十天，先给按质量分排出的最佳窗口，再列逐日明细（概率条与质量徽章）；结果落盘缓存，重开页命中零请求。">一次取数算出未来十天，先给按质量分排出的最佳窗口，再列逐日明细（概率条与质量徽章）；结果落盘缓存，重开页命中零请求。</p></div>
     <div class="c"><h3><span class="dot" aria-hidden="true"></span><span data-i18n="多观测点对比">多观测点对比</span></h3><p data-i18n="最多 4 个机位一次取数横向排序，直接回答「今晚去哪儿拍」。">最多 4 个机位一次取数横向排序，直接回答「今晚去哪儿拍」。</p></div>
     <div class="c wide"><h3><span class="dot" aria-hidden="true"></span><span data-i18n="快照互通">快照互通</span></h3><p data-i18n="结论编码进 URL，对方打开即见快照、零额度零请求；快照格式与经典原版完全互通——两边生成的链接互相能解。">结论编码进 URL，对方打开即见快照、零额度零请求；快照格式与经典原版完全互通——两边生成的链接互相能解。</p></div>
   </div>
@@ -308,7 +316,7 @@ html[data-theme="light"] .hero > .ph-band .ph-credit{
 
   <section class="sec" id="u-trend">
     <h2><span class="no">03</span><span data-i18n="十日趋势">十日趋势</span></h2>
-    <p data-i18n="点「加载趋势」显式取数（约 102 次加权调用，34 个坐标 × 10 天一次拉完），之后朝 / 晚两条概率曲线加质量分柱状列。算好的结果落盘缓存 6 小时，重开页命中直接画出，零请求。">点「加载趋势」显式取数（约 102 次加权调用，34 个坐标 × 10 天一次拉完），之后朝 / 晚两条概率曲线加质量分柱状列。算好的结果落盘缓存 6 小时，重开页命中直接画出，零请求。</p>
+    <p data-i18n="点「加载趋势」显式取数（约 102 次加权调用，34 个坐标 × 10 天一次拉完），页面先按观赏质量排出最佳窗口前三名，下面是常显的逐日明细：朝 / 晚概率条与质量徽章。算好的结果落盘缓存 6 小时，重开页命中直接画出，零请求。">点「加载趋势」显式取数（约 102 次加权调用，34 个坐标 × 10 天一次拉完），页面先按观赏质量排出最佳窗口前三名，下面是常显的逐日明细：朝 / 晚概率条与质量徽章。算好的结果落盘缓存 6 小时，重开页命中直接画出，零请求。</p>
   </section>
 
   <section class="sec" id="u-map">
@@ -535,7 +543,7 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
     "光谱观测场": "光譜觀測場",
     "以查询点为中心的 121 点网格（半径约 500 km、格距 80 km），全光谱色阶铺色，可切换综合指数 / 出现概率 / 观赏质量 / 模型分歧四个维度。": "以查詢點為中心的 121 點網格（半徑約 500 km、格距 80 km），全光譜色階鋪色，可切換綜合指數 / 出現概率 / 觀賞質量 / 模型分歧四個維度。",
     "十日趋势": "十日趨勢",
-    "一次取数画十天曲线，朝 / 晚分开看；算好的结果落盘缓存，重开页命中零请求。": "一次取數畫十天曲線，朝 / 晚分開看；算好的結果落盤快取，重開頁命中零請求。",
+    "一次取数算出未来十天，先给按质量分排出的最佳窗口，再列逐日明细（概率条与质量徽章）；结果落盘缓存，重开页命中零请求。": "一次取數算出未來十天，先給按質量分排出的最佳時段，再列逐日明細（概率條與質量徽章）；結果落盤快取，重開頁命中零請求。",
     "多观测点对比": "多觀測點對比",
     "最多 4 个机位一次取数横向排序，直接回答「今晚去哪儿拍」。": "最多 4 個機位一次取數橫向排序，直接回答「今晚去哪兒拍」。",
     "快照互通": "快照互通",
@@ -564,7 +572,7 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
     "出现概率＝今晚「有没有霞」；观赏质量＝「好不好看」（0–100 分，优 ≥80、良 ≥65、一般 ≥45）。两个维度独立：概率高可能质量平平（闷烧），概率低也可能一旦出现极惊艳。": "出現概率＝今晚「有沒有霞」；觀賞質量＝「好不好看」（0–100 分，優 ≥80、良 ≥65、一般 ≥45）。兩個維度獨立：概率高可能質量平平（悶燒），概率低也可能一旦出現極驚豔。",
     "卡内天色带标出日出 / 日落与民用 / 航海 / 天文昏影终四道线，「此刻」游标告诉你正处在哪个阶段；晚霞的黄金窗口通常在日落后 10–25 分钟，朝霞则要赶在天亮之前到位。": "卡內天色帶標出日出 / 日落與民用 / 航海 / 天文昏影終四道線，「此刻」游標告訴你正處在哪個階段；晚霞的黃金窗口通常在日落後 10–25 分鐘，朝霞則要趕在天亮之前到位。",
     "三张模型卡（GFS / ECMWF / 光追）可逐张对照：结论越一致，可信度徽标越稳；分歧大时，宁可当「可能有」对待。": "三張模型卡（GFS / ECMWF / 光追）可逐張對照：結論越一致，可信度徽章越穩；分歧大時，寧可當「可能有」對待。",
-    "点「加载趋势」显式取数（约 102 次加权调用，34 个坐标 × 10 天一次拉完），之后朝 / 晚两条概率曲线加质量分柱状列。算好的结果落盘缓存 6 小时，重开页命中直接画出，零请求。": "點「載入趨勢」顯式取數（約 102 次加權呼叫，34 個座標 × 10 天一次拉完），之後朝 / 晚兩條概率曲線加質量分柱狀列。算好的結果落盤快取 6 小時，重開頁命中直接畫出，零請求。",
+    "点「加载趋势」显式取数（约 102 次加权调用，34 个坐标 × 10 天一次拉完），页面先按观赏质量排出最佳窗口前三名，下面是常显的逐日明细：朝 / 晚概率条与质量徽章。算好的结果落盘缓存 6 小时，重开页命中直接画出，零请求。": "點「載入趨勢」顯式取數（約 102 次加權呼叫，34 個座標 × 10 天一次拉完），頁面先按觀賞質量排出最佳時段前三名，下面是常顯的逐日明細：朝 / 晚概率條與質量徽章。算好的結果落盤快取 6 小時，重開頁命中直接畫出，零請求。",
     "观测场地图": "觀測場地圖",
     "以当前地点为中心的 121 点采样网格（半径约 500 km、80 km 间距），四种着色维度：综合指数 / 出现概率 / 观赏质量 / 模型分歧。色阶是全光谱形态——颜色即数值，没有凸包硬边界，边缘自然淡出。热力图目前为测试功能，结果仅供参考。": "以當前地點為中心的 121 點取樣網格（半徑約 500 km、80 km 間距），四種著色維度：綜合指數 / 出現概率 / 觀賞質量 / 模型分歧。色階是全光譜形態——顏色即數值，沒有凸包硬邊界，邊緣自然淡出。熱力圖目前為測試功能，結果僅供參考。",
     "取数纪律：只有显式点「加载地图」才发起请求（约 171 次加权调用）；这个日期已有缓存时会自动画出来。选点有两种方式——直接点格点，或搜城市名；任意点都能一键「加入对比」。": "取數紀律：只有顯式點「載入地圖」才發起請求（約 171 次加權呼叫）；這個日期已有快取時會自動畫出來。選點有兩種方式——直接點格點，或搜城市名；任意點都能一鍵「加入對比」。",
@@ -675,7 +683,7 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
     "光谱观测场": "Spectrum field map",
     "以查询点为中心的 121 点网格（半径约 500 km、格距 80 km），全光谱色阶铺色，可切换综合指数 / 出现概率 / 观赏质量 / 模型分歧四个维度。": "A 121-point grid centred on your query (about 500 km radius, 80 km spacing), painted with a full-spectrum ramp; switch between composite index / probability / quality / model spread.",
     "十日趋势": "10-day trend",
-    "一次取数画十天曲线，朝 / 晚分开看；算好的结果落盘缓存，重开页命中零请求。": "One fetch draws ten days of curves, dawn and dusk separately; results are cached, so reopening hits zero requests.",
+    "一次取数算出未来十天，先给按质量分排出的最佳窗口，再列逐日明细（概率条与质量徽章）；结果落盘缓存，重开页命中零请求。": "One fetch covers the next ten days: best windows ranked by quality first, then the daily detail (probability bars and quality badges); results are cached, so reopening hits zero requests.",
     "多观测点对比": "Multi-spot compare",
     "最多 4 个机位一次取数横向排序，直接回答「今晚去哪儿拍」。": "Up to 4 spots, one fetch, ranked side by side — it answers 'where should I shoot tonight?'",
     "快照互通": "Interoperable snapshots",
@@ -704,7 +712,7 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
     "出现概率＝今晚「有没有霞」；观赏质量＝「好不好看」（0–100 分，优 ≥80、良 ≥65、一般 ≥45）。两个维度独立：概率高可能质量平平（闷烧），概率低也可能一旦出现极惊艳。": "Probability = 'will there be glow tonight'; quality = 'will it be stunning' (0–100; great ≥80, good ≥65, fair ≥45). The two are independent: high probability can be flat (a smolder), low probability can still be spectacular if it shows.",
     "卡内天色带标出日出 / 日落与民用 / 航海 / 天文昏影终四道线，「此刻」游标告诉你正处在哪个阶段；晚霞的黄金窗口通常在日落后 10–25 分钟，朝霞则要赶在天亮之前到位。": "The sky band inside the card marks four lines — sunrise/sunset and the civil, nautical and astronomical twilight limits. The 'now' cursor tells you which stage you're in; the golden window for dusk glow is typically 10–25 minutes after sunset, while dawn glow means arriving before first light.",
     "三张模型卡（GFS / ECMWF / 光追）可逐张对照：结论越一致，可信度徽标越稳；分歧大时，宁可当「可能有」对待。": "Three model cards (GFS / ECMWF / ray-trace) can be compared one by one: the more they agree, the steadier the confidence badge. When they diverge widely, treat it as 'maybe'.",
-    "点「加载趋势」显式取数（约 102 次加权调用，34 个坐标 × 10 天一次拉完），之后朝 / 晚两条概率曲线加质量分柱状列。算好的结果落盘缓存 6 小时，重开页命中直接画出，零请求。": "Click 'Load trend' to fetch explicitly (~102 weighted calls; 34 coordinates × 10 days in one go), then dawn / dusk probability curves plus a quality-score column. Results cache for 6 hours — reopening draws them instantly, zero requests.",
+    "点「加载趋势」显式取数（约 102 次加权调用，34 个坐标 × 10 天一次拉完），页面先按观赏质量排出最佳窗口前三名，下面是常显的逐日明细：朝 / 晚概率条与质量徽章。算好的结果落盘缓存 6 小时，重开页命中直接画出，零请求。": "Click 'Load trend' to fetch explicitly (~102 weighted calls; 34 coordinates × 10 days in one go). The page ranks the top three best windows by viewing quality, followed by the always-visible daily detail: dawn / dusk probability bars and quality badges. Results cache for 6 hours — reopening draws them instantly, zero requests.",
     "观测场地图": "The field map",
     "以当前地点为中心的 121 点采样网格（半径约 500 km、80 km 间距），四种着色维度：综合指数 / 出现概率 / 观赏质量 / 模型分歧。色阶是全光谱形态——颜色即数值，没有凸包硬边界，边缘自然淡出。热力图目前为测试功能，结果仅供参考。": "A 121-point sampling grid centred on your location (about 500 km radius, 80 km spacing) with four coloring modes: composite index / probability / quality / model spread. The ramp is full-spectrum — color is the value, with no hard hull boundary; edges fade out naturally. The heat map is still a test feature; results are for reference only.",
     "取数纪律：只有显式点「加载地图」才发起请求（约 171 次加权调用）；这个日期已有缓存时会自动画出来。选点有两种方式——直接点格点，或搜城市名；任意点都能一键「加入对比」。": "Fetch discipline: requests fire only when you explicitly click 'Load map' (~171 weighted calls); if this date is already cached, it draws automatically. Two ways to pick a spot — tap a grid point directly, or search a city name; any point can be added to compare in one tap.",

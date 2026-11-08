@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue";
+import { inject, ref, computed, onMounted, watch } from "vue";
 import { state, isDark } from "../state";
 import { t, ageText, getLang } from "../core/i18n";
 import { cityName } from "../core/citylang";
@@ -8,6 +8,7 @@ import { QUALITY_BANDS } from "../core/scoring";
 import { saveTrendCard } from "../core/sharecard";
 import { loadTrend, type TrendRow } from "../core/trend";
 import FoldNote from "./FoldNote.vue";
+import ShareButton from "./ShareButton.vue";
 
 const rows = ref<TrendRow[]>([]);
 const loading = ref(false);
@@ -69,6 +70,49 @@ const byDay = computed(() => {
   return [...map.values()].sort((a, b) => a.date.localeCompare(b.date));
 });
 
+/* ---------- 最佳窗口（F3 口径：跨朝/晚按质量分排名） ---------- */
+/** 未来这些天里最值得出门的前三名。用户关心的是“值不值得跑一趟”，
+    所以排序只看观赏质量分 Q；Q 相同再让出现概率 P 高的靠前。 */
+const best = computed(() =>
+  rows.value.slice().sort((a, b) => b.Q - a.Q || b.P - a.P).slice(0, 3)
+);
+const bestTone = computed(() => {
+  const q = best.value[0]?.Q ?? 0;
+  if (q >= 65) return { key: "值得安排", cls: "good" };
+  if (q >= 45) return { key: "可以留意", cls: "mid" };
+  return { key: "整体偏弱", cls: "bad" };
+});
+
+const WEEK = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+function weekday(date: string): string {
+  const [Y, M, D] = date.split("-").map(Number);
+  return t(WEEK[new Date(Date.UTC(Y, M - 1, D)).getUTCDay()]);
+}
+
+/* 点击窗口 = 用户的显式意图：切到那天那段并重算一次（与V1 F3行为一致）。
+   渲染最佳窗口本身仍然零取数 —— 只读已算好的 rows。 */
+const runForecast = inject<((force?: boolean) => Promise<void>) | null>("sunglow.run", null);
+function scrollToVerdict() {
+  const target = document.getElementById("verdict");
+  if (!target) return;
+  const reduce =
+    typeof matchMedia !== "undefined" &&
+    matchMedia("(prefers-reduced-motion: reduce)").matches;
+  target.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+}
+async function jumpTo(date: string, period: "am" | "pm") {
+  if (state.loading) return;
+  state.dateStr = date;
+  state.period = period;
+  state.mapDateS = date;
+  state.mapPeriod = period;
+  state.result = null;
+  /* 先跳回结论区再取数：用户立刻看到加载态，不用等 9 秒超时预算 */
+  scrollToVerdict();
+  if (!runForecast) return;
+  await runForecast();
+}
+
 /* 等级配色：取 QUALITY_BANDS 的按主题色，与模型卡同一口径 */
 function bandOf(grade: string) {
   const b = QUALITY_BANDS.find((x) => x.key === grade) || QUALITY_BANDS[QUALITY_BANDS.length - 1];
@@ -108,15 +152,13 @@ async function saveImg() {
           <button class="btn btn-ghost sm" style="margin-left: 10px" :disabled="loading" @click="go('click')">
             {{ loading ? t("取数中…") : rows.length ? t("重新加载趋势") : t("加载趋势") }}
           </button>
-          <button
+          <ShareButton
             v-if="rows.length"
-            class="btn btn-ghost sm"
+            :busy="busy"
+            :disabled="loading"
             style="margin-left: 8px"
-            :disabled="loading || busy"
             @click="saveImg"
-          >
-            {{ busy ? t("正在生成…") : t("保存图片") }}
-          </button>
+          />
           <span v-if="srcKind && !loading" class="fresh">
             <span class="fresh-t">
               {{ srcKind === "cache" ? t("缓存 · {age}前", { age: ageText(cacheAgeMs ?? 0) }) : t("刚刚取数") }}
@@ -130,44 +172,95 @@ async function saveImg() {
 
       <div class="glass trend-card">
         <div v-if="error" class="err">{{ error }}</div>
-        <div v-if="rows.length" class="trend-rows">
-          <div v-for="d in byDay" :key="d.date" class="t-day">
-            <div class="t-label">
-              <b>{{ d.date.slice(5) }}</b>
-              <span>{{ d.date }}</span>
+
+        <template v-if="rows.length">
+          <!-- 最佳窗口：先回答「哪天值得去」，再给逐日数据 -->
+          <div class="best-block">
+            <div class="best-head">
+              <div>
+                <span class="pill">{{ t("最佳窗口") }} · {{ t("未来 {n} 天", { n: byDay.length }) }}</span>
+                <p class="best-sub">
+                  {{ t("最值得出门") }} · {{ best[0].date.slice(5) }} {{ weekday(best[0].date) }}
+                  · {{ t(best[0].period === "am" ? "朝霞" : "晚霞") }}
+                  · {{ t("质量") }} {{ Math.round(best[0].Q) }} {{ t("分") }}
+                  · {{ t("出现概率") }} {{ Math.round(best[0].P) }}%
+                </p>
+              </div>
+              <span class="tone" :class="'tone-' + bestTone.cls">{{ t(bestTone.key) }}</span>
             </div>
-            <div class="t-pair">
-              <div class="t-row">
-                <span class="per">{{ t("朝") }}</span>
-                <div class="bar"><i :style="{ width: (d.am?.P ?? 0) + '%' }" /></div>
-                <b class="pv" :style="{ color: rampColor(d.am?.P ?? 0) }">
-                  {{ d.am ? Math.round(d.am.P) + "%" : "—" }}
-                </b>
-                <span v-if="d.am" class="qb" :style="badgeStyle(d.am.grade)">
-                  <b>{{ t(d.am.grade) }}</b><em>{{ Math.round(d.am.Q) }}</em>
+
+            <div class="best-grid">
+              <button
+                v-for="(w, i) in best"
+                :key="w.date + w.period"
+                type="button"
+                class="best-win"
+                :class="{ first: i === 0 }"
+                :disabled="state.loading"
+                :aria-label="w.date + ' ' + t(w.period === 'am' ? '朝霞' : '晚霞') + ' · ' + t('质量') + ' ' + Math.round(w.Q) + ' ' + t('分') + ' · ' + t('出现概率') + ' ' + Math.round(w.P) + '%'"
+                @click="jumpTo(w.date, w.period)"
+              >
+                <span class="bw-top">
+                  <em class="bw-rank">#{{ i + 1 }}</em>
+                  <span class="bw-date">
+                    <b>{{ w.date.slice(5) }}</b>
+                    <em>{{ weekday(w.date) }}</em>
+                  </span>
                 </span>
-                <span v-else class="qb empty">—</span>
-              </div>
-              <div class="t-row">
-                <span class="per">{{ t("晚") }}</span>
-                <div class="bar"><i :style="{ width: (d.pm?.P ?? 0) + '%' }" /></div>
-                <b class="pv" :style="{ color: rampColor(d.pm?.P ?? 0) }">
-                  {{ d.pm ? Math.round(d.pm.P) + "%" : "—" }}
-                </b>
-                <span v-if="d.pm" class="qb" :style="badgeStyle(d.pm.grade)">
-                  <b>{{ t(d.pm.grade) }}</b><em>{{ Math.round(d.pm.Q) }}</em>
+                <span class="bw-per">{{ t(w.period === "am" ? "朝霞" : "晚霞") }}</span>
+                <span class="bw-bottom">
+                  <b class="bw-q" :style="{ color: bandOf(w.grade) }">{{ Math.round(w.Q) }}<i>{{ t("分") }}</i></b>
+                  <span class="bw-p">{{ Math.round(w.P) }}%</span>
+                  <span class="bw-grade" :style="badgeStyle(w.grade)">{{ t(w.grade) }}</span>
                 </span>
-                <span v-else class="qb empty">—</span>
-              </div>
+              </button>
             </div>
           </div>
-        </div>
+
+          <!-- 逐日明细始终展开：概率条与完整徽章直接可见 -->
+          <div class="detail-block">
+            <h3 class="detail-title">{{ t("逐日明细（概率条与质量徽章）") }}</h3>
+            <div class="trend-rows">
+              <div v-for="d in byDay" :key="d.date" class="t-day">
+                <div class="t-label">
+                  <b>{{ d.date.slice(5) }}</b>
+                  <span>{{ d.date }}</span>
+                </div>
+                <div class="t-pair">
+                  <div class="t-row">
+                    <span class="per">{{ t("朝") }}</span>
+                    <div class="bar"><i :style="{ width: (d.am?.P ?? 0) + '%' }" /></div>
+                    <b class="pv" :style="{ color: rampColor(d.am?.P ?? 0) }">
+                      {{ d.am ? Math.round(d.am.P) + "%" : "—" }}
+                    </b>
+                    <span v-if="d.am" class="qb" :style="badgeStyle(d.am.grade)">
+                      <b>{{ t(d.am.grade) }}</b><em>{{ Math.round(d.am.Q) }}</em>
+                    </span>
+                    <span v-else class="qb empty">—</span>
+                  </div>
+                  <div class="t-row">
+                    <span class="per">{{ t("晚") }}</span>
+                    <div class="bar"><i :style="{ width: (d.pm?.P ?? 0) + '%' }" /></div>
+                    <b class="pv" :style="{ color: rampColor(d.pm?.P ?? 0) }">
+                      {{ d.pm ? Math.round(d.pm.P) + "%" : "—" }}
+                    </b>
+                    <span v-if="d.pm" class="qb" :style="badgeStyle(d.pm.grade)">
+                      <b>{{ t(d.pm.grade) }}</b><em>{{ Math.round(d.pm.Q) }}</em>
+                    </span>
+                    <span v-else class="qb empty">—</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="trend-key">
+              <span><i class="k1" />{{ t("出现概率") }}</span>
+              <span><i class="k2" />{{ t("质量徽章（右列）") }}</span>
+            </div>
+          </div>
+        </template>
+
         <div v-else-if="!loading && !error" class="hint">
           {{ t("趋势需要一次性取 34 个坐标 × 10 天数据（约 102 次加权调用），点击「加载趋势」显式触发。") }}
-        </div>
-        <div class="trend-key">
-          <span><i class="k1" />{{ t("出现概率") }}</span>
-          <span><i class="k2" />{{ t("质量徽章（右列）") }}</span>
         </div>
 
         <FoldNote fold-key="trendFold" title="说明 · 趋势为什么要手动加载">
@@ -182,6 +275,142 @@ async function saveImg() {
 
 <style scoped>
 .trend-card { padding: 18px 20px; }
+
+/* ---------- 最佳窗口 ---------- */
+.best-block {
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--stroke);
+}
+.best-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.best-sub {
+  margin: 9px 0 0;
+  font-size: var(--fs-small);
+  color: var(--tx-2);
+  line-height: 1.65;
+}
+.tone {
+  flex: 0 0 auto;
+  font-size: var(--fs-tiny);
+  line-height: 1.6;
+  padding: 2px 10px;
+  border: 1px solid currentColor;
+  border-radius: var(--r-full);
+  white-space: nowrap;
+}
+.tone-good { color: var(--q-good); }
+.tone-mid { color: var(--q-mid); }
+.tone-bad { color: var(--q-bad); }
+
+.best-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+.best-win {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-height: 104px;
+  padding: 12px 14px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-md);
+  background: var(--bg-glass);
+  color: var(--tx-1);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--t-fast), background var(--t-fast), transform var(--t-fast);
+}
+.best-win:hover {
+  border-color: var(--stroke-2);
+  background: var(--bg-glass-2);
+  transform: translateY(-1px);
+}
+.best-win:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.best-win:disabled { opacity: 0.55; cursor: default; transform: none; }
+.best-win.first {
+  border-color: var(--acc-2);
+  background: linear-gradient(140deg, rgba(255, 156, 63, 0.09), var(--bg-glass) 58%);
+}
+.bw-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.bw-rank {
+  font-style: normal;
+  font-size: var(--fs-tiny);
+  color: var(--tx-3);
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+}
+.bw-date { display: inline-flex; align-items: baseline; gap: 6px; }
+.bw-date b {
+  font-size: var(--fs-body);
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+.bw-date em { font-style: normal; font-size: var(--fs-tiny); color: var(--tx-3); }
+.bw-per { font-size: var(--fs-tiny); color: var(--tx-2); letter-spacing: 0.02em; }
+.bw-bottom {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: auto;
+  flex-wrap: wrap;
+}
+.bw-q {
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  line-height: 1;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.bw-q i { font-style: normal; font-size: var(--fs-tiny); font-weight: 500; margin-left: 2px; }
+.bw-p {
+  font-family: var(--font-display);
+  font-size: var(--fs-small);
+  color: var(--tx-2);
+  font-variant-numeric: tabular-nums;
+}
+.bw-grade {
+  font-size: var(--fs-tiny);
+  line-height: 1.6;
+  padding: 1px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--r-full);
+  white-space: nowrap;
+}
+
+/* 始终展开，不再包 details：保留标题做分区，正文直接接上 */
+.detail-block { margin-top: 18px; }
+.detail-title {
+  margin: 0 0 12px;
+  font-size: var(--fs-tiny);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--tx-3);
+}
+
+@media (max-width: 720px) {
+  .best-grid { grid-template-columns: 1fr 1fr; }
+  .best-win.first { grid-column: 1 / -1; }
+}
+@media (max-width: 640px) {
+  .trend-card { padding: 16px; }
+  .best-sub { font-size: var(--fs-tiny); }
+}
 .trend-rows { display: grid; gap: 12px; }
 .t-day {
   display: grid;
@@ -301,4 +530,18 @@ async function saveImg() {
 }
 .linkbtn:hover { color: var(--acc-1); }
 .linkbtn:disabled { opacity: 0.5; }
+.linkbtn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+/* 触屏热区：小号操作按钮也撑到 44px 高 */
+@media (pointer: coarse) {
+  .sm { min-height: 44px; padding: 0 14px; }
+  .linkbtn {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 8px;
+  }
+}
 </style>

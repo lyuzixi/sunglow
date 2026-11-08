@@ -39,6 +39,15 @@ function onToggle(e: Event) {
   list-style-position: inside;
 }
 .fnote summary:hover { color: var(--tx-1); }
+.fnote summary:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+/* 触屏热区：整行可点，高度不低于 44px */
+@media (pointer: coarse) {
+  .fnote summary { padding: 12px 0; }
+}
 .fnote-body {
   margin-top: 8px;
   padding-left: 14px;

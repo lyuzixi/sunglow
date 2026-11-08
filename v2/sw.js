@@ -5,7 +5,9 @@
      · 导航请求（HTML）：网络优先，失败回落缓存 —— 保证更新能及时生效
      · 静态资源（图标/manifest）：stale-while-revalidate
      · 一切跨域请求（open-meteo、map.qq.com）：直接放行，不进缓存
-   版本号变更即在 activate 里清掉旧缓存。
+   版本号由 publish-root 在发布时按 index.html 内容哈希重写（每次构建都变），
+   install 只缓存、不自动 skipWaiting —— 新版本先进入 waiting，由页面提示条
+   询问用户后再激活（见 src/components/PwaUpdatePrompt.vue）。
    ========================================================================= */
 const VERSION = "glowcast-v2-pwa-6";
 const CORE = [
@@ -17,16 +19,25 @@ const CORE = [
   "./favicon-192.png",
   "./icon-192.png",
   "./icon-512.png",
+  "./icon-maskable-512.png",
   "./apple-touch-icon-180.png"
 ];
 
 self.addEventListener("install", (e) => {
   e.waitUntil((async () => {
     const cache = await caches.open(VERSION);
-    /* 逐个 add，单个失败不拖垮整体安装 */
-    await Promise.all(CORE.map((u) => cache.add(u).catch(() => {})));
-    await self.skipWaiting();
+    /* 逐个 add，单个失败不拖垮整体安装；cache: reload 绕开 HTTP 缓存，
+       避免把旧 index.html 抄进新版本的离线缓存 */
+    await Promise.all(CORE.map((u) =>
+      cache.add(new Request(u, { cache: "reload" })).catch(() => {})
+    ));
   })());
+});
+
+/* 页面提示条在用户点「立即刷新」后发来 SKIP_WAITING；
+   首次安装（页面没有 controller）时页面会自动发同一条消息，直接生效 */
+self.addEventListener("message", (e) => {
+  if (e.data && e.data.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("activate", (e) => {

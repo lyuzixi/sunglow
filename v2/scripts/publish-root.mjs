@@ -7,6 +7,8 @@
    manifest.webmanifest / icon-192.png 等输入在场），根目录是发布副本。
 
    做法：FILES 里的全部交付文件从 v2/ 拷贝到仓库根，逐文件 sha256 校验；
+   例外：sw.js 发布时把 VERSION 重写成「index.html 内容哈希」—— Service Worker
+   必须每次构建都换字节，浏览器才会发现新版本并交给页面弹「新版本已就绪」。
    缺文件 / 拷贝校验失败 / 根 index.html 残留指向上级的跨目录链接 ⇒ exit 1。
    为什么机制化：根副本是线上交付物，手动拷贝必漂移（仓库纪律：判据必须机制化，
    参照 emit-single 对稳定文件名与残留哈希的校验思路）。
@@ -50,6 +52,34 @@ for (const f of FILES) {
     bad++;
     continue;
   }
+
+  /* Service Worker 是唯一需要「每次构建都换字节」的交付物：
+     VERSION 由 index.html 内容哈希决定，旧缓存随之作废，页面才能弹出更新提示。 */
+  if (f === "sw.js") {
+    const indexSrc = fs.existsSync(path.join(repo, "index.html"))
+      ? path.join(repo, "index.html")
+      : path.join(root, "index.html");
+    if (!fs.existsSync(indexSrc)) {
+      console.error("✗ sw.js 无法构建戳：index.html 不存在");
+      bad++;
+      continue;
+    }
+    const buildId = crypto.createHash("sha256")
+      .update(fs.readFileSync(indexSrc)).digest("hex").slice(0, 12);
+    const text = fs.readFileSync(src, "utf8").replace(
+      /const VERSION = "[^"]+";/,
+      'const VERSION = "glowcast-v2-pwa-' + buildId + '";'
+    );
+    fs.writeFileSync(dst, text, "utf8");
+    if (!text.includes('glowcast-v2-pwa-' + buildId)) {
+      console.error("✗ sw.js 构建戳写入失败");
+      bad++;
+      continue;
+    }
+    console.log("  ✓ sw.js -> sw.js（构建戳 glowcast-v2-pwa-" + buildId + "）");
+    continue;
+  }
+
   fs.copyFileSync(src, dst);
   if (sha256(src) !== sha256(dst)) {
     console.error("✗ 拷贝校验失败（sha256 不一致）:", f);

@@ -18,16 +18,17 @@ import { conclWord } from "./verdict";
 import { skyBandOf } from "./skyband";
 import { t, getLang } from "./i18n";
 import { cityName } from "./citylang";
-import { uAlt, uDist } from "./units";
+import { uAlt, uDist, uClock } from "./units";
 import { mixedIndex, QUALITY_BANDS } from "./scoring";
 import { isNum } from "./math";
 import type { TrendRow } from "./trend";
+import { glowWindowOf } from "./shareextras";
 import { isForeignTz, tzLabel } from "./tz";
 import {
   paintField, drawCityLabels, drawAziLayer,
   type FieldPt, type FieldCache, type CityLabel, type Proj, type Rect4
 } from "./maprender";
-import { glowColor, glowRgb, glowAlpha, GLOW_BANDS } from "./ramp";
+import { glowColor, glowRgb, glowAlpha, GLOW_BANDS, rampColor } from "./ramp";
 import heroPhoto from "../assets/hero-photo.webp";
 
 const W = 780, H = 400, S = 2;
@@ -471,13 +472,15 @@ export async function saveShareCard(
 }
 
 /* =========================================================================
-   十日趋势分享卡（横版 780×600）
-   顶部 150 章首抬头：实拍照片铺底、大标题压在上面（与教程页 T1、结论卡
-   报头带同一套语言）；两列并排、每列 5 天；每天 朝 / 晚 各一行，只留数字
-   （概率 / 质量），不画概率条、不带等级 —— 转发到聊天里不会被拉成一条竖长图。
+   十日趋势分享卡（横版 780×680）
+   顶部 116 章首抬头：实拍照片铺底、大标题压在上面（与教程页 T1、结论卡
+   报头带同一套语言）；抬头下先给「最佳窗口」前三名（与页面同一口径：
+   全部朝 / 晚行按观赏质量 Q 降序，Q 相同看概率 P），再是照搬页面趋势表
+   的两列 × 5 天：每天 朝 / 晚 各一行，概率条 + 概率数字 + 质量徽章
+   （等级与分数），转发到聊天里与屏上看到的是同一套表达。
    数字直接取趋势表的同一份 rows，图与页面不会说出两套数。
    ========================================================================= */
-const TW = 780, TH = 600, T_BAND = 150;
+const TW = 780, TH = 680, T_BAND = 116;
 
 export interface TrendDay {
   date: string;
@@ -558,9 +561,8 @@ export function drawTrendCard(
       0, 3, TW, ih);
   }
   const veil = c.createLinearGradient(0, 3, 0, T_BAND);
-  veil.addColorStop(0, dark ? "rgba(7,11,20,.30)" : "rgba(242,245,251,.55)");
-  veil.addColorStop(0.4, dark ? "rgba(7,11,20,.06)" : "rgba(242,245,251,.18)");
-  veil.addColorStop(0.74, dark ? "rgba(7,11,20,.45)" : "rgba(242,245,251,.45)");
+  veil.addColorStop(0, dark ? "rgba(7,11,20,.26)" : "rgba(242,245,251,.60)");
+  veil.addColorStop(0.45, dark ? "rgba(7,11,20,.06)" : "rgba(242,245,251,.30)");
   veil.addColorStop(1, BG);
   c.fillStyle = veil; c.fillRect(0, 3, TW, T_BAND - 3);
   /* 顶部压一层：品牌名与署名压在这条带上，需要一块稳定的底 */
@@ -578,52 +580,147 @@ export function drawTrendCard(
   c.textAlign = "left";
 
   c.font = f(700, 30, true); c.fillStyle = TX1;
-  c.fillText(t("十日趋势"), 44, 124);
+  c.fillText(t("十日趋势"), 44, 96);
 
   c.font = f(500, 11.5); c.fillStyle = TX3;
-  c.fillText(t("朝") + " / " + t("晚") + "　" + count + " " + t("条实算结果"), 44, 178);
+  c.fillText(t("朝") + " / " + t("晚") + "　" + count + " " + t("条实算结果"), 44, 140);
 
   c.textAlign = "right"; c.font = f(500, 11.5); c.fillStyle = TX2;
   c.fillText(
     fit(c, opts.city + "　" + range + (srcTxt ? "　·　" + srcTxt : ""), 470),
-    TW - 44, 178
+    TW - 44, 140
   );
   c.textAlign = "left";
 
   c.strokeStyle = LINE; c.lineWidth = 1;
-  c.beginPath(); c.moveTo(44, 196); c.lineTo(TW - 44, 196); c.stroke();
+  c.beginPath(); c.moveTo(44, 156); c.lineTo(TW - 44, 156); c.stroke();
 
-  /* 体：两列 × 5 天，中间一条竖线 */
-  const COLX = [44, 404], COLW = 334, ROWH = 60, Y0 = 248, HDRY = 220;
-  c.strokeStyle = LINE;
-  c.beginPath(); c.moveTo(390, 208); c.lineTo(390, 516); c.stroke();
-
-  c.font = f(500, 10.5); c.fillStyle = TX3;
-  COLX.forEach((x) => {
-    c.textAlign = "left";
-    c.fillText(t("日期"), x, HDRY);
-    c.fillText(t("时段"), x + 96, HDRY);
-    c.textAlign = "right";
-    c.fillText(t("概率"), x + 264, HDRY);
-    c.fillText(t("质量"), x + COLW, HDRY);
-  });
+  /* 最佳窗口：与页面同一口径 —— 全部朝 / 晚行按 Q 降序，Q 相同看 P，取前 3 */
+  const best = days
+    .flatMap((d) => (d.am ? [d.am] : []).concat(d.pm ? [d.pm] : []))
+    .sort((a, b) => b.Q - a.Q || b.P - a.P)
+    .slice(0, 3);
+  c.font = f(600, 11.5); c.fillStyle = TX2;
+  c.fillText(t("最佳窗口"), 44, 178);
+  c.textAlign = "right"; c.font = f(500, 11.5); c.fillStyle = TX3;
+  c.fillText(t("未来 {n} 天", { n: days.length }), TW - 44, 178);
   c.textAlign = "left";
 
-  /* 朝/晚一行：概率右对齐到 x+264，质量右对齐到列尾 */
-  function line(row: TrendRow | undefined, label: string, x: number, y: number) {
-    ctx.font = f(500, 11); ctx.fillStyle = TX3;
-    ctx.textAlign = "left";
-    ctx.fillText(label, x + 96, y);
+  const BW3 = (TW - 88 - 20) / 3, BY3 = 188, BH3 = 58;
+  best.forEach((w, i) => {
+    const x = 44 + i * (BW3 + 10);
+    const gc = gradeColor(w.grade, dark);
+    c.fillStyle = i === 0 ? withAlpha(SP[1], dark ? 0.12 : 0.08) : withAlpha(TX1, dark ? 0.035 : 0.028);
+    rr(c, x, BY3, BW3, BH3, 9); c.fill();
+    c.strokeStyle = i === 0 ? withAlpha(SP[1], 0.46) : LINE; c.lineWidth = 1;
+    rr(c, x + 0.5, BY3 + 0.5, BW3 - 1, BH3 - 1, 9); c.stroke();
+
+    /* 第一行：名次 / 日期 / 星期 / 朝晚 */
+    c.textAlign = "left"; c.font = f(600, 10.5, true); c.fillStyle = TX3;
+    c.fillText("#" + (i + 1), x + 12, BY3 + 19);
+    const rw = c.measureText("#" + (i + 1)).width;
+    c.font = f(700, 14, true); c.fillStyle = TX1;
+    c.fillText(w.date.slice(5), x + 12 + rw + 8, BY3 + 19);
+    const dww = c.measureText(w.date.slice(5)).width;
+    c.font = f(500, 10.5); c.fillStyle = TX3;
+    c.fillText(weekdayOf(w.date), x + 12 + rw + 8 + dww + 6, BY3 + 19);
+    c.textAlign = "right"; c.font = f(500, 10.5); c.fillStyle = TX2;
+    c.fillText(t(w.period === "am" ? "朝霞" : "晚霞"), x + BW3 - 12, BY3 + 19);
+
+    /* 第二行：质量分（主）/ 概率 / 等级徽章 */
+    c.textAlign = "left"; c.font = f(700, 21, true); c.fillStyle = gc;
+    const qs = String(Math.round(w.Q));
+    c.fillText(qs, x + 12, BY3 + 46);
+    const qw = c.measureText(qs).width;
+    c.font = f(500, 10); c.fillStyle = TX3;
+    c.fillText(t("分"), x + 12 + qw + 2, BY3 + 46);
+    const fw = c.measureText(t("分")).width;
+    c.font = f(500, 12); c.fillStyle = TX2;
+    c.fillText(Math.round(w.P) + "%", x + 12 + qw + fw + 12, BY3 + 46);
+
+    /* 等级徽章：底色是等级淡色，文字与描边同色，与页面徽章同一套 */
+    c.font = f(600, 10.5);
+    const tag = t(w.grade);
+    const tw = c.measureText(tag).width + 14;
+    const bx = x + BW3 - 12 - tw;
+    c.fillStyle = withAlpha(gc, 0.10);
+    rr(c, bx, BY3 + 34, tw, 17, 8.5); c.fill();
+    c.strokeStyle = withAlpha(gc, 0.30);
+    rr(c, bx + 0.5, BY3 + 34.5, tw - 1, 16, 8); c.stroke();
+    c.textAlign = "center"; c.fillStyle = gc;
+    c.fillText(tag, bx + tw / 2, BY3 + 46);
+    c.textAlign = "left";
+  });
+
+  /* 体：照搬页面趋势表 —— 每天一行，左侧日期，右侧 朝 / 晚 两行：
+     概率条 + 概率数字 + 质量徽章；两列 × 5 天。 */
+  const COLX = [44, 404], COLW = 334, ROWH = 56, Y0 = 270, PX = 86, PW = COLW - PX;
+
+  /** 概率条：底槽 + 光谱填充（与页面 .bar 同一视觉） */
+  function barCell(x: number, y: number, w: number, p: number | null) {
+    const h = 5;
+    rr(ctx, x, y, w, h, h / 2);
+    ctx.fillStyle = withAlpha(TX1, dark ? 0.09 : 0.07); ctx.fill();
+    if (p == null || p <= 0) return;
+    const fw = Math.max(0, Math.min(w, (p / 100) * w));
+    if (fw <= 0) return;
+    ctx.save();
+    rr(ctx, x, y, fw, h, Math.min(h / 2, fw / 2)); ctx.clip();
+    const g = ctx.createLinearGradient(x, 0, x + fw, 0);
+    g.addColorStop(0, SP[0]); g.addColorStop(0.5, SP[1]); g.addColorStop(1, SP[2]);
+    ctx.fillStyle = g; ctx.fillRect(x, y, fw, h);
+    ctx.restore();
+  }
+
+  /** 质量徽章：等级 + 分数，颜色即等级（与页面 .qb 同款）；返回宽度 */
+  function badgeCell(xRight: number, y: number, grade: string | null, q: number | null): number {
+    const label = grade ? t(grade) : "—";
+    const gc = grade ? gradeColor(grade, dark) : TX3;
+    ctx.font = f(600, 10);
+    const lw = ctx.measureText(label).width;
+    const qtxt = q == null ? "" : String(Math.round(q));
+    const qw = qtxt ? ctx.measureText(qtxt).width + 4 : 0;
+    const w = lw + qw + 12;
+    const x = xRight - w;
+    const top = y - 12;
+    rr(ctx, x, top, w, 17, 8.5);
+    if (grade) {
+      ctx.fillStyle = withAlpha(gc, dark ? 0.12 : 0.08);
+      ctx.fill();
+    }
+    ctx.strokeStyle = grade ? withAlpha(gc, 0.30) : LINE;
+    ctx.lineWidth = 1;
+    rr(ctx, x + 0.5, top + 0.5, w - 1, 16, 8); ctx.stroke();
+    ctx.textAlign = "left"; ctx.font = f(600, 10);
+    ctx.fillStyle = grade ? gc : TX3;
+    ctx.fillText(label, x + 6, y + 1);
+    if (qtxt) {
+      ctx.save();
+      ctx.globalAlpha = 0.72;
+      ctx.font = f(500, 10);
+      ctx.fillStyle = grade ? gc : TX3;
+      ctx.fillText(qtxt, x + 6 + lw + 4, y + 1);
+      ctx.restore();
+    }
+    return w;
+  }
+
+  /** 朝/晚一行：概率条在中间，数字右对齐，质量徽章贴列尾 */
+  function rowCell(row: TrendRow | undefined, label: string, x: number, y: number) {
+    ctx.textAlign = "left"; ctx.font = f(500, 10.5); ctx.fillStyle = TX3;
+    ctx.fillText(label, x, y);
+    const bw = badgeCell(x + PW, y, row?.grade ?? null, row ? row.Q : null);
+    const pvRight = x + PW - bw - 8;
+    const barX = x + 24;
+    const barW = Math.max(28, pvRight - 34 - barX);
+    barCell(barX, y - 8, barW, row ? row.P : null);
     ctx.textAlign = "right";
     if (row) {
-      ctx.font = f(700, 18, true); ctx.fillStyle = TX1;
-      ctx.fillText(Math.round(row.P) + "%", x + 264, y);
-      ctx.font = f(500, 15); ctx.fillStyle = TX2;
-      ctx.fillText(Math.round(row.Q) + "", x + COLW, y);
+      ctx.font = f(600, 13, true); ctx.fillStyle = rampColor(row.P);
+      ctx.fillText(Math.round(row.P) + "%", pvRight, y);
     } else {
-      ctx.font = f(500, 15); ctx.fillStyle = TX3;
-      ctx.fillText("—", x + 264, y);
-      ctx.fillText("—", x + COLW, y);
+      ctx.font = f(500, 12); ctx.fillStyle = TX3;
+      ctx.fillText("—", pvRight, y);
     }
     ctx.textAlign = "left";
   }
@@ -632,36 +729,48 @@ export function drawTrendCard(
     const col = idx < 5 ? 0 : 1;
     const i = idx % 5;
     const x = COLX[col];
-    const base = Y0 + i * ROWH;
+    const top = Y0 + i * ROWH;
 
-    /* 隔行底衬：5 天两列，长图里靠它把行读出来 */
-    if (i % 2 === 1) {
-      c.fillStyle = withAlpha(TX1, dark ? 0.035 : 0.028);
-      rr(c, x - 8, base - 21, COLW + 8, 50, 7);
-      c.fill();
+    ctx.font = f(700, 14, true); ctx.fillStyle = TX1;
+    ctx.fillText(d.date.slice(5), x, top + 20);
+    ctx.font = f(500, 9.5); ctx.fillStyle = TX3;
+    ctx.fillText(d.date, x, top + 34);
+
+    rowCell(d.am, t("朝"), x + PX, top + 20);
+    rowCell(d.pm, t("晚"), x + PX, top + 42);
+
+    /* 行分隔线：每列最后一天不画，两列底部齐平 */
+    if (i < 4) {
+      ctx.strokeStyle = LINE; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x, top + 53); ctx.lineTo(x + COLW, top + 53); ctx.stroke();
     }
-
-    c.font = f(700, 15, true); c.fillStyle = TX1;
-    c.fillText(d.date.slice(5), x, base);
-    const dw = c.measureText(d.date.slice(5)).width;
-    c.font = f(500, 11); c.fillStyle = TX3;
-    c.fillText(weekdayOf(d.date), x + dw + 7, base);
-
-    line(d.am, t("朝"), x, base);
-    line(d.pm, t("晚"), x, base + 20);
   });
 
+  /* 图例：与页面 .trend-key 同一套（概率条 / 质量徽章） */
+  const LG = 580;
+  let lx = 44;
+  ctx.textAlign = "left"; ctx.font = f(500, 10.5); ctx.fillStyle = TX3;
+  const lgd = ctx.createLinearGradient(lx, 0, lx + 14, 0);
+  lgd.addColorStop(0, SP[0]); lgd.addColorStop(0.5, SP[1]); lgd.addColorStop(1, SP[2]);
+  rr(ctx, lx, LG - 8, 14, 4, 2); ctx.fillStyle = lgd; ctx.fill();
+  lx += 20;
+  ctx.fillText(t("出现概率"), lx, LG);
+  lx += ctx.measureText(t("出现概率")).width + 18;
+  rr(ctx, lx, LG - 8, 14, 4, 2); ctx.fillStyle = SP[1]; ctx.fill();
+  lx += 20;
+  ctx.fillText(t("质量徽章（右列）"), lx, LG);
+
   /* 页脚：口径 + 数据源 */
-  c.strokeStyle = LINE;
-  c.beginPath(); c.moveTo(44, 530); c.lineTo(TW - 44, 530); c.stroke();
-  c.font = f(500, 11); c.fillStyle = TX3;
-  c.fillText(
-    fit(c, "P " + t("出现概率") + "　　Q " + t("观赏质量") + "　　·　　" + t("数据源") + " Open-Meteo", 540),
-    44, 556
+  ctx.strokeStyle = LINE;
+  ctx.beginPath(); ctx.moveTo(44, 628); ctx.lineTo(TW - 44, 628); ctx.stroke();
+  ctx.font = f(500, 11); ctx.fillStyle = TX3;
+  ctx.fillText(
+    fit(ctx, "P " + t("出现概率") + "　　Q " + t("观赏质量") + "　　·　　" + t("数据源") + " Open-Meteo", 540),
+    44, 652
   );
-  c.textAlign = "right"; c.font = f(600, 11); c.fillStyle = TX3;
-  c.fillText("SUNGLOW V2", TW - 44, 556);
-  c.textAlign = "left";
+  ctx.textAlign = "right"; ctx.font = f(600, 11); ctx.fillStyle = TX3;
+  ctx.fillText("SUNGLOW", TW - 44, 652);
+  ctx.textAlign = "left";
 
   return {
     w: cv.width, h: cv.height, theme,
@@ -681,6 +790,277 @@ export async function saveTrendCard(
   try { photo = await loadHeroPhoto(); } catch { photo = null; }
   const cv = document.createElement("canvas");
   const meta = drawTrendCard(cv, days, opts, photo);
+  cv.dataset.shareMeta = JSON.stringify(meta);
+  const blob = await canvasToBlob(cv);
+  return deliverBlob(blob, meta.fileName);
+}
+
+/* =========================================================================
+   竖版故事卡（9:16 · 540×960，2 倍密度 → 1080×1920）
+   给小红书 / 朋友圈这类竖屏场景用：实拍抬头、超大出现概率、质量与等级、
+   一句话结论、天色带、关键细节与最佳观赏窗口。数值全部取同一份
+   ForecastResult / VerdictView，与结论卡和横版分享图不会出现两套数。
+   ========================================================================= */
+const STW = 540, STH = 960, ST_BAND = 300;
+
+export function storyShareFileName(r: ForecastResult): string {
+  return t("霞光档案") + "_" + safeName(cityName(r.city.name, getLang())) + "_" +
+    r.dateStr + "_" + t(r.period === "am" ? "朝霞" : "晚霞") + "_" +
+    t("竖版故事卡") + ".png";
+}
+
+export function drawStoryCard(
+  cv: HTMLCanvasElement, r: ForecastResult, view: VerdictView, nowMs = Date.now(),
+  photo?: HTMLImageElement | null
+): ShareMeta {
+  const dark = document.documentElement.dataset.theme === "dark";
+  const theme: "dark" | "light" = dark ? "dark" : "light";
+
+  cv.width = STW * S; cv.height = STH * S;
+  const c = cv.getContext("2d");
+  if (!c) throw new Error("canvas 2d unavailable");
+
+  const BG = tokColor("--bg-card-solid", dark ? "#101a2e" : "#ffffff");
+  const TX1 = tokColor("--tx-1", dark ? "#e9eefb" : "#111a2c");
+  const TX2 = tokColor("--tx-2", dark ? "#a0b1cd" : "#46556f");
+  const TX3 = tokColor("--tx-3", dark ? "#7f8fb0" : "#667287");
+  const LINE = tokColor("--stroke", dark ? "rgba(148,178,232,.14)" : "rgba(40,60,100,.10)");
+  const ACC = tokColor("--acc-1", "#ff4d82");
+  const SP = [
+    tokColor("--spectrum-1", "#ff4d82"),
+    tokColor("--spectrum-2", "#ff9c3f"),
+    tokColor("--spectrum-3", "#2ed5e8")
+  ];
+  const DUSK: Record<string, string> = {
+    "s-day": tokColor("--dusk-day", "#dde5ee"),
+    "s-civil": tokColor("--dusk-civil", "#f0c48c"),
+    "s-naut": tokColor("--dusk-nautical", "#d9784a"),
+    "s-astro": tokColor("--dusk-astro", "#7a759f"),
+    "s-night": tokColor("--dusk-night", "#2b3450")
+  };
+
+  c.scale(S, S);
+  c.textBaseline = "alphabetic";
+  c.textAlign = "left";
+
+  c.fillStyle = BG; c.fillRect(0, 0, STW, STH);
+  const sg = c.createLinearGradient(0, 0, STW, 0);
+  sg.addColorStop(0, SP[0]); sg.addColorStop(0.5, SP[1]); sg.addColorStop(1, SP[2]);
+  c.fillStyle = sg; c.fillRect(0, 0, STW, 4);
+
+  /* 顶部实拍带 */
+  if (photo) {
+    const ih = ST_BAND - 3;
+    const sc = Math.max(STW / photo.width, ih / photo.height);
+    const sw = STW / sc, sh = ih / sc;
+    c.drawImage(photo, (photo.width - sw) / 2, (photo.height - sh) * 0.42, sw, sh,
+      0, 3, STW, ih);
+  }
+  const veil = c.createLinearGradient(0, 3, 0, ST_BAND);
+  veil.addColorStop(0, dark ? "rgba(7,11,20,.30)" : "rgba(242,245,251,.58)");
+  veil.addColorStop(0.4, dark ? "rgba(7,11,20,.06)" : "rgba(242,245,251,.18)");
+  veil.addColorStop(0.72, dark ? "rgba(7,11,20,.42)" : "rgba(242,245,251,.44)");
+  veil.addColorStop(1, BG);
+  c.fillStyle = veil; c.fillRect(0, 3, STW, ST_BAND - 3);
+  /* 标题压在照片下沿：再压一层竖向渐变，保证城市名在亮天空上也读得清 */
+  const low = c.createLinearGradient(0, 150, 0, ST_BAND);
+  low.addColorStop(0, "rgba(" + (dark ? "7,11,20" : "255,255,255") + ",0)");
+  low.addColorStop(1, dark ? "rgba(7,11,20,.56)" : "rgba(255,255,255,.64)");
+  c.fillStyle = low; c.fillRect(0, 150, STW, ST_BAND - 150);
+  const scrim = c.createLinearGradient(0, 3, 0, 48);
+  scrim.addColorStop(0, dark ? "rgba(7,11,20,.52)" : "rgba(255,255,255,.80)");
+  scrim.addColorStop(1, "rgba(" + (dark ? "7,11,20" : "255,255,255") + ",0)");
+  c.fillStyle = scrim; c.fillRect(0, 3, STW, 45);
+
+  const BX = 36, BW = STW - 72;
+  c.font = f(600, 11);
+  c.fillStyle = dark ? "rgba(233,238,251,.85)" : "rgba(17,26,44,.85)";
+  c.fillText(t("霞光档案") + " · SUNGLOW", BX, 26);
+  c.textAlign = "right"; c.font = f(500, 11);
+  c.fillStyle = tokColor("--photo-credit", dark ? "rgba(233,238,251,.62)" : "rgba(17,26,44,.56)");
+  c.fillText(t("广州 · 珠江 · 实拍"), STW - BX, 26);
+  c.textAlign = "left";
+
+  c.font = f(700, 34, true); c.fillStyle = TX1;
+  c.fillText(fit(c, cityName(r.city.name, getLang()), BW), BX, 238);
+  c.font = f(500, 13.5); c.fillStyle = TX2;
+  c.fillText(
+    r.dateStr + "　" + t(r.period === "am" ? "朝霞" : "晚霞"),
+    BX, 266
+  );
+
+  c.strokeStyle = LINE; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(BX, 318); c.lineTo(STW - BX, 318); c.stroke();
+
+  const gc = gradeColor(view.grade, dark);
+  const band = skyBandOf(r, nowMs, r.dateStr);
+
+  /* 主数字：出现概率 */
+  c.font = f(500, 12); c.fillStyle = TX3;
+  c.fillText(t("出现概率"), BX, 352);
+  c.fillText(t("观赏质量"), 286, 352);
+
+  c.font = f(700, 84, true); c.fillStyle = TX1;
+  c.fillText(Math.round(view.P) + "%", BX, 440);
+
+  c.font = f(700, 44, true); c.fillStyle = gc;
+  const qs = String(Math.round(view.Q));
+  c.fillText(qs, 286, 428);
+  const qw = c.measureText(qs).width;
+  c.font = f(500, 12); c.fillStyle = TX3;
+  c.fillText(t("分"), 286 + qw + 4, 428);
+
+  /* 等级胶囊 */
+  c.font = f(600, 11.5);
+  const tag = t(view.grade);
+  const tw = c.measureText(tag).width + 20;
+  rr(c, 286, 442, tw, 24, 12);
+  c.fillStyle = withAlpha(gc, 0.12); c.fill();
+  c.strokeStyle = withAlpha(gc, 0.40); c.lineWidth = 1; c.stroke();
+  c.fillStyle = gc; c.textAlign = "center";
+  c.fillText(tag, 286 + tw / 2, 459);
+  c.textAlign = "left";
+
+  /* 一句话结论 */
+  c.font = f(600, 22, true); c.fillStyle = TX1;
+  c.fillText(t(conclWord(view.P)), BX, 488);
+
+  /* 天色带 */
+  const BY = 522, BH = 64, BR = 10;
+  if (band) {
+    const totalM = band.segs.reduce((a, s) => a + s.m, 0) || 1;
+    c.save();
+    rr(c, BX, BY, BW, BH, BR); c.clip();
+    c.fillStyle = withAlpha(TX1, dark ? 0.05 : 0.04);
+    c.fillRect(BX, BY, BW, BH);
+    let x = BX;
+    band.segs.forEach((s) => {
+      const w = (s.m / totalM) * BW;
+      c.fillStyle = DUSK[s.cls] || "#ccc";
+      c.fillRect(x, BY, Math.ceil(w) + 0.5, BH);
+      x += w;
+    });
+    const gx = BX + (band.glowX / 100) * BW;
+    const rg = c.createRadialGradient(gx, BY + BH, 0, gx, BY + BH, BW * 0.5);
+    rg.addColorStop(0, "rgba(255,166,87,0.30)");
+    rg.addColorStop(0.68, "rgba(255,166,87,0)");
+    c.fillStyle = rg; c.fillRect(BX, BY, BW, BH);
+    if (band.win) {
+      const wx = BX + (band.win.left / 100) * BW;
+      const ww = Math.max(4, (band.win.width / 100) * BW);
+      c.fillStyle = ACC;
+      c.fillRect(wx, BY + BH - 5, ww, 5);
+      c.fillStyle = dark ? "rgba(255,255,255,.55)" : "rgba(255,255,255,.88)";
+      c.fillRect(wx, BY + BH - 5, ww, 1);
+    }
+    c.restore();
+    c.strokeStyle = LINE; c.lineWidth = 1;
+    rr(c, BX + 0.5, BY + 0.5, BW - 1, BH - 1, BR); c.stroke();
+
+    c.font = f(500, 12); c.fillStyle = TX3;
+    const evMk = band.marks[0], darkMk = band.marks[3];
+    const tzs = r.tz && isForeignTz(r.tz) ? " " + tzLabel(r.tz) : "";
+    const px = (p: number) => BX + (p / 100) * BW;
+    c.textAlign = "left";
+    c.fillText(fit(c, evMk.name + " " + evMk.time + tzs, 230),
+      Math.min(px(evMk.p), BX + BW - 200), BY + BH + 20);
+    c.textAlign = "right";
+    c.fillText(fit(c, darkMk.name + " " + darkMk.time, 170),
+      Math.max(px(darkMk.p), BX + 200), BY + BH + 20);
+    c.textAlign = "left";
+  }
+
+  /* 关键细节：与横版分享卡同一份口径 */
+  const p2 = r.sRT.primary;
+  const cfb = r.conf;
+  const rowList: string[] = [];
+  rowList.push(
+    t("载霞云层 {v}", { v: t(p2.type) }) + " · " +
+    t("覆盖 {v}", { v: Math.round(p2.cover) + "%" }) + " · " +
+    t("云底高度") + " " + uAlt(p2.base * 1000)
+  );
+  rowList.push(
+    t("云边界距离") + " " + (isNum(r.sRT.d) ? uDist(r.sRT.d as number) : t("无明显边界")) +
+    " · " + t("等效云底高度") + " " + uAlt(r.sRT.hEff * 1000) +
+    " · AOD " + (isNum(r.sRT.aodUp) ? (r.sRT.aodUp as number).toFixed(2) : "—")
+  );
+  rowList.push(
+    t("可信度") + " " + t(cfb.lv) + " · " + t(cfb.txt) +
+    (isNum(r.dvI) ? " · ΔI " + Math.round(r.dvI as number) : "")
+  );
+  const mname = (id: string) => (id === "gfs" ? "GFS " : id === "ec" ? "EC " : t("光追") + " ");
+  rowList.push(
+    r.models.map((m) => mname(m.id) + Math.round(m.P) + "%").join(" · ") +
+    " · " + t("综合 I {v}", { v: Math.round(mixedIndex(r.P, r.Q)) })
+  );
+
+  c.strokeStyle = LINE; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(BX, 634); c.lineTo(STW - BX, 634); c.stroke();
+  c.font = f(500, 12.5);
+  rowList.forEach((s, k) => {
+    c.fillStyle = k === 2 ? (dark ? cfb.dark.color : cfb.color) : TX2;
+    c.fillText(fit(c, s, BW), BX, 660 + k * 24);
+  });
+
+  /* 最佳观赏窗口：与天色带同一份计算 */
+  const win = glowWindowOf(r);
+  const range = uClock(win.startMs, r.tz) + "–" + uClock(win.endMs, r.tz);
+  const durMin = Math.max(1, Math.round((win.endMs - win.startMs) / 60000));
+  c.font = f(500, 12); c.fillStyle = TX3;
+  c.fillText(win.geom ? t("最佳观赏窗口") : t("参考时段"), BX, 770);
+  c.font = f(700, 20, true); c.fillStyle = TX1;
+  c.fillText(range + "　·　" + durMin + " " + t("分钟"), BX, 796);
+
+  c.font = f(500, 12.5); c.fillStyle = TX3;
+  c.fillText(fit(c, t("让每一次追霞，都有迹可循"), BW), BX, 842);
+
+  /* 页脚 */
+  c.strokeStyle = LINE;
+  c.beginPath(); c.moveTo(BX, 880); c.lineTo(STW - BX, 880); c.stroke();
+  c.font = f(500, 11); c.fillStyle = TX3;
+  c.fillText(
+    fit(c, t("霞光档案 · 数据源 Open-Meteo（GFS / ECMWF-IFS / CAMS 气溶胶）· 结论仅供观赏参考"), 390), BX, 904
+  );
+  c.textAlign = "right"; c.font = f(600, 11);
+  c.fillText("SUNGLOW", STW - BX, 904);
+  c.textAlign = "left";
+
+  /* mock 数据角标 */
+  if (r.src === "mock") {
+    const badge = t("演示数据");
+    c.font = f(600, 11.5);
+    const bw = c.measureText(badge).width + 22;
+    rr(c, BX, 44, bw, 24, 12);
+    c.fillStyle = withAlpha("#e2b45e", dark ? 0.18 : 0.16); c.fill();
+    c.strokeStyle = withAlpha("#e2b45e", 0.55); c.lineWidth = 1; c.stroke();
+    c.fillStyle = dark ? "#e2b45e" : "#8a5a00";
+    c.textAlign = "center";
+    c.fillText(badge, BX + bw / 2, 60);
+    c.textAlign = "left";
+  }
+
+  return {
+    w: cv.width, h: cv.height, theme,
+    model: view.single ? view.label : "ens",
+    single: view.single,
+    src: r.src,
+    watermark: r.src === "mock",
+    fileName: storyShareFileName(r),
+    rows: rowList,
+    bg: BG,
+    grade: view.grade,
+    band: !!band
+  };
+}
+
+export async function saveStoryCard(
+  r: ForecastResult, view: VerdictView
+): Promise<ShareOutcome> {
+  await ensureFonts();
+  let photo: HTMLImageElement | null = null;
+  try { photo = await loadHeroPhoto(); } catch { photo = null; }
+  const cv = document.createElement("canvas");
+  const meta = drawStoryCard(cv, r, view, Date.now(), photo);
   cv.dataset.shareMeta = JSON.stringify(meta);
   const blob = await canvasToBlob(cv);
   return deliverBlob(blob, meta.fileName);

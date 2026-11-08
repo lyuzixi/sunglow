@@ -65,6 +65,7 @@ const geomTxt = computed(() => {
         <h2>{{ t("结论") }}</h2>
         <div class="head-right">
           <ShareImageButton :view="view" />
+          <ShareImageButton :view="view" kind="story" />
           <div class="seg" role="group" :aria-label="t('模型')">
             <button
               v-for="m in MK"

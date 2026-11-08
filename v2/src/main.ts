@@ -20,9 +20,5 @@ if (typeof matchMedia !== "undefined") {
 
 createApp(App).use(router).mount("#app");
 
-/* PWA：只在 http(s) 下注册 —— file:// 双击打开时没有 SW，也不该在控制台报错 */
-if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js").catch(() => { /* 不支持就算了，不影响主流程 */ });
-  });
-}
+/* PWA 注册与「新版本已就绪」提示统一在 PwaUpdatePrompt.vue 里处理：
+   首次安装自动接管；后续更新先进入 waiting，由用户点「立即刷新」再激活。 */

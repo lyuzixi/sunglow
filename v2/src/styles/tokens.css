@@ -25,7 +25,7 @@
   --fs-lead: clamp(1.05rem, 1.9vw, 1.35rem);
   --fs-body: 0.95rem;
   --fs-small: 0.82rem;
-  --fs-tiny: 0.72rem;
+  --fs-tiny: 0.75rem;
 
   /* ---- 间距 / 圆角 ---- */
   --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
@@ -60,7 +60,7 @@
   --stroke-2: rgba(148, 178, 232, 0.26);
   --tx-1: #e9eefb;
   --tx-2: #a0b1cd;
-  --tx-3: #5c6c8c;
+  --tx-3: #7f8fb0;
   --tx-inv: #06101c;
 
   --acc-1: var(--spectrum-1);
@@ -120,7 +120,7 @@
   --stroke-2: rgba(40, 60, 100, 0.20);
   --tx-1: #111a2c;
   --tx-2: #46556f;
-  --tx-3: #8693ab;
+  --tx-3: #667287;
   --tx-inv: #ffffff;
 
   --acc-1: #e02d62;
@@ -135,8 +135,8 @@
   --card-sh: 0 12px 32px rgba(20, 40, 80, 0.10);
   --ring: rgba(15, 159, 191, 0.35);
 
-  --q-good: #1c8a55;
-  --q-mid: #c07a10;
+  --q-good: #16794a;
+  --q-mid: #965d06;
   --q-bad: #c0392b;
   --q-info: #2266bb;
 

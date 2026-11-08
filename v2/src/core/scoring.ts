@@ -325,9 +325,9 @@ export interface QualityBand {
   key: string; min: number; max: number; color: string; dark: string;
 }
 export const QUALITY_BANDS: QualityBand[] = [
-  { key: "优", min: 80, max: 100, color: "#178a52", dark: "#5fce97" },
-  { key: "良", min: 65, max: 79, color: "#5f9a1b", dark: "#9ac765" },
-  { key: "一般", min: 45, max: 64, color: "#c07a10", dark: "#e2b45e" },
+  { key: "优", min: 80, max: 100, color: "#0f7042", dark: "#5fce97" },
+  { key: "良", min: 65, max: 79, color: "#4a7a10", dark: "#9ac765" },
+  { key: "一般", min: 45, max: 64, color: "#965d06", dark: "#e2b45e" },
   { key: "差", min: 0, max: 44, color: "#c0392b", dark: "#f2796a" }
 ];
 export const QUALITY_LABEL: Record<string, string> = {

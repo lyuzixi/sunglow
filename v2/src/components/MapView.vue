@@ -19,6 +19,7 @@ import { runForecast, pointCacheGet } from "../core/forecast";
 import { cityTz, todayInTz, addDaysIso } from "../core/tz";
 import FoldNote from "./FoldNote.vue";
 import Select from "./Select.vue";
+import ShareButton from "./ShareButton.vue";
 import {
   paintField, drawGraticule, drawRangeDashed, drawAziLayer, drawCityLabels,
   newFieldCache, trendValueAt, fieldProbeAt,
@@ -1364,9 +1365,7 @@ function fmtV(v: number | null): string {
               {{ t("重新取数") }}
             </button>
           </div>
-          <button v-if="curPts.length && !loading" class="btn btn-ghost" :disabled="saveBusy" @click="saveImg">
-            {{ saveBusy ? t("正在生成…") : t("保存图片") }}
-          </button>
+          <ShareButton v-if="curPts.length && !loading" :busy="saveBusy" @click="saveImg" />
           <button class="btn btn-ghost" @click="toggleFs">{{ fs ? t("退出全屏") : t("全屏") }}</button>
         </div>
 

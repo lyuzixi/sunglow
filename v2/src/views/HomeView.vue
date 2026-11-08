@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, provide, ref, watch } from "vue";
 import HeroSection from "../components/HeroSection.vue";
 import ConclusionCard from "../components/ConclusionCard.vue";
 import TrendSection from "../components/TrendSection.vue";
@@ -9,10 +9,13 @@ import FactorsPanel from "../components/FactorsPanel.vue";
 import CalibPanel from "../components/CalibPanel.vue";
 import RayDetail from "../components/RayDetail.vue";
 import NotesCard from "../components/NotesCard.vue";
+import ShareQrDialog from "../components/ShareQrDialog.vue";
 import { state, hasSavedCity, reanchorToday } from "../state";
 import { nearestCity, cityByName, CITIES } from "../core/city";
 import { runForecast } from "../core/forecast";
 import { cityTz, todayInTz } from "../core/tz";
+import { verdictViewOf } from "../core/verdict";
+import { captionOf, saveIcs } from "../core/shareextras";
 import { snapEncode, snapDecode, type SnapInput, type SnapData } from "../core/snap";
 import { SNAP_FAC_NAME, snapFacFmt, judgmentOf } from "../core/factors";
 import { t } from "../core/i18n";
@@ -24,6 +27,19 @@ const snapUrl = ref("");
 const snapMsg = ref("");
 const copied = ref(false);
 const snapView = ref<SnapData | null>(null);
+const qrOpen = ref(false);
+const copiedText = ref(false);
+const icsDone = ref(false);
+
+/* 底部分享区与快照链接同一口径：综合结论（模型切换只在结论卡内生效） */
+const shareView = computed(() =>
+  state.result ? verdictViewOf(state.result, "ens") : null
+);
+const caption = computed(() => {
+  const r = state.result;
+  const v = shareView.value;
+  return r && v ? captionOf(r, v) : "";
+});
 
 async function run(force = false) {
   state.loading = true;
@@ -50,6 +66,10 @@ async function run(force = false) {
     state.loading = false;
   }
 }
+
+/* 趋势最佳窗口点击后要重算：把它交给子组件，避免趋势区复制一套取数逻辑。
+   约束不变 —— 只有用户显式点了某个窗口，才会触发这一次计算。 */
+provide("sunglow.run", run);
 
 function refreshSnap() {
   const r = state.result;
@@ -98,7 +118,33 @@ async function copySnap() {
     copied.value = true;
     setTimeout(() => (copied.value = false), 1800);
   } catch {
-    snapMsg.value = "复制失败，请手动复制";
+    snapMsg.value = t("复制失败，请手动复制");
+  }
+}
+
+/* 一键复制现成文案：今晚 18:32，广州晚霞概率 72%，良 */
+async function copyCaption() {
+  if (!caption.value) return;
+  try {
+    await navigator.clipboard.writeText(caption.value);
+    copiedText.value = true;
+    setTimeout(() => (copiedText.value = false), 1800);
+  } catch {
+    snapMsg.value = t("复制失败，请手动复制");
+  }
+}
+
+/* 加入日历：.ics 覆盖最佳观赏窗口，提前 30 分钟提醒 */
+function addCalendar() {
+  const r = state.result;
+  const v = shareView.value;
+  if (!r || !v) return;
+  try {
+    saveIcs(r, v, snapUrl.value);
+    icsDone.value = true;
+    setTimeout(() => (icsDone.value = false), 1800);
+  } catch {
+    snapMsg.value = t("日历文件生成失败，请重试");
   }
 }
 
@@ -268,17 +314,31 @@ onMounted(async () => {
     <div class="wrap">
       <div class="glass" style="padding: 26px 28px; display: flex; flex-wrap: wrap; gap: 18px; align-items: center; justify-content: space-between">
         <div>
-          <h3 style="margin: 0 0 6px">{{ t("分享快照") }}</h3>
+          <h3 style="margin: 0 0 6px">{{ t("分享与保存") }}</h3>
           <p style="margin: 0; color: var(--tx-2); font-size: var(--fs-small)">
             {{ t("生成的链接与 Sunglow Classic Edition（经典原版）互通（SNAP_VER=1），对方无需重新取数即可查看。") }}
           </p>
+          <p class="share-tip">{{ t("二维码、文案与日历文件均由本机生成，不经过服务器。") }}</p>
         </div>
-        <button class="btn btn-primary" :disabled="!snapUrl" @click="copySnap">
-          {{ copied ? t("已复制") : t("复制链接") }}
-        </button>
+        <div class="share-acts">
+          <button class="btn btn-primary" :disabled="!snapUrl" @click="copySnap">
+            {{ copied ? t("已复制") : t("复制链接") }}
+          </button>
+          <button class="btn btn-ghost" :disabled="!snapUrl" @click="qrOpen = true">
+            {{ t("二维码") }}
+          </button>
+          <button class="btn btn-ghost" :disabled="!shareView" @click="copyCaption">
+            {{ copiedText ? t("已复制") : t("复制文案") }}
+          </button>
+          <button class="btn btn-ghost" :disabled="!shareView" @click="addCalendar">
+            {{ icsDone ? t("已下载") : t("加入日历") }}
+          </button>
+        </div>
       </div>
     </div>
   </section>
+
+  <ShareQrDialog :open="qrOpen" :url="snapUrl" @close="qrOpen = false" @copy="copySnap" />
 </template>
 
 <style scoped>
@@ -339,5 +399,22 @@ onMounted(async () => {
   .sf b { grid-area: val; }
   .sf .fj { grid-area: judge; justify-self: end; }
   .sf i { grid-area: bar; }
+}
+
+/* ---- 分享与保存 ---- */
+.share-tip {
+  margin: 6px 0 0;
+  color: var(--tx-3);
+  font-size: var(--fs-tiny);
+}
+.share-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+@media (max-width: 720px) {
+  .share-acts { width: 100%; justify-content: flex-start; }
+  .share-acts .btn { flex: 1 1 auto; }
 }
 </style>

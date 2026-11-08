@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
+import { useRouter } from "vue-router";
 import SettingsPanel from "./SettingsPanel.vue";
 import { state, setLangAndSave, setThemeAndSave, setFold, type ThemeMode } from "../state";
 import { t, LANGS, LANG_SHORT, LANG_NAMES, type Lang } from "../core/i18n";
 import { cityName } from "../core/citylang";
+import { openFeedback } from "../composables/useFeedback";
 
 /* 徽标三段：地点 / 日期 / 朝晚霞。宽屏在主行按钮右侧；手机（mode-mini）
    连这一行都放不下，顶栏干脆不显示徽标 —— 改由抽屉顶部的状态行承担。
@@ -45,6 +47,7 @@ const themeOpen = ref(false);
    手机极简档隐藏按钮，入口交给目录抽屉的「更多项目」组。 */
 const verOpen = ref(false);
 const rootEl = ref<HTMLElement | null>(null);
+const router = useRouter();
 
 /* ---- 移动端目录抽屉（≤860px 替代导航） ---- */
 const drawerOpen = ref(false);
@@ -172,6 +175,10 @@ function toggleDrawer() {
 function closeDrawer() {
   drawerOpen.value = false;
 }
+function jumpFeedback() {
+  closeDrawer();
+  openFeedback();
+}
 
 /* 站内跳转：**不能**用原生 href="#id" —— 本项目是 hash 路由（createWebHashHistory），
    #verdict 会被当成路由 /verdict，落到 404。改成滚动定位。 */
@@ -182,7 +189,14 @@ function jumpTo(id: string, close = false) {
   if (det?.fold && state.folds[det.fold]) setFold(det.fold, false);
   if (NAV.some((n) => n.id === id)) active.value = id;
   const el = document.querySelector(id);
-  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (el) {
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+  /* 关于页等非首页路由：顶栏目录仍然可见，点它就先回首页再定位 */
+  void router.push("/").then(() => nextTick(() => {
+    document.querySelector(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }));
 }
 
 /* ---- 当前小节高亮：IO 只当「有变化」的信号，判定用几何量，结果可复现 ---- */
@@ -506,6 +520,12 @@ const themeIcon = () =>
     <div class="md-group">
       <h4>{{ t("指南") }}</h4>
       <a class="ext" href="./tutorial.html"><span>{{ t("使用教程") }}</span><i class="arw">↗</i></a>
+      <a class="ext" href="#/about" @click="closeDrawer">
+        <span>{{ t("关于 / 隐私") }}</span><i class="arw">↗</i>
+      </a>
+      <a class="ext" href="#feedback" @click.prevent="jumpFeedback">
+        <span>{{ t("反馈") }}</span><i class="arw">↗</i>
+      </a>
     </div>
 
     <!-- 更多项目（2026-10-27）：与桌面下拉同口径，写单行版名（随界面语言）；
