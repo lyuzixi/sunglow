@@ -67,8 +67,8 @@ must(/from "qrcode-generator"/.test(qrDialog), "二维码弹层没有使用 qrco
 must(/z-index: 300/.test(qrDialog), "二维码弹层层级低于顶栏");
 const feedbackDialogSrc = read("src/components/FeedbackDialog.vue");
 must(/z-index: 320/.test(feedbackDialogSrc), "反馈弹层层级低于设置面板 / 顶栏");
-must(/openFeedbackFromSettings/.test(read("src/components/SettingsPanel.vue")),
-  "设置菜单打开反馈前没有先收起面板");
+must(/saveQr/.test(feedbackDialogSrc) && /a\.download/.test(feedbackDialogSrc),
+  "反馈弹层缺少保存二维码图片的入口");
 const pwaBar = read("src/components/PwaUpdatePrompt.vue");
 must(/\.pwa-bar \{[\s\S]{0,500}overflow: hidden/.test(pwaBar),
   "更新提示条顶部光谱线没有裁到胶囊轮廓（直线会越过两端圆角）");
@@ -154,7 +154,7 @@ const critical = [
   "竖版故事卡", "分享与保存", "二维码", "复制文案", "加入日历",
   "最佳观赏窗口", "霞光档案 · {city}{period} {p}%", "今晚", "明晚",
   "新版本已就绪", "反馈", "反馈与交流", "反馈及交流请联系官方小红书",
-  "前往小红书主页", "小红书主页截图",
+  "前往小红书主页", "小红书主页截图", "保存二维码图片",
   "关于 / 隐私", "数据来源", "本地存储与隐私"
 ];
 for (const k of critical) {

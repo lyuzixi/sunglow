@@ -7,9 +7,53 @@ import { feedbackOpen, closeFeedback } from "../composables/useFeedback";
 import xhsProfile from "../assets/xiaohongshu-profile.jpg";
 
 const XHS_URL = "https://www.xiaohongshu.com/user/profile/65446e91000000000301c1cb";
+const QR_FILE = "霞光档案_官方小红书.jpg";
 
 const xhsLink = ref<HTMLAnchorElement | null>(null);
+const saving = ref(false);
 let lastFocus: HTMLElement | null = null;
+
+/** 保存主页截图：手机优先系统分享（可直接存相册），桌面回退下载。 */
+async function saveQr() {
+  if (saving.value) return;
+  saving.value = true;
+  try {
+    const res = await fetch(xhsProfile);
+    const blob = await res.blob();
+    const file = new File([blob], QR_FILE, { type: blob.type || "image/jpeg" });
+    const nav = navigator as Navigator & {
+      canShare?: (data?: ShareData) => boolean;
+      share?: (data?: ShareData) => Promise<void>;
+    };
+    const coarse =
+      typeof matchMedia !== "undefined" && matchMedia("(pointer: coarse)").matches;
+    let canShareFile = false;
+    if (coarse && nav.share && nav.canShare) {
+      try { canShareFile = nav.canShare({ files: [file] }); } catch { canShareFile = false; }
+    }
+    if (canShareFile) {
+      try {
+        await nav.share!({ files: [file], title: QR_FILE });
+        return;
+      } catch (e) {
+        if ((e as Error)?.name === "AbortError") return;
+        /* 其他错误（权限 / 策略拦截）继续走下载 */
+      }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = QR_FILE;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  } catch {
+    alert(t("保存失败，请长按图片保存。"));
+  } finally {
+    saving.value = false;
+  }
+}
 
 function onKey(e: KeyboardEvent) {
   if (e.key === "Escape" && feedbackOpen.value) closeFeedback();
@@ -48,6 +92,18 @@ onBeforeUnmount(() => {
           target="_blank"
           rel="noopener noreferrer"
         >{{ t("前往小红书主页") }}</a>
+        <button
+          class="btn btn-ghost fb-save"
+          :disabled="saving"
+          :aria-busy="saving"
+          @click="saveQr"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M4 21h16" />
+          </svg>
+          {{ saving ? t("保存中…") : t("保存二维码图片") }}
+        </button>
         <button class="btn btn-ghost fb-close" @click="closeFeedback()">{{ t("关闭") }}</button>
       </div>
     </div>
@@ -108,12 +164,25 @@ onBeforeUnmount(() => {
   text-decoration: none;
 }
 .fb-go:hover { text-decoration: none; }
+.fb-save {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 190px;
+  margin-top: 8px;
+}
+.fb-save:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.fb-save svg { flex: none; }
 .fb-close {
   display: inline-flex;
   justify-content: center;
   margin-top: 8px;
 }
 @media (pointer: coarse) {
-  .fb-go, .fb-close { min-height: 44px; }
+  .fb-go, .fb-save, .fb-close { min-height: 44px; }
 }
 </style>

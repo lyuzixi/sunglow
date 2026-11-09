@@ -4,8 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Skyglow Enhanced Edition · Skyglow移植增强版 · 火烧云概率预报</title>
-<meta name="description" content="Skyglow Enhanced Edition（Skyglow移植增强版）：基于 ERA5 分层云量、CAMS 气溶胶光学厚度与太阳几何的朝霞/晚霞定量预报（全功能单文件版）。">
+<meta name="description" content="Skyglow Enhanced Edition（Skyglow移植增强版）：基于第三方开源项目 couletian/Skyglow 的独立移植增强版，不属于 Sunglow；使用 ERA5 分层云量、CAMS 气溶胶光学厚度与太阳几何的朝霞/晚霞定量预报（全功能单文件版）。">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PGNpcmNsZSBjeD0iMTYiIGN5PSIxOSIgcj0iOCIgZmlsbD0iI2ZmN2E0ZCIvPjxwYXRoIGQ9Ik0yIDI1aDI4IiBzdHJva2U9IiNmZmIwNzAiIHN0cm9rZS13aWR0aD0iMiIvPjwvc3ZnPg==">
+<script>
+/* 来源提示条可关闭：先于 CSS 读取偏好，已关闭的用户不会看到闪烁。 */
+(function () {
+  try {
+    if (localStorage.getItem("skyglow.originNotice.v1") === "off")
+      document.documentElement.classList.add("origin-off");
+  } catch (e) { /* 隐私模式：保持显示 */ }
+})();
+</script>
 <style>
 :root{
   --bg:#07090f; --bg2:#0a0d14; --card:rgba(19,22,31,.78); --card2:rgba(12,15,22,.72);
@@ -48,6 +57,36 @@ body{
 .nav a.active:after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:2px;
   background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px}
 .top-meta{font-size:11px;color:var(--muted2);letter-spacing:.06em;font-family:var(--mono)}
+
+/* 来源说明条（2026-11-09）：Skyglow 是第三方开源项目的移植增强版，不属于 Sunglow。
+   与 V1 的停更提示同一思路：先把「我是谁 / 我不是谁」讲清楚，再进入预报。 */
+.origin-note{border-bottom:1px solid var(--line);
+  background:linear-gradient(90deg,rgba(255,138,76,.10),rgba(255,209,102,.045) 45%,rgba(255,209,102,0) 82%)}
+.origin-note-in{display:flex;align-items:flex-start;gap:10px;padding-top:9px;padding-bottom:9px;
+  font-size:12px;line-height:1.65;color:var(--muted)}
+.origin-copy{flex:1 1 auto;min-width:0}
+.origin-tag{flex:none;margin-top:1px;padding:1px 8px;border:1px solid rgba(255,209,102,.32);
+  border-radius:999px;background:rgba(255,209,102,.06);color:var(--accent2);
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;white-space:nowrap}
+.origin-note b{color:var(--text);font-weight:600}
+.origin-note a{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(255,138,76,.3)}
+.origin-note a:hover{color:var(--accent2)}
+.origin-close{flex:none;width:30px;height:30px;margin-left:auto;display:inline-flex;align-items:center;
+  justify-content:center;border:1px solid var(--line2);border-radius:8px;
+  background:rgba(255,255,255,.03);color:var(--muted);font:inherit;font-size:12px;line-height:1;
+  cursor:pointer;transition:color .15s,border-color .15s,background .15s}
+.origin-close:hover{color:var(--text);border-color:rgba(255,138,76,.45);background:rgba(255,138,76,.10)}
+.origin-close:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* 已关闭：顶部提示条不出现；页脚说明不受影响 */
+.origin-off .origin-note,.origin-note[hidden]{display:none}
+@media (pointer:coarse){
+  .origin-close{width:40px;height:40px}
+}
+@media (max-width:640px){
+  .origin-note-in{flex-wrap:wrap;gap:4px 10px;padding-top:10px;padding-bottom:10px}
+  .origin-copy{flex-basis:100%;order:3}
+  .origin-close{order:2}
+}
 
 /* 手机目录（≤980px）：汉堡 + 左侧抽屉，替代被隐藏的顶栏导航。
    桌面端 .mnav-btn 不显示，抽屉与遮罩也一直处于关闭态。 */
@@ -293,6 +332,15 @@ table.src th{color:var(--muted2);font-weight:500;font-size:10.5px}
   border-radius:999px;background:rgba(255,138,76,.10);color:var(--accent);font-size:10px;
   font-style:normal;font-weight:600;line-height:16px;letter-spacing:.02em;white-space:nowrap;
   text-decoration:none;vertical-align:1px}
+/* 推荐标识（2026-11-09）：指向 Sunglow 光谱观测版，与 .stale 同构但改用金色高亮 */
+.rec{display:inline-block;margin-left:6px;padding:0 4px;border:1px solid rgba(255,209,102,.42);
+  border-radius:999px;background:rgba(255,209,102,.12);color:var(--accent2);font-size:10px;
+  font-style:normal;font-weight:600;line-height:16px;letter-spacing:.02em;white-space:nowrap;
+  text-decoration:none;vertical-align:1px}
+/* 页脚来源说明：即使顶部提示被忽略，也能在页脚查到完整定性 */
+.fine-origin{margin-top:7px!important;margin-bottom:7px;padding-left:9px;border-left:2px solid var(--accent);
+  color:var(--muted)!important}
+.fine-origin strong{color:var(--accent2)}
 .attribution{font-size:10.5px;color:var(--muted2);margin-top:5px}
 .attribution a{color:var(--muted);text-decoration:underline;text-decoration-color:rgba(255,255,255,.18)}
 .attribution a:hover{color:var(--accent)}
@@ -586,6 +634,30 @@ table.src-table tr:hover td{background:rgba(255,255,255,.02)}
   </div>
 </header>
 
+<!-- 来源说明：Skyglow 是第三方开源项目的独立移植增强版，不属于 Sunglow。
+     与 V1 的停更提示同一思路：先把「我是谁 / 我不是谁」讲清楚，再进入预报。 -->
+<div class="origin-note" id="originNote" role="note">
+  <div class="wrap origin-note-in">
+    <span class="origin-tag">独立移植项目</span>
+    <span class="origin-copy">Skyglow 基于第三方开源项目
+      <a href="https://github.com/couletian/Skyglow" target="_blank" rel="noopener">couletian/Skyglow</a>
+      移植增强，<b>不属于 Sunglow / 霞光预报</b>，也不是 Sunglow 的一个版本。</span>
+    <button type="button" class="origin-close" id="originNoteClose" aria-label="关闭来源提示" title="关闭来源提示">✕</button>
+  </div>
+</div>
+<script>
+/* 关闭只隐藏顶部提示条；页脚的完整来源说明始终保留。偏好只存本机。 */
+(function () {
+  var el = document.getElementById("originNote");
+  var btn = document.getElementById("originNoteClose");
+  if (!el || !btn) return;
+  btn.addEventListener("click", function () {
+    el.hidden = true;
+    try { localStorage.setItem("skyglow.originNotice.v1", "off"); } catch (e) { /* 隐私模式 */ }
+  });
+})();
+</script>
+
 <!-- 手机目录抽屉：分组顺序 = 页面顺序，条目与锚点一一对应。
      Python 服务页（web/index.html）不加载本段与 toc.js，手机端仍保持原样。 -->
 <div class="mnav-mask" id="mnavMask"></div>
@@ -609,9 +681,9 @@ table.src-table tr:hover td{background:rgba(255,255,255,.02)}
     <a href="#cache"><span>本地缓存</span></a>
   </div>
   <div class="mnav-group">
-    <h4>其他版本</h4>
+    <h4>更多项目</h4>
     <a class="ext" href="../V1/index.html" title="经典原版已停止更新，仅保留小修小补"><span>Sunglow 经典原版<em class="stale">已停更</em></span><i class="arw">↗</i></a>
-    <a class="ext" href="../index.html"><span>Sunglow 光谱观测版</span><i class="arw">↗</i></a>
+    <a class="ext" href="../index.html"><span>Sunglow 光谱观测版<em class="rec">推荐</em></span><i class="arw">↗</i></a>
   </div>
 </aside>
 
@@ -1020,6 +1092,7 @@ table.src-table tr:hover td{background:rgba(255,255,255,.02)}
 
   <footer class="foot">
     <div>Skyglow Enhanced Edition · Skyglow移植增强版 · 火烧云概率预报（基于第三方项目移植增强）
+      <div class="fine fine-origin"><strong>Skyglow 不属于 Sunglow</strong>：它是第三方开源项目 couletian/Skyglow 的独立移植增强版，不是 Sunglow / 霞光预报的版本，也不是 V2 的下一代。</div>
       <div class="fine">全功能单文件版由 <strong>lyuzixi</strong> 将上游 Python 算法逐行移植为纯 JS 并打包（移植增强）。<br>
         原作者：<strong>couletian</strong> · 上游：<a href="https://github.com/couletian/Skyglow" target="_blank" rel="noopener">couletian/Skyglow</a> · 本仓库：<a href="https://github.com/lyuzixi/sunglow" target="_blank" rel="noopener">lyuzixi/sunglow</a><br>
         上游未附 LICENSE，版权归原作者所有并保留；本目录不主张上游代码的版权，引用或再分发前请先联系原作者确认。</div>
@@ -1027,7 +1100,7 @@ table.src-table tr:hover td{background:rgba(255,255,255,.02)}
            ../ 指向上级 —— 仓库根 index.html 即线上 V2，V1/ 与本目录同级，
            所以 file:// 双击与静态托管两种打开方式下都成立。不放进 #footMeta：
            那一格由 JS 写模型版本，探针按内容读它。 -->
-      <div class="fine foot-vers"><a href="../V1/index.html" title="经典原版已停止更新，仅保留小修小补">Sunglow 经典原版<em class="stale">已停更</em> →</a><a href="../index.html">Sunglow 光谱观测版 →</a></div>
+      <div class="fine foot-vers"><a href="../V1/index.html" title="经典原版已停止更新，仅保留小修小补">Sunglow 经典原版<em class="stale">已停更</em> →</a><a href="../index.html">Sunglow 光谱观测版<em class="rec">推荐</em> →</a></div>
     </div>
     <div id="footMeta">数据：ERA5 / CAMS / Open-Meteo · 标签：sunsetbot 再分析记录</div>
   </footer>

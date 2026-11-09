@@ -40,6 +40,36 @@ body{
   background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px}
 .top-meta{font-size:11px;color:var(--muted2);letter-spacing:.06em;font-family:var(--mono)}
 
+/* 来源说明条（2026-11-09）：Skyglow 是第三方开源项目的移植增强版，不属于 Sunglow。
+   与 V1 的停更提示同一思路：先把「我是谁 / 我不是谁」讲清楚，再进入预报。 */
+.origin-note{border-bottom:1px solid var(--line);
+  background:linear-gradient(90deg,rgba(255,138,76,.10),rgba(255,209,102,.045) 45%,rgba(255,209,102,0) 82%)}
+.origin-note-in{display:flex;align-items:flex-start;gap:10px;padding-top:9px;padding-bottom:9px;
+  font-size:12px;line-height:1.65;color:var(--muted)}
+.origin-copy{flex:1 1 auto;min-width:0}
+.origin-tag{flex:none;margin-top:1px;padding:1px 8px;border:1px solid rgba(255,209,102,.32);
+  border-radius:999px;background:rgba(255,209,102,.06);color:var(--accent2);
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;white-space:nowrap}
+.origin-note b{color:var(--text);font-weight:600}
+.origin-note a{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(255,138,76,.3)}
+.origin-note a:hover{color:var(--accent2)}
+.origin-close{flex:none;width:30px;height:30px;margin-left:auto;display:inline-flex;align-items:center;
+  justify-content:center;border:1px solid var(--line2);border-radius:8px;
+  background:rgba(255,255,255,.03);color:var(--muted);font:inherit;font-size:12px;line-height:1;
+  cursor:pointer;transition:color .15s,border-color .15s,background .15s}
+.origin-close:hover{color:var(--text);border-color:rgba(255,138,76,.45);background:rgba(255,138,76,.10)}
+.origin-close:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* 已关闭：顶部提示条不出现；页脚说明不受影响 */
+.origin-off .origin-note,.origin-note[hidden]{display:none}
+@media (pointer:coarse){
+  .origin-close{width:40px;height:40px}
+}
+@media (max-width:640px){
+  .origin-note-in{flex-wrap:wrap;gap:4px 10px;padding-top:10px;padding-bottom:10px}
+  .origin-copy{flex-basis:100%;order:3}
+  .origin-close{order:2}
+}
+
 /* 手机目录（≤980px）：汉堡 + 左侧抽屉，替代被隐藏的顶栏导航。
    桌面端 .mnav-btn 不显示，抽屉与遮罩也一直处于关闭态。 */
 .mnav-btn{display:none;width:36px;height:36px;margin-left:auto;align-items:center;justify-content:center;
@@ -284,6 +314,15 @@ table.src th{color:var(--muted2);font-weight:500;font-size:10.5px}
   border-radius:999px;background:rgba(255,138,76,.10);color:var(--accent);font-size:10px;
   font-style:normal;font-weight:600;line-height:16px;letter-spacing:.02em;white-space:nowrap;
   text-decoration:none;vertical-align:1px}
+/* 推荐标识（2026-11-09）：指向 Sunglow 光谱观测版，与 .stale 同构但改用金色高亮 */
+.rec{display:inline-block;margin-left:6px;padding:0 4px;border:1px solid rgba(255,209,102,.42);
+  border-radius:999px;background:rgba(255,209,102,.12);color:var(--accent2);font-size:10px;
+  font-style:normal;font-weight:600;line-height:16px;letter-spacing:.02em;white-space:nowrap;
+  text-decoration:none;vertical-align:1px}
+/* 页脚来源说明：即使顶部提示被忽略，也能在页脚查到完整定性 */
+.fine-origin{margin-top:7px!important;margin-bottom:7px;padding-left:9px;border-left:2px solid var(--accent);
+  color:var(--muted)!important}
+.fine-origin strong{color:var(--accent2)}
 .attribution{font-size:10.5px;color:var(--muted2);margin-top:5px}
 .attribution a{color:var(--muted);text-decoration:underline;text-decoration-color:rgba(255,255,255,.18)}
 .attribution a:hover{color:var(--accent)}

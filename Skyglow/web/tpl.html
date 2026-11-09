@@ -4,8 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Skyglow Enhanced Edition · Skyglow移植增强版 · 火烧云概率预报</title>
-<meta name="description" content="Skyglow Enhanced Edition（Skyglow移植增强版）：基于 ERA5 分层云量、CAMS 气溶胶光学厚度与太阳几何的朝霞/晚霞定量预报（全功能单文件版）。">
+<meta name="description" content="Skyglow Enhanced Edition（Skyglow移植增强版）：基于第三方开源项目 couletian/Skyglow 的独立移植增强版，不属于 Sunglow；使用 ERA5 分层云量、CAMS 气溶胶光学厚度与太阳几何的朝霞/晚霞定量预报（全功能单文件版）。">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PGNpcmNsZSBjeD0iMTYiIGN5PSIxOSIgcj0iOCIgZmlsbD0iI2ZmN2E0ZCIvPjxwYXRoIGQ9Ik0yIDI1aDI4IiBzdHJva2U9IiNmZmIwNzAiIHN0cm9rZS13aWR0aD0iMiIvPjwvc3ZnPg==">
+<script>
+/* 来源提示条可关闭：先于 CSS 读取偏好，已关闭的用户不会看到闪烁。 */
+(function () {
+  try {
+    if (localStorage.getItem("skyglow.originNotice.v1") === "off")
+      document.documentElement.classList.add("origin-off");
+  } catch (e) { /* 隐私模式：保持显示 */ }
+})();
+</script>
 <style>
 /*__STYLE__*/
 </style>
@@ -39,6 +48,30 @@
   </div>
 </header>
 
+<!-- 来源说明：Skyglow 是第三方开源项目的独立移植增强版，不属于 Sunglow。
+     与 V1 的停更提示同一思路：先把「我是谁 / 我不是谁」讲清楚，再进入预报。 -->
+<div class="origin-note" id="originNote" role="note">
+  <div class="wrap origin-note-in">
+    <span class="origin-tag">独立移植项目</span>
+    <span class="origin-copy">Skyglow 基于第三方开源项目
+      <a href="https://github.com/couletian/Skyglow" target="_blank" rel="noopener">couletian/Skyglow</a>
+      移植增强，<b>不属于 Sunglow / 霞光预报</b>，也不是 Sunglow 的一个版本。</span>
+    <button type="button" class="origin-close" id="originNoteClose" aria-label="关闭来源提示" title="关闭来源提示">✕</button>
+  </div>
+</div>
+<script>
+/* 关闭只隐藏顶部提示条；页脚的完整来源说明始终保留。偏好只存本机。 */
+(function () {
+  var el = document.getElementById("originNote");
+  var btn = document.getElementById("originNoteClose");
+  if (!el || !btn) return;
+  btn.addEventListener("click", function () {
+    el.hidden = true;
+    try { localStorage.setItem("skyglow.originNotice.v1", "off"); } catch (e) { /* 隐私模式 */ }
+  });
+})();
+</script>
+
 <!-- 手机目录抽屉：分组顺序 = 页面顺序，条目与锚点一一对应。
      Python 服务页（web/index.html）不加载本段与 toc.js，手机端仍保持原样。 -->
 <div class="mnav-mask" id="mnavMask"></div>
@@ -62,9 +95,9 @@
     <a href="#cache"><span>本地缓存</span></a>
   </div>
   <div class="mnav-group">
-    <h4>其他版本</h4>
+    <h4>更多项目</h4>
     <a class="ext" href="../V1/index.html" title="经典原版已停止更新，仅保留小修小补"><span>Sunglow 经典原版<em class="stale">已停更</em></span><i class="arw">↗</i></a>
-    <a class="ext" href="../index.html"><span>Sunglow 光谱观测版</span><i class="arw">↗</i></a>
+    <a class="ext" href="../index.html"><span>Sunglow 光谱观测版<em class="rec">推荐</em></span><i class="arw">↗</i></a>
   </div>
 </aside>
 
@@ -473,6 +506,7 @@
 
   <footer class="foot">
     <div>Skyglow Enhanced Edition · Skyglow移植增强版 · 火烧云概率预报（基于第三方项目移植增强）
+      <div class="fine fine-origin"><strong>Skyglow 不属于 Sunglow</strong>：它是第三方开源项目 couletian/Skyglow 的独立移植增强版，不是 Sunglow / 霞光预报的版本，也不是 V2 的下一代。</div>
       <div class="fine">全功能单文件版由 <strong>lyuzixi</strong> 将上游 Python 算法逐行移植为纯 JS 并打包（移植增强）。<br>
         原作者：<strong>couletian</strong> · 上游：<a href="https://github.com/couletian/Skyglow" target="_blank" rel="noopener">couletian/Skyglow</a> · 本仓库：<a href="https://github.com/lyuzixi/sunglow" target="_blank" rel="noopener">lyuzixi/sunglow</a><br>
         上游未附 LICENSE，版权归原作者所有并保留；本目录不主张上游代码的版权，引用或再分发前请先联系原作者确认。</div>
@@ -480,7 +514,7 @@
            ../ 指向上级 —— 仓库根 index.html 即线上 V2，V1/ 与本目录同级，
            所以 file:// 双击与静态托管两种打开方式下都成立。不放进 #footMeta：
            那一格由 JS 写模型版本，探针按内容读它。 -->
-      <div class="fine foot-vers"><a href="../V1/index.html" title="经典原版已停止更新，仅保留小修小补">Sunglow 经典原版<em class="stale">已停更</em> →</a><a href="../index.html">Sunglow 光谱观测版 →</a></div>
+      <div class="fine foot-vers"><a href="../V1/index.html" title="经典原版已停止更新，仅保留小修小补">Sunglow 经典原版<em class="stale">已停更</em> →</a><a href="../index.html">Sunglow 光谱观测版<em class="rec">推荐</em> →</a></div>
     </div>
     <div id="footMeta">数据：ERA5 / CAMS / Open-Meteo · 标签：sunsetbot 再分析记录</div>
   </footer>
