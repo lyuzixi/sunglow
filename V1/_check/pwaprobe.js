@@ -1,14 +1,14 @@
-/* F1 探针 —— 离线可用（PWA 化）。
+/* F1 探针 —— 应用外壳离线（PWA 化）。
  *
  * F1 与本项目的一个核心约束正面冲突：**产物必须是单文件**。而 PWA 物理上做不到
  * 单文件（SW 的注册脚本必须是同源 http(s) 的真实 URL，blob:/data: 一律被拒），
  * 所以设计成 `PWA=1` 的**可选产物**。这个探针于是有两组性质要同时守住：
  *   A. 默认构建**仍然**是单文件（无 manifest、无占位符残留、脚本块数不变）；
- *   B. PWA 构建真能离线打开，且**绝不缓存气象响应**。
+ *   B. PWA 构建能离线打开应用外壳（气象取数仍需联网），且**绝不缓存气象响应**。
  * 只测 B 不测 A，等于悄悄把单文件约束丢掉了。
  *
  * 离线那一半用**真实浏览器**测：起 SW → reload 让它接管 → CDP 切 offline →
- * 再 reload。断言"页面还能打开"而不是"SW 文件存在" —— 后者测不到任何真东西。
+ * 再 reload。断言"外壳还能打开"而不是"SW 文件存在" —— 后者测不到任何真东西。
  *
  * 用法: node _check/pwaprobe.js
  */
@@ -35,7 +35,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
  * 是部署约定（docfacts 比对的正是那样构建出来的字节数），于是探针也继承了这个变量 ——
  * `build({PWA:"1"}, DIR_PWA)` 名义上构建"站点根 /"的那套，实际被构建成了子路径版。
  * C 组用 `/` 起服务，页面却去注册 `/sunglow/sw.js` ⇒ 注册 404 ⇒
- * "SW 没装上 / 离线打不开"五条一起红，而错误信息指向的方向完全不对。
+ * "SW 没装上 / 外壳打不开"五条一起红，而错误信息指向的方向完全不对。
  * 现在显式清掉 PWA / SITE_BASE / OUT_DIR，逐次按调用方意图设置。 */
 function build(env, dir) {
   const base = Object.assign({}, process.env);
@@ -267,7 +267,7 @@ class CDP {
     "B sw.js 的预缓存名单里没有任何接口域名": precacheHasApi === false,
     "C SW 在真实浏览器里装上了并进入 activated": swState === "activated",
     "C reload 后 SW 真的接管了页面（controller 非空）": controlled === true,
-    "C 离线后仍能打开页面（SW 从缓存应答 —— 这是 F1 的全部意义）": offOk === true && offNav === true,
+    "C 离线后仍能打开应用外壳（SW 从缓存应答；气象取数仍需联网）": offOk === true && offNav === true,
     "C 离线时显示离线提示条": barInfo.hidden === false && /离线/.test(barInfo.txt || ""),
     "C 离线时取数失败给的是**离线专属**文案（不是「稍候 1 分钟重试」）":
       /离线状态/.test(heroOff) && !/稍候约 1 分钟/.test(heroOff),

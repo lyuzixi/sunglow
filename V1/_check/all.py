@@ -81,7 +81,7 @@ SUITE = [
     ("snapprobe",     "snapprobe.js",    "F5 结果快照（零额度 / 失效 / 恶意载荷 / 坏输入）"),
     ("calibprobe",    "calibprobe.js",   "F4 实况回填与本地校准（口径 / 阈值 / 不改模型输出 / 只存本机）"),
     # F1 探针要自己跑 assemble.py（构建三套产物），所以把当前解释器传进去。
-    ("pwaprobe",      "pwaprobe.js",     "F1 离线 / PWA（单文件约束仍成立 + 离线真能打开 + 不缓存气象）",
+    ("pwaprobe",      "pwaprobe.js",     "F1 离线 / PWA（单文件约束仍成立 + 应用外壳可离线打开 + 不缓存气象）",
      {"PY": sys.executable}),
     ("404probe",     "404probe.js",     "404 页（深路径渲染/桌面+窄屏/两个出口）"),
     # 教程页是**独立手写文件**，不进 assemble.py 的构建链 —— index.html 那一整套

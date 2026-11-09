@@ -109,6 +109,13 @@ must(/backdrop-filter: saturate\(1\.7\) blur\(26px\)/.test(settings),
 must(/@supports not \(\(backdrop-filter: blur\(1px\)\)/.test(settings),
   "设置面板缺少不支持 backdrop-filter 时的实色兜底");
 
+/* ---------- 1.9 不得宣称断网可完整使用 ---------- */
+const noOfflineClaim = /断网也能打开|断网也能开|断网可用|断网可开|断网也能看|双击即可离线使用/;
+for (const rel of ["tutorial.html", "404.html", "sw.js", "app.html", "README.md",
+  "../README.md", "../code-wiki.html", "../V1/index.html", "../V1/tutorial.html", "../V1/README.md"]) {
+  must(!noOfflineClaim.test(read(rel)), `${rel} 仍宣称断网可完整使用（气象取数需要联网）`);
+}
+
 /* ---------- 2. 分享卡：最佳窗口前 3 + 无内部代号 ---------- */
 const card = read("src/core/sharecard.ts");
 must(/TW = 780, TH = 680/.test(card), "趋势分享卡不再是 780×680");

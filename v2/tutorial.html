@@ -347,7 +347,7 @@ html[data-theme="light"] .hero > .ph-band .ph-credit{
 
   <section class="sec" id="u-quota">
     <h2><span class="no">09</span><span data-i18n="缓存、额度与离线">缓存、额度与离线</span></h2>
-    <p data-i18n="所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度：日额度耗尽（429）会直接报错并提示次日重置，不再回退演示数据；短时限流则提示约一分钟恢复，不自动重试。网络不可用或超时（预算 12 秒）才回落到确定性 mock，界面左上角标注 MOCK——别把 mock 当预报。装了 PWA 的话，断网也能看已缓存的结果。">所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度：日额度耗尽（429）会直接报错并提示次日重置，不再回退演示数据；短时限流则提示约一分钟恢复，不自动重试。网络不可用或超时（预算 12 秒）才回落到确定性 mock，界面左上角标注 MOCK——别把 mock 当预报。装了 PWA 的话，断网也能看已缓存的结果。</p>
+    <p data-i18n="所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度：日额度耗尽（429）会直接报错并提示次日重置，不再回退演示数据；短时限流则提示约一分钟恢复，不自动重试。网络不可用或超时（预算 12 秒）才回落到确定性 mock，界面左上角标注 MOCK——别把 mock 当预报。装了 PWA 的话，断网时只能查看已缓存的结果，不能获取新预报。">所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度：日额度耗尽（429）会直接报错并提示次日重置，不再回退演示数据；短时限流则提示约一分钟恢复，不自动重试。网络不可用或超时（预算 12 秒）才回落到确定性 mock，界面左上角标注 MOCK——别把 mock 当预报。装了 PWA 的话，断网时只能查看已缓存的结果，不能获取新预报。</p>
   </section>
 
   <section class="sec" id="u-terms">
@@ -497,7 +497,7 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
 
   <section class="sec" id="c-etq">
     <h2><span class="no">06</span><span data-i18n="额度礼节与离线">额度礼节与离线</span></h2>
-    <p data-i18n="别用脚本刷接口——免费层按访客 IP 计额，刷爆了大家都没得看。出门前把常用城市看一遍，断网时已缓存的结果照样能开；PWA 装上之后，山里也有底气。">别用脚本刷接口——免费层按访客 IP 计额，刷爆了大家都没得看。出门前把常用城市看一遍，断网时已缓存的结果照样能开；PWA 装上之后，山里也有底气。</p>
+    <p data-i18n="别用脚本刷接口——免费层按访客 IP 计额，刷爆了大家都没得看。出门前把常用城市看一遍，断网时只能查看已缓存的结果，不能获取新预报；PWA 装上之后，离线也能翻看这些缓存。">别用脚本刷接口——免费层按访客 IP 计额，刷爆了大家都没得看。出门前把常用城市看一遍，断网时只能查看已缓存的结果，不能获取新预报；PWA 装上之后，离线也能翻看这些缓存。</p>
   </section>
 </section>
 </main>
@@ -584,7 +584,7 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
     "偏好与外观": "偏好與外觀",
     "设置面板里：主题（大气光谱观测站·深色 / 晨光实验室·浅色 / 跟随系统）、语言（简体 / 繁體 / English）、单位（公制 km·m·℃ / 英制 mi·ft·℉）、时间格式（12 / 24 小时制）；开篇照片背景另有 关 / 天色带 / 全幅 / 窗口 四种模式，默认关闭。偏好写本机 localStorage，与本教程页共享同一份。": "設置面板裡：主題（大氣光譜觀測站·深色 / 晨光實驗室·淺色 / 跟隨系統）、語言（簡體 / 繁體 / English）、單位（公制 km·m·℃ / 英制 mi·ft·℉）、時間格式（12 / 24 小時制）；開篇照片背景另有 關 / 天色帶 / 全幅 / 視窗 四種模式，預設關閉。偏好寫本機 localStorage，與本教程頁共享同一份。",
     "缓存、额度与离线": "快取、額度與離線",
-    "所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度：日额度耗尽（429）会直接报错并提示次日重置，不再回退演示数据；短时限流则提示约一分钟恢复，不自动重试。网络不可用或超时（预算 12 秒）才回落到确定性 mock，界面左上角标注 MOCK——别把 mock 当预报。装了 PWA 的话，断网也能看已缓存的结果。": "所有結果按「日期 + 時段 + 座標」分鍵快取 6 小時，設置裡可看條數、一鍵清除。數據源 Open-Meteo 免費層按訪客 IP 計額度：日額度耗盡（429）會直接報錯並提示次日重置，不再回退演示數據；短時限流則提示約一分鐘恢復，不自動重試。網路不可用或超時（預算 12 秒）才回落到確定性 mock，介面左上角標註 MOCK——別把 mock 當預報。裝了 PWA 的話，斷網也能看已快取的結果。",
+    "所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度：日额度耗尽（429）会直接报错并提示次日重置，不再回退演示数据；短时限流则提示约一分钟恢复，不自动重试。网络不可用或超时（预算 12 秒）才回落到确定性 mock，界面左上角标注 MOCK——别把 mock 当预报。装了 PWA 的话，断网时只能查看已缓存的结果，不能获取新预报。": "所有結果按「日期 + 時段 + 座標」分鍵快取 6 小時，設置裡可看條數、一鍵清除。數據源 Open-Meteo 免費層按訪客 IP 計額度：日額度耗盡（429）會直接報錯並提示次日重置，不再回退演示數據；短時限流則提示約一分鐘恢復，不自動重試。網路不可用或超時（預算 12 秒）才回落到確定性 mock，介面左上角標註 MOCK——別把 mock 當預報。裝了 PWA 的話，斷網時只能查看已快取的結果，不能取得新預報。",
     "术语速查": "術語速查",
     "气溶胶光学厚度，衡量大气浑浊度（0.1 清澈 → 1+ 重霾）。": "氣溶膠光學厚度，衡量大氣渾濁度（0.1 清澈 → 1+ 重霾）。",
     "云底高度": "雲底高度",
@@ -657,7 +657,7 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
     "实况校准的反哺": "實況校準的反哺",
     "每次拍完回来标注「看到了 / 没看到 / 无法判断」。本机样本攒够后（≥8 条），你会看到自己所在区域的观测偏差——那是你的个人命中率，比通用概率更懂你的机位。数据只存本机，换浏览器不跟着走。": "每次拍完回來標註「看到了 / 沒看到 / 無法判斷」。本機樣本攢夠後（≥8 條），你會看到自己所在區域的觀測偏差——那是你的個人命中率，比通用概率更懂你的機位。數據只存本機，換瀏覽器不跟著走。",
     "额度礼节与离线": "額度禮節與離線",
-    "别用脚本刷接口——免费层按访客 IP 计额，刷爆了大家都没得看。出门前把常用城市看一遍，断网时已缓存的结果照样能开；PWA 装上之后，山里也有底气。": "別用腳本刷介面——免費層按訪客 IP 計額，刷爆了大家都沒得看。出門前把常用城市看一遍，斷網時已快取的結果照樣能開；PWA 裝上之後，山裡也有底氣。"
+    "别用脚本刷接口——免费层按访客 IP 计额，刷爆了大家都没得看。出门前把常用城市看一遍，断网时只能查看已缓存的结果，不能获取新预报；PWA 装上之后，离线也能翻看这些缓存。": "別用腳本刷介面——免費層按訪客 IP 計額，刷爆了大家都沒得看。出門前把常用城市看一遍，斷網時只能查看已快取的結果，不能取得新預報；PWA 裝上之後，離線也能翻看這些快取。"
   };
   var EN = {
     "回主页": "Home",
@@ -724,7 +724,7 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
     "偏好与外观": "Preferences & appearance",
     "设置面板里：主题（大气光谱观测站·深色 / 晨光实验室·浅色 / 跟随系统）、语言（简体 / 繁體 / English）、单位（公制 km·m·℃ / 英制 mi·ft·℉）、时间格式（12 / 24 小时制）；开篇照片背景另有 关 / 天色带 / 全幅 / 窗口 四种模式，默认关闭。偏好写本机 localStorage，与本教程页共享同一份。": "In the settings panel: theme (Spectrum Observatory dark / Dawn Lab light / system), language (简体 / 繁體 / English), units (metric km·m·℃ / imperial mi·ft·℉) and clock format (12 / 24-hour). The hero photo backdrop has four modes — off / sky band / full / window — off by default. Preferences live in this device's localStorage, shared with this tutorial page.",
     "缓存、额度与离线": "Cache, quota & offline",
-    "所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度：日额度耗尽（429）会直接报错并提示次日重置，不再回退演示数据；短时限流则提示约一分钟恢复，不自动重试。网络不可用或超时（预算 12 秒）才回落到确定性 mock，界面左上角标注 MOCK——别把 mock 当预报。装了 PWA 的话，断网也能看已缓存的结果。": "All results cache for 6 hours, keyed by date + period + coordinates; the settings panel shows the count and clears everything in one tap. Data comes from Open-Meteo's free tier, metered per visitor IP: an exhausted daily quota (429) errors out immediately and tells you it resets tomorrow — it no longer falls back to demo data; a short-term throttle asks you to retry in about a minute and never auto-retries. Only an unavailable network or a timeout (12-second budget) falls back to deterministic mock data, flagged MOCK in the top-left — don't mistake mock for a forecast. With the PWA installed, cached results open even offline.",
+    "所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度：日额度耗尽（429）会直接报错并提示次日重置，不再回退演示数据；短时限流则提示约一分钟恢复，不自动重试。网络不可用或超时（预算 12 秒）才回落到确定性 mock，界面左上角标注 MOCK——别把 mock 当预报。装了 PWA 的话，断网时只能查看已缓存的结果，不能获取新预报。": "All results cache for 6 hours, keyed by date + period + coordinates; the settings panel shows the count and clears everything in one tap. Data comes from Open-Meteo's free tier, metered per visitor IP: an exhausted daily quota (429) errors out immediately and tells you it resets tomorrow — it no longer falls back to demo data; a short-term throttle asks you to retry in about a minute and never auto-retries. Only an unavailable network or a timeout (12-second budget) falls back to deterministic mock data, flagged MOCK in the top-left — don't mistake mock for a forecast. With the PWA installed you can still view cached results offline, but you cannot fetch a new forecast.",
     "术语速查": "Glossary",
     "气溶胶光学厚度，衡量大气浑浊度（0.1 清澈 → 1+ 重霾）。": "Aerosol optical depth — how murky the air is (0.1 clear → 1+ heavy haze).",
     "云底高度": "Cloud-base height",
@@ -797,7 +797,7 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
     "实况校准的反哺": "What calibration gives back",
     "每次拍完回来标注「看到了 / 没看到 / 无法判断」。本机样本攒够后（≥8 条），你会看到自己所在区域的观测偏差——那是你的个人命中率，比通用概率更懂你的机位。数据只存本机，换浏览器不跟着走。": "After each shoot, tag 'saw it / didn't / can't tell'. Once your device has enough samples (≥8), you'll see the observed deviation for your region — your personal hit rate, which knows your spots better than the generic probability. Data stays on the device; it doesn't follow you to another browser.",
     "额度礼节与离线": "Quota etiquette & offline",
-    "别用脚本刷接口——免费层按访客 IP 计额，刷爆了大家都没得看。出门前把常用城市看一遍，断网时已缓存的结果照样能开；PWA 装上之后，山里也有底气。": "Don't script-hammer the API — the free tier is metered per visitor IP, and burning it leaves nothing for anyone. Check your usual cities before heading out; cached results open fine offline, and with the PWA installed you're covered even in the mountains."
+    "别用脚本刷接口——免费层按访客 IP 计额，刷爆了大家都没得看。出门前把常用城市看一遍，断网时只能查看已缓存的结果，不能获取新预报；PWA 装上之后，离线也能翻看这些缓存。": "Don't script-hammer the API — the free tier is metered per visitor IP, and burning it leaves nothing for anyone. Check your usual cities before heading out; offline you can only view cached results, not fetch a new forecast; the PWA lets you revisit those cached results."
   };
   var DICT = { hant: HANT, en: EN };
   var THEMES = ["auto", "light", "dark"];

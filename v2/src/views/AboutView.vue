@@ -15,7 +15,7 @@ import { openFeedback } from "../composables/useFeedback";
       <div class="about-hero">
         <span class="pill">SUNGLOW · Spectrum Edition</span>
         <h1>{{ t("关于霞光档案") }}</h1>
-        <p class="lead">{{ t("朝霞与晚霞的定量预报，纯前端、单文件、可离线。这份说明讲清数据来源、额度与本地存储。") }}</p>
+        <p class="lead">{{ t("朝霞与晚霞的定量预报，纯前端、单文件；气象取数需要联网。这份说明讲清数据来源、额度与本地存储。") }}</p>
       </div>
 
       <div class="about-grid">

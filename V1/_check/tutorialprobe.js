@@ -199,7 +199,7 @@ const HIT = `(function(){
   const s = {
     "产物 tutorial.html 存在且非空": html.length > 60000,
     "产物里没有未替换的占位符": holes.length === 0,
-    "自包含：零外部引用（断网也打得开）": ext.length === 0,
+    "自包含：零外部引用": ext.length === 0,
     "主题引导脚本排在第一块 CSS 之前（防 FOUC）": iBoot > 0 && iCss > iBoot,
     /* 教程页是手写独立文件 —— 一旦有人把它塞进 assemble.py 的模板替换，
        它就会多出 __SITE_BASE__ 之类的注入点，与"双击可开"的定位冲突。 */

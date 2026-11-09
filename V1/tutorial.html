@@ -672,7 +672,7 @@ python mkpreview.py</pre></div>
     <p data-i18n-html="d3.p4">纯静态站没有前端路由，「访问不存在的路径」由托管平台兜底（Cloudflare Pages / GitHub Pages / Netlify 都取站点根下的 <code>404.html</code> 并以 404 返回）。<code>assemble.py</code> 一并生成，无需 rewrite 配置；页内地址写成站点根的绝对形式，由构建期注入 <code>SITE_BASE</code>。</p>
 
     <h3 data-i18n="3.4 可选 PWA">3.4 可选 PWA</h3>
-    <p data-i18n-html="d3.p5"><code>PWA=1</code> 会多产 <code>manifest.json</code> / <code>sw.js</code> / 两枚图标，可被「添加到主屏幕」且离线能打开。三条纪律：① SW <b>绝不缓存气象响应</b>（只认预缓存名单）；② 缓存名带产物 sha256 前 12 位，内容一变旧缓存作废；③ 注册是「增强」—— 失败或 <code>file://</code> 打开全部静默跳过。默认不开，因为它与「单文件产物」的核心约束冲突。</p>
+    <p data-i18n-html="d3.p5"><code>PWA=1</code> 会多产 <code>manifest.json</code> / <code>sw.js</code> / 两枚图标，可被「添加到主屏幕」；断网时只能打开应用外壳与已缓存的结果，新的预报与地图仍需联网。三条纪律：① SW <b>绝不缓存气象响应</b>（只认预缓存名单）；② 缓存名带产物 sha256 前 12 位，内容一变旧缓存作废；③ 注册是「增强」—— 失败或 <code>file://</code> 打开全部静默跳过。默认不开，因为它与「单文件产物」的核心约束冲突。</p>
 
     <h3 data-i18n="3.5 本地预览">3.5 本地预览</h3>
     <div class="code"><pre>python assemble.py          <span class="c"># 生成 index.html</span>
@@ -830,7 +830,7 @@ python _check/all.py -k cdp     <span class="c"># 只跑名字含 cdp 的</span>
       <li data-i18n-html="c5.li2"><b>三模型合成</b>（GFS / ECMWF / 光追，权重 0.30 / 0.34 / 0.36），降低单一来源偏差。</li>
       <li data-i18n-html="c5.li3"><b>隐私友好</b>：本地校准只存本机、可关闭可清空、不回改模型。</li>
       <li data-i18n-html="c5.li4"><b>额度对访客友好</b>：首屏只取单点，地图显式点击才取，缓存命中零请求。</li>
-      <li data-i18n-html="c5.li5"><b>可装成 App</b>（PWA，可选），离线也能打开。</li>
+      <li data-i18n-html="c5.li5"><b>可装成 App</b>（PWA，可选）；断网时只能查看已缓存的结果，新预报需要联网。</li>
     </ul>
   </section>
 
@@ -1054,7 +1054,7 @@ var ZH_HANT_2 = {
   "3.3 404 页": "3.3 404 頁",
   "d3.p4": "純靜態站沒有前端路由，「存取不存在的路徑」由託管平台兜底（Cloudflare Pages / GitHub Pages / Netlify 都取站點根下的 <code>404.html</code> 並以 404 回應）。<code>assemble.py</code> 一併產生，無需 rewrite 設定；頁內位址寫成站點根的絕對形式，由建置期注入 <code>SITE_BASE</code>。",
   "3.4 可选 PWA": "3.4 可選 PWA",
-  "d3.p5": "<code>PWA=1</code> 會多產 <code>manifest.json</code> / <code>sw.js</code> / 兩枚圖示，可被「加入主畫面」且離線能開啟。三條紀律：① SW <b>絕不快取氣象回應</b>（只認預快取名單）；② 快取名帶產物 sha256 前 12 位，內容一變舊快取作廢；③ 註冊是「增強」—— 失敗或 <code>file://</code> 開啟全部靜默跳過。預設不開，因為它與「單檔產物」的核心約束衝突。",
+  "d3.p5": "<code>PWA=1</code> 會多產 <code>manifest.json</code> / <code>sw.js</code> / 兩枚圖示，可被「加入主畫面」；斷網時只能開啟應用外殼與已快取的結果，新的預報與地圖仍需連網。三條紀律：① SW <b>絕不快取氣象回應</b>（只認預快取名單）；② 快取名帶產物 sha256 前 12 位，內容一變舊快取作廢；③ 註冊是「增強」—— 失敗或 <code>file://</code> 開啟全部靜默跳過。預設不開，因為它與「單檔產物」的核心約束衝突。",
   "3.5 本地预览": "3.5 本機預覽",
   "d3.p6": "<code>_check/preview.html</code> 的地圖 SDK 是樁實作（複刻 Heat 核函式疊加與投影），可離線、可斷言、不消耗額度。回歸套件全部跑這個檔案。",
 
@@ -1163,7 +1163,7 @@ var ZH_HANT_2 = {
   "c5.li2": "<b>三模型合成</b>（GFS / ECMWF / 光追，權重 0.30 / 0.34 / 0.36），降低單一來源偏差。",
   "c5.li3": "<b>隱私友善</b>：本地校準只存本機、可關閉可清空、不回改模型。",
   "c5.li4": "<b>額度對訪客友善</b>：首屏只取單點，地圖明確點擊才取，快取命中零請求。",
-  "c5.li5": "<b>可裝成 App</b>（PWA，可選），離線也能開啟。",
+  "c5.li5": "<b>可裝成 App</b>（PWA，可選）；斷網時只能檢視已快取的結果，新預報需要連網。",
 
   "6 · 注意事项（别踩坑）": "6 · 注意事項（別踩坑）",
   "免费层按访客自己的出口 IP 计（10000 次 / 天 / 人）。演示时自己多刷几次没关系，但别让观众以为「无限调用」。": "免費層依訪客自己的出口 IP 計（10000 次 / 天 / 人）。示範時自己多刷幾次沒關係，但別讓觀眾以為「無限呼叫」。",
@@ -1372,7 +1372,7 @@ var EN_2 = {
   "3.3 404 页": "3.3 The 404 page",
   "d3.p4": "A purely static site has no front-end router, so unknown paths are handled by the host (Cloudflare Pages, GitHub Pages and Netlify all serve <code>404.html</code> from the site root with a 404 status). <code>assemble.py</code> writes it too — no rewrite rules needed. In-page links are absolute from the site root, injected at build time via <code>SITE_BASE</code>.",
   "3.4 可选 PWA": "3.4 Optional PWA",
-  "d3.p5": "<code>PWA=1</code> adds <code>manifest.json</code>, <code>sw.js</code> and two icons, so the app can be added to the home screen and opened offline. Three rules: (1) the service worker <b>never caches weather responses</b>, only a precache list; (2) the cache name carries the first 12 hex digits of the product's sha256, so a content change retires the old cache; (3) registration is an enhancement — failures and <code>file://</code> are silently skipped. Off by default because it conflicts with the single-file constraint.",
+  "d3.p5": "<code>PWA=1</code> adds <code>manifest.json</code>, <code>sw.js</code> and two icons, so the app can be added to the home screen; offline you only get the app shell and cached results — new forecasts and maps still need a connection. Three rules: (1) the service worker <b>never caches weather responses</b>, only a precache list; (2) the cache name carries the first 12 hex digits of the product's sha256, so a content change retires the old cache; (3) registration is an enhancement — failures and <code>file://</code> are silently skipped. Off by default because it conflicts with the single-file constraint.",
   "3.5 本地预览": "3.5 Local preview",
   "d3.p6": "<code>_check/preview.html</code> uses a stub map SDK (reproducing the Heat kernel accumulation and projection), so it runs offline, is assertable, and spends no quota. The whole regression suite runs against that file.",
 
@@ -1481,7 +1481,7 @@ var EN_2 = {
   "c5.li2": "<b>Three models blended</b> (GFS / ECMWF / ray-traced, weights 0.30 / 0.34 / 0.36) to damp single-source bias.",
   "c5.li3": "<b>Privacy-friendly</b>: local calibration stays on the device, can be switched off or cleared, and never rewrites the model.",
   "c5.li4": "<b>Quota-friendly</b>: the first screen fetches one point, the map needs a click, and a cache hit costs nothing.",
-  "c5.li5": "<b>Installable as an app</b> (optional PWA) and opens offline.",
+  "c5.li5": "<b>Installable as an app</b> (optional PWA); offline you can only view cached results — a new forecast needs a connection.",
 
   "6 · 注意事项（别踩坑）": "6 · Caveats",
   "免费层按访客自己的出口 IP 计（10000 次 / 天 / 人）。演示时自己多刷几次没关系，但别让观众以为「无限调用」。": "The free tier counts against each visitor's own egress IP (10,000 calls per day per person). Refreshing during a demo is fine, but do not let viewers think calls are unlimited.",

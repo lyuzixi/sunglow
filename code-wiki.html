@@ -1320,7 +1320,7 @@ npm run build        <span class="c"># check-consistency → vite → emit-singl
 npm run probe:ui
 npm run probe:tz
 npm run probe:consist</pre>
-      <p>交付：根 <code>index.html</code> 可直接双击，断网可用（JS/CSS/字体内联）。
+      <p>交付：根 <code>index.html</code> 可直接双击打开；气象取数需要联网（JS/CSS/字体内联）。
         PWA 附属文件由仓库提供，<code>emit-single</code> 只负责把 Vite 的哈希名改回稳定名并校验存在性。</p>
 
       <h3 id="v2-debt">5.8 Sunglow Spectrum Edition（V2）的风险与技术债</h3>
@@ -1788,7 +1788,7 @@ PORT=8888 SKYGLOW_HOST=0.0.0.0 python server.py   <span class="c"># 容器部署
           单文件 HTML 决定了一连串取舍：图标必须内联（<code>assemble.py</code> 用 zlib 手写 PNG 编码）、
           不做 <code>og:image</code>、PWA 默认关闭（Service Worker 注册脚本必须是同源真实 URL，<code>blob:</code>/<code>data:</code> 一律被拒）、
           v2 宁可加两个构建后处理脚本也要把「多文件产物」压回单文件。
-          <mark class="key">这条约束的收益是可分享、可离线、零部署依赖；代价是包体与可维护性。</mark>
+          <mark class="key">这条约束的收益是可分享、单文件部署、零部署依赖；代价是包体与可维护性。</mark>
           项目把这个代价明确记账（README 里写清代价），这是成熟度信号。
         </li>
         <li>

@@ -1,6 +1,6 @@
 /* =========================================================================
    SUNGLOW v2 · Service Worker（正式版，取代此前的一次性退役 shim）
-   目标：可安装 + 断网可开 + 秒开；**不碰气象响应**（额度与新鲜度都不许缓存）。
+   目标：可安装 + 离线打开应用外壳 + 秒开；气象取数仍需联网；**不碰气象响应**（额度与新鲜度都不许缓存）。
    策略：
      · 导航请求（HTML）：网络优先，失败回落缓存 —— 保证更新能及时生效
      · 静态资源（图标/manifest）：stale-while-revalidate
@@ -9,7 +9,7 @@
    install 只缓存、不自动 skipWaiting —— 新版本先进入 waiting，由页面提示条
    询问用户后再激活（见 src/components/PwaUpdatePrompt.vue）。
    ========================================================================= */
-const VERSION = "glowcast-v2-pwa-70ce77508344";
+const VERSION = "glowcast-v2-pwa-6401c1d23f12";
 const CORE = [
   "./",
   "./index.html",

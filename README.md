@@ -4,13 +4,13 @@
 
 基于免费公开气象数据，计算太阳—云层几何、大气光谱消光与光路上游云遮挡，输出朝霞 / 晚霞的**出现概率（0–100%）**、强度等级、最佳观赏窗口与预计色彩。
 
-**主入口：双击根目录的 [index.html](index.html)** —— Sunglow Spectrum Edition 的单文件产物，断网也能打开。
+**主入口：双击根目录的 [index.html](index.html)** —— Sunglow Spectrum Edition 的单文件产物；页面可直接打开，但气象取数需要联网。
 
 ## 版本一览
 
 | 版本（正式名） | 内部标识 / 目录 | 定位 | 入口 |
 |---|---|---|---|
-| **Sunglow Spectrum Edition**（光谱观测版） | V2 · `v2/` | **当前主线**：大气光谱观测站 · 深色科技风；新功能、体验与迭代都在这里 | [index.html](index.html) · [README](v2/README.md)；双击根 `index.html`，断网可用 |
+| **Sunglow Spectrum Edition**（光谱观测版） | V2 · `v2/` | **当前主线**：大气光谱观测站 · 深色科技风；新功能、体验与迭代都在这里 | [index.html](index.html) · [README](v2/README.md)；双击根 `index.html` 打开页面，气象取数需要联网 |
 | **Sunglow Classic Edition**（经典原版） | V1 · `V1/` | **历史经典版本**：算法权威 · assemble 单文件构建链；冻结为只读基准 | [V1/index.html](V1/index.html) · [README](V1/README.md)；双击；地图需腾讯地图代理 |
 | **Skyglow Enhanced Edition**（Skyglow移植增强版） | Skyglow · `Skyglow/` | **独立移植增强版本**：基于第三方 couletian/Skyglow，功能最全；不是 V3，也不是 V2 的下一代 | [Skyglow/index.html](Skyglow/index.html) · [README](Skyglow/README.md)；双击单文件版；完整功能用 `run.bat` / `run.sh` |
 
@@ -45,7 +45,7 @@
 sunglow/
 ├── index.html / 404.html / tutorial.html / sw.js / manifest.webmanifest / icon-*.png
 │                            Sunglow Spectrum Edition 发布产物（构建生成，勿手改）
-├── code-wiki.html           项目 Code Wiki（单页，可离线打开）
+├── code-wiki.html           项目 Code Wiki（单页）
 ├── V1/                      经典原版（Sunglow Classic Edition）：assemble 单文件构建链，算法权威
 ├── v2/                      当前主线（Sunglow Spectrum Edition）：Vite 6 + Vue 3 + TS
 └── Skyglow/                 独立移植增强版（Skyglow Enhanced Edition）：上游 Python 服务 + 移植增强单文件版
