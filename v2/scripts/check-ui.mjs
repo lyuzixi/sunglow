@@ -65,6 +65,7 @@ must(/复制文案/.test(home) && /加入日历/.test(home) && /二维码/.test(
   "底部分享区缺少二维码 / 文案 / 日历入口");
 must(/from "qrcode-generator"/.test(qrDialog), "二维码弹层没有使用 qrcode-generator");
 must(/z-index: 300/.test(qrDialog), "二维码弹层层级低于顶栏");
+must(/saveQr/.test(qrDialog) && /deliverBlob/.test(qrDialog), "二维码弹层缺少保存二维码图片的入口");
 const feedbackDialogSrc = read("src/components/FeedbackDialog.vue");
 must(/z-index: 320/.test(feedbackDialogSrc), "反馈弹层层级低于设置面板 / 顶栏");
 must(/saveQr/.test(feedbackDialogSrc) && /a\.download/.test(feedbackDialogSrc),

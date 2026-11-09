@@ -4,6 +4,7 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import qrcode from "qrcode-generator";
 import { t } from "../core/i18n";
+import { deliverBlob } from "../core/sharecard";
 
 const props = defineProps<{ open: boolean; url: string }>();
 const emit = defineEmits<{ (e: "close"): void; (e: "copy"): void }>();
@@ -11,6 +12,7 @@ const emit = defineEmits<{ (e: "close"): void; (e: "copy"): void }>();
 const cv = ref<HTMLCanvasElement | null>(null);
 const closeBtn = ref<HTMLButtonElement | null>(null);
 const err = ref("");
+const saving = ref(false);
 let lastFocus: HTMLElement | null = null;
 
 function draw() {
@@ -42,6 +44,23 @@ function draw() {
 }
 
 function close() { emit("close"); }
+
+/** 保存二维码：手机优先系统分享（可直接存相册），桌面回退下载 */
+async function saveQr() {
+  const el = cv.value;
+  if (!el || saving.value || err.value) return;
+  saving.value = true;
+  try {
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      el.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob failed"))), "image/png");
+    });
+    await deliverBlob(blob, t("霞光档案") + "_" + t("快照二维码") + ".png");
+  } catch {
+    alert(t("保存失败，请长按图片保存。"));
+  } finally {
+    saving.value = false;
+  }
+}
 
 function onKey(e: KeyboardEvent) {
   if (e.key === "Escape" && props.open) close();
@@ -80,6 +99,9 @@ onBeforeUnmount(() => {
         <p class="qr-url">{{ url }}</p>
         <div class="qr-acts">
           <button class="btn btn-primary" @click="emit('copy')">{{ t("复制链接") }}</button>
+          <button class="btn btn-ghost" :disabled="saving || !!err" :aria-busy="saving" @click="saveQr">
+            {{ saving ? t("保存中…") : t("保存二维码图片") }}
+          </button>
           <button ref="closeBtn" class="btn btn-ghost" @click="close">{{ t("关闭") }}</button>
         </div>
       </div>
@@ -141,6 +163,7 @@ onBeforeUnmount(() => {
 }
 .qr-acts {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   justify-content: center;
 }

@@ -709,6 +709,12 @@ input, select {
 .mdrawer.armed { display: block; }
 @media (max-width: 720px) {
   .topbar-in { height: 56px; }
+  /* 手机页脚：品牌说明在上，链接组在下；两个版本入口各自独占一行，
+     版权回到第一行右侧，避免长名字被拆成竖排 */
+  .foot-in { flex-direction: column; align-items: stretch; gap: var(--sp-4); }
+  .foot-links { gap: 10px 16px; font-size: var(--fs-small); }
+  .foot-links > span { order: 0; margin-left: auto; }
+  .foot-ver { order: 1; flex: 1 1 100%; }
 }
 
 /* ---- 菜单弹层 ---- */
@@ -807,6 +813,9 @@ table.data tr:last-child td { border-bottom: 0; }
 .foot-brand { display: flex; flex-direction: column; gap: 3px; }
 .foot-sub { font-size: var(--fs-tiny); }
 .foot-ver { line-height: 1.25; }
+/* 页脚链接组：空间不够时整条换行，而不是把每个链接压成竖排字 */
+.foot-links { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+.foot-links a { white-space: nowrap; }
 /* 停更状态：页脚与项目入口的胶囊徽标，沿用页脚的字号与发丝线 */
 .ver-stale {
   display: inline-block;

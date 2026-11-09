@@ -424,7 +424,7 @@ export type ShareOutcome = "shared" | "downloaded" | "cancelled";
 
 /** 落地：手机优先唤起系统分享面板（可直接发微信/存相册），
     桌面、以及不支持带文件分享的浏览器，回退到下载。 */
-async function deliverBlob(blob: Blob, fileName: string): Promise<ShareOutcome> {
+export async function deliverBlob(blob: Blob, fileName: string): Promise<ShareOutcome> {
   const nav = navigator as Navigator & {
     canShare?: (d?: ShareData) => boolean;
     share?: (d?: ShareData) => Promise<void>;
