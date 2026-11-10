@@ -4,7 +4,8 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import qrcode from "qrcode-generator";
 import { t } from "../core/i18n";
-import { deliverBlob } from "../core/sharecard";
+import { state } from "../state";
+import { deliverBlob, saveQrCard } from "../core/sharecard";
 
 const props = defineProps<{ open: boolean; url: string }>();
 const emit = defineEmits<{ (e: "close"): void; (e: "copy"): void }>();
@@ -45,16 +46,22 @@ function draw() {
 
 function close() { emit("close"); }
 
-/** 保存二维码：手机优先系统分享（可直接存相册），桌面回退下载 */
+/** 保存二维码：有当次结果时存完整卡片（照片 + 概率 + 质量），
+    快照/无结果时退回存纯二维码；手机优先系统分享，桌面回退下载 */
 async function saveQr() {
   const el = cv.value;
   if (!el || saving.value || err.value) return;
   saving.value = true;
   try {
-    const blob = await new Promise<Blob>((resolve, reject) => {
-      el.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob failed"))), "image/png");
-    });
-    await deliverBlob(blob, t("霞光档案") + "_" + t("快照二维码") + ".png");
+    const r = state.result;
+    if (r) {
+      await saveQrCard(props.url, r);
+    } else {
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        el.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob failed"))), "image/png");
+      });
+      await deliverBlob(blob, t("霞光档案") + "_" + t("快照二维码") + ".png");
+    }
   } catch {
     alert(t("保存失败，请长按图片保存。"));
   } finally {

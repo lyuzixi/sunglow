@@ -30,6 +30,7 @@ import {
 } from "./maprender";
 import { glowColor, glowRgb, glowAlpha, GLOW_BANDS, rampColor } from "./ramp";
 import heroPhoto from "../assets/hero-photo.webp";
+import qrcode from "qrcode-generator";
 
 const W = 780, H = 400, S = 2;
 /** 顶部实拍报头带高度（与首屏 M2 报头带同一套照片与署名） */
@@ -453,6 +454,175 @@ export async function deliverBlob(blob: Blob, fileName: string): Promise<ShareOu
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 5000);
   return "downloaded";
+}
+
+/* =========================================================================
+   快照二维码卡（保存二维码图片用）
+   版式 C3「玻璃叠层 · 双数字」：实拍照片铺满 3:4，顶部压暗放品牌 / 城市 / 日期，
+   底部一块液态玻璃里把「出现概率」和「质量」并排放，等级胶囊与扫码提示在下。
+   文案与数值全部取自同一份 ForecastResult，和页面结论不会打架。
+   注：照片源只有 1024×683，竖裁后 512 宽，1080 画布必然有插值；
+   这是「整幅照片当封面」的固有代价，换取与站点一致的观感。
+   ========================================================================= */
+const QW = 1080, QH = 1440;
+
+/** 逐字绘制并手动加字距：canvas 的 letter-spacing 在旧内核里不可用 */
+function spaced(c: CanvasRenderingContext2D, s: string, x: number, y: number, gap: number) {
+  let cx = x;
+  for (const ch of s) {
+    c.fillText(ch, cx, y);
+    cx += c.measureText(ch).width + gap;
+  }
+}
+
+export async function saveQrCard(url: string, r: ForecastResult): Promise<void> {
+  const cv = document.createElement("canvas");
+  cv.width = QW; cv.height = QH;
+  const c = cv.getContext("2d");
+  if (!c) throw new Error("canvas 2d unavailable");
+  c.imageSmoothingQuality = "high";
+  c.textBaseline = "top";
+  c.textAlign = "left";
+
+  /* ---- 照片：3:4 竖裁居中（源 3:2，两侧各裁四分之一） ---- */
+  let photo: HTMLImageElement | null = null;
+  try { photo = await loadHeroPhoto(); } catch { photo = null; }
+  let sx = 0, sy = 0, sw = QW, sh = QH;
+  if (photo && photo.width) {
+    const tr = QW / QH, sr = photo.width / photo.height;
+    if (sr > tr) { sw = photo.height * tr; sh = photo.height; sx = (photo.width - sw) / 2; }
+    else { sw = photo.width; sh = photo.width / tr; sy = (photo.height - sh) * 0.5; }
+    c.drawImage(photo, sx, sy, sw, sh, 0, 0, QW, QH);
+  } else {
+    const g = c.createLinearGradient(0, 0, 0, QH);
+    g.addColorStop(0, "#1b2440"); g.addColorStop(1, "#0b1220");
+    c.fillStyle = g; c.fillRect(0, 0, QW, QH);
+  }
+
+  /* ---- 顶部压暗：到 62% 收干净，下半张照片不受影响 ---- */
+  const scrim = c.createLinearGradient(0, 0, 0, QH * 0.62);
+  scrim.addColorStop(0, "rgba(3,6,12,.76)");
+  scrim.addColorStop(0.34, "rgba(3,6,12,.40)");
+  scrim.addColorStop(1, "rgba(3,6,12,0)");
+  c.fillStyle = scrim; c.fillRect(0, 0, QW, QH * 0.62);
+
+  /* ---- 顶部信息 ---- */
+  const PAD = 76, BRAND_Y = 70;
+  c.fillStyle = "rgba(255,255,255,.88)";
+  c.font = f(600, 32, true);
+  spaced(c, "SUNGLOW", PAD, BRAND_Y, 9);
+  c.textAlign = "right";
+  c.fillStyle = "rgba(255,255,255,.64)";
+  c.font = f(500, 32);
+  c.fillText(t("霞光档案"), QW - PAD, BRAND_Y);
+  c.textAlign = "left";
+
+  c.fillStyle = "#ffffff";
+  c.font = f(700, 98);
+  c.fillText(fit(c, cityName(r.city.name, getLang()), QW - PAD * 2), PAD, BRAND_Y + 72);
+
+  /* ---- 玻璃面板：阴影 → 模糊照片 → 暗化 → 顶部高光 ---- */
+  const GX = 51, GH = 580, GY = QH - 51 - GH, GW = QW - GX * 2, GR = 51;
+  c.save();
+  c.shadowColor = "rgba(0,0,0,.38)"; c.shadowBlur = 44; c.shadowOffsetY = 20;
+  c.fillStyle = "rgba(10,15,24,.42)";
+  rr(c, GX, GY, GW, GH, GR); c.fill();
+  c.restore();
+
+  c.save();
+  rr(c, GX, GY, GW, GH, GR); c.clip();
+  if (photo && photo.width) {
+    c.filter = "blur(46px)";
+    c.drawImage(photo, sx, sy, sw, sh, 0, 0, QW, QH);
+    c.filter = "none";
+  }
+  c.fillStyle = "rgba(10,15,24,.42)"; c.fillRect(GX, GY, GW, GH);
+  const hl = c.createLinearGradient(0, GY, 0, GY + 120);
+  hl.addColorStop(0, "rgba(255,255,255,.16)");
+  hl.addColorStop(1, "rgba(255,255,255,0)");
+  c.fillStyle = hl; c.fillRect(GX, GY, GW, 120);
+  c.restore();
+
+  /* ---- 日期：并入玻璃面板首行，深底白字不受照片亮度影响 ---- */
+  const DATE_Y = GY + 44;
+  const [yy, mm, dd] = r.dateStr.split("-").map(Number);
+  const dow = new Date(yy, (mm || 1) - 1, dd || 1).getDay();
+  const dateLine = r.dateStr + " · " + t(WEEK[dow] || "周日") + " · " +
+    t(r.period === "am" ? "朝霞" : "晚霞");
+  c.fillStyle = "rgba(255,255,255,.72)";
+  c.font = f(400, 32);
+  c.fillText(fit(c, dateLine, GW - 88), GX + 44, DATE_Y);
+  const ROW_Y = DATE_Y + 54;
+
+  /* ---- 二维码：白卡靠右，码点按画布精度重绘（不是放大位图） ---- */
+  const PLATE = 432, PIN = 29;
+  const PLX = QW - 51 - 44 - PLATE, PLY = ROW_Y;
+  c.save();
+  c.shadowColor = "rgba(0,0,0,.35)"; c.shadowBlur = 30; c.shadowOffsetY = 12;
+  c.fillStyle = "#ffffff";
+  rr(c, PLX, PLY, PLATE, PLATE, 32); c.fill();
+  c.restore();
+
+  const qr = qrcode(0, "L");
+  qr.addData(url);
+  qr.make();
+  const n = qr.getModuleCount();
+  const cell = Math.max(1, Math.floor((PLATE - PIN * 2) / n));
+  const qs = cell * n;
+  const qx = PLX + (PLATE - qs) / 2, qy = PLY + (PLATE - qs) / 2;
+  c.fillStyle = "#0b1020";
+  for (let y = 0; y < n; y++) {
+    for (let x = 0; x < n; x++) {
+      if (qr.isDark(y, x)) c.fillRect(qx + x * cell, qy + y * cell, cell, cell);
+    }
+  }
+
+  /* ---- 左侧文字列：概率与质量并列（C3），等级胶囊单独一行 ---- */
+  const LX = 95, LY = ROW_Y, LW = PLX - 44 - LX;
+  const CELL_GAP = 36, CELL_W = (LW - CELL_GAP) / 2;
+
+  const stat = (x: number, label: string, val: number, unit: string) => {
+    c.fillStyle = "rgba(255,255,255,.66)";
+    c.font = f(500, 32);
+    c.fillText(fit(c, label, CELL_W), x, LY + 4);
+    c.fillStyle = "#ffffff";
+    c.font = f(700, 96, true);
+    const s = String(val);
+    c.fillText(s, x, LY + 44);
+    const w = c.measureText(s).width;
+    c.font = f(500, 32);
+    c.fillStyle = "rgba(255,255,255,.82)";
+    c.fillText(unit, x + w + 6, LY + 108);
+  };
+  stat(LX, t("出现概率"), Math.round(r.P), "%");
+  stat(LX + CELL_W + CELL_GAP, t("质量"), Math.round(r.Q), t("分"));
+
+  /* 等级胶囊：颜色跟等级走（差不能是绿的） */
+  const QY = LY + 158, PH = 48;
+  const tag = t(r.grade);
+  const gc = gradeColor(r.grade, true);
+  c.font = f(600, 32);
+  const tw = c.measureText(tag).width;
+  const pillW = tw + 44;
+  c.fillStyle = withAlpha(gc, 0.20);
+  rr(c, LX, QY, pillW, PH, 24); c.fill();
+  c.strokeStyle = withAlpha(gc, 0.5); c.lineWidth = 2; c.stroke();
+  c.fillStyle = gc;
+  c.textBaseline = "middle";
+  c.fillText(tag, LX + 22, QY + PH / 2 + 1);
+  c.textBaseline = "top";
+
+  /* 分隔线 + 底部提示 */
+  c.fillStyle = "rgba(255,255,255,.16)";
+  c.fillRect(LX, QY + PH + 40, LW, 1);
+  c.fillStyle = "rgba(255,255,255,.74)";
+  c.font = f(400, 32);
+  c.fillText(t("扫码查看快照"), LX, GY + GH - 44 - 32);
+
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    cv.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob failed"))), "image/png");
+  });
+  await deliverBlob(blob, shareFileName(r));
 }
 
 export async function saveShareCard(

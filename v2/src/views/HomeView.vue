@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, provide, ref, watch } from "vue";
+import { computed, nextTick, onMounted, provide, ref, watch } from "vue";
 import HeroSection from "../components/HeroSection.vue";
 import ConclusionCard from "../components/ConclusionCard.vue";
 import TrendSection from "../components/TrendSection.vue";
@@ -41,6 +41,44 @@ const caption = computed(() => {
   return r && v ? captionOf(r, v) : "";
 });
 
+/* ---------- 结果落地时的视口锚定 ----------
+   首屏取数前，结论 / 影响因素 / 光追三节都是空态：整页 6333px；结果一到，
+   这三节长成完整卡片，整页变成 11737px（实测 390×844）。用户这时往往已经在往下滑，
+   浏览器自带的滚动锚定只补回一部分（Chromium 实测视口仍会视觉跳 ~2100px），
+   小米浏览器补得更差 —— 表现就是「滑动中突然跳到实况校准」。
+   所以在写结果前后把视口顶部所在的那一节钉住：只有整页高度真的变了才动，
+   且用瞬移、在绘制前完成，用户看不见。 */
+type ViewAnchor = { el: HTMLElement | null; top: number; sh: number };
+
+function captureViewAnchor(): ViewAnchor {
+  const el =
+    [...document.querySelectorAll<HTMLElement>(".section")].find((s) => {
+      const r = s.getBoundingClientRect();
+      /* 跨在视口里的那一节（底部还在视口内），或紧贴视口下方进入视口的那一节 */
+      return r.bottom > 1 && r.top < window.innerHeight;
+    }) || null;
+  return {
+    el,
+    top: el ? el.getBoundingClientRect().top : 0,
+    sh: document.documentElement.scrollHeight
+  };
+}
+
+async function holdViewAnchor(a: ViewAnchor): Promise<void> {
+  await nextTick();
+  /* 还停在最顶上时，下方长高不会动到眼前内容，不必（也不该）补 */
+  if (!a.el || window.scrollY < 1) return;
+  if (Math.abs(document.documentElement.scrollHeight - a.sh) < 8) return;
+  /* 浏览器已经做过的锚定补偿不再重复算 —— 这里只补残差 */
+  const d = a.el.getBoundingClientRect().top - a.top;
+  if (Math.abs(d) < 8) return;
+  const root = document.documentElement;
+  /* 全局 CSS 是 scroll-behavior:smooth；这一次必须瞬移（行为值 auto 会继承 CSS） */
+  root.style.scrollBehavior = "auto";
+  window.scrollTo(0, window.scrollY + d);
+  root.style.scrollBehavior = "";
+}
+
 async function run(force = false) {
   state.loading = true;
   state.error = "";
@@ -51,6 +89,7 @@ async function run(force = false) {
       period: state.period,
       force
     });
+    const anchor = captureViewAnchor();
     if (!r.ok) {
       state.error = r.error;
       state.result = null;
@@ -60,6 +99,7 @@ async function run(force = false) {
       refreshSnap();
       syncUrl();
     }
+    await holdViewAnchor(anchor);
   } catch (e) {
     state.error = String(e);
   } finally {
