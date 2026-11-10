@@ -32,16 +32,14 @@ watchEffect(() => {
         <a href="./tutorial.html">{{ t("使用教程") }}</a>
         <a href="#feedback" @click.prevent="openFeedback">{{ t("反馈") }}</a>
         <router-link to="/about">{{ t("关于 / 隐私") }}</router-link>
-        <!-- 版本切换（2026-10-27）：两条都按**根位置**写（源码直改，publish-root 校验
-             禁止根产物里出现 ../ 跨目录链接）。V2 交付物发布到仓库根，所以 V1/ 与
-             Skyglow/ 就是同级目录 —— 根副本正确，v2/ 工程目录里预览时这两条会指错，
-             与既有版本切换入口同一条已拍板的已知限制。 -->
+        <!-- 版本切换（2026-10-27）：V1 仍按根位置写（publish-root 禁止 ../ 跨目录链接）；
+             Skyglow 已独立到 sky.sunglow.cloud，改用绝对地址跨域跳转。 -->
         <a
           class="foot-ver"
           href="V1/index.html"
           :title="t('经典原版已停止更新，仅保留小修小补')"
         >{{ t("Sunglow 经典原版") }}<em class="ver-stale">{{ t("已停更") }}</em></a>
-        <a class="foot-ver" href="Skyglow/index.html">{{ t("Skyglow 移植增强版") }}<em class="ver-ind">{{ t("独立项目") }}</em></a>
+        <a class="foot-ver" href="https://sky.sunglow.cloud/">{{ t("Skyglow 移植增强版") }}<em class="ver-ind">{{ t("独立项目") }}</em></a>
         <span>© {{ year }}</span>
       </div>
     </div>

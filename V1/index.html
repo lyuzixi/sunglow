@@ -1725,13 +1725,14 @@ body.snapmode [data-snaphide]{display:none}
         </ul>
       </div>
     </details>
-    <!-- 版本切换（2026-10-27）：三版同仓并存，页脚给两个出口，与 Spectrum Edition
-         的版本切换入口同构。相对地址 ../ 指向上级 —— 仓库根 index.html 即线上 V2，Skyglow/ 同级。
+    <!-- 版本切换（2026-10-27）：页脚给两个出口，与 Spectrum Edition 的版本切换入口同构。
+         V2 用相对地址 ../index.html（仓库根 index.html 即线上 V2）；Skyglow 已独立到
+         sky.sunglow.cloud，必须用绝对地址跨域跳转。
          快照（分享）模式照常显示：它是站内导航，不是会被快照误带出去的开关，所以不打
          data-snaphide；目录抽屉整块已隐，那两条不受影响。 -->
     <div class="vlnks">
       <a class="vlnk" href="../index.html"><span data-i18n="Sunglow 光谱观测版">Sunglow 光谱观测版</span><span class="vlnk-rec" data-i18n="推荐">推荐</span><span aria-hidden="true">→</span></a>
-      <a class="vlnk" href="../Skyglow/index.html"><span data-i18n="Skyglow 移植增强版">Skyglow 移植增强版</span><span class="vlnk-ind" data-i18n="独立项目">独立项目</span><span aria-hidden="true">→</span></a>
+      <a class="vlnk" href="https://sky.sunglow.cloud/"><span data-i18n="Skyglow 移植增强版">Skyglow 移植增强版</span><span class="vlnk-ind" data-i18n="独立项目">独立项目</span><span aria-hidden="true">→</span></a>
     </div>
     <!-- 视觉方案 P1：谚语落款 —— 把应用接回民间观天传统。
          朝霞不出门、晚霞行千里讲的正是这个应用在预报的那件事；安静一行，不参与信息层级。 -->
@@ -7361,11 +7362,11 @@ function shareCard() {
   <div class="toc-g" data-i18n="指南">指南</div>
   <a class="toc-i" id="tocTut" href="tutorial.html"><span data-i18n="使用教程">使用教程</span><span class="toc-tag" aria-hidden="true">↗</span></a>
   <!-- 更多项目（2026-10-27）：与「指南」同为真链接组 —— 点它直接离开首页，同样不接
-       data-goto。相对地址里 ../ 指向上级：仓库根的 index.html 就是线上 V2，Skyglow/
-       与本目录同级，所以本地双击和静态托管两种打开方式下都成立。 -->
+       data-goto。V2 用相对地址 ../index.html 指向仓库根；Skyglow 已独立到
+       sky.sunglow.cloud，必须用绝对地址跨域跳转。 -->
   <div class="toc-g" data-i18n="更多项目">更多项目</div>
   <a class="toc-i" href="../index.html"><span class="vlnk" data-i18n="Sunglow 光谱观测版">Sunglow 光谱观测版</span><span class="toc-tag rec"><span data-i18n="推荐">推荐</span><span aria-hidden="true"> ↗</span></span></a>
-  <a class="toc-i" href="../Skyglow/index.html"><span class="vlnk" data-i18n="Skyglow 移植增强版">Skyglow 移植增强版</span><span class="toc-tag" data-i18n="独立项目">独立项目</span><span class="toc-tag" aria-hidden="true" style="margin-left:6px">↗</span></a>
+  <a class="toc-i" href="https://sky.sunglow.cloud/"><span class="vlnk" data-i18n="Skyglow 移植增强版">Skyglow 移植增强版</span><span class="toc-tag" data-i18n="独立项目">独立项目</span><span class="toc-tag" aria-hidden="true" style="margin-left:6px">↗</span></a>
 </nav>
 <div class="tocveil" id="tocVeil" hidden></div>
 

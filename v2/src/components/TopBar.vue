@@ -454,7 +454,7 @@ const themeIcon = () =>
             >
               <span class="ver-tx">{{ t("Sunglow 经典原版") }}<em class="ver-stale">{{ t("已停更") }}</em></span><i class="arw">↗</i>
             </a>
-            <a role="menuitem" href="Skyglow/index.html">
+            <a role="menuitem" href="https://sky.sunglow.cloud/">
               <span class="ver-tx">{{ t("Skyglow 移植增强版") }}<em class="ver-ind">{{ t("独立项目") }}</em></span><i class="arw">↗</i>
             </a>
           </div>
@@ -529,7 +529,7 @@ const themeIcon = () =>
     </div>
 
     <!-- 更多项目（2026-10-27）：与桌面下拉同口径，写单行版名（随界面语言）；
-         真链接、根位置（publish-root 禁止 ../），点它直接离开首页。 -->
+         V1 用根位置链接，Skyglow 已独立到 sky.sunglow.cloud，用绝对地址跨域跳转。 -->
     <div class="md-group">
       <h4>{{ t("更多项目") }}</h4>
       <a
@@ -537,7 +537,7 @@ const themeIcon = () =>
         href="V1/index.html"
         :title="t('经典原版已停止更新，仅保留小修小补')"
       ><span class="ver-tx">{{ t("Sunglow 经典原版") }}<em class="ver-stale">{{ t("已停更") }}</em></span><i class="arw">↗</i></a>
-      <a class="ext" href="Skyglow/index.html"><span class="ver-tx">{{ t("Skyglow 移植增强版") }}<em class="ver-ind">{{ t("独立项目") }}</em></span><i class="arw">↗</i></a>
+      <a class="ext" href="https://sky.sunglow.cloud/"><span class="ver-tx">{{ t("Skyglow 移植增强版") }}<em class="ver-ind">{{ t("独立项目") }}</em></span><i class="arw">↗</i></a>
     </div>
   </aside>
 </template>

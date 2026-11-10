@@ -682,8 +682,8 @@ table.src-table tr:hover td{background:rgba(255,255,255,.02)}
   </div>
   <div class="mnav-group">
     <h4>更多项目</h4>
-    <a class="ext" href="../V1/index.html" title="经典原版已停止更新，仅保留小修小补"><span>Sunglow 经典原版<em class="stale">已停更</em></span><i class="arw">↗</i></a>
-    <a class="ext" href="../index.html"><span>Sunglow 光谱观测版<em class="rec">推荐</em></span><i class="arw">↗</i></a>
+    <a class="ext" href="https://sunglow.cloud/V1/index.html" title="经典原版已停止更新，仅保留小修小补"><span>Sunglow 经典原版<em class="stale">已停更</em></span><i class="arw">↗</i></a>
+    <a class="ext" href="https://sunglow.cloud/"><span>Sunglow 光谱观测版<em class="rec">推荐</em></span><i class="arw">↗</i></a>
   </div>
 </aside>
 
@@ -760,7 +760,7 @@ table.src-table tr:hover td{background:rgba(255,255,255,.02)}
             <span id="cacheText">—</span>
             <button id="refreshNow" title="忽略本地缓存，重新向数据源请求">刷新</button>
           </div>
-          <div class="attribution" id="attribution">skyglow 原作者 <a href="https://github.com/couletian/Skyglow" target="_blank" rel="noopener">couletian</a> · 全功能单文件版 <a href="https://github.com/lyuzixi/sunglow" target="_blank" rel="noopener">lyuzixi</a> 移植增强</div>
+          <div class="attribution" id="attribution">skyglow 原作者 <a href="https://github.com/couletian/Skyglow" target="_blank" rel="noopener">couletian</a> · 全功能单文件版 <a href="https://github.com/lyuzixi/skyglow" target="_blank" rel="noopener">lyuzixi</a> 移植增强</div>
         </div>
         <div class="conf" id="conf">置信度 —</div>
       </div>
@@ -1094,13 +1094,12 @@ table.src-table tr:hover td{background:rgba(255,255,255,.02)}
     <div>Skyglow Enhanced Edition · Skyglow移植增强版 · 火烧云概率预报（基于第三方项目移植增强）
       <div class="fine fine-origin"><strong>Skyglow 不属于 Sunglow</strong>：它是第三方开源项目 couletian/Skyglow 的独立移植增强版，不是 Sunglow / 霞光预报的版本，也不是 V2 的下一代。</div>
       <div class="fine">全功能单文件版由 <strong>lyuzixi</strong> 将上游 Python 算法逐行移植为纯 JS 并打包（移植增强）。<br>
-        原作者：<strong>couletian</strong> · 上游：<a href="https://github.com/couletian/Skyglow" target="_blank" rel="noopener">couletian/Skyglow</a> · 本仓库：<a href="https://github.com/lyuzixi/sunglow" target="_blank" rel="noopener">lyuzixi/sunglow</a><br>
+        原作者：<strong>couletian</strong> · 上游：<a href="https://github.com/couletian/Skyglow" target="_blank" rel="noopener">couletian/Skyglow</a> · 本仓库：<a href="https://github.com/lyuzixi/skyglow" target="_blank" rel="noopener">lyuzixi/skyglow</a><br>
         上游未附 LICENSE，版权归原作者所有并保留；本目录不主张上游代码的版权，引用或再分发前请先联系原作者确认。</div>
-      <!-- 版本切换（2026-10-27）：三版同仓并存，本页是 /Skyglow/ 下的单文件产物，
-           ../ 指向上级 —— 仓库根 index.html 即线上 V2，V1/ 与本目录同级，
-           所以 file:// 双击与静态托管两种打开方式下都成立。不放进 #footMeta：
-           那一格由 JS 写模型版本，探针按内容读它。 -->
-      <div class="fine foot-vers"><a href="../V1/index.html" title="经典原版已停止更新，仅保留小修小补">Sunglow 经典原版<em class="stale">已停更</em> →</a><a href="../index.html">Sunglow 光谱观测版<em class="rec">推荐</em> →</a></div>
+      <!-- 版本切换（2026-10-27）：Skyglow 已独立到 sky.sunglow.cloud 仓库，
+           Sunglow V2 与 V1 仍留在 sunglow.cloud，因此这里必须写绝对地址跨域跳转。
+           不放进 #footMeta：那一格由 JS 写模型版本，探针按内容读它。 -->
+      <div class="fine foot-vers"><a href="https://sunglow.cloud/V1/index.html" title="经典原版已停止更新，仅保留小修小补">Sunglow 经典原版<em class="stale">已停更</em> →</a><a href="https://sunglow.cloud/">Sunglow 光谱观测版<em class="rec">推荐</em> →</a></div>
     </div>
     <div id="footMeta">数据：ERA5 / CAMS / Open-Meteo · 标签：sunsetbot 再分析记录</div>
   </footer>
