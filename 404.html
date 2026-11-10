@@ -37,7 +37,12 @@
   document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
   document.documentElement.style.colorScheme = dark ? "dark" : "light";
   var lang = pref.lang === "hant" || pref.lang === "en" ? pref.lang : "zh";
-  document.documentElement.setAttribute("lang", lang === "zh" ? "zh-CN" : lang === "hant" ? "zh-Hant" : "en");
+  /* ?lang= 优先于偏好：与教程页同一口径，分享 / 跨域互跳时可直接指定语言 */
+  try {
+    var ql = new URLSearchParams(location.search).get("lang");
+    if (ql === "zh" || ql === "hant" || ql === "en") lang = ql;
+  } catch (e) { /* 老内核不支持 URLSearchParams 时退回偏好 */ }
+  document.documentElement.setAttribute("lang", lang === "zh" ? "zh-CN" : lang === "hant" ? "zh-Hant-TW" : "en");
   window.__gcPref = { lang: lang, theme: theme };
 })();
 </script>
@@ -348,7 +353,7 @@ html[data-theme="light"] .ph-credit{text-shadow:0 1px 10px rgba(242,245,251,.90)
   }
   function applyLang() {
     document.documentElement.setAttribute("lang",
-      lang === "zh" ? "zh-CN" : lang === "hant" ? "zh-Hant" : "en");
+      lang === "zh" ? "zh-CN" : lang === "hant" ? "zh-Hant-TW" : "en");
     var nodes = document.querySelectorAll("[data-i18n]");
     for (var i = 0; i < nodes.length; i++) {
       nodes[i].textContent = t(nodes[i].getAttribute("data-i18n"));

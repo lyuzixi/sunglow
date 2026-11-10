@@ -9,7 +9,9 @@
    install 只缓存、不自动 skipWaiting —— 新版本先进入 waiting，由页面提示条
    询问用户后再激活（见 src/components/PwaUpdatePrompt.vue）。
    ========================================================================= */
-const VERSION = "glowcast-v2-pwa-e4d06b253535";
+/* 占位值：发布时由 publish-root.mjs 按 index.html 内容哈希重写为
+   glowcast-v2-pwa-<12 位哈希>，源文件不写死版本号（写死会让人以为改它就能升版）。 */
+const VERSION = "glowcast-v2-pwa-d05631bccf2b";
 const CORE = [
   "./",
   "./index.html",

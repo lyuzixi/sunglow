@@ -322,7 +322,7 @@ html[data-theme="light"] .hero > .ph-band .ph-credit{
   <section class="sec" id="u-map">
     <h2><span class="no">04</span><span data-i18n="观测场地图">观测场地图</span></h2>
     <p data-i18n="以当前地点为中心的 121 点采样网格（半径约 500 km、80 km 间距），四种着色维度：综合指数 / 出现概率 / 观赏质量 / 模型分歧。色阶是全光谱形态——颜色即数值，没有凸包硬边界，边缘自然淡出。热力图目前为测试功能，结果仅供参考。">以当前地点为中心的 121 点采样网格（半径约 500 km、80 km 间距），四种着色维度：综合指数 / 出现概率 / 观赏质量 / 模型分歧。色阶是全光谱形态——颜色即数值，没有凸包硬边界，边缘自然淡出。热力图目前为测试功能，结果仅供参考。</p>
-    <p data-i18n="取数纪律：只有显式点「加载地图」才发起请求（约 171 次加权调用）；这个日期已有缓存时会自动画出来。选点有两种方式——直接点格点，或搜城市名；任意点都能一键「加入对比」。">取数纪律：只有显式点「加载地图」才发起请求（约 171 次加权调用）；这个日期已有缓存时会自动画出来。选点有两种方式——直接点格点，或搜城市名；任意点都能一键「加入对比」。</p>
+    <p data-i18n="取数纪律：只有显式点「加载地图」才发起请求（约 363 次加权调用）；这个日期已有缓存时会自动画出来。选点有两种方式——直接点格点，或搜城市名；任意点都能一键「加入对比」。">取数纪律：只有显式点「加载地图」才发起请求（约 363 次加权调用）；这个日期已有缓存时会自动画出来。选点有两种方式——直接点格点，或搜城市名；任意点都能一键「加入对比」。</p>
   </section>
 
   <section class="sec" id="u-cmp">
@@ -424,7 +424,7 @@ W_ENS = GFS 0.30 / ECMWF 0.34 / 光追 0.36（几何平均）
     <p data-i18n="一切时间按城市当地钟（API_TZ=auto，序列存真实 epoch，偏移量先取整再算）。取数账目与纪律：">一切时间按城市当地钟（API_TZ=auto，序列存真实 epoch，偏移量先取整再算）。取数账目与纪律：</p>
     <div class="kv">
       <div class="c"><div class="n">≈51</div><div class="d" data-i18n="单点预报加权调用">单点预报加权调用</div></div>
-      <div class="c"><div class="n">≈171</div><div class="d" data-i18n="观测场全量">观测场全量</div></div>
+      <div class="c"><div class="n">≈363</div><div class="d" data-i18n="观测场全量">观测场全量</div></div>
       <div class="c"><div class="n">≈102</div><div class="d" data-i18n="十日趋势一次拉完">十日趋势一次拉完</div></div>
       <div class="c"><div class="n">6 h</div><div class="d" data-i18n="缓存 TTL，键=日期+时段+坐标">缓存 TTL，键=日期+时段+坐标</div></div>
     </div>
@@ -575,7 +575,7 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
     "点「加载趋势」显式取数（约 102 次加权调用，34 个坐标 × 10 天一次拉完），页面先按观赏质量排出最佳窗口前三名，下面是常显的逐日明细：朝 / 晚概率条与质量徽章。算好的结果落盘缓存 6 小时，重开页命中直接画出，零请求。": "點「載入趨勢」顯式取數（約 102 次加權呼叫，34 個座標 × 10 天一次拉完），頁面先按觀賞質量排出最佳時段前三名，下面是常顯的逐日明細：朝 / 晚概率條與質量徽章。算好的結果落盤快取 6 小時，重開頁命中直接畫出，零請求。",
     "观测场地图": "觀測場地圖",
     "以当前地点为中心的 121 点采样网格（半径约 500 km、80 km 间距），四种着色维度：综合指数 / 出现概率 / 观赏质量 / 模型分歧。色阶是全光谱形态——颜色即数值，没有凸包硬边界，边缘自然淡出。热力图目前为测试功能，结果仅供参考。": "以當前地點為中心的 121 點取樣網格（半徑約 500 km、80 km 間距），四種著色維度：綜合指數 / 出現概率 / 觀賞質量 / 模型分歧。色階是全光譜形態——顏色即數值，沒有凸包硬邊界，邊緣自然淡出。熱力圖目前為測試功能，結果僅供參考。",
-    "取数纪律：只有显式点「加载地图」才发起请求（约 171 次加权调用）；这个日期已有缓存时会自动画出来。选点有两种方式——直接点格点，或搜城市名；任意点都能一键「加入对比」。": "取數紀律：只有顯式點「載入地圖」才發起請求（約 171 次加權呼叫）；這個日期已有快取時會自動畫出來。選點有兩種方式——直接點格點，或搜城市名；任意點都能一鍵「加入對比」。",
+    "取数纪律：只有显式点「加载地图」才发起请求（约 363 次加权调用）；这个日期已有缓存时会自动画出来。选点有两种方式——直接点格点，或搜城市名；任意点都能一键「加入对比」。": "取數紀律：只有顯式點「載入地圖」才發起請求（約 363 次加權呼叫）；這個日期已有快取時會自動畫出來。選點有兩種方式——直接點格點，或搜城市名；任意點都能一鍵「加入對比」。",
     "最多 4 个点。从地图格点加入的免额度（读已取数的场）；搜索加入的每个点约 51 次加权调用，缓存 6 小时。一次取数后按质量分横向排序——「今晚去哪儿拍」就此有答案。": "最多 4 個點。從地圖格點加入的免額度（讀已取數的場）；搜尋加入的每個點約 51 次加權呼叫，快取 6 小時。一次取數後按質量分橫向排序——「今晚去哪兒拍」就此有答案。",
     "保存图片与快照链接": "儲存圖片與快照連結",
     "结论卡的「保存图片」导出 PNG 结论卡（纯 canvas 绘制，配色跟随当前主题）；「复制链接」把当前结果编码进 URL（base64url，SNAP_VER=1），对方打开即见快照，不消耗任何接口额度。格式与经典原版互通——经典原版生成的快照这里能解，反之亦然。": "結論卡的「儲存圖片」匯出 PNG 結論卡（純 canvas 繪製，配色跟隨當前主題）；「複製連結」把當前結果編碼進 URL（base64url，SNAP_VER=1），對方打開即見快照，不消耗任何介面額度。格式與經典原版互通——經典原版生成的快照這裡能解，反之亦然。",
@@ -715,7 +715,7 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
     "点「加载趋势」显式取数（约 102 次加权调用，34 个坐标 × 10 天一次拉完），页面先按观赏质量排出最佳窗口前三名，下面是常显的逐日明细：朝 / 晚概率条与质量徽章。算好的结果落盘缓存 6 小时，重开页命中直接画出，零请求。": "Click 'Load trend' to fetch explicitly (~102 weighted calls; 34 coordinates × 10 days in one go). The page ranks the top three best windows by viewing quality, followed by the always-visible daily detail: dawn / dusk probability bars and quality badges. Results cache for 6 hours — reopening draws them instantly, zero requests.",
     "观测场地图": "The field map",
     "以当前地点为中心的 121 点采样网格（半径约 500 km、80 km 间距），四种着色维度：综合指数 / 出现概率 / 观赏质量 / 模型分歧。色阶是全光谱形态——颜色即数值，没有凸包硬边界，边缘自然淡出。热力图目前为测试功能，结果仅供参考。": "A 121-point sampling grid centred on your location (about 500 km radius, 80 km spacing) with four coloring modes: composite index / probability / quality / model spread. The ramp is full-spectrum — color is the value, with no hard hull boundary; edges fade out naturally. The heat map is still a test feature; results are for reference only.",
-    "取数纪律：只有显式点「加载地图」才发起请求（约 171 次加权调用）；这个日期已有缓存时会自动画出来。选点有两种方式——直接点格点，或搜城市名；任意点都能一键「加入对比」。": "Fetch discipline: requests fire only when you explicitly click 'Load map' (~171 weighted calls); if this date is already cached, it draws automatically. Two ways to pick a spot — tap a grid point directly, or search a city name; any point can be added to compare in one tap.",
+    "取数纪律：只有显式点「加载地图」才发起请求（约 363 次加权调用）；这个日期已有缓存时会自动画出来。选点有两种方式——直接点格点，或搜城市名；任意点都能一键「加入对比」。": "Fetch discipline: requests fire only when you explicitly click 'Load map' (~363 weighted calls); if this date is already cached, it draws automatically. Two ways to pick a spot — tap a grid point directly, or search a city name; any point can be added to compare in one tap.",
     "最多 4 个点。从地图格点加入的免额度（读已取数的场）；搜索加入的每个点约 51 次加权调用，缓存 6 小时。一次取数后按质量分横向排序——「今晚去哪儿拍」就此有答案。": "Up to 4 spots. Points added from the map grid cost no quota (they read the already-fetched field); each searched point costs ~51 weighted calls, cached for 6 hours. After one fetch they rank side by side by quality score — 'where to shoot tonight', answered.",
     "保存图片与快照链接": "Save image & snapshot link",
     "结论卡的「保存图片」导出 PNG 结论卡（纯 canvas 绘制，配色跟随当前主题）；「复制链接」把当前结果编码进 URL（base64url，SNAP_VER=1），对方打开即见快照，不消耗任何接口额度。格式与经典原版互通——经典原版生成的快照这里能解，反之亦然。": "'Save image' on the verdict card exports a PNG (pure canvas, colors follow your theme); 'Copy link' encodes the current result into the URL (base64url, SNAP_VER=1) — the recipient opens the snapshot directly, costing zero API quota. The format interoperates with Classic Edition: snapshots from either side decode on the other.",

@@ -31,6 +31,13 @@ const qrOpen = ref(false);
 const copiedText = ref(false);
 const icsDone = ref(false);
 
+/* 是否由 file:// 直接打开（双击根 index.html）。分享链接基于 location，
+   这种场景下分享出去的是本机路径，见 copySnap / openQr 的拦截提示。 */
+const isLocalFile = typeof location !== "undefined" && location.protocol === "file:";
+/* 「复制链接」与「二维码」共用同一句提示（键即简体原文，繁体/英文在 i18n-extra 里） */
+const LOCAL_SHARE_TIP =
+  "分享链接需要线上地址：当前用本地文件打开，链接是本机路径、别人打不开；请打开 https://sunglow.cloud/ 后再复制。";
+
 /* 底部分享区与快照链接同一口径：综合结论（模型切换只在结论卡内生效） */
 const shareView = computed(() =>
   state.result ? verdictViewOf(state.result, "ens") : null
@@ -79,7 +86,14 @@ async function holdViewAnchor(a: ViewAnchor): Promise<void> {
   root.style.scrollBehavior = "";
 }
 
+/* 单点预报竞态令牌：快速连续切换城市 / 日期时，先发的请求可能后到；
+   只有「当前这一次」才允许写 state 与结束 loading（core 侧另有同一判据，
+   见 forecast.ts 的 stillCurrent）。 */
+let runSeq = 0;
+
 async function run(force = false) {
+  const seq = ++runSeq;
+  const stillCurrent = () => seq === runSeq;
   state.loading = true;
   state.error = "";
   try {
@@ -87,8 +101,11 @@ async function run(force = false) {
       city: state.city,
       dateStr: state.dateStr,
       period: state.period,
-      force
+      useMock: state.useMock,
+      force,
+      stillCurrent
     });
+    if (!stillCurrent()) return; /* 已被更新的请求取代：不覆写结果，loading 交给它收尾 */
     const anchor = captureViewAnchor();
     if (!r.ok) {
       state.error = r.error;
@@ -101,9 +118,10 @@ async function run(force = false) {
     }
     await holdViewAnchor(anchor);
   } catch (e) {
+    if (!stillCurrent()) return;
     state.error = String(e);
   } finally {
-    state.loading = false;
+    if (stillCurrent()) state.loading = false;
   }
 }
 
@@ -153,6 +171,12 @@ function refreshSnap() {
 
 async function copySnap() {
   if (!snapUrl.value) return;
+  /* file:// 下 location.href 是本机路径（file:///D:/…），复制出去别人打不开：
+     提示改用线上地址并阻止复制，避免把死链发给别人。 */
+  if (isLocalFile) {
+    snapMsg.value = t(LOCAL_SHARE_TIP);
+    return;
+  }
   try {
     await navigator.clipboard.writeText(snapUrl.value);
     copied.value = true;
@@ -160,6 +184,17 @@ async function copySnap() {
   } catch {
     snapMsg.value = t("复制失败，请手动复制");
   }
+}
+
+/* 二维码里装的就是 snapUrl：file:// 下它是本机路径，扫出来同样打不开，
+   所以按钮置灰；万一被键盘 / 脚本触发，也给同一句提示并拦下。 */
+function openQr() {
+  if (!snapUrl.value) return;
+  if (isLocalFile) {
+    snapMsg.value = t(LOCAL_SHARE_TIP);
+    return;
+  }
+  qrOpen.value = true;
 }
 
 /* 一键复制现成文案：今晚 18:32，广州晚霞概率 72%，良 */
@@ -358,13 +393,19 @@ onMounted(async () => {
           <p style="margin: 0; color: var(--tx-2); font-size: var(--fs-small)">
             {{ t("生成的链接与 Sunglow Classic Edition（经典原版）互通（SNAP_VER=1），对方无需重新取数即可查看。") }}
           </p>
+          <p v-if="isLocalFile" class="share-tip">{{ t(LOCAL_SHARE_TIP) }}</p>
           <p class="share-tip">{{ t("二维码、文案与日历文件均由本机生成，不经过服务器。") }}</p>
         </div>
         <div class="share-acts">
           <button class="btn btn-primary" :disabled="!snapUrl" @click="copySnap">
             {{ copied ? t("已复制") : t("复制链接") }}
           </button>
-          <button class="btn btn-ghost" :disabled="!snapUrl" @click="qrOpen = true">
+          <button
+            class="btn btn-ghost"
+            :disabled="!snapUrl || isLocalFile"
+            :title="isLocalFile ? t(LOCAL_SHARE_TIP) : undefined"
+            @click="openQr"
+          >
             {{ t("二维码") }}
           </button>
           <button class="btn btn-ghost" :disabled="!shareView" @click="copyCaption">

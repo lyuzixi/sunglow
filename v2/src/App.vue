@@ -27,6 +27,7 @@ watchEffect(() => {
         </div>
         <div class="foot-sub">{{ t("让每一次追霞，都有迹可循") }}</div>
         <div class="foot-sub">{{ t("数据源") }} Open-Meteo（{{ t("非商业用途") }}）</div>
+        <div class="foot-sub">{{ t("概率预报 · 仅供参考") }}</div>
       </div>
       <div class="foot-links">
         <a href="./tutorial.html">{{ t("使用教程") }}</a>

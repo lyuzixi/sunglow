@@ -3,7 +3,8 @@
    链在 build 之后自动跑：vite build && emit-single.mjs && publish-root.mjs
 
    背景（2026-10-26 拍板）：V2 是项目主线，交付物落到仓库根——根 index.html
-   即线上站点，V1/、Skyglow/ 退为同级归档。源码工程留在 v2/（构建需要
+   即线上站点；V1/ 保留在仓库，Skyglow/ 为历史归档，入口已跨域
+   （https://sky.sunglow.cloud/）。源码工程留在 v2/（构建需要
    manifest.webmanifest / icon-192.png 等输入在场），根目录是发布副本。
 
    做法：FILES 里的全部交付文件从 v2/ 拷贝到仓库根，逐文件 sha256 校验；
@@ -35,8 +36,9 @@ const FILES = [
   "apple-touch-icon-180.png",
 ];
 
-/* 根副本位于仓库根，同级目录（V1/、Skyglow/）都不该出现 ../ 前缀链接；
+/* 根副本位于仓库根，同级目录（V1/）都不该出现 ../ 前缀链接；
    页脚的版本切换入口在源码里就写 V1/index.html（2026-10-26 拍板：源码直接改），
+   Skyglow 走绝对地址 https://sky.sunglow.cloud/（已独立），
    所以根产物里任何 ../ 跨目录链接都视为回归。 */
 const BAD_PATTERNS = ["../V1/", "../v2/", "../Skyglow/"];
 
@@ -71,7 +73,9 @@ for (const f of FILES) {
       'const VERSION = "glowcast-v2-pwa-' + buildId + '";'
     );
     fs.writeFileSync(dst, text, "utf8");
-    if (!text.includes('glowcast-v2-pwa-' + buildId)) {
+    /* 两条都要过：戳写对了，且源文件的 __BUILD_ID__ 占位确实被替换掉
+       （占位残留 = 浏览器永远认为没有新版本） */
+    if (!text.includes('glowcast-v2-pwa-' + buildId) || text.includes("__BUILD_ID__")) {
       console.error("✗ sw.js 构建戳写入失败");
       bad++;
       continue;

@@ -69,3 +69,21 @@ Skyglow/data/era5/
 /.mockups/
 /.trae-html-share-packages/
 /.screenshots/
+
+# ---- 上线期过程稿（2026-11-10 排查：内部物料，不入库、不随 Pages 发布）----
+/design-preview/
+/promo-posters/
+/promo-video/
+/promo-video-male/
+/xhs-launch-kit/
+/xhs-preheat-sunglow-cloud/
+/android-app-plan/
+/android-native-plan/
+/skyglow-pages/
+/photo-fusion-explainer.html
+/.preview/
+/.tmp-preview/
+/.tools/
+/v2/.vite-trend-preview/
+/v2/.vite-trend-preview2/
+/deliverables/

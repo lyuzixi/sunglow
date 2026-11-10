@@ -92,6 +92,7 @@ onMounted(() => {
           <span class="hero-slogan">{{ t("让每一次追霞，都有迹可循") }}</span>
           <span class="hero-sub-tech">{{ t("沉浸式预报体验 —— GFS / ECMWF / 光追物理三套算法，把今晚的天空写成一份可以出发的理由。") }}</span>
         </p>
+        <p class="hero-note">{{ t("概率预报 · 仅供参考") }}</p>
 
         <div class="hero-controls">
           <div class="field" style="min-width: 210px; position: relative">
@@ -475,6 +476,15 @@ onMounted(() => {
   margin-top: 6px;
   color: var(--tx-3);
   font-size: var(--fs-small);
+}
+/* 统一免责标语（首页 / 结论卡 / 页脚同一句）：紧贴副标题，不挤开操作区。
+   底纹是首屏照片上的浅色白纱（≈ --bg-base #f2f5fb），--tx-3 在它上面只有 4.45:1，
+   卡在 AA 线下；改用 --tx-2：浅色 6.89:1、深色 9.06:1，且仍是全页最弱的一级文字。 */
+.hero-note {
+  margin: -18px 0 22px;
+  color: var(--tx-2);
+  font-size: var(--fs-tiny);
+  letter-spacing: 0.02em;
 }
 .hero-controls {
   display: flex;

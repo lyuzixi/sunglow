@@ -8,7 +8,7 @@ V1 代码与资源零改动，Spectrum Edition 只单向链接到 Classic Editio
 ## 版本家族
 - **Sunglow Spectrum Edition（V2 · 光谱观测版）**：当前主线，本目录。
 - **Sunglow Classic Edition（V1 · 经典原版）**：历史经典版本，保留最初的设计与算法实现。
-- **Skyglow Enhanced Edition（Skyglow · Skyglow移植增强版）**：基于第三方 [couletian/Skyglow](https://github.com/couletian/Skyglow) 的移植增强独立版本，不是 V2 的下一代。
+- **Skyglow Enhanced Edition（Skyglow · Skyglow移植增强版）**：基于第三方 [couletian/Skyglow](https://github.com/couletian/Skyglow) 的移植增强独立版本，不是 V2 的下一代。已独立部署于 https://sky.sunglow.cloud/，已迁出本仓库。
 
 ## 视觉方向
 **A · 大气光谱观测站**（深色） / **晨光实验室**（浅色） / 跟随系统
@@ -44,7 +44,7 @@ v2/
 │   │   └── forecast.ts      取数→样带→三套算法→综合 编排
 │   ├── composables/useReveal.ts
 │   ├── components/          Hero/结论/天色带/趋势/观测场/模式/因素/校准/顶栏
-│   ├── views/               Home / Tutorial / 404
+│   ├── views/               HomeView / AboutView / NotFoundView
 │   └── styles/              tokens.css（双主题设计令牌）+ main.css
 ├── app.html                 源码入口（开发用，不对外）
 └── index.html               构建中间产物（单文件；发布副本在仓库根，见下）
@@ -54,7 +54,7 @@ v2/
 
 | 产物 | 路径 | 怎么打开 |
 |---|---|---|
-| **唯一交付** | 仓库根 `index.html` | **直接双击打开**；气象取数需要联网。JS/CSS/字体内联，约 0.8MB |
+| **唯一交付** | 仓库根 `index.html` | **直接双击打开**；气象取数需要联网。JS/CSS/字体内联，约 1.22MB |
 | 发布伴随 | 根 `404.html` / `tutorial.html` / `sw.js` / `manifest.webmanifest` / 图标×5 | `npm run build` 自动发布 |
 | 开发 | 源码入口 `v2/app.html`（不对外） | `cd v2 && npm run dev` → 打开 `/app.html` |
 
@@ -68,7 +68,7 @@ npm run build              # 单文件产物 + publish-root 自动发布 10 个�
 > 为什么不直接双击源码入口 `v2/app.html`：Vite 默认产物是 ES module 多文件，
 > 浏览器从 `file://` 加载 module 脚本会被 CORS 拦截。单文件版把脚本内联进 HTML 才绕开这条限制。
 > 根 `index.html` 由 `npm run build` 生成并自动发布，**不要手改**；`v2/index.html` 是构建中间产物
->（本地预览用；页脚、顶栏「版本」菜单与目录抽屉「其他版本」组里的 V1 / Skyglow 链接都按根位置写（`V1/index.html`、`Skyglow/index.html`），故只在根副本中正确）。
+>（本地预览用；页脚、顶栏「版本」菜单与目录抽屉「其他版本」组里的 V1 链接按根位置写 `V1/index.html`，Skyglow 使用绝对地址 https://sky.sunglow.cloud/（已独立），故只在根副本中正确）。
 
 ## 使用教程（四档三语）
 
@@ -101,5 +101,5 @@ npm run build              # 单文件产物 + publish-root 自动发布 10 个�
 
 ## 注意
 - 数据源 Open-Meteo，免费层仅限非商业用途，按访客 IP 计额度
-- 网络不可用/超时（预算 9s）会回落到**确定性 mock**，界面左上角标注 `MOCK`
+- 网络不可用/超时（单点总预算 12s；单次请求 6s，地图取数 12s）会回落到**确定性 mock**，界面左上角标注 `MOCK`；这不是离线可用——气象取数必须联网，断网只能看已缓存的结果
 - 探针：`probe-ui`（agent-browser）/ `probe-tz` / `probe:consist`；交付物经 publish-root 落根，GitHub Pages 根路径即 V2

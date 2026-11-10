@@ -231,14 +231,16 @@ eq("图标尺寸统一 34×34", icons861.map((i) => [i.w, i.h]), [[34, 34], [34,
 eq("图标圆角统一", [...new Set(icons861.map((i) => i.r))].length, 1);
 ok("设置按钮走的是 .icon-btn", String(icons861[0].cls).includes("icon-btn"), String(icons861[0].cls));
 
-/* 版本菜单（2026-10-27）：两条真链接，顺序 V1 → Skyglow，根位置写法 */
+/* 版本菜单（2026-11-10）：两条真链接，顺序 V1 → Skyglow；V1 用根位置，
+   Skyglow 已独立部署，走跨域绝对地址（文案随留/停更徽章一并断言） */
 ev(`document.querySelector('.top-actions .ver-btn').click()`);
 wait(250);
 ok("版本按钮能打开菜单", ev(`!!document.querySelector('.ver-pop')`) === true);
-eq("版本菜单两条 = V1 / Skyglow（根位置）",
+eq("版本菜单两条 = V1 / Skyglow（Skyglow 走跨域绝对地址）",
   ev(`[...document.querySelectorAll('.ver-pop a')].map(a=>[
     a.textContent.replace(/\\s+/g,'').replace('↗',''), a.getAttribute('href')])`),
-  [["V1", "V1/index.html"], ["Skyglow", "Skyglow/index.html"]]);
+  [["Sunglow经典原版已停更", "V1/index.html"],
+    ["Skyglow移植增强版独立项目", "https://sky.sunglow.cloud/"]]);
 ev(`document.querySelector('.top-actions .ver-btn').click()`);
 
 ok("设置面板能打开", ev(OPEN_SETTINGS) === true);
@@ -349,10 +351,10 @@ ok("抽屉顶部补出状态行（城市 · 日期 · 朝/晚霞）",
 ok("状态行在「目录」标题之上且不出界",
   !!mdStatus && mdStatus.top < mdStatus.pre && mdStatus.l >= 0 && mdStatus.r <= 390,
   JSON.stringify(mdStatus && [mdStatus.top, mdStatus.pre, mdStatus.l, mdStatus.r]));
-ok("抽屉有「更多项目」组，经典原版 / Skyglow 独立项目 两条真链接",
+ok("抽屉有「更多项目」组，经典原版 / Skyglow 独立项目 两条真链接（Skyglow 走跨域绝对地址）",
   ev(`(()=>{const h=[...document.querySelectorAll('.mdrawer .md-group h4')].some(x=>x.textContent.trim()==='更多项目');
     return h && !!document.querySelector('.mdrawer a[href="V1/index.html"]')
-      && !!document.querySelector('.mdrawer a[href="Skyglow/index.html"]');})()`) === true);
+      && !!document.querySelector('.mdrawer a[href="https://sky.sunglow.cloud/"]');})()`) === true);
 ev(`document.querySelector('.mdrawer-mask')?.click()`);
 wait(320);
 

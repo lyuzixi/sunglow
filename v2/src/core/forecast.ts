@@ -63,7 +63,13 @@ export interface ForecastResult {
   /** 本次没取到气溶胶（AOD），评分实际用了 0.25 兜底值 —— 首屏据此给用户提示 */
   aodFallback: boolean;
 }
-export interface ForecastFail { ok: false; error: string }
+export interface ForecastFail { ok: false; error: string; /** 已被更新的请求取代，调用方应静默丢弃 */ stale?: boolean }
+
+/* ---- 竞态令牌（B2-7）----
+   单点预报是异步的：快速连续切换城市 / 日期时，先发的请求可能后到，把旧结果
+   覆写到新结果上（趋势与观测场早有 stillCurrent / seq 防护，单点这边漏了）。
+   做法与 core/trend.ts 一致——调用方持有自增号并传入 stillCurrent，本模块在
+   取数回来、写缓存与计算之前校验一次；同步段不会被其它请求插队，故一处足够。 */
 
 const MODEL_LABEL: Record<string, string> = {
   gfs: "GFS 统计", ec: "EC 统计", rt: "光追物理"
@@ -236,6 +242,8 @@ export async function runForecast(opts: {
   period: "am" | "pm";
   useMock?: boolean;
   force?: boolean;
+  /** 结果写回前校验「仍是当前请求」；返回 false 时本函数返回 stale，不落缓存 */
+  stillCurrent?: () => boolean;
 }): Promise<ForecastResult | ForecastFail> {
   const { city, dateStr, period } = opts;
   /* 命中缓存直接返回，一个请求都不发（显式重算传 force） */
@@ -300,6 +308,8 @@ export async function runForecast(opts: {
     sA = null;
     tz = { iana: null, offsetSec: bundle.tzOffsetSec, est: true };
   }
+  /* 取数回来先确认自己仍是最新一次请求：被取代的一律丢弃，不写时区 / 预报缓存 */
+  if (opts.stillCurrent && !opts.stillCurrent()) return { ok: false, error: "", stale: true };
   /* 接口回来的时区是权威值：校准并记住（同一坐标下次开页就不用再估） */
   const tzLive = sG.find((x): x is Series => !!x)?.tz;
   if (src === "live" && tzLive && !tzLive.est) {

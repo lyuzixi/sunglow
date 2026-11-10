@@ -83,8 +83,10 @@ const publish = read("scripts/publish-root.mjs");
 const app = read("src/App.vue");
 must(/type === "SKIP_WAITING"/.test(sw) && !/await self\.skipWaiting\(\)/.test(sw),
   "Service Worker 仍是安装即接管，页面弹不出「新版本已就绪」");
-must(/glowcast-v2-pwa-/.test(publish) && /const VERSION = /.test(publish),
+must(/'glowcast-v2-pwa-' \+ buildId/.test(publish) && /const VERSION = /.test(publish),
   "publish-root 没有按 index.html 哈希给 sw.js 打构建戳");
+must(/const VERSION = "glowcast-v2-pwa-__BUILD_ID__";/.test(sw),
+  "sw.js 的 VERSION 不再是语义化占位 __BUILD_ID__（写死版本号会让升版失效）");
 must(/PwaUpdatePrompt/.test(app), "App 没有挂载 PWA 更新提示条");
 must(/path: "\/about"/.test(read("src/router.ts")), "缺少 /about 关于隐私路由");
 must(/关于 \/ 隐私/.test(app) && /反馈/.test(app), "页脚缺少「关于 / 隐私」或「反馈」入口");
@@ -112,8 +114,10 @@ must(/@supports not \(\(backdrop-filter: blur\(1px\)\)/.test(settings),
   "设置面板缺少不支持 backdrop-filter 时的实色兜底");
 
 /* ---------- 1.9 不得宣称断网可完整使用 ---------- */
-const noOfflineClaim = /断网也能打开|断网也能开|断网可用|断网可开|断网也能看|双击即可离线使用/;
+/* 「离线回落」也在禁列：它容易被读成「断网也能用」，实际只是取数失败后回落 mock */
+const noOfflineClaim = /断网也能打开|断网也能开|断网可用|断网可开|断网也能看|双击即可离线使用|离线回落/;
 for (const rel of ["tutorial.html", "404.html", "sw.js", "app.html", "README.md",
+  "../tutorial.html", "../404.html", "../sw.js",
   "../README.md", "../code-wiki.html", "../V1/index.html", "../V1/tutorial.html", "../V1/README.md"]) {
   must(!noOfflineClaim.test(read(rel)), `${rel} 仍宣称断网可完整使用（气象取数需要联网）`);
 }
@@ -219,6 +223,28 @@ for (const theme of ["dark", "light"]) {
       `${theme} 主题 --tx-3 对比度 ${contrast(tx3, bg).toFixed(2)}，低于 4.5:1`);
   }
 }
+/* 首屏免责标语压在照片白纱上，实际底色是 --bg-base（#f2f5fb），比 --bg-card-solid
+   更暗一档：--tx-3 在那里只剩 4.45:1，所以 .hero-note 必须用 --tx-2。 */
+const heroSrc = read("src/components/HeroSection.vue");
+const heroNote = heroSrc.match(/\.hero-note\s*\{([\s\S]*?)\}/);
+must(!!heroNote, "HeroSection.vue 找不到 .hero-note 样式块");
+if (heroNote) {
+  const tok = heroNote[1].match(/color:\s*var\(--(tx-[123])\)/);
+  must(!!tok, ".hero-note 的 color 不是 --tx-1/2/3 令牌");
+  if (tok) {
+    for (const theme of ["dark", "light"]) {
+      const fg = themeColor(theme, tok[1]);
+      const bg = themeColor(theme, "bg-base");
+      must(!!fg && !!bg, `tokens.css 解析不到 ${theme} 的 --${tok[1]} / --bg-base`);
+      if (fg && bg) {
+        must(contrast(fg, bg) >= 4.5,
+          `${theme} 主题首屏免责标语 --${tok[1]} 在 --bg-base 上对比度 ` +
+          `${contrast(fg, bg).toFixed(2)}，低于 4.5:1`);
+      }
+    }
+  }
+}
+
 /* 等级徽章：浅色等级色叠在 8% 同名底色（badge 的实际底色）上仍需 ≥ 4.5:1 */
 function blend(fg, bg, a) {
   const p = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));

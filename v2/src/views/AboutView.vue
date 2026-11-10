@@ -23,7 +23,7 @@ import { openFeedback } from "../composables/useFeedback";
           <h2><span class="no">01</span>{{ t("数据来源") }}</h2>
           <p>{{ t("Open-Meteo 提供 GFS 与 ECMWF-IFS 气象场、CAMS 气溶胶光学厚度；免费公开数据，仅限非商业用途。") }}</p>
           <p>{{ t("观测场底图可选腾讯地图，经部署方配置的代理加载；未配置代理时地图不可用，预报与分享功能不受影响。") }}</p>
-          <p>{{ t("行政区边界来自 DataV；首屏实拍照片为广州珠江，随项目自带。") }}</p>
+          <p>{{ t("底图与行政区边界由腾讯地图提供；首屏实拍照片为广州珠江，随项目自带。") }}</p>
           <p class="warn">{{ t("预报只作观赏参考，不构成出行、航海、航空等安全决策依据。") }}</p>
         </section>
 
@@ -37,7 +37,7 @@ import { openFeedback } from "../composables/useFeedback";
               <tbody>
                 <tr><td>{{ t("单点预报") }}</td><td>{{ t("约 51 次") }}</td></tr>
                 <tr><td>{{ t("十日趋势") }}</td><td>{{ t("约 102 次") }}</td></tr>
-                <tr><td>{{ t("观测场") }}</td><td>{{ t("约 171 次") }}</td></tr>
+                <tr><td>{{ t("观测场") }}</td><td>{{ t("约 363 次") }}</td></tr>
                 <tr><td>{{ t("多地对比") }}</td><td>{{ t("约 51 次 / 点") }}</td></tr>
                 <tr><td>{{ t("快照 / 二维码 / 日历") }}</td><td>{{ t("0 次") }}</td></tr>
               </tbody>

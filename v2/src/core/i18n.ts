@@ -274,6 +274,11 @@ let curLang: Lang = "zh";
 
 export function setLang(l: Lang): void {
   curLang = LANGS.includes(l) ? l : "zh";
+  /* 同步 <html lang>：屏幕阅读器发音、拼写检查与 SEO 都依赖它（教程页 / 404 已如此） */
+  document.documentElement.setAttribute(
+    "lang",
+    curLang === "hant" ? "zh-Hant-TW" : curLang === "en" ? "en" : "zh-CN"
+  );
 }
 export function getLang(): Lang {
   return curLang;

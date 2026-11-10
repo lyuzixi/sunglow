@@ -123,6 +123,7 @@ const geomTxt = computed(() => {
             <p v-if="res.aodFallback" class="aod-note">
               {{ t("本次没有取到气溶胶数据，颜色浓淡按默认值估算，实际霞光可能比预报更淡或更浓。") }}
             </p>
+            <p class="v-note">{{ t("概率预报 · 仅供参考") }}</p>
 
             <div class="v-grid">
               <div class="metric">
@@ -301,6 +302,14 @@ const geomTxt = computed(() => {
   color: var(--q-mid);
   font-size: var(--fs-tiny);
   line-height: 1.5;
+}
+
+/* 统一免责标语（首页 / 结论卡 / 页脚同一句） */
+.v-note {
+  margin: 2px 0 0;
+  color: var(--tx-3);
+  font-size: var(--fs-tiny);
+  letter-spacing: 0.02em;
 }
 .v-grid {
   display: grid;
