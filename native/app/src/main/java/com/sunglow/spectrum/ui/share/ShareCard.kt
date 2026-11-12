@@ -9,12 +9,13 @@ import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
 import androidx.core.content.FileProvider
 import androidx.core.content.res.ResourcesCompat
-import androidx.core.graphics.toArgb
+import androidx.compose.ui.graphics.toArgb
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
@@ -105,11 +106,11 @@ object ShareCard {
             val scale = max(W / hero.width, heroH / hero.height)
             val sw = W / scale
             val sh = heroH / scale
-            val src = RectF(
-                (hero.width - sw) / 2f,
-                (hero.height - sh) * 0.45f,
-                (hero.width + sw) / 2f,
-                (hero.height + sh) * 0.45f
+            val src = Rect(
+                ((hero.width - sw) / 2f).toInt(),
+                ((hero.height - sh) * 0.45f).toInt(),
+                ((hero.width + sw) / 2f).toInt(),
+                ((hero.height + sh) * 0.45f).toInt()
             )
             cv.drawBitmap(hero, src, RectF(0f, 0f, W, heroH), paint)
             hero.recycle()
@@ -202,7 +203,7 @@ object ShareCard {
         val bandH = 92f
         val bandW = W - 128f
         txt("天色带", 64f, bandY - 18f, 26f, faint)
-        val sky = skyBandOf(r, System.currentTimeMillis(), r.dateStr)
+        val sky = skyBandOf(r, System.currentTimeMillis().toDouble(), r.dateStr)
         if (sky != null) {
             val total = sky.segments.sumOf { it.weight.toDouble() }.takeIf { it > 0 } ?: 1.0
             cv.save()

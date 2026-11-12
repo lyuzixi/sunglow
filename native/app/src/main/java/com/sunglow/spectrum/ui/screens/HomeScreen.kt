@@ -1295,7 +1295,7 @@ private fun TimeLine(result: ForecastResult, colors: SunglowColors) {
         )
         return
     }
-    val sky = skyBandOf(result, System.currentTimeMillis(), result.dateStr)
+    val sky = skyBandOf(result, System.currentTimeMillis().toDouble(), result.dateStr)
     val span = if (sky != null) sky.endMs - sky.startMs else 0.0
     val left = if (span > 0) ((win.first - sky!!.startMs) / span).toFloat().coerceIn(0f, 1f) else 0f
     val right = if (span > 0) ((win.second - sky!!.startMs) / span).toFloat().coerceIn(0f, 1f) else 1f
