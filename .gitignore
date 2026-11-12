@@ -48,6 +48,19 @@ node_modules/
 __pycache__/
 *.pyc
 
+# ---- 原生安卓工程（2026-11-12 新增）----
+# 构建产物与本地环境文件不入库；golden 基准由 CI 从 v2 的 TS 源码实时生成，不入库。
+native/.gradle/
+native/build/
+native/app/build/
+native/app/src/test/resources/golden/
+native/local.properties
+native/.idea/
+native/*.iml
+native/.kotlin/
+*.jks
+*.keystore
+
 # ---- 可重跑的截图 / 日志 / 构建中间产物（2026-10-27 同步前清理）----
 # 会话残留与构建中间产物：重新构建即重建，不入库。
 debug.log
