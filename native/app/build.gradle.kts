@@ -13,7 +13,7 @@ android {
         applicationId = "com.sunglow.spectrum"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
+        versionCode = (System.getenv("SUNGLOW_VERSION_CODE") ?: "1").toIntOrNull() ?: 1
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

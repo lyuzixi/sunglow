@@ -11,6 +11,10 @@
 
 name: android
 
+# 每次构建的 versionCode 用跑次号递增：同版本号在部分 ROM 上会拒绝覆盖安装
+env:
+  SUNGLOW_VERSION_CODE: ${{ github.run_number }}
+
 on:
   push:
     paths:
@@ -35,13 +39,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 固定 debug 签名：Gradle 首次构建会在 ~/.android 生成 debug.keystore，
-      # 缓存后每次构建复用同一把，新包才能覆盖安装旧包（否则签名不一致）。
-      - name: Restore debug keystore
-        uses: actions/cache@v4
-        with:
-          path: ~/.android/debug.keystore
-          key: sunglow-debug-keystore-v1
+      # 固定 debug 签名：仓库里的 keystore 优先（native/keystore/debug.keystore）。
+      # 首次没有时由 Gradle 生成，构建后作为 artifact 上传，下载入库后即可永久固定。
+      - name: Prepare debug keystore
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.android"
+          if [ -f native/keystore/debug.keystore ]; then
+            cp native/keystore/debug.keystore "$HOME/.android/debug.keystore"
+            echo "using repo keystore"
+          else
+            rm -f "$HOME/.android/debug.keystore"
+            echo "no repo keystore; gradle will generate one"
+          fi
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -138,6 +148,16 @@ jobs:
           name: sunglow-debug-apk
           path: native/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+      # 把本次使用的签名证书也挂出来：首次运行下载后放进 native/keystore/，
+      # 之后每次构建都复用同一把，覆盖安装就不会再报“签名不一致”。
+      - name: Upload debug keystore
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-keystore
+          path: ${{ env.HOME }}/.android/debug.keystore
+          if-no-files-found: warn
 
       # 产物挂到 Releases：免登录就能下载，装到手机上也方便
       - name: Publish debug APK to release
