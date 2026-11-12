@@ -18,6 +18,7 @@ import com.sunglow.spectrum.core.todayInTz
 import com.sunglow.spectrum.data.CityRepository
 import com.sunglow.spectrum.data.ForecastStore
 import com.sunglow.spectrum.data.OpenMeteoClient
+import com.sunglow.spectrum.ui.i18n.Lang
 import com.sunglow.spectrum.ui.i18n.gradeText
 
 /*
@@ -70,12 +71,13 @@ class ReminderWorker(
         if (!Notifications.canPost(ctx)) return Result.success()
 
         Notifications.ensureChannel(ctx)
-        val title = ctx.getString(
+        val lctx = Lang.wrap(ctx)
+        val title = lctx.getString(
             if (period == Period.AM) R.string.notif_title_am else R.string.notif_title_pm
         )
         val ws = wsMs?.let { fmtClock(it.toDouble(), tz) } ?: "—"
         val we = weMs?.let { fmtClock(it.toDouble(), tz) } ?: "—"
-        val body = ctx.getString(R.string.notif_body, p.toInt(), gradeText(ctx, cur.grade), ws, we)
+        val body = lctx.getString(R.string.notif_body, p.toInt(), gradeText(lctx, cur.grade), ws, we)
 
         val intent = Intent(ctx, MainActivity::class.java).apply {
             putExtra(MainActivity.EXTRA_CITY, city.name)

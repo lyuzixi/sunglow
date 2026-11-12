@@ -2,6 +2,8 @@ package com.sunglow.spectrum.work
 
 import android.content.Context
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequest
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
@@ -18,6 +20,7 @@ object ReminderScheduler {
 
     private const val WORK_AM = "sunglow_reminder_am"
     private const val WORK_PM = "sunglow_reminder_pm"
+    private const val WORK_NOW = "sunglow_reminder_now"
     private const val WORK_WIDGET = "sunglow_widget_hourly"
 
     fun sync(ctx: Context, enabled: Boolean) {
@@ -33,6 +36,17 @@ object ReminderScheduler {
         val req = PeriodicWorkRequestBuilder<WidgetRefreshWorker>(1, TimeUnit.HOURS).build()
         WorkManager.getInstance(ctx)
             .enqueueUniquePeriodicWork(WORK_WIDGET, ExistingPeriodicWorkPolicy.KEEP, req)
+    }
+
+    /** 刚打开提醒开关时先跑一次，避免等到下一个固定检查点才生效 */
+    fun checkNow(ctx: Context) {
+        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        val req = OneTimeWorkRequestBuilder<ReminderWorker>()
+            .setInitialDelay(5, TimeUnit.SECONDS)
+            .setInputData(workDataOf("period" to if (hour < 12) "am" else "pm"))
+            .build()
+        WorkManager.getInstance(ctx)
+            .enqueueUniqueWork(WORK_NOW, ExistingWorkPolicy.REPLACE, req)
     }
 
     private fun daily(period: String, hour: Int, minute: Int): PeriodicWorkRequest =

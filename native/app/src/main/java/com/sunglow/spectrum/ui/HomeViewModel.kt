@@ -242,6 +242,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         prefs.edit().putBoolean("reminder_enabled", on).apply()
         _state.update { it.copy(reminderEnabled = on) }
         ReminderScheduler.sync(getApplication(), on)
+        if (on) ReminderScheduler.checkNow(getApplication())
     }
 
     fun setReminderThreshold(value: Int) {

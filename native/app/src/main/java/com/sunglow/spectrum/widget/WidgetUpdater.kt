@@ -14,6 +14,7 @@ import com.sunglow.spectrum.core.todayInTz
 import com.sunglow.spectrum.data.CityRepository
 import com.sunglow.spectrum.data.ForecastStore
 import com.sunglow.spectrum.data.PeriodSnapshot
+import com.sunglow.spectrum.ui.i18n.Lang
 import com.sunglow.spectrum.ui.i18n.gradeText
 
 /*
@@ -32,11 +33,14 @@ object WidgetUpdater {
     }
 
     fun build(ctx: Context): RemoteViews {
+        val lctx = Lang.wrap(ctx)
         val views = RemoteViews(ctx.packageName, R.layout.widget_sunglow)
+        views.setTextViewText(R.id.widget_am_label, lctx.getString(R.string.widget_am))
+        views.setTextViewText(R.id.widget_pm_label, lctx.getString(R.string.widget_pm))
         val city = CityRepository(ctx).lastCity()
         if (city == null) {
-            views.setTextViewText(R.id.widget_city, ctx.getString(R.string.widget_city_empty))
-            views.setTextViewText(R.id.widget_footer, ctx.getString(R.string.widget_no_cache))
+            views.setTextViewText(R.id.widget_city, lctx.getString(R.string.widget_city_empty))
+            views.setTextViewText(R.id.widget_footer, lctx.getString(R.string.widget_no_cache))
             views.setTextViewText(R.id.widget_am_p, "—")
             views.setTextViewText(R.id.widget_pm_p, "—")
             views.setTextViewText(R.id.widget_am_grade, "")
@@ -50,13 +54,13 @@ object WidgetUpdater {
         val snap = ForecastStore.day(ctx, city.name, date)
 
         views.setTextViewText(R.id.widget_city, city.shortName)
-        bindPeriod(ctx, views, true, snap?.am)
-        bindPeriod(ctx, views, false, snap?.pm)
+        bindPeriod(lctx, views, true, snap?.am)
+        bindPeriod(lctx, views, false, snap?.pm)
 
         val footer = if (snap != null && snap.updatedAt > 0) {
-            ctx.getString(R.string.widget_updated, fmtClock(snap.updatedAt.toDouble(), tz))
+            lctx.getString(R.string.widget_updated, fmtClock(snap.updatedAt.toDouble(), tz))
         } else {
-            ctx.getString(R.string.widget_no_cache)
+            lctx.getString(R.string.widget_no_cache)
         }
         views.setTextViewText(R.id.widget_footer, footer)
         attachClick(ctx, views, city.name, date, null)
