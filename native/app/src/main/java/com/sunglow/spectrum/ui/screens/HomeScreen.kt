@@ -48,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -583,6 +584,12 @@ private fun GlassCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .shadow(
+                elevation = if (colors.isDark) 0.dp else 10.dp,
+                shape = RoundedCornerShape(radius.lg),
+                ambientColor = Color(0x33142850),
+                spotColor = Color(0x33142850)
+            )
             .clip(RoundedCornerShape(radius.lg))
             .background(colors.card)
             .border(1.dp, colors.rule, RoundedCornerShape(radius.lg))
@@ -801,20 +808,20 @@ private fun SunRows(result: ForecastResult, win: Pair<Double, Double>?) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 4.dp)
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.Top
             ) {
                 Text(
                     text = k,
                     style = MaterialTheme.typography.bodyMedium,
                     color = colors.faint,
-                    modifier = Modifier.width(96.dp)
+                    modifier = Modifier.width(84.dp)
                 )
                 Text(
                     text = v,
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (k == "几何条件" && !result.sRT.geom.ok) colors.bad else colors.ink,
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.End
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
@@ -994,11 +1001,14 @@ private fun FactorList(result: ForecastResult) {
 @Composable
 private fun FactorRow(row: FacDisplayRow, open: Boolean, onClick: () -> Unit) {
     val colors = SunglowTheme.colors
+    val score = row.score
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
-            .padding(vertical = 10.dp)
+            .background(if (open) colors.glass else Color.Transparent)
+            .padding(vertical = 10.dp, horizontal = 4.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -1007,13 +1017,30 @@ private fun FactorRow(row: FacDisplayRow, open: Boolean, onClick: () -> Unit) {
                 color = colors.ink,
                 modifier = Modifier.weight(1f)
             )
-            Text(
-                text = row.value,
-                style = MaterialTheme.typography.bodyMedium,
-                color = colors.muted
-            )
-            Spacer(Modifier.width(8.dp))
             JudgeChip(row.judge, row.judgeCls)
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = row.value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = colors.muted
+        )
+        Spacer(Modifier.height(6.dp))
+        // 评分条：与网页 fac-card .bar 同款，分数按 0-100 映射
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(3.dp)
+                .clip(RoundedCornerShape(999.dp))
+                .background(colors.rule)
+        ) {
+            val pct = ((score ?: 0.0) * 100).roundToInt().coerceIn(0, 100)
+            Box(
+                Modifier
+                    .fillMaxWidth(pct / 100f)
+                    .fillMaxHeight()
+                    .background(Brush.horizontalGradient(colors.spectrum))
+            )
         }
         if (open) {
             Spacer(Modifier.height(8.dp))
@@ -1075,13 +1102,14 @@ private fun RayCard(result: ForecastResult) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 4.dp)
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.Top
             ) {
                 Text(
                     text = k,
                     style = MaterialTheme.typography.bodyMedium,
                     color = colors.faint,
-                    modifier = Modifier.width(110.dp)
+                    modifier = Modifier.width(96.dp)
                 )
                 Text(
                     text = v,
