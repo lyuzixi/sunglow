@@ -1,36 +1,40 @@
 package com.sunglow.spectrum.ui.screens
 
 import android.Manifest
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,51 +47,65 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sunglow.spectrum.R
-import com.sunglow.spectrum.core.City
-import com.sunglow.spectrum.core.FacDisplayRow
 import com.sunglow.spectrum.core.ForecastResult
-import com.sunglow.spectrum.core.ModelRow
+import com.sunglow.spectrum.core.ModelSel
 import com.sunglow.spectrum.core.Period
 import com.sunglow.spectrum.core.QUALITY_BANDS
 import com.sunglow.spectrum.core.QUALITY_LABEL
 import com.sunglow.spectrum.core.TzCache
-import com.sunglow.spectrum.core.addDaysIso
+import com.sunglow.spectrum.core.captionOf
 import com.sunglow.spectrum.core.conclWord
 import com.sunglow.spectrum.core.facDisplayRows
 import com.sunglow.spectrum.core.fmtClock
 import com.sunglow.spectrum.core.fmtDur
 import com.sunglow.spectrum.core.glowWindow
+import com.sunglow.spectrum.core.gradeOf
 import com.sunglow.spectrum.core.isNum
+import com.sunglow.spectrum.core.shareBodyOf
 import com.sunglow.spectrum.core.todayInTz
-import com.sunglow.spectrum.core.typeDetailText
 import com.sunglow.spectrum.core.uAlt
 import com.sunglow.spectrum.core.uDist
+import com.sunglow.spectrum.core.verdictViewOf
+import com.sunglow.spectrum.core.VerdictView
 import com.sunglow.spectrum.ui.HomeViewModel
+import com.sunglow.spectrum.ui.theme.DuskAstro
+import com.sunglow.spectrum.ui.theme.DuskCivil
+import com.sunglow.spectrum.ui.theme.DuskDay
+import com.sunglow.spectrum.ui.theme.DuskNautical
+import com.sunglow.spectrum.ui.theme.DuskNight
 import com.sunglow.spectrum.ui.theme.SunglowColors
 import com.sunglow.spectrum.ui.theme.SunglowTheme
-import java.time.LocalDate
 import java.util.Locale
 import kotlin.math.roundToInt
 
 /*
- * P2 主屏：选城市 → 选日期/时段 → 一次单点预报 → 结论、模式明细、主要因素。
- * 数值口径全部来自 core/，这一层只负责排版。
+ * 结论页（P0 视觉骨架）
+ * 结构：实拍 Hero（双主角读数）→ 结论句 → 五段曙暮光 → 四模型并列卡 → 下钻入口。
+ * 点任意模型卡，Hero 的 P/Q/等级/分歧/可信度一起切换。
  */
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(vm: HomeViewModel = viewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     val colors = SunglowTheme.colors
-    val spacing = SunglowTheme.spacing
     val context = LocalContext.current
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -102,69 +120,77 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
         }
     }
 
-    val today = remember(state.city) {
-        todayInTz(TzCache.cityTz(state.city.lat, state.city.lon))
+    var modelSel by remember(state.city.name, state.dateStr, state.period) {
+        mutableStateOf(ModelSel.ENS)
     }
+    var sheet by remember { mutableStateOf<String?>(null) }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(colors.bg)
+    val result = state.result
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 20.dp)
     ) {
-        GlowBackdrop()
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .statusBarsPadding()
-                .navigationBarsPadding()
-                .padding(horizontal = spacing.page)
-                .padding(top = spacing.lg, bottom = spacing.xxl)
-        ) {
-            CityHeader(city = state.city, onClick = { vm.setCitySheetOpen(true) })
-
-            Spacer(Modifier.height(spacing.lg))
-
-            DateBar(
-                dates = state.dates,
-                selected = state.dateStr,
-                today = today,
-                onSelect = vm::selectDate
+        item {
+            HeroBlock(
+                state = state,
+                result = result,
+                modelSel = modelSel,
+                onOpenCity = { vm.setCitySheetOpen(true) },
+                onShare = {
+                    if (result != null) {
+                        val view = verdictViewOf(result, modelSel)
+                        val send = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, shareBodyOf(result, view))
+                        }
+                        context.startActivity(Intent.createChooser(send, "分享霞光预报"))
+                    }
+                }
             )
+        }
 
-            Spacer(Modifier.height(spacing.md))
-
-            PeriodSwitch(period = state.period, onSelect = vm::selectPeriod)
-
-            Spacer(Modifier.height(spacing.lg))
-
-            val result = state.result
-            when {
-                state.error != null -> ErrorCard(
-                    message = state.error ?: "",
-                    loading = state.loading,
-                    onRetry = vm::refresh
-                )
-                result == null && state.loading -> LoadingCard()
-                result != null -> {
-                    VerdictCard(result = result, loading = state.loading)
-                    Spacer(Modifier.height(spacing.lg))
-                    ModelTable(result.models)
-                    Spacer(Modifier.height(spacing.lg))
-                    FactorList(result)
+        if (result != null) {
+            val view = verdictViewOf(result, modelSel)
+            item {
+                Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp)) {
+                    Text(
+                        text = verdictSentence(view),
+                        style = MaterialTheme.typography.titleMedium.copy(fontSize = 14.5.sp),
+                        color = colors.ink
+                    )
                 }
             }
-
-            Spacer(Modifier.height(spacing.xl))
-
-            Text(
-                text = "概率预报 · 仅供参考 · 气象数据 Open-Meteo",
-                style = MaterialTheme.typography.labelSmall,
-                color = colors.muted,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center
-            )
+            item { SkyBand(result) }
+            item {
+                ModelSection(
+                    result = result,
+                    sel = modelSel,
+                    onSelect = { modelSel = it }
+                )
+            }
+            item {
+                Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp)) {
+                    FoldRow("影响因素", "13 项判据", onClick = { sheet = "factors" })
+                    Spacer(Modifier.height(8.dp))
+                    FoldRow("光路细节", "云幕几何与消光", onClick = { sheet = "ray" })
+                    Spacer(Modifier.height(8.dp))
+                    FoldRow("分享与文案", "生成一句话", onClick = { sheet = "share" })
+                }
+            }
+            item {
+                Text(
+                    text = "数据 Open-Meteo · 概率预报仅供参考",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.faint,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+        } else {
+            item { StatusCard(state.error, state.loading, vm::refresh) }
         }
     }
 
@@ -191,217 +217,267 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
             onDismiss = { vm.setCitySheetOpen(false) }
         )
     }
-}
 
-/* ---------- 背景与容器 ---------- */
-
-@Composable
-private fun GlowBackdrop() {
-    val colors = SunglowTheme.colors
-    Canvas(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(420.dp)
-    ) {
-        drawRect(
-            brush = Brush.radialGradient(
-                colors = listOf(
-                    colors.accent.copy(alpha = if (colors.isDark) 0.26f else 0.14f),
-                    Color.Transparent
-                ),
-                center = Offset(size.width * 0.82f, -size.height * 0.15f),
-                radius = size.width * 1.05f
-            ),
-            size = Size(size.width, size.height)
-        )
-        drawRect(
-            brush = Brush.radialGradient(
-                colors = listOf(
-                    colors.accentCool.copy(alpha = if (colors.isDark) 0.16f else 0.10f),
-                    Color.Transparent
-                ),
-                center = Offset(size.width * 0.05f, size.height * 0.05f),
-                radius = size.width * 0.9f
-            ),
-            size = Size(size.width, size.height)
-        )
-    }
-}
-
-@Composable
-private fun Panel(content: @Composable () -> Unit) {
-    val colors = SunglowTheme.colors
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(colors.card)
-            .border(1.dp, colors.rule, RoundedCornerShape(18.dp))
-            .padding(18.dp)
-    ) {
-        content()
-    }
-}
-
-/* ---------- 顶部：城市 ---------- */
-
-@Composable
-private fun CityHeader(city: City, onClick: () -> Unit) {
-    val colors = SunglowTheme.colors
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(colors.card)
-            .border(1.dp, colors.rule, RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = stringResource(R.string.brand_mark) + " · 光谱观测",
-                style = MaterialTheme.typography.labelSmall,
-                color = colors.accentCool
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text = city.name,
-                style = MaterialTheme.typography.headlineMedium,
-                color = colors.ink
-            )
-            if (city.region.isNotBlank() && city.region != city.name) {
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = city.region,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = colors.muted
-                )
-            }
-        }
-        Text(
-            text = "切换城市",
-            style = MaterialTheme.typography.bodyLarge,
-            color = colors.accentCool
-        )
-    }
-}
-
-/* ---------- 日期条 ---------- */
-
-@Composable
-private fun DateBar(
-    dates: List<String>,
-    selected: String,
-    today: String,
-    onSelect: (String) -> Unit
-) {
-    val colors = SunglowTheme.colors
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        items(dates, key = { it }) { d ->
-            val on = d == selected
-            val label = when (d) {
-                today -> "今天"
-                addDaysIso(today, 1) -> "明天"
-                else -> weekdayOf(d)
-            }
-            Column(
-                modifier = Modifier
-                    .width(64.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(if (on) colors.accent else colors.card)
-                    .border(
-                        1.dp,
-                        if (on) Color.Transparent else colors.rule,
-                        RoundedCornerShape(12.dp)
-                    )
-                    .clickable { onSelect(d) }
-                    .padding(vertical = 10.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (on) Color.White.copy(alpha = 0.9f) else colors.muted
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = shortDate(d),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (on) Color.White else colors.ink
-                )
+    if (sheet != null && result != null) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = { sheet = null },
+            sheetState = sheetState,
+            containerColor = colors.bg2
+        ) {
+            when (sheet) {
+                "factors" -> FactorsSheet(result)
+                "ray" -> RaySheet(result)
+                "share" -> ShareSheet(result, verdictViewOf(result, modelSel))
             }
         }
     }
 }
 
-private fun weekdayOf(dateStr: String): String = try {
-    when (LocalDate.parse(dateStr).dayOfWeek.value) {
-        1 -> "周一"
-        2 -> "周二"
-        3 -> "周三"
-        4 -> "周四"
-        5 -> "周五"
-        6 -> "周六"
-        else -> "周日"
-    }
-} catch (_: Exception) {
-    "—"
-}
-
-private fun shortDate(dateStr: String): String =
-    if (dateStr.length >= 10) dateStr.substring(5).replace('-', '/') else dateStr
-
-/* ---------- 时段切换 ---------- */
+/* ---------- Hero ---------- */
 
 @Composable
-private fun PeriodSwitch(period: Period, onSelect: (Period) -> Unit) {
-    val colors = SunglowTheme.colors
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(999.dp))
-            .background(colors.card)
-            .border(1.dp, colors.rule, RoundedCornerShape(999.dp))
-            .padding(4.dp)
-    ) {
-        PeriodChip("朝霞", period == Period.AM, Modifier.weight(1f)) { onSelect(Period.AM) }
-        PeriodChip("晚霞", period == Period.PM, Modifier.weight(1f)) { onSelect(Period.PM) }
-    }
-}
-
-@Composable
-private fun PeriodChip(
-    label: String,
-    selected: Boolean,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
+private fun HeroBlock(
+    state: com.sunglow.spectrum.ui.HomeUiState,
+    result: ForecastResult?,
+    modelSel: ModelSel,
+    onOpenCity: () -> Unit,
+    onShare: () -> Unit
 ) {
     val colors = SunglowTheme.colors
+    val view = result?.let { verdictViewOf(it, modelSel) }
+
     Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(999.dp))
-            .background(if (selected) colors.accentCool else Color.Transparent)
-            .clickable(onClick = onClick)
-            .padding(vertical = 8.dp),
-        contentAlignment = Alignment.Center
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(236.dp)
+            .background(Color(0xFF1B2130))
     ) {
+        Image(
+            painter = painterResource(R.drawable.hero_photo),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+        /* 顶部压暗，保证状态栏与胶囊可读 */
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        0f to Color(0x6B060A12),
+                        0.34f to Color(0x0A060A12),
+                        0.76f to Color(0x57060A12),
+                        1f to Color(0xE0070B14)
+                    )
+                )
+        )
+        /* 左下径向压暗，承载读数 */
+        Canvas(Modifier.fillMaxSize()) {
+            drawRect(
+                brush = Brush.radialGradient(
+                    colors = listOf(Color(0xD9060A12), Color.Transparent),
+                    center = Offset(size.width * 0.24f, size.height * 0.92f),
+                    radius = size.width * 0.95f
+                )
+            )
+        }
+
+        /* 顶栏 */
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 18.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(Color(0x6111161F))
+                    .border(1.dp, Color(0x29FFFFFF), RoundedCornerShape(999.dp))
+                    .clickable(onClick = onOpenCity)
+                    .padding(horizontal = 12.dp, vertical = 7.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    Modifier
+                        .size(5.dp)
+                        .clip(CircleShape)
+                        .background(colors.accentCool)
+                )
+                Spacer(Modifier.width(7.dp))
+                Text(
+                    text = state.city.name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White.copy(alpha = 0.94f),
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = " · " + state.dateStr.takeLast(5).replace('-', '/') +
+                        " · " + (if (state.period == Period.AM) "朝霞" else "晚霞"),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.72f),
+                    maxLines = 1
+                )
+            }
+            Spacer(Modifier.weight(1f))
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .background(Color(0x6111161F))
+                    .border(1.dp, Color(0x29FFFFFF), CircleShape)
+                    .clickable(onClick = onShare),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("↑", style = MaterialTheme.typography.bodyLarge, color = Color.White)
+            }
+        }
+
+        /* 读数 */
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(start = 20.dp, end = 20.dp, bottom = 14.dp)
+        ) {
+            if (view == null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (state.loading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = colors.accentCool
+                        )
+                        Spacer(Modifier.width(10.dp))
+                    }
+                    Text(
+                        text = state.error ?: if (state.loading) "正在取数…" else "点我开始观测",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White.copy(alpha = 0.8f)
+                    )
+                }
+            } else {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Column {
+                        Text(
+                            text = view.p.roundToInt().toString(),
+                            style = MaterialTheme.typography.displaySmall.copy(
+                                fontSize = 40.sp,
+                                fontWeight = FontWeight.Medium,
+                                shadow = Shadow(colors.accent.copy(alpha = 0.45f), blurRadius = 18f)
+                            ),
+                            color = Color.White
+                        )
+                        Text(
+                            text = if (state.period == Period.AM) "朝霞概率" else "晚霞概率",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 9.sp,
+                                letterSpacing = 1.4.sp
+                            ),
+                            color = Color.White.copy(alpha = 0.62f)
+                        )
+                    }
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = "%",
+                        style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp),
+                        color = Color.White.copy(alpha = 0.9f),
+                        modifier = Modifier.padding(bottom = 18.dp)
+                    )
+                    Spacer(Modifier.width(20.dp))
+                    Column {
+                        Text(
+                            text = view.q.roundToInt().toString(),
+                            style = MaterialTheme.typography.displaySmall.copy(
+                                fontSize = 40.sp,
+                                fontWeight = FontWeight.Medium,
+                                shadow = Shadow(Color(0x66FF9C3F), blurRadius = 18f)
+                            ),
+                            color = Color(0xFFFFD08A)
+                        )
+                        Text(
+                            text = "观赏质量",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 9.sp,
+                                letterSpacing = 1.4.sp
+                            ),
+                            color = Color.White.copy(alpha = 0.62f)
+                        )
+                    }
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = "分",
+                        style = MaterialTheme.typography.titleSmall.copy(fontSize = 13.sp),
+                        color = Color(0xFFFFD08A).copy(alpha = 0.85f),
+                        modifier = Modifier.padding(bottom = 18.dp)
+                    )
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    SubStat("等级", QUALITY_LABEL[view.grade] ?: view.grade, gradeColor(view.grade, colors))
+                    SubDivider()
+                    if (view.single) {
+                        SubStat("时效", "实况/历史", Color.White)
+                    } else {
+                        SubStat(
+                            "分歧",
+                            if (isNum(result.dvI)) result.dvI!!.roundToInt().toString() else "—",
+                            Color.White
+                        )
+                        SubDivider()
+                        SubStat("可信度", result.conf.level, Color.White)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SubStat(label: String, value: String, valueColor: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             text = label,
-            style = MaterialTheme.typography.titleMedium,
-            color = if (selected) colors.bg else colors.muted
+            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
+            color = Color.White.copy(alpha = 0.55f)
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodySmall.copy(
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.SemiBold
+            ),
+            color = valueColor
         )
     }
 }
 
-/* ---------- 结论卡 ---------- */
+@Composable
+private fun SubDivider() {
+    Box(
+        Modifier
+            .padding(horizontal = 8.dp)
+            .width(1.dp)
+            .height(10.dp)
+            .background(Color.White.copy(alpha = 0.26f))
+    )
+}
+
+/* ---------- 天色带 ---------- */
 
 @Composable
-private fun VerdictCard(result: ForecastResult, loading: Boolean) {
+private fun SkyBand(result: ForecastResult) {
     val colors = SunglowTheme.colors
-    val p = result.p.roundToInt()
-    val q = result.q.roundToInt()
-    val gradeColor = gradeColor(result.grade, colors)
+    val now = System.currentTimeMillis().toDouble()
+    val span = 3 * 3600000.0
+    val start = result.evMs - span
+    val total = span * 2
+    val nowPct = ((now - start) / total).coerceIn(0.0, 1.0).toFloat()
+
     val win = remember(result) {
         if (result.sRT.geom.ok) {
             glowWindow(
@@ -414,393 +490,567 @@ private fun VerdictCard(result: ForecastResult, loading: Boolean) {
             )
         } else null
     }
+    val winStart = win?.let { ((it.first - start) / total).toFloat() } ?: 0f
+    val winEnd = win?.let { ((it.second - start) / total).toFloat() } ?: 0f
 
-    Panel {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            ConfPill(
-                text = "可信度 " + result.conf.level + " · " + result.conf.txt,
-                fg = hexColor(if (colors.isDark) result.conf.darkColor else result.conf.color),
-                bg = hexColor(if (colors.isDark) result.conf.darkBg else result.conf.bg),
-                bd = hexColor(if (colors.isDark) result.conf.darkBd else result.conf.bd)
-            )
-            Spacer(Modifier.weight(1f))
-            if (loading) {
-                Text(
-                    text = "取数中…",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = colors.muted
-                )
-            }
-        }
-
-        Spacer(Modifier.height(14.dp))
-
-        Text(
-            text = result.city.name + " " + result.dateStr + " " +
-                (if (result.period == Period.AM) "朝霞" else "晚霞") +
-                " " + conclWord(result.p),
-            style = MaterialTheme.typography.headlineMedium,
-            color = colors.ink
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        Text(
-            text = "概率 $p%，观赏质量 $q 分 · 等级 " +
-                (QUALITY_LABEL[result.grade] ?: result.grade) + "。" + result.conf.hint,
-            style = MaterialTheme.typography.bodyMedium,
-            color = colors.muted
-        )
-
-        if (result.aodFallback) {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = "本次没有取到气溶胶数据，颜色浓淡按默认值估算，实际霞光可能比预报更淡或更浓。",
-                style = MaterialTheme.typography.bodyMedium,
-                color = colors.accentAlt
-            )
-        }
-
-        Spacer(Modifier.height(18.dp))
-
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Metric("$p%", "出现概率", colors.accent, Modifier.weight(1f))
-            Metric("$q", "观赏质量", colors.accentAlt, Modifier.weight(1f))
-            Metric(result.grade, "等级", gradeColor, Modifier.weight(1f))
-            Metric(
-                if (isNum(result.dvI)) String.format(Locale.US, "%.1f", result.dvI!!) else "—",
-                "模型分歧 ΔI",
-                colors.ink,
-                Modifier.weight(1f)
-            )
-        }
-
-        Spacer(Modifier.height(18.dp))
-
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(colors.rule)
-        )
-
-        Spacer(Modifier.height(14.dp))
-
-        SunRows(result = result, win = win)
-
-        Spacer(Modifier.height(16.dp))
-
-        ColorStrip(result)
-    }
-}
-
-@Composable
-private fun Metric(value: String, label: String, color: Color, modifier: Modifier = Modifier) {
-    val colors = SunglowTheme.colors
-    Column(modifier = modifier) {
-        Text(
-            text = value,
-            style = MaterialTheme.typography.headlineLarge.copy(fontSize = 26.sp),
-            color = color
-        )
-        Spacer(Modifier.height(2.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = colors.muted
-        )
-    }
-}
-
-@Composable
-private fun SunRows(result: ForecastResult, win: Pair<Double, Double>?) {
-    val colors = SunglowTheme.colors
-    val rows = mutableListOf<Pair<String, String>>()
-    rows.add(result.evName to fmtClock(result.evMs, result.tz))
-    rows.add("方位角" to String.format(Locale.US, "%.1f", result.evAz) + "°")
-    rows.add(
-        "云型" to typeDetailText(
-            result.sRT.primary.type,
-            result.sRT.decks.map { it.cover }
-        )
-    )
-    rows.add("云底高度" to uAlt(result.sRT.primary.base * 1000))
-    rows.add("几何条件" to geomText(result))
-    rows.add("持续时间" to fmtDur(result.sRT.geom.dur))
-    rows.add("能见度" to uDist(result.envM.vis?.let { it / 1000 }, 1))
-    rows.add(
-        "最佳观赏窗口" to (win?.let { fmtClock(it.first, result.tz) + "–" + fmtClock(it.second, result.tz) }
-            ?: "—")
-    )
-
-    Column {
-        rows.forEach { (k, v) ->
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                verticalAlignment = Alignment.Top
-            ) {
-                Text(
-                    text = k,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = colors.muted,
-                    modifier = Modifier.width(84.dp)
-                )
-                Text(
-                    text = v,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (k == "几何条件" && !result.sRT.geom.ok) Color(0xFFD0503F) else colors.ink,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
-    }
-}
-
-private fun geomText(r: ForecastResult): String {
-    val g = r.sRT.geom
-    if (g.ok) return "火烧云三角几何条件成立"
-    return if (isNum(r.sRT.d)) {
-        "不成立：云边界 " + uDist(r.sRT.d) + " 已超过上限 " + uDist(g.xMax)
-    } else {
-        "不成立：400 km 内没有可承载霞光的云盘"
-    }
-}
-
-@Composable
-private fun ColorStrip(result: ForecastResult) {
-    val colors = SunglowTheme.colors
-    val samples = result.sRT.samples
-    if (samples.isEmpty()) return
-    Column {
-        Row(
+    Column(modifier = Modifier.padding(horizontal = 18.dp)) {
+        Canvas(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(16.dp)
-                .clip(RoundedCornerShape(999.dp))
-                .border(1.dp, colors.rule, RoundedCornerShape(999.dp))
+                .height(28.dp)
+                .clip(RoundedCornerShape(8.dp))
         ) {
-            samples.forEach { s ->
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .background(hexColor(s.color.hex))
+            val segs = listOf(
+                0.26f to DuskDay,
+                0.15f to DuskCivil,
+                0.15f to DuskNautical,
+                0.13f to DuskAstro,
+                0.31f to DuskNight
+            )
+            var x = 0f
+            segs.forEach { (w, c) ->
+                val ww = size.width * w
+                drawRect(color = c, topLeft = Offset(x, 0f), size = Size(ww, size.height))
+                x += ww
+            }
+            /* 霞光窗口 */
+            if (win != null && winEnd > winStart) {
+                drawRect(
+                    color = Color(0xFFFF4D82),
+                    topLeft = Offset(size.width * winStart, size.height - 3.dp.toPx()),
+                    size = Size(size.width * (winEnd - winStart), 3.dp.toPx())
                 )
             }
+            /* 此刻 */
+            drawLine(
+                color = Color.White.copy(alpha = 0.9f),
+                start = Offset(size.width * nowPct, 0f),
+                end = Offset(size.width * nowPct, size.height),
+                strokeWidth = 1.dp.toPx()
+            )
         }
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = samples.map { it.color.nameZh }.distinct().joinToString(" · "),
-            style = MaterialTheme.typography.labelSmall,
-            color = colors.muted
-        )
-    }
-}
-
-@Composable
-private fun ConfPill(text: String, fg: Color, bg: Color, bd: Color) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(999.dp))
-            .background(bg)
-            .border(1.dp, bd, RoundedCornerShape(999.dp))
-            .padding(horizontal = 10.dp, vertical = 4.dp)
-    ) {
-        Text(text = text, style = MaterialTheme.typography.labelSmall, color = fg)
-    }
-}
-
-/* ---------- 模式明细 ---------- */
-
-@Composable
-private fun ModelTable(models: List<ModelRow>) {
-    val colors = SunglowTheme.colors
-    Panel {
-        Text(
-            text = "模式明细",
-            style = MaterialTheme.typography.labelSmall,
-            color = colors.muted
-        )
-        Spacer(Modifier.height(10.dp))
-        models.forEach { m ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = m.label,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = colors.ink,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = "P " + m.p.roundToInt() + "%",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = colors.accent
-                )
-                Spacer(Modifier.width(14.dp))
-                Text(
-                    text = "Q " + m.q.roundToInt(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = colors.accentAlt
-                )
-            }
-        }
-    }
-}
-
-/* ---------- 主要因素 ---------- */
-
-@Composable
-private fun FactorList(result: ForecastResult) {
-    val colors = SunglowTheme.colors
-    val rows = remember(result) { facDisplayRows(result) }
-    var expanded by remember { mutableStateOf<String?>(null) }
-
-    Panel {
-        Text(
-            text = "主要因素",
-            style = MaterialTheme.typography.labelSmall,
-            color = colors.muted
-        )
         Spacer(Modifier.height(4.dp))
-        Text(
-            text = "点任意一项查看说明",
-            style = MaterialTheme.typography.labelSmall,
-            color = colors.ruleStrong
-        )
-        Spacer(Modifier.height(12.dp))
-        rows.forEachIndexed { i, row ->
-            if (i > 0) {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(colors.rule)
+        Row(modifier = Modifier.fillMaxWidth()) {
+            listOf("白昼", "民用", "航海", "天文", "夜间").forEachIndexed { i, nm ->
+                Text(
+                    text = nm,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp),
+                    color = colors.faint,
+                    modifier = Modifier.weight(
+                        when (i) { 0 -> 26f; 1 -> 15f; 2 -> 15f; 3 -> 13f; else -> 31f }
+                    )
                 )
             }
-            FactorRow(
-                row = row,
-                open = expanded == row.key,
-                onClick = { expanded = if (expanded == row.key) null else row.key }
-            )
-        }
-    }
-}
-
-@Composable
-private fun FactorRow(row: FacDisplayRow, open: Boolean, onClick: () -> Unit) {
-    val colors = SunglowTheme.colors
-    Column(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 10.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = row.name,
-                style = MaterialTheme.typography.bodyLarge,
-                color = colors.ink,
-                modifier = Modifier.weight(1f)
-            )
-            Spacer(Modifier.width(10.dp))
-            /* 名称与数值平分宽度：长数值换行，不再把名称挤成竖排 */
-            Text(
-                text = row.value,
-                style = MaterialTheme.typography.bodyMedium,
-                color = colors.muted,
-                textAlign = TextAlign.End,
-                modifier = Modifier.weight(1f)
-            )
-            Spacer(Modifier.width(8.dp))
-            JudgeChip(row.judge, row.judgeCls)
-        }
-        if (open) {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = row.desc,
-                style = MaterialTheme.typography.bodyMedium,
-                color = colors.muted
-            )
-        }
-    }
-}
-
-@Composable
-private fun JudgeChip(text: String, cls: String) {
-    val colors = SunglowTheme.colors
-    val c = judgeColor(cls, colors)
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(999.dp))
-            .background(c.copy(alpha = 0.12f))
-            .border(1.dp, c.copy(alpha = 0.5f), RoundedCornerShape(999.dp))
-            .padding(horizontal = 7.dp, vertical = 2.dp)
-    ) {
-        Text(text = text, style = MaterialTheme.typography.labelSmall, color = c)
-    }
-}
-
-private fun judgeColor(cls: String, colors: SunglowColors): Color = when (cls) {
-    "ok" -> Color(0xFF2F9E63)
-    "mid" -> colors.accentAlt
-    "bad" -> Color(0xFFD0503F)
-    else -> colors.muted
-}
-
-/* ---------- 错误 / 加载 ---------- */
-
-@Composable
-private fun ErrorCard(message: String, loading: Boolean, onRetry: () -> Unit) {
-    val colors = SunglowTheme.colors
-    Panel {
-        Text(
-            text = "取数失败",
-            style = MaterialTheme.typography.titleMedium,
-            color = Color(0xFFD0503F)
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = colors.muted
-        )
-        Spacer(Modifier.height(10.dp))
-        TextButton(onClick = onRetry, enabled = !loading) {
-            Text(
-                text = if (loading) "取数中…" else "重新计算",
-                style = MaterialTheme.typography.bodyLarge,
+                text = "此刻 " + fmtClock(now, result.tz),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 8.5.sp,
+                    fontWeight = FontWeight.SemiBold
+                ),
                 color = colors.accentCool
             )
         }
     }
 }
 
+/* ---------- 模型卡 ---------- */
+
 @Composable
-private fun LoadingCard() {
+private fun ModelSection(result: ForecastResult, sel: ModelSel, onSelect: (ModelSel) -> Unit) {
     val colors = SunglowTheme.colors
-    Panel {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(18.dp),
-                strokeWidth = 2.dp,
-                color = colors.accentCool
-            )
-            Spacer(Modifier.width(12.dp))
+    val sRT = result.sRT
+
+    Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp)) {
+        Row(verticalAlignment = Alignment.Bottom) {
             Text(
-                text = "正在取数并计算…",
-                style = MaterialTheme.typography.bodyLarge,
-                color = colors.muted
+                text = "各模型独立结果",
+                style = MaterialTheme.typography.titleMedium.copy(fontSize = 13.sp),
+                color = colors.ink
+            )
+            Spacer(Modifier.weight(1f))
+            Text(
+                text = "点卡片，上方数据随之切换",
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                color = colors.faint
             )
         }
         Spacer(Modifier.height(6.dp))
+
+        /* 综合 */
+        val ensView = verdictViewOf(result, ModelSel.ENS)
+        ModelCard(
+            selected = sel == ModelSel.ENS,
+            accent = colors.accentCool,
+            dotColor = colors.accentCool,
+            barBrush = Brush.horizontalGradient(colors.spectrum),
+            title = "多模型综合",
+            desc = "GFS 30% + EC 34% + 光追 36%",
+            p = ensView.p,
+            q = ensView.q,
+            grade = ensView.grade,
+            lines = listOf(
+                listOf(
+                    "可信度" to result.conf.level,
+                    "ΔI" to (if (isNum(result.dvI)) result.dvI!!.roundToInt().toString() else "—"),
+                    "ΔP" to (if (isNum(result.spread)) "${result.spread!!.roundToInt()}" else "—"),
+                    "ΔQ" to (if (isNum(result.spreadQ)) "${result.spreadQ!!.roundToInt()}" else "—")
+                ),
+                cloudLine(result),
+                listOf(
+                    "持续" to fmtDur(sRT.geom.dur),
+                    "AOD" to (if (isNum(result.envM.aod)) String.format(Locale.US, "%.2f", result.envM.aod) else "—")
+                )
+            ),
+            onClick = { onSelect(ModelSel.ENS) }
+        )
+
+        result.models.forEach { m ->
+            val ms = when (m.id) {
+                "gfs" -> Triple(ModelSel.GFS, "GFS 模式", "NOAA 全球模式 · 1 小时分辨率")
+                "ec" -> Triple(ModelSel.EC, "ECMWF-IFS 模式", "欧洲中心全球模式")
+                "rt" -> Triple(ModelSel.RT, "光追算法", "纯物理：多波长光路积分 + CIE 色度")
+                else -> return@forEach
+            }
+            val accent = when (m.id) {
+                "gfs" -> colors.info
+                "ec" -> colors.good
+                else -> colors.accent
+            }
+            val isRt = m.id == "rt"
+            val lines = if (isRt) {
+                listOf(
+                    listOf(
+                        "主云型" to sRT.primary.type,
+                        "等效地表" to uAlt(sRT.heq * 1000),
+                        "峰值透射" to fmtSci(sRT.peak.color.t550)
+                    ),
+                    listOf(
+                        "亮度" to sRT.bright.txt.substringBefore("（"),
+                        "颜色" to sRT.peak.color.nameZh,
+                        "饱和" to (sRT.peak.color.sat * 100).roundToInt().toString() + "%"
+                    )
+                )
+            } else {
+                listOf(
+                    cloudLine(result),
+                    listOf(
+                        "持续" to fmtDur(sRT.geom.dur),
+                        "AOD" to (if (isNum(result.envM.aod)) String.format(Locale.US, "%.2f", result.envM.aod) else "—")
+                    )
+                )
+            }
+            ModelCard(
+                selected = sel == ms.first,
+                accent = accent,
+                dotColor = accent,
+                barBrush = Brush.horizontalGradient(listOf(accent, accent)),
+                title = ms.second,
+                desc = ms.third,
+                p = m.p,
+                q = m.q,
+                grade = gradeOf(m.q),
+                lines = lines,
+                onClick = { onSelect(ms.first) }
+            )
+        }
+    }
+}
+
+private fun cloudLine(r: ForecastResult): List<Pair<String, String>> = listOf(
+    "云型" to r.sRT.primary.type,
+    "云量" to (r.sRT.primary.cover.roundToInt().toString() + "%"),
+    "云底" to uAlt(r.sRT.primary.base * 1000),
+    "边界" to uDist(r.sRT.d)
+)
+
+@Composable
+private fun ModelCard(
+    selected: Boolean,
+    accent: Color,
+    dotColor: Color,
+    barBrush: Brush,
+    title: String,
+    desc: String,
+    p: Double,
+    q: Double,
+    grade: String,
+    lines: List<List<Pair<String, String>>>,
+    onClick: () -> Unit
+) {
+    val colors = SunglowTheme.colors
+    val radius = RoundedCornerShape(12.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 6.dp)
+            .clip(radius)
+            .background(colors.card)
+            .border(
+                width = if (selected) 1.5.dp else 1.dp,
+                color = if (selected) accent else colors.rule,
+                shape = radius
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 11.dp, vertical = 9.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier
+                    .size(5.dp)
+                    .clip(CircleShape)
+                    .background(dotColor)
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold
+                ),
+                color = colors.ink
+            )
+            Spacer(Modifier.weight(1f))
+            Text(
+                text = desc,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                color = colors.faint,
+                textAlign = TextAlign.End,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.width(180.dp)
+            )
+        }
+        Spacer(Modifier.height(3.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = p.roundToInt().toString() + "%",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold
+                ),
+                color = colors.ink
+            )
+            Spacer(Modifier.width(7.dp))
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(colors.good.copy(alpha = 0.12f))
+                    .border(1.dp, colors.good.copy(alpha = 0.45f), RoundedCornerShape(999.dp))
+                    .padding(horizontal = 6.dp, vertical = 1.dp)
+            ) {
+                Text(
+                    text = "质量 ${q.roundToInt()} · " + (QUALITY_LABEL[grade] ?: grade),
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                    color = colors.good
+                )
+            }
+        }
+        Spacer(Modifier.height(5.dp))
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(2.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(colors.rule)
+        ) {
+            Box(
+                Modifier
+                    .fillMaxWidth((p / 100.0).toFloat().coerceIn(0f, 1f))
+                    .height(2.dp)
+                    .background(barBrush)
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        lines.forEach { line ->
+            Text(
+                text = annotatedLine(line, colors),
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                color = colors.muted,
+                lineHeight = 14.sp
+            )
+        }
+    }
+}
+
+private fun annotatedLine(line: List<Pair<String, String>>, colors: SunglowColors): AnnotatedString =
+    buildAnnotatedString {
+        line.forEachIndexed { i, (k, v) ->
+            if (i > 0) withStyle(SpanStyle(color = colors.faint.copy(alpha = 0.55f))) { append(" · ") }
+            withStyle(SpanStyle(color = colors.faint)) { append(k) }
+            append(" ")
+            withStyle(SpanStyle(color = colors.muted)) { append(v) }
+        }
+    }
+
+/* ---------- 折叠入口 ---------- */
+
+@Composable
+private fun FoldRow(title: String, note: String, onClick: () -> Unit) {
+    val colors = SunglowTheme.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(colors.card)
+            .border(1.dp, colors.rule, RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 13.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         Text(
-            text = "沿日出/日落方位取 17 个样带点，跑 GFS / ECMWF / 光追三套算法，通常几秒内完成。",
+            text = title,
             style = MaterialTheme.typography.bodyMedium,
-            color = colors.ruleStrong
+            color = colors.ink,
+            fontWeight = FontWeight.Medium
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text = note,
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.faint
+        )
+        Spacer(Modifier.weight(1f))
+        Text(
+            text = "›",
+            style = MaterialTheme.typography.bodyLarge,
+            color = colors.accentCool
+        )
+    }
+}
+
+/* ---------- 底部 sheet 内容 ---------- */
+
+@Composable
+private fun FactorsSheet(result: ForecastResult) {
+    val colors = SunglowTheme.colors
+    val rows = remember(result) { facDisplayRows(result) }
+    Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 28.dp)) {
+        Text(
+            text = "影响因素",
+            style = MaterialTheme.typography.titleMedium,
+            color = colors.ink
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = "13 项判据 · 到达率由云场与光路共同决定",
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.faint
+        )
+        Spacer(Modifier.height(12.dp))
+        rows.forEachIndexed { i, row ->
+            if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(colors.rule))
+            Column(modifier = Modifier.padding(vertical = 9.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = row.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.ink,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = row.value,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.muted
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(judgeColor(row.judgeCls, colors).copy(alpha = 0.12f))
+                            .padding(horizontal = 6.dp, vertical = 1.dp)
+                    ) {
+                        Text(
+                            text = row.judge,
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                            color = judgeColor(row.judgeCls, colors)
+                        )
+                    }
+                }
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    text = row.desc,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                    color = colors.faint,
+                    lineHeight = 14.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RaySheet(result: ForecastResult) {
+    val colors = SunglowTheme.colors
+    val r = result.sRT
+    val rows = listOf(
+        "主云层" to (r.primary.nameZh + " · " + r.primary.type),
+        "云量" to (r.primary.cover.roundToInt().toString() + "%"),
+        "云底高度" to uAlt(r.primary.base * 1000),
+        "云边界距离" to uDist(r.d),
+        "霞光深入上限" to uDist(r.geom.xMax),
+        "持续时间" to fmtDur(r.geom.dur),
+        "气溶胶标高" to uAlt(r.hs * 1000),
+        "等效地面高度" to uAlt(r.heq * 1000),
+        "峰值透射" to fmtSci(r.peak.color.t550),
+        "亮度" to r.bright.txt
+    )
+    Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 28.dp)) {
+        Text(
+            text = "光路细节",
+            style = MaterialTheme.typography.titleMedium,
+            color = colors.ink
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = "沿日出/日落方位量出的云幕几何与消光",
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.faint
+        )
+        Spacer(Modifier.height(12.dp))
+        rows.forEach { (k, v) ->
+            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
+                Text(
+                    text = k,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.faint,
+                    modifier = Modifier.width(96.dp)
+                )
+                Text(
+                    text = v,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.ink,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.End
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ShareSheet(result: ForecastResult, view: VerdictView) {
+    val colors = SunglowTheme.colors
+    val context = LocalContext.current
+    val caption = remember(result, view) { captionOf(result, view) }
+    Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 28.dp)) {
+        Text(
+            text = "分享",
+            style = MaterialTheme.typography.titleMedium,
+            color = colors.ink
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = caption,
+            style = MaterialTheme.typography.bodyMedium,
+            color = colors.muted
+        )
+        Spacer(Modifier.height(14.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(Brush.horizontalGradient(colors.spectrum))
+                    .clickable {
+                        val send = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, shareBodyOf(result, view))
+                        }
+                        context.startActivity(Intent.createChooser(send, "分享霞光预报"))
+                    }
+                    .padding(vertical = 11.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "系统分享",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = Color(0xFF06101C)
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(colors.glass)
+                    .border(1.dp, colors.ruleStrong, RoundedCornerShape(999.dp))
+                    .clickable {
+                        val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        cm.setPrimaryClip(ClipData.newPlainText("霞光预报", caption))
+                        Toast.makeText(context, "文案已复制", Toast.LENGTH_SHORT).show()
+                    }
+                    .padding(vertical = 11.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "复制文案",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = colors.ink
+                )
+            }
+        }
+    }
+}
+
+/* ---------- 状态卡 ---------- */
+
+@Composable
+private fun StatusCard(error: String?, loading: Boolean, onRetry: () -> Unit) {
+    val colors = SunglowTheme.colors
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 18.dp, vertical = 8.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(colors.card)
+            .border(1.dp, colors.rule, RoundedCornerShape(14.dp))
+            .padding(16.dp)
+    ) {
+        Text(
+            text = if (error != null) "取数失败" else if (loading) "正在取数…" else "暂无数据",
+            style = MaterialTheme.typography.titleSmall,
+            color = if (error != null) colors.bad else colors.ink
+        )
+        if (error != null) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = error,
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.muted
+            )
+        }
+        Spacer(Modifier.height(10.dp))
+        Text(
+            text = if (loading) "请稍候" else "重新计算",
+            style = MaterialTheme.typography.bodyMedium,
+            color = colors.accentCool,
+            modifier = Modifier
+                .clip(RoundedCornerShape(999.dp))
+                .clickable(enabled = !loading, onClick = onRetry)
+                .padding(horizontal = 8.dp, vertical = 4.dp)
         )
     }
 }
 
 /* ---------- 工具 ---------- */
+
+private fun verdictSentence(view: VerdictView): String = when {
+    view.p >= 60 -> "云幕与光路配合得不错，值得往高处走一趟"
+    view.p >= 35 -> "有一定机会，值得碰碰运气"
+    view.p >= 15 -> "机会不大，路过时顺便看看"
+    else -> "这一场希望不大，安心做别的事"
+}
+
+private fun gradeColor(grade: String, colors: SunglowColors): Color {
+    val band = QUALITY_BANDS.firstOrNull { it.key == grade } ?: return colors.muted
+    return hexColor(if (colors.isDark) band.dark else band.color)
+}
+
+private fun judgeColor(cls: String, colors: SunglowColors): Color = when (cls) {
+    "ok" -> colors.good
+    "mid" -> colors.mid
+    "bad" -> colors.bad
+    else -> colors.muted
+}
 
 private fun hexColor(hex: String): Color = try {
     Color(android.graphics.Color.parseColor(hex))
@@ -808,7 +1058,10 @@ private fun hexColor(hex: String): Color = try {
     Color.Gray
 }
 
-private fun gradeColor(grade: String, colors: SunglowColors): Color {
-    val band = QUALITY_BANDS.firstOrNull { it.key == grade } ?: return colors.ink
-    return hexColor(if (colors.isDark) band.dark else band.color)
+/** 科学计数法：2.78e-2 / 1.2e-3 */
+private fun fmtSci(v: Double): String {
+    if (!v.isFinite() || v <= 0) return "—"
+    val e = kotlin.math.floor(kotlin.math.log10(v)).toInt()
+    val m = v / Math.pow(10.0, e.toDouble())
+    return String.format(Locale.US, "%.2fe%d", m, e)
 }

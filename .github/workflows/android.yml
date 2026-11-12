@@ -77,12 +77,13 @@ jobs:
         with:
           node-version: "22"
 
-      # 品牌 logo 与网页端顶栏同一张图：构建时复制进原生资源，仓库里不存第二份二进制
-      - name: Copy brand logo into app resources
+      # 品牌图：顶栏小标 + 首屏天空照，构建时复制进原生资源，仓库里不存第二份二进制
+      - name: Copy brand assets into app resources
         working-directory: .
         run: |
           mkdir -p native/app/src/main/res/drawable-nodpi
           cp v2/src/assets/logo-mark.png native/app/src/main/res/drawable-nodpi/logo_mark.png
+          cp v2/src/assets/hero-photo.webp native/app/src/main/res/drawable-nodpi/hero_photo.webp
 
       - name: Generate algorithm baseline (golden)
         working-directory: .

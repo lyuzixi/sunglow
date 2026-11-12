@@ -15,6 +15,7 @@ import com.sunglow.spectrum.data.CityRepository
 import com.sunglow.spectrum.data.LocationProvider
 import com.sunglow.spectrum.data.OpenMeteoClient
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,8 +25,14 @@ import kotlinx.coroutines.launch
 /*
  * 主屏状态
  * 只做三件事：选城市 / 选日期时段 / 取一次单点预报。
- * 地图、观测场、分享卡属于后续阶段，这里不预埋。
+ * 趋势按需加载（切到趋势 Tab 才跑），观测场复用当前结果。
  */
+
+/** 趋势里的单日单时段 */
+data class TrendCell(val p: Double, val q: Double, val grade: String)
+
+/** 趋势里的一天：朝 + 晚 */
+data class TrendRow(val date: String, val am: TrendCell?, val pm: TrendCell?)
 
 data class HomeUiState(
     val city: City = DEFAULT_CITY,
@@ -35,7 +42,13 @@ data class HomeUiState(
     val loading: Boolean = false,
     val result: ForecastResult? = null,
     val error: String? = null,
-    val citySheetOpen: Boolean = false
+    val citySheetOpen: Boolean = false,
+    /* 十日趋势 */
+    val trend: List<TrendRow> = emptyList(),
+    val trendLoading: Boolean = false,
+    val trendDone: Int = 0,
+    val trendTotal: Int = 0,
+    val trendError: String? = null
 )
 
 val DEFAULT_CITY = City("北京市", 116.4074, 39.9042, "北京市")
@@ -54,11 +67,54 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     val state: StateFlow<HomeUiState> = _state.asStateFlow()
 
     private var job: Job? = null
+    private var trendJob: Job? = null
 
     init {
         val dates = buildDates(startCity)
         _state.update { it.copy(dates = dates, dateStr = dates.firstOrNull().orEmpty()) }
         load()
+    }
+
+    /* ---------- 十日趋势 ---------- */
+
+    /** 切到趋势 Tab 时调用；已有完整结果就不重复跑 */
+    fun loadTrend(force: Boolean = false) {
+        val s = _state.value
+        if (s.trendLoading) return
+        if (!force && s.trend.size >= s.dates.size) return
+        trendJob?.cancel()
+        trendJob = viewModelScope.launch {
+            _state.update {
+                it.copy(
+                    trendLoading = true,
+                    trendError = null,
+                    trendDone = 0,
+                    trendTotal = s.dates.size,
+                    trend = if (force) emptyList() else it.trend
+                )
+            }
+            val rows = mutableListOf<TrendRow>()
+            try {
+                for ((i, d) in s.dates.withIndex()) {
+                    /* 逐日串行：接口限流比"快"重要，缓存命中后重进会很快 */
+                    val amRes = engine.run(s.city, d, Period.AM, force)
+                    val pmRes = engine.run(s.city, d, Period.PM, force)
+                    val am = (amRes as? ForecastOutcome.Success)?.result
+                    val pm = (pmRes as? ForecastOutcome.Success)?.result
+                    rows += TrendRow(
+                        date = d,
+                        am = am?.let { TrendCell(it.p, it.q, it.grade) },
+                        pm = pm?.let { TrendCell(it.p, it.q, it.grade) }
+                    )
+                    _state.update { it.copy(trend = rows.toList(), trendDone = i + 1) }
+                    delay(120)
+                }
+            } catch (e: Exception) {
+                _state.update { it.copy(trendError = "趋势取数中断，请点重试") }
+            } finally {
+                _state.update { it.copy(trendLoading = false) }
+            }
+        }
     }
 
     /* ---------- 选择 ---------- */

@@ -13,6 +13,13 @@ val SpectrumMagenta = Color(0xFFFF4D82)
 val SpectrumAmber = Color(0xFFFF9C3F)
 val SpectrumCyan = Color(0xFF2ED5E8)
 
+// ---- 曙暮光五段（与网页 --dusk-* 同值，不随主题变化） ----
+val DuskDay = Color(0xFF3A4354)
+val DuskCivil = Color(0xFFE8B678)
+val DuskNautical = Color(0xFFCF6F42)
+val DuskAstro = Color(0xFF6F6A92)
+val DuskNight = Color(0xFF1E2536)
+
 // ---- 深色：大气光谱观测站 ----
 object DarkTokens {
     val bg = Color(0xFF070B14)
