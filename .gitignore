@@ -58,6 +58,8 @@ native/app/src/test/resources/golden/
 native/app/src/main/assets/cities.tsv
 # 品牌 logo 同样由 CI 从 v2/src/assets 复制到资源目录，不入库
 native/app/src/main/res/drawable-nodpi/logo_mark.png
+# 完整版启动器图标由 CI 从 base64 文本还原，不入库
+native/app/src/main/res/mipmap-xxxhdpi/ic_launcher.jpg
 native/local.properties
 native/.idea/
 native/*.iml

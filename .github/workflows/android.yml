@@ -6,9 +6,8 @@
 #     由 gradle/actions/setup-gradle 提供指定版本的 Gradle
 #   · Android SDK 直接用 runner 镜像自带的那一份（/usr/local/lib/android/sdk），
 #     不再依赖 setup-android 在线下载，少一个网络失败点
-#   · debug keystore 缓存复用，保证每次产出的包签名一致、能覆盖安装
 #   · 单测与基准测试（GoldenTest）先跑，失败即停，不产出"看着像成功"的包
-#   · debug APK 作为构建产物挂出，同时发到 Releases 供免登录下载
+#   · debug APK 作为构建产物挂出，供真机安装验证
 
 name: android
 
@@ -84,6 +83,14 @@ jobs:
         run: |
           mkdir -p native/app/src/main/res/drawable-nodpi
           cp v2/src/assets/logo-mark.png native/app/src/main/res/drawable-nodpi/logo_mark.png
+
+      # 完整版启动器图标（含 SUNGLOW 字标）：base64 文本入库，构建时还原为图片，
+      # 这样仓库不提交二进制，也不会被自适应图标遮罩裁掉字标。
+      - name: Restore launcher icon
+        working-directory: .
+        run: |
+          mkdir -p native/app/src/main/res/mipmap-xxxhdpi
+          base64 -d native/tools/logo-icon.b64 > native/app/src/main/res/mipmap-xxxhdpi/ic_launcher.jpg
 
       - name: Generate algorithm baseline (golden)
         working-directory: .
