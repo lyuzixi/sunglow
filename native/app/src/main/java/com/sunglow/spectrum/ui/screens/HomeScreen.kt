@@ -588,10 +588,9 @@ private fun VerdictCard(
     onRetry: () -> Unit
 ) {
     val colors = SunglowTheme.colors
-    val spacing = SunglowTheme.spacing
     val p = view.p.roundToInt()
     val q = view.q.roundToInt()
-    val gradeColor = gradeColor(view.grade, colors)
+    val gradeCol = gradeColor(view.grade, colors)
     val win = remember(result) {
         if (result.sRT.geom.ok) {
             glowWindow(
@@ -676,7 +675,7 @@ private fun VerdictCard(
             Metric(
                 QUALITY_LABEL[view.grade] ?: view.grade,
                 "等级",
-                gradeColor,
+                gradeCol,
                 Modifier.weight(1f),
                 size = 22
             )
@@ -861,18 +860,23 @@ private fun ConfPill(text: String, fg: Color, bg: Color, bd: Color) {
 
 /* ---------- 模型卡（点选切换主数字） ---------- */
 
+private data class ModelCellData(
+    val sel: ModelSel,
+    val label: String,
+    val p: Double,
+    val q: Double
+)
+
 @Composable
 private fun ModelCards(result: ForecastResult, sel: ModelSel, onSelect: (ModelSel) -> Unit) {
-    data class Cell(val sel: ModelSel, val label: String, val p: Double, val q: Double)
-
     val cells = remember(result) {
         buildList {
-            add(Cell(ModelSel.ENS, "综合", result.p, result.q))
+            add(ModelCellData(ModelSel.ENS, "综合", result.p, result.q))
             result.models.forEach { m ->
                 when (m.id) {
-                    "gfs" -> add(Cell(ModelSel.GFS, "GFS", m.p, m.q))
-                    "ec" -> add(Cell(ModelSel.EC, "ECMWF", m.p, m.q))
-                    "rt" -> add(Cell(ModelSel.RT, "光追", m.p, m.q))
+                    "gfs" -> add(ModelCellData(ModelSel.GFS, "GFS", m.p, m.q))
+                    "ec" -> add(ModelCellData(ModelSel.EC, "ECMWF", m.p, m.q))
+                    "rt" -> add(ModelCellData(ModelSel.RT, "光追", m.p, m.q))
                 }
             }
         }
