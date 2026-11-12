@@ -450,6 +450,9 @@ private fun TencentMap(
 ) {
     val colors = SunglowTheme.colors
     var webRef by remember { mutableStateOf<WebView?>(null) }
+    var loading by remember(city.name) { mutableStateOf(true) }
+    var error by remember(city.name) { mutableStateOf<String?>(null) }
+    var retry by remember(city.name) { mutableStateOf(0) }
 
     Box(
         modifier = modifier
@@ -473,10 +476,12 @@ private fun TencentMap(
                             request: android.webkit.WebResourceRequest?,
                             error: android.webkit.WebResourceError?
                         ) {
-                            if (request?.isForMainFrame == true) onFail()
+                            if (request?.isForMainFrame == true) {
+                                loading = false
+                                error = "页面加载失败，请检查网络"
+                            }
                         }
                     }
-                    /* 地图内拖动时不让外层滚动抢手势 */
                     setOnTouchListener { v, e ->
                         when (e.action) {
                             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE ->
@@ -499,16 +504,90 @@ private fun TencentMap(
             },
             modifier = Modifier.fillMaxSize()
         )
-    }
 
-    /* 9.5 秒仍未就绪 → 判定失败，外层自动切回剖面 */
-    LaunchedEffect(city.name) {
-        delay(9500)
-        webRef?.evaluateJavascript("window.__mapReady === true") { v ->
-            if (v != "true") onFail()
+        if (loading) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Color(0xCC070B14)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "地图加载中…",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.faint
+                )
+            }
+        }
+
+        if (error != null) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xE6070B14)),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = error ?: "",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.muted
+                )
+                Spacer(Modifier.height(10.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "重试",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.accentCool,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .border(1.dp, colors.accentCool.copy(alpha = 0.5f), RoundedCornerShape(999.dp))
+                            .clickable {
+                                error = null
+                                loading = true
+                                retry += 1
+                                webRef?.loadUrl(mapUrl(city))
+                            }
+                            .padding(horizontal = 14.dp, vertical = 6.dp)
+                    )
+                    Text(
+                        text = "看光路剖面",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.muted,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .border(1.dp, colors.ruleStrong, RoundedCornerShape(999.dp))
+                            .clickable { onFail() }
+                            .padding(horizontal = 14.dp, vertical = 6.dp)
+                    )
+                }
+            }
         }
     }
+
+    /* 每秒查一次 SDK 是否就绪，最多 15 秒 */
+    LaunchedEffect(city.name, retry) {
+        loading = true
+        repeat(15) {
+            delay(1000)
+            val ready = webRef?.queryReady() == true
+            if (ready) {
+                loading = false
+                error = null
+                return@LaunchedEffect
+            }
+        }
+        loading = false
+        error = "地图加载超时（可能是网络或地图服务限制）"
+    }
 }
+
+private suspend fun WebView.queryReady(): Boolean =
+    kotlin.coroutines.suspendCoroutine { cont ->
+        evaluateJavascript("window.__mapReady === true") { v ->
+            cont.resumeWith(Result.success(v == "true"))
+        }
+    }
 
 /** 站点同域的地图页：来源与网页版一致，避免 file:// 被 SDK 拒绝 */
 private fun mapUrl(city: com.sunglow.spectrum.core.City): String {
