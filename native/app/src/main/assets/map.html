@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>观测场</title>
+<style>
+  html,body{height:100%;margin:0;background:#070b14;overflow:hidden}
+  #map{position:absolute;inset:0}
+  #fail{
+    position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+    color:#7f8fb0;font:13px -apple-system,"PingFang SC",sans-serif;text-align:center;padding:24px;
+  }
+  #hud{
+    position:absolute;left:12px;bottom:12px;padding:5px 10px;border-radius:999px;
+    background:rgba(7,11,20,.72);border:1px solid rgba(148,178,232,.2);
+    color:#a0b1cd;font:11px -apple-system,"PingFang SC",sans-serif;
+    backdrop-filter:blur(8px);pointer-events:none;
+  }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="fail">地图底图暂不可用<br><span style="font-size:11px;opacity:.7">已自动切回光路剖面</span></div>
+<div id="hud">腾讯地图 · 可拖动缩放</div>
+
+<script>
+  var map = null;
+  var pending = null;
+
+  function fail() {
+    document.getElementById('fail').style.display = 'flex';
+    window.__mapFail = true;
+  }
+
+  function showHud(txt) {
+    var h = document.getElementById('hud');
+    if (h) h.textContent = txt;
+  }
+
+  function initMap() {
+    try {
+      map = new TMap.Map(document.getElementById('map'), {
+        center: new TMap.LatLng(39.9042, 116.4074),
+        zoom: 7,
+        viewMode: '2D',
+        pitch: 0,
+        rotation: 0
+      });
+      window.__mapReady = true;
+      if (pending) {
+        window.setData(pending);
+        pending = null;
+      }
+    } catch (e) {
+      fail();
+    }
+  }
+
+  window.setData = function (d) {
+    if (!d) return;
+    if (!map) {
+      pending = d;
+      return;
+    }
+    try {
+      map.setCenter(new TMap.LatLng(d.lat, d.lon));
+      if (d.zoom) map.setZoom(d.zoom);
+      showHud(d.name ? (d.name + ' · 腾讯地图') : '腾讯地图 · 可拖动缩放');
+    } catch (e) {
+      fail();
+    }
+  };
+
+  var s = document.createElement('script');
+  s.src = 'https://map.qq.com/api/gljs?v=1.exp&libraries=visualization';
+  s.onload = initMap;
+  s.onerror = fail;
+  document.head.appendChild(s);
+
+  /* 9 秒还没就绪就视为失败，交给原生回退 */
+  setTimeout(function () {
+    if (!window.__mapReady) fail();
+  }, 9000);
+</script>
+</body>
+</html>

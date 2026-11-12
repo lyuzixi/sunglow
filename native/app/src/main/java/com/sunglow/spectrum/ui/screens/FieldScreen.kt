@@ -1,5 +1,9 @@
 package com.sunglow.spectrum.ui.screens
 
+import android.view.MotionEvent
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,7 +26,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,8 +42,10 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.delay
 import com.sunglow.spectrum.core.ForecastResult
 import com.sunglow.spectrum.core.Period
 import com.sunglow.spectrum.core.fmtDur
@@ -59,6 +69,8 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     val colors = SunglowTheme.colors
     val result = state.result
+    var mapFailed by remember(state.city.name) { mutableStateOf(false) }
+    var showMap by remember(state.city.name) { mutableStateOf(true) }
 
     Column(
         modifier = Modifier
@@ -99,7 +111,38 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
             return@Column
         }
 
-        RayProfile(result)
+        if (showMap && !mapFailed) {
+            TencentMap(
+                city = state.city,
+                modifier = Modifier.padding(horizontal = 18.dp),
+                onFail = { mapFailed = true }
+            )
+        } else {
+            RayProfile(result)
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 18.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.End
+        ) {
+            Text(
+                text = if (showMap && !mapFailed) "切到光路剖面" else "切到地图",
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.accentCool,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .clickable {
+                        if (showMap && !mapFailed) {
+                            showMap = false
+                        } else {
+                            showMap = true
+                            mapFailed = false
+                        }
+                    }
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            )
+        }
 
         Column(Modifier.padding(horizontal = 18.dp, vertical = 12.dp)) {
             Text(
@@ -395,6 +438,80 @@ private fun RayProfile(result: ForecastResult) {
             )
         }
     }
+}
+
+/* ---------- 腾讯地图（WebView 复用网页同一套 JS SDK） ---------- */
+
+@Composable
+private fun TencentMap(
+    city: com.sunglow.spectrum.core.City,
+    modifier: Modifier = Modifier,
+    onFail: () -> Unit
+) {
+    val colors = SunglowTheme.colors
+    var webRef by remember { mutableStateOf<WebView?>(null) }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(260.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .border(1.dp, colors.rule, RoundedCornerShape(14.dp))
+            .background(colors.card)
+    ) {
+        AndroidView(
+            factory = { ctx ->
+                WebView(ctx).apply {
+                    settings.javaScriptEnabled = true
+                    settings.domStorageEnabled = true
+                    settings.cacheMode = WebSettings.LOAD_DEFAULT
+                    setBackgroundColor(android.graphics.Color.parseColor("#070B14"))
+                    webViewClient = object : WebViewClient() {
+                        override fun onPageFinished(view: WebView?, url: String?) {
+                            pushCity(view, city)
+                        }
+
+                        override fun onReceivedError(
+                            view: WebView?,
+                            request: android.webkit.WebResourceRequest?,
+                            error: android.webkit.WebResourceError?
+                        ) {
+                            if (request?.isForMainFrame == true) onFail()
+                        }
+                    }
+                    /* 地图内拖动时不让外层滚动抢手势 */
+                    setOnTouchListener { v, e ->
+                        when (e.action) {
+                            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE ->
+                                v.parent?.requestDisallowInterceptTouchEvent(true)
+                            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
+                                v.parent?.requestDisallowInterceptTouchEvent(false)
+                        }
+                        false
+                    }
+                    loadUrl("file:///android_asset/map.html")
+                    webRef = this
+                }
+            },
+            update = { wv -> pushCity(wv, city) },
+            modifier = Modifier.fillMaxSize()
+        )
+    }
+
+    /* 9.5 秒仍未就绪 → 判定失败，外层自动切回剖面 */
+    LaunchedEffect(city.name) {
+        delay(9500)
+        webRef?.evaluateJavascript("window.__mapFail === true") { v ->
+            if (v == "true") onFail()
+        }
+    }
+}
+
+private fun pushCity(wv: WebView?, city: com.sunglow.spectrum.core.City) {
+    if (wv == null) return
+    val name = city.name.replace("'", "").replace("\\", "")
+    val js = "window.setData({lat:${city.lat},lon:${city.lon},zoom:7,name:'$name'});"
+    wv.evaluateJavascript(js, null)
 }
 
 /* ---------- 多点对比 ---------- */
