@@ -1,10 +1,14 @@
 package com.sunglow.spectrum.ui.screens
 
 import android.Manifest
+import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -45,6 +49,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -69,6 +74,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -80,6 +86,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.core.content.ContextCompat
 import com.sunglow.spectrum.R
 import com.sunglow.spectrum.core.ForecastResult
 import com.sunglow.spectrum.core.ModelSel
@@ -107,6 +114,7 @@ import com.sunglow.spectrum.ui.HomeViewModel
 import com.sunglow.spectrum.ui.components.ChevronRight
 import com.sunglow.spectrum.ui.components.MoreIcon
 import com.sunglow.spectrum.ui.components.ShareIcon
+import com.sunglow.spectrum.ui.i18n.Lang
 import com.sunglow.spectrum.ui.motion.AnimatedNumberText
 import com.sunglow.spectrum.ui.motion.confirm
 import com.sunglow.spectrum.ui.motion.open
@@ -223,17 +231,17 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
             }
             item {
                 Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp)) {
-                    FoldRow("影响因素", "13 项判据") {
+                    FoldRow(stringResource(R.string.fold_factors), stringResource(R.string.fold_factors_note)) {
                         haptics.open()
                         sheet = "factors"
                     }
                     Spacer(Modifier.height(8.dp))
-                    FoldRow("光路细节", "云幕几何与消光") {
+                    FoldRow(stringResource(R.string.fold_ray), stringResource(R.string.fold_ray_note)) {
                         haptics.open()
                         sheet = "ray"
                     }
                     Spacer(Modifier.height(8.dp))
-                    FoldRow("分享与文案", "生成一句话") {
+                    FoldRow(stringResource(R.string.fold_share), stringResource(R.string.fold_share_note)) {
                         haptics.open()
                         sheet = "share"
                     }
@@ -293,8 +301,27 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 "share" -> ShareSheet(result, verdictViewOf(result, modelSel))
                 "settings" -> SettingsSheet(
                     themeMode = state.themeMode,
-                    onSetTheme = vm::setThemeMode
+                    lang = state.lang,
+                    reminderEnabled = state.reminderEnabled,
+                    reminderThreshold = state.reminderThreshold,
+                    onSetTheme = vm::setThemeMode,
+                    onSetLang = vm::setLanguage,
+                    onSetReminder = vm::setReminderEnabled,
+                    onSetThreshold = vm::setReminderThreshold,
+                    onOpenAbout = { sheet = "about" },
+                    onFeedback = {
+                        runCatching {
+                            context.startActivity(
+                                Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/lyuzixi/sunglow/issues"))
+                            )
+                        }
+                    },
+                    onClearCache = {
+                        vm.clearLocalCache()
+                        Toast.makeText(context, context.getString(R.string.cache_cleared), Toast.LENGTH_SHORT).show()
+                    }
                 )
+                "about" -> AboutSheet()
             }
         }
     }
@@ -1338,7 +1365,7 @@ private fun ShareSheet(result: ForecastResult, view: VerdictView) {
     val qr = remember(result) { ShareCard.qr(link, 512) }
     Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 28.dp)) {
         Text(
-            text = "分享",
+            text = stringResource(R.string.share_title),
             style = MaterialTheme.typography.titleMedium,
             color = colors.ink
         )
@@ -1359,12 +1386,19 @@ private fun ShareSheet(result: ForecastResult, view: VerdictView) {
                 .clickable {
                     haptics.confirm()
                     runCatching { ShareCard.shareImage(context, result, view, colors.isDark) }
+                        .onFailure {
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.share_failed),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                 }
                 .padding(vertical = 12.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "生成分享图卡",
+                text = stringResource(R.string.share_make_card),
                 style = MaterialTheme.typography.titleSmall,
                 color = Color(0xFF06101C)
             )
@@ -1390,7 +1424,7 @@ private fun ShareSheet(result: ForecastResult, view: VerdictView) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "系统分享",
+                    text = stringResource(R.string.share_system),
                     style = MaterialTheme.typography.titleSmall,
                     color = colors.ink
                 )
@@ -1404,14 +1438,18 @@ private fun ShareSheet(result: ForecastResult, view: VerdictView) {
                     .clickable {
                         haptics.tap()
                         val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        cm.setPrimaryClip(ClipData.newPlainText("霞光预报", caption))
-                        Toast.makeText(context, "文案已复制", Toast.LENGTH_SHORT).show()
+                        cm.setPrimaryClip(ClipData.newPlainText("Sunglow", caption))
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.share_text_copied),
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                     .padding(vertical = 11.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "复制文案",
+                    text = stringResource(R.string.share_copy_text),
                     style = MaterialTheme.typography.titleSmall,
                     color = colors.ink
                 )
@@ -1448,7 +1486,7 @@ private fun ShareSheet(result: ForecastResult, view: VerdictView) {
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(
-                    text = "扫码打开网页版",
+                    text = stringResource(R.string.share_qr_title),
                     style = MaterialTheme.typography.bodyMedium,
                     color = colors.ink
                 )
@@ -1461,7 +1499,7 @@ private fun ShareSheet(result: ForecastResult, view: VerdictView) {
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "复制链接",
+                    text = stringResource(R.string.share_copy_link),
                     style = MaterialTheme.typography.labelSmall,
                     color = colors.accentCool,
                     modifier = Modifier
@@ -1470,8 +1508,12 @@ private fun ShareSheet(result: ForecastResult, view: VerdictView) {
                         .clickable {
                             haptics.tap()
                             val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            cm.setPrimaryClip(ClipData.newPlainText("霞光档案链接", link))
-                            Toast.makeText(context, "链接已复制", Toast.LENGTH_SHORT).show()
+                            cm.setPrimaryClip(ClipData.newPlainText("Sunglow", link))
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.share_link_copied),
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 )
@@ -1483,23 +1525,67 @@ private fun ShareSheet(result: ForecastResult, view: VerdictView) {
 /* ---------- 设置 ---------- */
 
 @Composable
-private fun SettingsSheet(themeMode: Int, onSetTheme: (Int) -> Unit) {
+private fun SettingsSheet(
+    themeMode: Int,
+    lang: String,
+    reminderEnabled: Boolean,
+    reminderThreshold: Int,
+    onSetTheme: (Int) -> Unit,
+    onSetLang: (String) -> Unit,
+    onSetReminder: (Boolean) -> Unit,
+    onSetThreshold: (Int) -> Unit,
+    onOpenAbout: () -> Unit,
+    onFeedback: () -> Unit,
+    onClearCache: () -> Unit
+) {
     val colors = SunglowTheme.colors
+    val context = LocalContext.current
+    val activity = context.findActivity()
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        onSetReminder(granted)
+        if (!granted) {
+            Toast.makeText(
+                context,
+                context.getString(R.string.reminder_permission_denied),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    fun toggleReminder(on: Boolean) {
+        val needPermission = on && Build.VERSION.SDK_INT >= 33 &&
+            ContextCompat.checkSelfPermission(
+                context, Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        if (needPermission) {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            onSetReminder(on)
+        }
+    }
+
     Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 28.dp)) {
         Text(
-            text = "设置",
+            text = stringResource(R.string.settings_title),
             style = MaterialTheme.typography.titleMedium,
             color = colors.ink
         )
+
         Spacer(Modifier.height(16.dp))
         Text(
-            text = "主题",
+            text = stringResource(R.string.settings_theme),
             style = MaterialTheme.typography.labelSmall,
             color = colors.faint
         )
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("跟随系统" to 0, "深色" to 1, "浅色" to 2).forEach { (label, mode) ->
+            listOf(
+                stringResource(R.string.theme_system) to 0,
+                stringResource(R.string.theme_dark) to 1,
+                stringResource(R.string.theme_light) to 2
+            ).forEach { (label, mode) ->
                 val on = themeMode == mode
                 Box(
                     modifier = Modifier
@@ -1514,9 +1600,7 @@ private fun SettingsSheet(themeMode: Int, onSetTheme: (Int) -> Unit) {
                             if (on) Color.Transparent else colors.ruleStrong,
                             RoundedCornerShape(999.dp)
                         )
-                        .clickable {
-                            onSetTheme(mode)
-                        }
+                        .clickable { onSetTheme(mode) }
                         .padding(vertical = 10.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -1528,19 +1612,205 @@ private fun SettingsSheet(themeMode: Int, onSetTheme: (Int) -> Unit) {
                 }
             }
         }
-        Spacer(Modifier.height(20.dp))
+
+        Spacer(Modifier.height(18.dp))
         Text(
-            text = "霞光档案 1.0.0 · 光谱观测版",
+            text = stringResource(R.string.settings_language),
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.faint
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(Lang.ZH, Lang.ZH_TW, Lang.EN).forEach { code ->
+                val on = lang == code
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(999.dp))
+                        .then(
+                            if (on) Modifier.background(Brush.horizontalGradient(colors.spectrum))
+                            else Modifier.background(colors.glass)
+                        )
+                        .border(
+                            1.dp,
+                            if (on) Color.Transparent else colors.ruleStrong,
+                            RoundedCornerShape(999.dp)
+                        )
+                        .clickable {
+                            if (lang != code) {
+                                onSetLang(code)
+                                activity?.recreate()
+                            }
+                        }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(Lang.labelRes(code)),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (on) Color(0xFF06101C) else colors.muted
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(18.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.settings_reminder),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.ink
+                )
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    text = stringResource(R.string.reminder_enable),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.faint
+                )
+            }
+            Switch(
+                checked = reminderEnabled,
+                onCheckedChange = { toggleReminder(it) },
+                colors = androidx.compose.material3.SwitchDefaults.colors(
+                    checkedThumbColor = Color(0xFF06101C),
+                    checkedTrackColor = colors.accent,
+                    uncheckedThumbColor = colors.faint,
+                    uncheckedTrackColor = colors.glassStrong,
+                    uncheckedBorderColor = colors.ruleStrong
+                )
+            )
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(30, 45, 60, 75).forEach { v ->
+                val on = reminderThreshold == v
+                Text(
+                    text = v.toString() + "%",
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                    color = if (on) colors.ink else colors.faint,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(if (on) colors.glassStrong else colors.glass)
+                        .border(
+                            1.dp,
+                            if (on) colors.ruleStrong else colors.rule,
+                            RoundedCornerShape(999.dp)
+                        )
+                        .clickable { onSetThreshold(v) }
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                )
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = stringResource(R.string.reminder_hint),
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+            color = colors.faint,
+            lineHeight = 14.sp
+        )
+
+        Spacer(Modifier.height(18.dp))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(colors.rule))
+        SettingsAction(stringResource(R.string.settings_about), onOpenAbout)
+        SettingsAction(stringResource(R.string.settings_feedback), onFeedback)
+        SettingsAction(stringResource(R.string.settings_clear_cache), onClearCache)
+
+        Spacer(Modifier.height(14.dp))
+        Text(
+            text = stringResource(R.string.about_version),
             style = MaterialTheme.typography.labelSmall,
             color = colors.faint
         )
         Spacer(Modifier.height(6.dp))
         Text(
-            text = "数据 Open-Meteo · 概率预报仅供参考",
+            text = stringResource(R.string.about_data),
             style = MaterialTheme.typography.labelSmall,
-            color = colors.faint
+            color = colors.faint,
+            lineHeight = 15.sp
         )
     }
+}
+
+@Composable
+private fun SettingsAction(title: String, onClick: () -> Unit) {
+    val colors = SunglowTheme.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 13.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyMedium,
+            color = colors.ink,
+            modifier = Modifier.weight(1f)
+        )
+        ChevronRight(colors.faint, 14.dp)
+    }
+}
+
+@Composable
+private fun AboutSheet() {
+    val colors = SunglowTheme.colors
+    Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 28.dp)) {
+        Text(
+            text = stringResource(R.string.about_title),
+            style = MaterialTheme.typography.titleMedium,
+            color = colors.ink
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = stringResource(R.string.about_version),
+            style = MaterialTheme.typography.bodySmall,
+            color = colors.muted
+        )
+        Spacer(Modifier.height(10.dp))
+        Text(
+            text = stringResource(R.string.about_data),
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.faint,
+            lineHeight = 16.sp
+        )
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.about_privacy_title),
+            style = MaterialTheme.typography.titleSmall,
+            color = colors.ink
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = stringResource(R.string.privacy_body),
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.muted,
+            lineHeight = 18.sp
+        )
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.about_licenses),
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.faint,
+            lineHeight = 16.sp
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = stringResource(R.string.about_thanks),
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.faint,
+            lineHeight = 16.sp
+        )
+    }
+}
+
+private fun Context.findActivity(): Activity? {
+    var ctx: Context = this
+    while (ctx is ContextWrapper) {
+        if (ctx is Activity) return ctx
+        ctx = ctx.baseContext
+    }
+    return null
 }
 
 @Composable

@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.sunglow.spectrum.core.City
+import com.sunglow.spectrum.core.ForecastCache
 import com.sunglow.spectrum.core.ForecastEngine
 import com.sunglow.spectrum.core.ForecastOutcome
 import com.sunglow.spectrum.core.ForecastResult
@@ -12,15 +13,22 @@ import com.sunglow.spectrum.core.TzCache
 import com.sunglow.spectrum.core.addDaysIso
 import com.sunglow.spectrum.core.todayInTz
 import com.sunglow.spectrum.data.CityRepository
+import com.sunglow.spectrum.data.ForecastStore
 import com.sunglow.spectrum.data.LocationProvider
 import com.sunglow.spectrum.data.OpenMeteoClient
+import com.sunglow.spectrum.ui.i18n.Lang
+import com.sunglow.spectrum.widget.WidgetUpdater
+import com.sunglow.spectrum.work.ReminderScheduler
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /*
  * 主屏状态
@@ -65,7 +73,12 @@ data class HomeUiState(
     /** 实况校准：城市名 → (看到次数, 记录次数) */
     val sightings: Map<String, Pair<Int, Int>> = emptyMap(),
     /** 0 跟随系统 / 1 深色 / 2 浅色 */
-    val themeMode: Int = 0
+    val themeMode: Int = 0,
+    /** zh / zh_tw / en */
+    val lang: String = "zh",
+    val reminderEnabled: Boolean = false,
+    /** 提醒阈值（概率百分比） */
+    val reminderThreshold: Int = 45
 )
 
 val DEFAULT_CITY = City("北京市", 116.4074, 39.9042, "北京市")
@@ -85,6 +98,9 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         HomeUiState(
             city = startCity,
             themeMode = prefs.getInt("theme_mode", 0),
+            lang = prefs.getString("lang", "zh") ?: "zh",
+            reminderEnabled = prefs.getBoolean("reminder_enabled", false),
+            reminderThreshold = prefs.getInt("reminder_threshold", 45),
             sightings = parseSightings(prefs.getString("sightings", "").orEmpty())
         )
     )
@@ -98,6 +114,36 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     init {
         val dates = buildDates(startCity)
         _state.update { it.copy(dates = dates, dateStr = dates.firstOrNull().orEmpty()) }
+        load()
+        /* 小组件 / 通知点进来：城市、日期、时段一次性应用 */
+        viewModelScope.launch {
+            LaunchBus.target.collect { t ->
+                if (t != null) {
+                    applyLaunch(t)
+                    LaunchBus.clear()
+                }
+            }
+        }
+    }
+
+    private fun applyLaunch(t: LaunchTarget) {
+        val city = t.cityName?.let { n ->
+            repo.cities.firstOrNull { it.name == n || it.shortName == n }
+        } ?: return
+        repo.remember(city)
+        val dates = buildDates(city)
+        val date = t.dateStr?.takeIf { it.matches(Regex("\\d{4}-\\d{2}-\\d{2}")) }
+            ?: dates.firstOrNull().orEmpty()
+        _state.update {
+            it.copy(
+                city = city,
+                dates = dates,
+                dateStr = date,
+                period = t.period ?: it.period,
+                result = null,
+                error = null
+            )
+        }
         load()
     }
 
@@ -183,6 +229,31 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     fun setThemeMode(mode: Int) {
         prefs.edit().putInt("theme_mode", mode).apply()
         _state.update { it.copy(themeMode = mode) }
+    }
+
+    /* ---------- M5 设置 ---------- */
+
+    fun setLanguage(lang: String) {
+        Lang.save(getApplication(), lang)
+        _state.update { it.copy(lang = lang) }
+    }
+
+    fun setReminderEnabled(on: Boolean) {
+        prefs.edit().putBoolean("reminder_enabled", on).apply()
+        _state.update { it.copy(reminderEnabled = on) }
+        ReminderScheduler.sync(getApplication(), on)
+    }
+
+    fun setReminderThreshold(value: Int) {
+        prefs.edit().putInt("reminder_threshold", value).apply()
+        _state.update { it.copy(reminderThreshold = value) }
+        ReminderScheduler.sync(getApplication(), _state.value.reminderEnabled)
+    }
+
+    fun clearLocalCache() {
+        ForecastCache.clear()
+        ForecastStore.clear(getApplication())
+        WidgetUpdater.updateAll(getApplication())
     }
 
     /* ---------- 多点对比 ---------- */
@@ -289,8 +360,15 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         job = viewModelScope.launch {
             _state.update { it.copy(loading = true, error = null) }
             when (val out = engine.run(s.city, s.dateStr, s.period, force)) {
-                is ForecastOutcome.Success -> _state.update {
-                    it.copy(loading = false, result = out.result, error = null)
+                is ForecastOutcome.Success -> {
+                    _state.update {
+                        it.copy(loading = false, result = out.result, error = null)
+                    }
+                    val app = getApplication<Application>()
+                    withContext(Dispatchers.IO) {
+                        ForecastStore.save(app, out.result)
+                    }
+                    WidgetUpdater.updateAll(app)
                 }
                 is ForecastOutcome.Failure -> _state.update {
                     it.copy(loading = false, result = null, error = out.message)

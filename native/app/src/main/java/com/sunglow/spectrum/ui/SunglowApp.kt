@@ -36,9 +36,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.sunglow.spectrum.R
 import com.sunglow.spectrum.ui.screens.FieldScreen
 import com.sunglow.spectrum.ui.screens.HomeScreen
 import com.sunglow.spectrum.ui.screens.TrendScreen
@@ -90,9 +92,9 @@ private fun SunglowTabBar(selected: Int, onSelect: (Int) -> Unit) {
                 .height(58.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            TabItem(0, "结论", selected == 0, Modifier.weight(1f)) { onSelect(0) }
-            TabItem(1, "趋势", selected == 1, Modifier.weight(1f)) { onSelect(1) }
-            TabItem(2, "观测场", selected == 2, Modifier.weight(1f)) { onSelect(2) }
+            TabItem(0, stringResource(R.string.tab_conclusion), selected == 0, Modifier.weight(1f)) { onSelect(0) }
+            TabItem(1, stringResource(R.string.tab_trend), selected == 1, Modifier.weight(1f)) { onSelect(1) }
+            TabItem(2, stringResource(R.string.tab_field), selected == 2, Modifier.weight(1f)) { onSelect(2) }
         }
     }
 }

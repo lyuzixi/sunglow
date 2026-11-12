@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">霞光檔案</string>
+
+    <string name="tab_conclusion">結論</string>
+    <string name="tab_trend">趨勢</string>
+    <string name="tab_field">觀測場</string>
+    <string name="settings_title">設定</string>
+    <string name="settings_theme">主題</string>
+    <string name="theme_system">跟隨系統</string>
+    <string name="theme_dark">深色</string>
+    <string name="theme_light">淺色</string>
+    <string name="settings_language">語言</string>
+    <string name="settings_reminder">霞光提醒</string>
+    <string name="reminder_enable">每日檢查並傳送本機通知</string>
+    <string name="reminder_threshold">提醒門檻</string>
+    <string name="reminder_hint">每天清晨與午後各檢查一次；窗口接近且機率達到門檻時通知，系統排程可能延遲數分鐘。</string>
+    <string name="reminder_permission_denied">未取得通知權限，提醒不會傳送</string>
+    <string name="settings_about">關於與隱私</string>
+    <string name="settings_feedback">意見回饋</string>
+    <string name="settings_clear_cache">清除本機快取</string>
+    <string name="cache_cleared">快取已清除</string>
+
+    <string name="about_title">關於</string>
+    <string name="about_version">霞光檔案 1.0.0 · 光譜觀測版</string>
+    <string name="about_data">資料來源：Open-Meteo 氣象與空氣品質介面；底圖為高德公開圖磚。</string>
+    <string name="about_privacy_title">隱私說明</string>
+    <string name="privacy_body">定位只用於比對最近的城市，不會上傳或保存座標軌跡。通知由本機計算與傳送，不經過伺服器。應用不收集帳號、裝置識別碼與使用行為；僅在取數時向 Open-Meteo 傳送城市座標與日期。</string>
+    <string name="about_licenses">開源元件：Kotlin、Jetpack Compose、OkHttp、osmdroid、ZXing、AndroidX WorkManager。</string>
+    <string name="about_thanks">靈感與演算法來自「霞光檔案」網頁版；實拍照片攝於廣州珠江。</string>
+
+    <string name="share_title">分享</string>
+    <string name="share_make_card">產生分享圖卡</string>
+    <string name="share_system">系統分享</string>
+    <string name="share_copy_text">複製文案</string>
+    <string name="share_copy_link">複製連結</string>
+    <string name="share_text_copied">文案已複製</string>
+    <string name="share_link_copied">連結已複製</string>
+    <string name="share_qr_title">掃碼開啟網頁版</string>
+    <string name="share_failed">圖卡產生失敗，請重試</string>
+
+    <string name="fold_factors">影響因素</string>
+    <string name="fold_factors_note">13 項判據</string>
+    <string name="fold_ray">光路細節</string>
+    <string name="fold_ray_note">雲幕幾何與消光</string>
+    <string name="fold_share">分享與文案</string>
+    <string name="fold_share_note">產生一句話</string>
+
+    <string name="widget_name">霞光檔案 · 今日</string>
+    <string name="widget_city_empty">選擇城市</string>
+    <string name="widget_am">朝霞</string>
+    <string name="widget_pm">晚霞</string>
+    <string name="widget_none">暫無資料</string>
+    <string name="widget_updated">更新於 %1$s</string>
+    <string name="widget_desc">顯示今早與今晚的霞光機率</string>
+    <string name="widget_no_cache">開啟應用後顯示</string>
+
+    <string name="notif_channel_name">霞光提醒</string>
+    <string name="notif_channel_desc">在霞光窗口前提醒你</string>
+    <string name="notif_title_am">今早有霞</string>
+    <string name="notif_title_pm">今晚有霞</string>
+    <string name="notif_body">機率 %1$d%% · %2$s · 窗口 %3$s–%4$s</string>
+    <string name="notif_worker">霞光檢查</string>
+
+    <string name="grade_you">優秀</string>
+    <string name="grade_liang">良好</string>
+    <string name="grade_yiban">一般</string>
+    <string name="grade_cha">較差</string>
+</resources>

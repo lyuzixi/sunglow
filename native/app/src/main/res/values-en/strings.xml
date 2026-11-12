@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Sunglow</string>
+
+    <string name="tab_conclusion">Now</string>
+    <string name="tab_trend">Trend</string>
+    <string name="tab_field">Field</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_theme">Theme</string>
+    <string name="theme_system">System</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_light">Light</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_reminder">Glow alert</string>
+    <string name="reminder_enable">Check daily and send a local notification</string>
+    <string name="reminder_threshold">Threshold</string>
+    <string name="reminder_hint">Checks each morning and afternoon. You will be notified when the window is near and the probability reaches the threshold. System scheduling may delay it by a few minutes.</string>
+    <string name="reminder_permission_denied">Notification permission is off, so alerts cannot be sent</string>
+    <string name="settings_about">About &amp; privacy</string>
+    <string name="settings_feedback">Feedback</string>
+    <string name="settings_clear_cache">Clear local cache</string>
+    <string name="cache_cleared">Cache cleared</string>
+
+    <string name="about_title">About</string>
+    <string name="about_version">Sunglow 1.0.0 · Spectral edition</string>
+    <string name="about_data">Data: Open-Meteo weather and air-quality APIs. Basemap: AMap public tiles.</string>
+    <string name="about_privacy_title">Privacy</string>
+    <string name="privacy_body">Location is used only to match the nearest city; no coordinate history is uploaded or stored. Notifications are computed and sent on device. The app collects no account, device identifiers or usage analytics; only city coordinates and the date are sent to Open-Meteo when fetching data.</string>
+    <string name="about_licenses">Open source: Kotlin, Jetpack Compose, OkHttp, osmdroid, ZXing, AndroidX WorkManager.</string>
+    <string name="about_thanks">Inspired by the Sunglow web edition. The hero photo was taken on the Pearl River, Guangzhou.</string>
+
+    <string name="share_title">Share</string>
+    <string name="share_make_card">Create share card</string>
+    <string name="share_system">Share text</string>
+    <string name="share_copy_text">Copy caption</string>
+    <string name="share_copy_link">Copy link</string>
+    <string name="share_text_copied">Caption copied</string>
+    <string name="share_link_copied">Link copied</string>
+    <string name="share_qr_title">Scan to open the web edition</string>
+    <string name="share_failed">Could not create the card, please retry</string>
+
+    <string name="fold_factors">Factors</string>
+    <string name="fold_factors_note">13 criteria</string>
+    <string name="fold_ray">Light path</string>
+    <string name="fold_ray_note">Geometry and extinction</string>
+    <string name="fold_share">Share &amp; caption</string>
+    <string name="fold_share_note">One-line summary</string>
+
+    <string name="widget_name">Sunglow · Today</string>
+    <string name="widget_city_empty">Pick a city</string>
+    <string name="widget_am">Dawn</string>
+    <string name="widget_pm">Dusk</string>
+    <string name="widget_none">No data</string>
+    <string name="widget_updated">Updated %1$s</string>
+    <string name="widget_desc">Dawn and dusk glow probability</string>
+    <string name="widget_no_cache">Open the app to load</string>
+
+    <string name="notif_channel_name">Glow alerts</string>
+    <string name="notif_channel_desc">Remind you before the glow window</string>
+    <string name="notif_title_am">Glow at dawn</string>
+    <string name="notif_title_pm">Glow tonight</string>
+    <string name="notif_body">%1$d%% · %2$s · window %3$s–%4$s</string>
+    <string name="notif_worker">Glow check</string>
+
+    <string name="grade_you">Excellent</string>
+    <string name="grade_liang">Good</string>
+    <string name="grade_yiban">Fair</string>
+    <string name="grade_cha">Poor</string>
+</resources>

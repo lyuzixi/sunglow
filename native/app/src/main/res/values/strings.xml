@@ -15,4 +15,78 @@
     <string name="next_api">气象取数（Open-Meteo）</string>
     <string name="next_city">城市库与定位</string>
     <string name="next_ui">结论卡与日期条</string>
+
+    <!-- M5 · 导航与设置 -->
+    <string name="tab_conclusion">结论</string>
+    <string name="tab_trend">趋势</string>
+    <string name="tab_field">观测场</string>
+    <string name="settings_title">设置</string>
+    <string name="settings_theme">主题</string>
+    <string name="theme_system">跟随系统</string>
+    <string name="theme_dark">深色</string>
+    <string name="theme_light">浅色</string>
+    <string name="settings_language">语言</string>
+    <string name="lang_zh">简体</string>
+    <string name="lang_zh_tw">繁體</string>
+    <string name="lang_en">English</string>
+    <string name="settings_reminder">霞光提醒</string>
+    <string name="reminder_enable">每日检查并发送本地通知</string>
+    <string name="reminder_threshold">提醒阈值</string>
+    <string name="reminder_hint">每天清晨与午后各检查一次；窗口临近且概率达到阈值时通知，系统调度可能延迟几分钟。</string>
+    <string name="reminder_permission_denied">未获得通知权限，提醒不会发送</string>
+    <string name="settings_about">关于与隐私</string>
+    <string name="settings_feedback">意见反馈</string>
+    <string name="settings_clear_cache">清除本地缓存</string>
+    <string name="cache_cleared">缓存已清除</string>
+
+    <!-- M5 · 关于 -->
+    <string name="about_title">关于</string>
+    <string name="about_version">霞光档案 1.0.0 · 光谱观测版</string>
+    <string name="about_data">数据来源：Open-Meteo 气象与空气质量接口；底图为高德公开瓦片。</string>
+    <string name="about_privacy_title">隐私说明</string>
+    <string name="privacy_body">定位只用于匹配最近的城市，不会上传或保存坐标轨迹。通知由本机计算与发送，不经过服务器。应用不收集账号、设备标识与使用行为；仅在取数时向 Open-Meteo 发送城市坐标与日期。</string>
+    <string name="about_licenses">开源组件：Kotlin、Jetpack Compose、OkHttp、osmdroid、ZXing、AndroidX WorkManager。</string>
+    <string name="about_thanks">灵感与算法来自「霞光档案」网页版；实拍照片摄于广州珠江。</string>
+
+    <!-- M5 · 分享面板 -->
+    <string name="share_title">分享</string>
+    <string name="share_make_card">生成分享图卡</string>
+    <string name="share_system">系统分享</string>
+    <string name="share_copy_text">复制文案</string>
+    <string name="share_copy_link">复制链接</string>
+    <string name="share_text_copied">文案已复制</string>
+    <string name="share_link_copied">链接已复制</string>
+    <string name="share_qr_title">扫码打开网页版</string>
+    <string name="share_failed">图卡生成失败，请重试</string>
+
+    <!-- M5 · 下钻入口 -->
+    <string name="fold_factors">影响因素</string>
+    <string name="fold_factors_note">13 项判据</string>
+    <string name="fold_ray">光路细节</string>
+    <string name="fold_ray_note">云幕几何与消光</string>
+    <string name="fold_share">分享与文案</string>
+    <string name="fold_share_note">生成一句话</string>
+
+    <!-- M5 · 小组件 -->
+    <string name="widget_name">霞光档案 · 今日</string>
+    <string name="widget_city_empty">选择城市</string>
+    <string name="widget_am">朝霞</string>
+    <string name="widget_pm">晚霞</string>
+    <string name="widget_none">暂无数</string>
+    <string name="widget_updated">更新于 %1$s</string>
+    <string name="widget_desc">显示今早与今晚的霞光概率</string>
+    <string name="widget_no_cache">打开应用后显示</string>
+
+    <!-- M5 · 通知 -->
+    <string name="notif_channel_name">霞光提醒</string>
+    <string name="notif_channel_desc">在霞光窗口前提醒你</string>
+    <string name="notif_title_am">今早有霞</string>
+    <string name="notif_title_pm">今晚有霞</string>
+    <string name="notif_body">概率 %1$d%% · %2$s · 窗口 %3$s–%4$s</string>
+    <string name="notif_worker">霞光检查</string>
+
+    <string name="grade_you">优秀</string>
+    <string name="grade_liang">良好</string>
+    <string name="grade_yiban">一般</string>
+    <string name="grade_cha">较差</string>
 </resources>

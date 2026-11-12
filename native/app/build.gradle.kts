@@ -83,6 +83,7 @@ dependencies {
     implementation(libs.okhttp)
     implementation("org.osmdroid:osmdroid-android:6.1.20")
     implementation("com.google.zxing:core:3.5.3")
+    implementation("androidx.work:work-runtime-ktx:2.10.0")
 
     testImplementation(libs.junit)
 }
