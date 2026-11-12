@@ -4,6 +4,8 @@
 #   · 本机不装 Android Studio / SDK，编译全部交给 GitHub 的 Linux 机器
 #   · 不做 Gradle wrapper（二进制 jar 无法在无 Gradle 环境下生成），
 #     由 gradle/actions/setup-gradle 提供指定版本的 Gradle
+#   · Android SDK 直接用 runner 镜像自带的那一份（/usr/local/lib/android/sdk），
+#     不再依赖 setup-android 在线下载，少一个网络失败点
 #   · 单测与基准测试（GoldenTest）先跑，失败即停，不产出"看着像成功"的包
 #   · debug APK 作为构建产物挂出，供真机安装验证
 
@@ -40,7 +42,20 @@ jobs:
           java-version: "21"
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        shell: bash
+        run: |
+          SDK="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          if [ ! -d "$SDK" ]; then
+            echo "::error::Android SDK not found at $SDK"
+            exit 1
+          fi
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
+          echo "$SDK/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+          echo "$SDK/platform-tools" >> "$GITHUB_PATH"
+          yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
+          "$SDK/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-36" "build-tools;36.0.0" || true
+          echo "platforms:" && ls "$SDK/platforms"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
