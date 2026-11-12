@@ -35,6 +35,9 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,8 +51,11 @@ import org.osmdroid.util.MapTileIndex
 import org.osmdroid.views.MapView
 import com.sunglow.spectrum.core.ForecastResult
 import com.sunglow.spectrum.core.Period
+import com.sunglow.spectrum.core.TransectPt
+import com.sunglow.spectrum.core.cloudBlockOf
 import com.sunglow.spectrum.core.fmtDur
 import com.sunglow.spectrum.core.isNum
+import com.sunglow.spectrum.core.transectPoints
 import com.sunglow.spectrum.core.uAlt
 import com.sunglow.spectrum.core.uDist
 import com.sunglow.spectrum.ui.HomeUiState
@@ -111,7 +117,7 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
         }
 
         if (showMap) {
-            OsmMap(city = state.city, modifier = Modifier.padding(horizontal = 18.dp))
+            OsmMap(city = state.city, result = result, modifier = Modifier.padding(horizontal = 18.dp))
         } else {
             RayProfile(result)
         }
@@ -478,11 +484,116 @@ private fun wgsToGcj(lat: Double, lon: Double): Pair<Double, Double> {
 /** 地图实例上的非状态字段：避免在地图回调里写 Compose 状态引起重组 */
 private class MapHolder {
     var lastKey: String = ""
+    var overlay: TransectOverlay? = null
+}
+
+/** 样带上的一个采样点（坐标已转 GCJ-02） */
+private data class SampleDot(val gp: GeoPoint, val cov: Float, val km: Double)
+
+/** 画在底图上的样带：折线 + 热力点 + 点选 */
+private class TransectOverlay(
+    private val colorFor: (Float) -> Int,
+    private val onPick: (Int) -> Unit,
+    private val dotRadius: Float,
+    private val strokeWidth: Float
+) : org.osmdroid.views.overlay.Overlay() {
+    var dots: List<SampleDot> = emptyList()
+    var selected: Int = -1
+
+    private val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+    private val path = android.graphics.Path()
+    private val pt = android.graphics.Point()
+    private val xy = ArrayList<Float>()
+
+    override fun draw(c: android.graphics.Canvas, mapView: MapView, shadow: Boolean) {
+        if (shadow || dots.isEmpty()) return
+        val proj = mapView.projection
+        xy.clear()
+        for (d in dots) {
+            proj.toPixels(d.gp, pt)
+            xy.add(pt.x.toFloat())
+            xy.add(pt.y.toFloat())
+        }
+
+        /* 光路折线 */
+        path.reset()
+        path.moveTo(xy[0], xy[1])
+        for (i in 1 until dots.size) path.lineTo(xy[i * 2], xy[i * 2 + 1])
+        p.reset()
+        p.isAntiAlias = true
+        p.style = android.graphics.Paint.Style.STROKE
+        p.strokeWidth = strokeWidth
+        p.color = 0x661FD3E6
+        c.drawPath(path, p)
+
+        /* 热力点：半径与颜色都随主云层云量走 */
+        for (i in dots.indices) {
+            val cx = xy[i * 2]
+            val cy = xy[i * 2 + 1]
+            val r = dotRadius * (0.6f + 0.6f * dots[i].cov)
+            p.style = android.graphics.Paint.Style.FILL
+            p.color = colorFor(dots[i].cov)
+            p.alpha = 235
+            c.drawCircle(cx, cy, r, p)
+            p.alpha = 255
+
+            if (i == 0) {
+                p.style = android.graphics.Paint.Style.STROKE
+                p.strokeWidth = strokeWidth * 1.2f
+                p.color = 0xFFFFFFFF.toInt()
+                c.drawCircle(cx, cy, r + strokeWidth * 2f, p)
+                p.style = android.graphics.Paint.Style.FILL
+                p.color = 0xFFFFFFFF.toInt()
+                c.drawCircle(cx, cy, r * 0.42f, p)
+            }
+            if (i == selected) {
+                p.style = android.graphics.Paint.Style.STROKE
+                p.strokeWidth = strokeWidth * 1.6f
+                p.color = 0xFFFFFFFF.toInt()
+                c.drawCircle(cx, cy, r + strokeWidth * 2.4f, p)
+            }
+        }
+    }
+
+    override fun onSingleTapConfirmed(e: MotionEvent, mapView: MapView): Boolean {
+        if (dots.isEmpty()) return false
+        val proj = mapView.projection
+        var best = -1
+        var bestD = Float.MAX_VALUE
+        val lim = dotRadius * 2.6f
+        for (i in dots.indices) {
+            proj.toPixels(dots[i].gp, pt)
+            val dx = pt.x - e.x
+            val dy = pt.y - e.y
+            val d = dx * dx + dy * dy
+            if (d <= lim * lim && d < bestD) {
+                bestD = d
+                best = i
+            }
+        }
+        if (best >= 0) {
+            onPick(best)
+            return true
+        }
+        return false
+    }
+}
+
+/** 云量 → 光谱热力色（青 → 琥珀 → 品红） */
+private fun rampColor(t: Float, colors: SunglowColors): Color {
+    val v = t.coerceIn(0f, 1f)
+    return if (v <= 0.5f) lerp(colors.accentCool, colors.accentAlt, v / 0.5f)
+    else lerp(colors.accentAlt, colors.accent, (v - 0.5f) / 0.5f)
 }
 
 @Composable
-private fun OsmMap(city: com.sunglow.spectrum.core.City, modifier: Modifier = Modifier) {
+private fun OsmMap(
+    city: com.sunglow.spectrum.core.City,
+    result: ForecastResult,
+    modifier: Modifier = Modifier
+) {
     val colors = SunglowTheme.colors
+    val density = LocalDensity.current
     val sources = remember {
         listOf(
             "街道" to AmapTileSource(
@@ -498,98 +609,219 @@ private fun OsmMap(city: com.sunglow.spectrum.core.City, modifier: Modifier = Mo
         )
     }
     var basemap by remember { mutableStateOf(0) }
+    var picked by remember(city.name) { mutableStateOf(-1) }
     val holder = remember { MapHolder() }
 
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(260.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .border(1.dp, colors.rule, RoundedCornerShape(14.dp))
-            .background(colors.card)
-    ) {
-        AndroidView(
-            factory = { ctx ->
-                runCatching {
-                    Configuration.getInstance().userAgentValue = ctx.packageName
-                }
-                MapView(ctx).apply {
-                    setBackgroundColor(android.graphics.Color.parseColor("#070B14"))
-                    setTileSource(sources[basemap].second)
-                    /* 不把 256px 瓦片按屏幕密度放大，否则整图发糊；
-                       按 log2(density) 抬高级别，视野范围与放大时一致但更清晰 */
-                    setTilesScaledToDpi(false)
-                    setMultiTouchControls(true)
-                    setBuiltInZoomControls(false)
-                    setUseDataConnection(true)
-                    tag = basemap
-                    val density = ctx.resources.displayMetrics.density
-                    controller.setZoom(6.5 + log2(density.toDouble()))
-                    val p = wgsToGcj(city.lat, city.lon)
-                    controller.setCenter(GeoPoint(p.first, p.second))
-                    holder.lastKey = basemap.toString() + "|" + city.name
+    /* 样带坐标与主云层云量：与预报同一份数据，不额外取数 */
+    val dots = remember(result) {
+        val coords = transectPoints(result.city, result.evAz)
+        val key = result.sRT.primary.key
+        result.transect.mapIndexedNotNull { i, t ->
+            val c = coords.getOrNull(i) ?: return@mapIndexedNotNull null
+            val cov = when (key) {
+                "cLow" -> t.cLow ?: 0.0
+                "cMid" -> t.cMid ?: 0.0
+                else -> t.cHigh ?: 0.0
+            }
+            val g = wgsToGcj(c.lat, c.lon)
+            SampleDot(
+                gp = GeoPoint(g.first, g.second),
+                cov = (cov / 100.0).toFloat().coerceIn(0f, 1f),
+                km = t.d
+            )
+        }
+    }
 
-                    /* 地图在竖向滚动页里：按下时先夺走父容器的滚动权，否则拖不动 */
-                    setOnTouchListener { v, e ->
-                        when (e.actionMasked) {
-                            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE ->
-                                v.parent?.requestDisallowInterceptTouchEvent(true)
-                            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
-                                v.parent?.requestDisallowInterceptTouchEvent(false)
-                        }
-                        false
-                    }
-                }
-            },
-            update = { mv ->
-                if (mv.tag != basemap) {
-                    mv.tag = basemap
-                    mv.setTileSource(sources[basemap].second)
-                }
-                val key = basemap.toString() + "|" + city.name
-                if (holder.lastKey != key) {
-                    holder.lastKey = key
-                    val p = wgsToGcj(city.lat, city.lon)
-                    mv.controller.setCenter(GeoPoint(p.first, p.second))
-                    mv.invalidate()
-                }
-            },
-            modifier = Modifier.fillMaxSize()
-        )
-
-        /* 底图切换：街道取不到图时可以换卫星 */
-        Row(
+    Column(modifier) {
+        Box(
             modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                .fillMaxWidth()
+                .height(260.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .border(1.dp, colors.rule, RoundedCornerShape(14.dp))
+                .background(colors.card)
         ) {
-            sources.forEachIndexed { i, s ->
-                val on = i == basemap
+            AndroidView(
+                factory = { ctx ->
+                    runCatching {
+                        Configuration.getInstance().userAgentValue = ctx.packageName
+                    }
+                    MapView(ctx).apply {
+                        setBackgroundColor(android.graphics.Color.parseColor("#070B14"))
+                        setTileSource(sources[basemap].second)
+                        /* 不把 256px 瓦片按屏幕密度放大，否则整图发糊；
+                           按 log2(density) 抬高级别，视野范围与放大时一致但更清晰 */
+                        setTilesScaledToDpi(false)
+                        setMultiTouchControls(true)
+                        setBuiltInZoomControls(false)
+                        setUseDataConnection(true)
+                        tag = basemap
+                        val d = ctx.resources.displayMetrics.density
+                        controller.setZoom(6.5 + log2(d.toDouble()))
+                        val p = wgsToGcj(city.lat, city.lon)
+                        controller.setCenter(GeoPoint(p.first, p.second))
+                        holder.lastKey = basemap.toString() + "|" + city.name
+
+                        val ov = TransectOverlay(
+                            colorFor = { t -> rampColor(t, colors).toArgb() },
+                            onPick = { picked = it },
+                            dotRadius = with(density) { 6.dp.toPx() },
+                            strokeWidth = with(density) { 2.dp.toPx() }
+                        )
+                        overlays.add(ov)
+                        holder.overlay = ov
+
+                        /* 地图在竖向滚动页里：按下时先夺走父容器的滚动权，否则拖不动 */
+                        setOnTouchListener { v, e ->
+                            when (e.actionMasked) {
+                                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE ->
+                                    v.parent?.requestDisallowInterceptTouchEvent(true)
+                                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
+                                    v.parent?.requestDisallowInterceptTouchEvent(false)
+                            }
+                            false
+                        }
+                    }
+                },
+                update = { mv ->
+                    if (mv.tag != basemap) {
+                        mv.tag = basemap
+                        mv.setTileSource(sources[basemap].second)
+                    }
+                    val key = basemap.toString() + "|" + city.name
+                    if (holder.lastKey != key) {
+                        holder.lastKey = key
+                        val p = wgsToGcj(city.lat, city.lon)
+                        mv.controller.setCenter(GeoPoint(p.first, p.second))
+                    }
+                    holder.overlay?.let {
+                        it.dots = dots
+                        it.selected = picked
+                    }
+                    mv.invalidate()
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+
+            /* 底图切换：街道取不到图时可以换卫星 */
+            Row(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                sources.forEachIndexed { i, s ->
+                    val on = i == basemap
+                    Text(
+                        text = s.first,
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                        color = if (on) colors.ink else colors.faint,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(if (on) colors.card.copy(alpha = 0.92f) else Color(0x66070B14))
+                            .border(1.dp, if (on) colors.ruleStrong else colors.rule, RoundedCornerShape(999.dp))
+                            .clickable { basemap = i }
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    )
+                }
+            }
+
+            Text(
+                text = "© 高德地图",
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                color = colors.faint,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(6.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color(0x99070B14))
+                    .padding(horizontal = 4.dp, vertical = 1.dp)
+            )
+        }
+
+        if (dots.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = s.first,
+                    text = "样带热力",
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
-                    color = if (on) colors.ink else colors.faint,
+                    color = colors.faint
+                )
+                Spacer(Modifier.width(6.dp))
+                Box(
                     modifier = Modifier
+                        .width(54.dp)
+                        .height(4.dp)
                         .clip(RoundedCornerShape(999.dp))
-                        .background(if (on) colors.card.copy(alpha = 0.92f) else Color(0x66070B14))
-                        .border(1.dp, if (on) colors.ruleStrong else colors.rule, RoundedCornerShape(999.dp))
-                        .clickable { basemap = i }
-                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(colors.accentCool, colors.accentAlt, colors.accent)
+                            )
+                        )
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = "主云层云量 0 → 100% · 点圆点看读数",
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                    color = colors.faint
                 )
             }
         }
 
-        Text(
-            text = "© 高德地图",
-            style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
-            color = colors.faint,
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(6.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(Color(0x99070B14))
-                .padding(horizontal = 4.dp, vertical = 1.dp)
+        val sel = dots.getOrNull(picked)
+        if (sel != null) {
+            Spacer(Modifier.height(8.dp))
+            SampleCard(
+                km = sel.km,
+                t = result.transect.getOrNull(picked),
+                xMax = result.sRT.geom.xMax,
+                onClose = { picked = -1 }
+            )
+        }
+    }
+}
+
+/** 点选样带点后的即时读数（全部来自本地结果，不再请求） */
+@Composable
+private fun SampleCard(km: Double, t: TransectPt?, xMax: Double, onClose: () -> Unit) {
+    val colors = SunglowTheme.colors
+    fun pct(v: Double?): String =
+        if (isNum(v)) v!!.roundToInt().toString() + "%" else "—"
+
+    Panel {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = "样带点 · 距城市 " + uDist(km),
+                style = MaterialTheme.typography.titleSmall,
+                color = colors.ink
+            )
+            Spacer(Modifier.weight(1f))
+            Text(
+                text = "关闭",
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.accentCool,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .clickable(onClick = onClose)
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+            )
+        }
+        Spacer(Modifier.height(6.dp))
+        if (t == null) {
+            Text(
+                text = "该点没有取到数据",
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.faint
+            )
+            return@Panel
+        }
+        InfoRow("低云 / 中云 / 高云", pct(t.cLow) + " / " + pct(t.cMid) + " / " + pct(t.cHigh))
+        InfoRow("低中云遮挡", pct(cloudBlockOf(t.cLow, t.cMid)))
+        InfoRow("能见度", uDist(if (isNum(t.vis)) t.vis!! / 1000 else null))
+        InfoRow(
+            "霞光可及",
+            if (km <= xMax) "范围内 · 上限 " + uDist(xMax)
+            else "已超出 · 上限 " + uDist(xMax)
         )
     }
 }
@@ -611,7 +843,7 @@ private fun ComparePanel(state: HomeUiState, onClear: () -> Unit) {
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = "已选 ${state.compareCities.size}/4",
+                text = "已选 ${state.compareCities.size}/4 · 按概率排名",
                 style = MaterialTheme.typography.labelSmall,
                 color = colors.faint
             )
@@ -627,9 +859,15 @@ private fun ComparePanel(state: HomeUiState, onClear: () -> Unit) {
             )
         }
         Spacer(Modifier.height(6.dp))
-        state.compareRows.forEach { row ->
+        state.compareRows.sortedByDescending { it.p }.forEachIndexed { idx, row ->
             Column(Modifier.padding(vertical = 4.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = (idx + 1).toString(),
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                        color = if (idx == 0) colors.accentCool else colors.faint,
+                        modifier = Modifier.width(14.dp)
+                    )
                     Text(
                         text = row.city.name,
                         style = MaterialTheme.typography.bodyMedium,

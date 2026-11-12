@@ -64,6 +64,8 @@ data class ForecastResult(
     val spreadQ: Double?,
     val conf: EnsBand,
     val factorRows: List<FacRow>,
+    /** 合并后的样带（0–400 km，25 km 一档），供观测场地图画热力点 */
+    val transect: List<TransectPt> = emptyList(),
     /** 本次没取到气溶胶（AOD），评分实际用了 0.25 兜底值 */
     val aodFallback: Boolean,
     val fromCache: Boolean = false
@@ -242,6 +244,7 @@ fun assembleForecast(
         spreadQ = spreadQ,
         conf = conf,
         factorRows = factorRows,
+        transect = trM,
         aodFallback = aodFallback
     )
 }
