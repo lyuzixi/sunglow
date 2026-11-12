@@ -26,7 +26,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -36,7 +48,9 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -48,9 +62,11 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -85,6 +101,12 @@ import com.sunglow.spectrum.core.uDist
 import com.sunglow.spectrum.core.verdictViewOf
 import com.sunglow.spectrum.core.VerdictView
 import com.sunglow.spectrum.ui.HomeViewModel
+import com.sunglow.spectrum.ui.motion.AnimatedNumberText
+import com.sunglow.spectrum.ui.motion.confirm
+import com.sunglow.spectrum.ui.motion.open
+import com.sunglow.spectrum.ui.motion.pressScale
+import com.sunglow.spectrum.ui.motion.rememberMotionEnabled
+import com.sunglow.spectrum.ui.motion.tap
 import com.sunglow.spectrum.ui.theme.DuskAstro
 import com.sunglow.spectrum.ui.theme.DuskCivil
 import com.sunglow.spectrum.ui.theme.DuskDay
@@ -125,8 +147,22 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
     }
     var sheet by remember { mutableStateOf<String?>(null) }
 
+    val haptics = LocalHapticFeedback.current
+    val motion = rememberMotionEnabled()
+    val modelOrder = remember { listOf(ModelSel.ENS, ModelSel.GFS, ModelSel.EC, ModelSel.RT) }
+    val cycleModel: () -> Unit = {
+        val i = modelOrder.indexOf(modelSel)
+        modelSel = modelOrder[(i + 1) % modelOrder.size]
+        haptics.tap()
+    }
+
     val result = state.result
 
+    PullToRefreshBox(
+        isRefreshing = state.loading && result != null,
+        onRefresh = vm::refresh,
+        modifier = Modifier.fillMaxSize()
+    ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 20.dp)
@@ -136,9 +172,12 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 state = state,
                 result = result,
                 modelSel = modelSel,
+                motion = motion,
                 onOpenCity = { vm.setCitySheetOpen(true) },
+                onCycleModel = cycleModel,
                 onShare = {
                     if (result != null) {
+                        haptics.confirm()
                         val view = verdictViewOf(result, modelSel)
                         val send = Intent(Intent.ACTION_SEND).apply {
                             type = "text/plain"
@@ -154,28 +193,47 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
             val view = verdictViewOf(result, modelSel)
             item {
                 Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp)) {
-                    Text(
-                        text = verdictSentence(view),
-                        style = MaterialTheme.typography.titleMedium.copy(fontSize = 14.5.sp),
-                        color = colors.ink
-                    )
+                    Crossfade(
+                        targetState = verdictSentence(view),
+                        animationSpec = tween(220),
+                        label = "verdict"
+                    ) { sentence ->
+                        Text(
+                            text = sentence,
+                            style = MaterialTheme.typography.titleMedium.copy(fontSize = 14.5.sp),
+                            color = colors.ink
+                        )
+                    }
                 }
             }
-            item { SkyBand(result) }
+            item { SkyBand(result, motion) }
             item {
                 ModelSection(
                     result = result,
                     sel = modelSel,
-                    onSelect = { modelSel = it }
+                    motion = motion,
+                    onSelect = {
+                        modelSel = it
+                        haptics.tap()
+                    }
                 )
             }
             item {
                 Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp)) {
-                    FoldRow("影响因素", "13 项判据", onClick = { sheet = "factors" })
+                    FoldRow("影响因素", "13 项判据") {
+                        haptics.open()
+                        sheet = "factors"
+                    }
                     Spacer(Modifier.height(8.dp))
-                    FoldRow("光路细节", "云幕几何与消光", onClick = { sheet = "ray" })
+                    FoldRow("光路细节", "云幕几何与消光") {
+                        haptics.open()
+                        sheet = "ray"
+                    }
                     Spacer(Modifier.height(8.dp))
-                    FoldRow("分享与文案", "生成一句话", onClick = { sheet = "share" })
+                    FoldRow("分享与文案", "生成一句话") {
+                        haptics.open()
+                        sheet = "share"
+                    }
                 }
             }
             item {
@@ -192,6 +250,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
         } else {
             item { StatusCard(state.error, state.loading, vm::refresh) }
         }
+    }
     }
 
     if (state.citySheetOpen) {
@@ -241,11 +300,19 @@ private fun HeroBlock(
     state: com.sunglow.spectrum.ui.HomeUiState,
     result: ForecastResult?,
     modelSel: ModelSel,
+    motion: Boolean,
     onOpenCity: () -> Unit,
+    onCycleModel: () -> Unit,
     onShare: () -> Unit
 ) {
     val colors = SunglowTheme.colors
     val view = result?.let { verdictViewOf(it, modelSel) }
+
+    /* 照片缓推镜：8 秒 1.00 → 1.04，只在首帧跑一次 */
+    val heroScale = remember { Animatable(1f) }
+    LaunchedEffect(Unit) {
+        if (motion) heroScale.animateTo(1.04f, tween(8000, easing = LinearEasing))
+    }
 
     Box(
         modifier = Modifier
@@ -257,7 +324,12 @@ private fun HeroBlock(
             painter = painterResource(R.drawable.hero_photo),
             contentDescription = null,
             contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    scaleX = heroScale.value
+                    scaleY = heroScale.value
+                }
         )
         /* 顶部压暗，保证状态栏与胶囊可读 */
         Box(
@@ -358,16 +430,25 @@ private fun HeroBlock(
                     )
                 }
             } else {
-                Row(verticalAlignment = Alignment.Bottom) {
+                Row(
+                    modifier = Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onCycleModel
+                    ),
+                    verticalAlignment = Alignment.Bottom
+                ) {
                     Column {
-                        Text(
-                            text = view.p.roundToInt().toString(),
+                        AnimatedNumberText(
+                            target = view.p,
                             style = MaterialTheme.typography.displaySmall.copy(
                                 fontSize = 40.sp,
                                 fontWeight = FontWeight.Medium,
                                 shadow = Shadow(colors.accent.copy(alpha = 0.45f), blurRadius = 18f)
                             ),
-                            color = Color.White
+                            color = Color.White,
+                            durationMs = 600,
+                            enabled = motion
                         )
                         Text(
                             text = if (state.period == Period.AM) "朝霞概率" else "晚霞概率",
@@ -387,14 +468,16 @@ private fun HeroBlock(
                     )
                     Spacer(Modifier.width(20.dp))
                     Column {
-                        Text(
-                            text = view.q.roundToInt().toString(),
+                        AnimatedNumberText(
+                            target = view.q,
                             style = MaterialTheme.typography.displaySmall.copy(
                                 fontSize = 40.sp,
                                 fontWeight = FontWeight.Medium,
                                 shadow = Shadow(Color(0x66FF9C3F), blurRadius = 18f)
                             ),
-                            color = Color(0xFFFFD08A)
+                            color = Color(0xFFFFD08A),
+                            durationMs = 600,
+                            enabled = motion
                         )
                         Text(
                             text = "观赏质量",
@@ -470,13 +553,26 @@ private fun SubDivider() {
 /* ---------- 天色带 ---------- */
 
 @Composable
-private fun SkyBand(result: ForecastResult) {
+private fun SkyBand(result: ForecastResult, motion: Boolean) {
     val colors = SunglowTheme.colors
-    val now = System.currentTimeMillis().toDouble()
+    var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(60_000)
+            nowMs = System.currentTimeMillis()
+        }
+    }
+    val now = nowMs.toDouble()
     val span = 3 * 3600000.0
     val start = result.evMs - span
     val total = span * 2
-    val nowPct = ((now - start) / total).coerceIn(0.0, 1.0).toFloat()
+    val nowPctTarget = ((now - start) / total).coerceIn(0.0, 1.0).toFloat()
+    /* 每分钟推进一次，用 600ms 缓动而不是瞬移 */
+    val nowPct by animateFloatAsState(
+        targetValue = nowPctTarget,
+        animationSpec = tween(if (motion) 600 else 0),
+        label = "nowLine"
+    )
 
     val win = remember(result) {
         if (result.sRT.geom.ok) {
@@ -492,6 +588,19 @@ private fun SkyBand(result: ForecastResult) {
     }
     val winStart = win?.let { ((it.first - start) / total).toFloat() } ?: 0f
     val winEnd = win?.let { ((it.second - start) / total).toFloat() } ?: 0f
+
+    /* 窗口在未来 2 小时内才呼吸，避免常驻耗电 */
+    val breathOn = motion && win != null && (win.first - now) in 0.0..(2 * 3600000.0)
+    val breath = rememberInfiniteTransition(label = "winBreath")
+    val winAlpha by breath.animateFloat(
+        initialValue = 0.55f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1500),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "winAlpha"
+    )
 
     Column(modifier = Modifier.padding(horizontal = 18.dp)) {
         Canvas(
@@ -516,7 +625,7 @@ private fun SkyBand(result: ForecastResult) {
             /* 霞光窗口 */
             if (win != null && winEnd > winStart) {
                 drawRect(
-                    color = Color(0xFFFF4D82),
+                    color = Color(0xFFFF4D82).copy(alpha = if (breathOn) winAlpha else 0.9f),
                     topLeft = Offset(size.width * winStart, size.height - 3.dp.toPx()),
                     size = Size(size.width * (winEnd - winStart), 3.dp.toPx())
                 )
@@ -556,7 +665,12 @@ private fun SkyBand(result: ForecastResult) {
 /* ---------- 模型卡 ---------- */
 
 @Composable
-private fun ModelSection(result: ForecastResult, sel: ModelSel, onSelect: (ModelSel) -> Unit) {
+private fun ModelSection(
+    result: ForecastResult,
+    sel: ModelSel,
+    motion: Boolean,
+    onSelect: (ModelSel) -> Unit
+) {
     val colors = SunglowTheme.colors
     val sRT = result.sRT
 
@@ -579,6 +693,7 @@ private fun ModelSection(result: ForecastResult, sel: ModelSel, onSelect: (Model
         /* 综合 */
         val ensView = verdictViewOf(result, ModelSel.ENS)
         ModelCard(
+            index = 0,
             selected = sel == ModelSel.ENS,
             accent = colors.accentCool,
             dotColor = colors.accentCool,
@@ -601,15 +716,16 @@ private fun ModelSection(result: ForecastResult, sel: ModelSel, onSelect: (Model
                     "AOD" to (if (isNum(result.envM.aod)) String.format(Locale.US, "%.2f", result.envM.aod) else "—")
                 )
             ),
+            motion = motion,
             onClick = { onSelect(ModelSel.ENS) }
         )
 
-        result.models.forEach { m ->
+        result.models.forEachIndexed { idx, m ->
             val ms = when (m.id) {
                 "gfs" -> Triple(ModelSel.GFS, "GFS 模式", "NOAA 全球模式 · 1 小时分辨率")
                 "ec" -> Triple(ModelSel.EC, "ECMWF-IFS 模式", "欧洲中心全球模式")
                 "rt" -> Triple(ModelSel.RT, "光追算法", "纯物理：多波长光路积分 + CIE 色度")
-                else -> return@forEach
+                else -> return@forEachIndexed
             }
             val accent = when (m.id) {
                 "gfs" -> colors.info
@@ -640,6 +756,7 @@ private fun ModelSection(result: ForecastResult, sel: ModelSel, onSelect: (Model
                 )
             }
             ModelCard(
+                index = idx + 1,
                 selected = sel == ms.first,
                 accent = accent,
                 dotColor = accent,
@@ -650,6 +767,7 @@ private fun ModelSection(result: ForecastResult, sel: ModelSel, onSelect: (Model
                 q = m.q,
                 grade = gradeOf(m.q),
                 lines = lines,
+                motion = motion,
                 onClick = { onSelect(ms.first) }
             )
         }
@@ -665,6 +783,7 @@ private fun cloudLine(r: ForecastResult): List<Pair<String, String>> = listOf(
 
 @Composable
 private fun ModelCard(
+    index: Int,
     selected: Boolean,
     accent: Color,
     dotColor: Color,
@@ -675,22 +794,52 @@ private fun ModelCard(
     q: Double,
     grade: String,
     lines: List<List<Pair<String, String>>>,
+    motion: Boolean,
     onClick: () -> Unit
 ) {
     val colors = SunglowTheme.colors
     val radius = RoundedCornerShape(12.dp)
+    val interaction = remember { MutableInteractionSource() }
+
+    /* 入场：逐张上浮 12dp，间隔 40ms */
+    val appear = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        if (motion) {
+            kotlinx.coroutines.delay(index * 40L)
+            appear.animateTo(1f, tween(360, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+        } else {
+            appear.snapTo(1f)
+        }
+    }
+
+    val borderColor by androidx.compose.animation.animateColorAsState(
+        targetValue = if (selected) accent else colors.rule,
+        animationSpec = tween(180),
+        label = "cardBorder"
+    )
+    val borderWidth by animateDpAsState(
+        targetValue = if (selected) 1.5.dp else 1.dp,
+        animationSpec = tween(180),
+        label = "cardBorderWidth"
+    )
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 6.dp)
+            .graphicsLayer {
+                alpha = appear.value
+                translationY = (1f - appear.value) * 12.dp.toPx()
+            }
+            .pressScale(interaction, enabled = motion)
             .clip(radius)
             .background(colors.card)
-            .border(
-                width = if (selected) 1.5.dp else 1.dp,
-                color = if (selected) accent else colors.rule,
-                shape = radius
+            .border(width = borderWidth, color = borderColor, shape = radius)
+            .clickable(
+                interactionSource = interaction,
+                indication = null,
+                onClick = onClick
             )
-            .clickable(onClick = onClick)
             .padding(horizontal = 11.dp, vertical = 9.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -931,6 +1080,7 @@ private fun RaySheet(result: ForecastResult) {
 private fun ShareSheet(result: ForecastResult, view: VerdictView) {
     val colors = SunglowTheme.colors
     val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
     val caption = remember(result, view) { captionOf(result, view) }
     Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 28.dp)) {
         Text(
@@ -952,6 +1102,7 @@ private fun ShareSheet(result: ForecastResult, view: VerdictView) {
                     .clip(RoundedCornerShape(999.dp))
                     .background(Brush.horizontalGradient(colors.spectrum))
                     .clickable {
+                        haptics.confirm()
                         val send = Intent(Intent.ACTION_SEND).apply {
                             type = "text/plain"
                             putExtra(Intent.EXTRA_TEXT, shareBodyOf(result, view))
@@ -974,6 +1125,7 @@ private fun ShareSheet(result: ForecastResult, view: VerdictView) {
                     .background(colors.glass)
                     .border(1.dp, colors.ruleStrong, RoundedCornerShape(999.dp))
                     .clickable {
+                        haptics.confirm()
                         val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                         cm.setPrimaryClip(ClipData.newPlainText("霞光预报", caption))
                         Toast.makeText(context, "文案已复制", Toast.LENGTH_SHORT).show()

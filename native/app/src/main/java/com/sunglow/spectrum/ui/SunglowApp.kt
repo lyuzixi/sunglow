@@ -1,5 +1,11 @@
 package com.sunglow.spectrum.ui
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -49,10 +55,19 @@ fun SunglowApp(vm: HomeViewModel = viewModel()) {
 
     Column(modifier = Modifier.fillMaxSize().background(colors.bg)) {
         Box(modifier = Modifier.weight(1f)) {
-            when (tab) {
-                0 -> HomeScreen(vm)
-                1 -> TrendScreen(vm)
-                else -> FieldScreen(vm)
+            AnimatedContent(
+                targetState = tab,
+                transitionSpec = {
+                    (fadeIn(tween(220)) + slideInVertically(tween(220)) { it / 40 }) togetherWith
+                        fadeOut(tween(120))
+                },
+                label = "tabSwitch"
+            ) { current ->
+                when (current) {
+                    0 -> HomeScreen(vm)
+                    1 -> TrendScreen(vm)
+                    else -> FieldScreen(vm)
+                }
             }
         }
         SunglowTabBar(selected = tab, onSelect = { tab = it })
