@@ -633,6 +633,8 @@ private fun VerdictCard(
             )
         } else null
     }
+    /* 太阳与几何默认收起：结论卡首屏只留 P/Q/等级/ΔI 四个数，细节按需展开 */
+    var sunOpen by remember(result) { mutableStateOf(false) }
 
     GlassCard(modifier = Modifier.padding(horizontal = SunglowTheme.spacing.page), topSpectrum = true) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -696,33 +698,42 @@ private fun VerdictCard(
 
         Spacer(Modifier.height(18.dp))
 
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Metric("$p%", "出现概率", colors.accent, Modifier.weight(1f))
-            Metric("$q", "观赏质量", colors.accentAlt, Modifier.weight(1f))
-        }
-        Spacer(Modifier.height(14.dp))
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Metric(
-                QUALITY_LABEL[view.grade] ?: view.grade,
-                "等级",
-                gradeCol,
-                Modifier.weight(1f),
-                size = 22
-            )
-            Metric(
-                if (isNum(result.dvI)) String.format(Locale.US, "%.1f", result.dvI!!) else "—",
-                "模型分歧 ΔI",
-                colors.ink,
-                Modifier.weight(1f),
-                size = 22
-            )
+        /* 2×2 指标网格：四个主数字等宽对齐，每格自带背板 */
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                MetricCell("$p%", "出现概率", colors.accent, Modifier.weight(1f))
+                MetricCell("$q", "观赏质量", colors.accentAlt, Modifier.weight(1f))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                MetricCell(
+                    QUALITY_LABEL[view.grade] ?: view.grade,
+                    "等级",
+                    gradeCol,
+                    Modifier.weight(1f),
+                    size = 22
+                )
+                MetricCell(
+                    if (isNum(result.dvI)) String.format(Locale.US, "%.1f", result.dvI!!) else "—",
+                    "模型分歧 ΔI",
+                    colors.ink,
+                    Modifier.weight(1f),
+                    size = 22
+                )
+            }
         }
 
-        Spacer(Modifier.height(16.dp))
-        Box(Modifier.fillMaxWidth().height(1.dp).background(colors.rule))
         Spacer(Modifier.height(14.dp))
 
-        SunRows(result = result, win = win)
+        /* 太阳与几何收进折叠区，摘要行直接给出日落/日出时刻与方位角 */
+        FoldSection(
+            title = "太阳与几何",
+            summary = result.evName + " " + fmtClock(result.evMs, result.tz) +
+                " · " + String.format(Locale.US, "%.1f", result.evAz) + "°",
+            open = sunOpen,
+            onToggle = { sunOpen = !sunOpen }
+        ) {
+            SunRows(result = result, win = win)
+        }
 
         Spacer(Modifier.height(16.dp))
         ColorStrip(result)
@@ -752,15 +763,21 @@ private fun VerdictCard(
 }
 
 @Composable
-private fun Metric(
+private fun MetricCell(
     value: String,
     label: String,
     color: Color,
     modifier: Modifier = Modifier,
-    size: Int = 28
+    size: Int = 26
 ) {
     val colors = SunglowTheme.colors
-    Column(modifier = modifier) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(colors.glass)
+            .border(1.dp, colors.rule, RoundedCornerShape(12.dp))
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+    ) {
         Text(
             text = value,
             style = MaterialTheme.typography.headlineLarge.copy(
@@ -777,6 +794,52 @@ private fun Metric(
             style = MaterialTheme.typography.labelSmall,
             color = colors.muted
         )
+    }
+}
+
+/* 卡内折叠区：标题行常驻（带摘要），点开展开内容 */
+@Composable
+private fun FoldSection(
+    title: String,
+    summary: String,
+    open: Boolean,
+    onToggle: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val colors = SunglowTheme.colors
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(colors.glass)
+                .border(1.dp, colors.rule, RoundedCornerShape(12.dp))
+                .clickable(onClick = onToggle)
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = colors.ink
+            )
+            Spacer(Modifier.weight(1f))
+            Text(
+                text = summary,
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.faint
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = if (open) "收起" else "展开",
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.accentCool
+            )
+        }
+        if (open) {
+            Spacer(Modifier.height(10.dp))
+            content()
+        }
     }
 }
 
