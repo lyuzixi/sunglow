@@ -95,6 +95,7 @@ import com.sunglow.spectrum.core.glowWindow
 import com.sunglow.spectrum.core.gradeOf
 import com.sunglow.spectrum.core.isNum
 import com.sunglow.spectrum.core.shareBodyOf
+import com.sunglow.spectrum.core.skyBandOf
 import com.sunglow.spectrum.core.todayInTz
 import com.sunglow.spectrum.core.uAlt
 import com.sunglow.spectrum.core.uDist
@@ -581,35 +582,18 @@ private fun SkyBand(result: ForecastResult, motion: Boolean) {
             nowMs = System.currentTimeMillis()
         }
     }
-    val now = nowMs.toDouble()
-    val span = 3 * 3600000.0
-    val start = result.evMs - span
-    val total = span * 2
-    val nowPctTarget = ((now - start) / total).coerceIn(0.0, 1.0).toFloat()
+    val band = remember(result, nowMs) {
+        skyBandOf(result, nowMs.toDouble(), result.dateStr)
+    }
     /* 每分钟推进一次，用 600ms 缓动而不是瞬移 */
     val nowPct by animateFloatAsState(
-        targetValue = nowPctTarget,
+        targetValue = band?.nowPct ?: 0f,
         animationSpec = tween(if (motion) 600 else 0),
         label = "nowLine"
     )
 
-    val win = remember(result) {
-        if (result.sRT.geom.ok) {
-            glowWindow(
-                evMs = result.evMs,
-                isAM = result.period == Period.AM,
-                lat = result.city.lat,
-                lon = result.city.lon,
-                thNearDeg = result.sRT.geom.thNearDeg,
-                thFarDeg = result.sRT.geom.thFarDeg
-            )
-        } else null
-    }
-    val winStart = win?.let { ((it.first - start) / total).toFloat() } ?: 0f
-    val winEnd = win?.let { ((it.second - start) / total).toFloat() } ?: 0f
-
-    /* 窗口在未来 2 小时内才呼吸，避免常驻耗电 */
-    val breathOn = motion && win != null && (win.first - now) in 0.0..(2 * 3600000.0)
+    /* 有窗口才呼吸，避免常驻耗电 */
+    val breathOn = motion && band != null && band.winWidth > 0f
     val breath = rememberInfiniteTransition(label = "winBreath")
     val winAlpha by breath.animateFloat(
         initialValue = 0.55f,
@@ -628,60 +612,106 @@ private fun SkyBand(result: ForecastResult, motion: Boolean) {
                 .height(28.dp)
                 .clip(RoundedCornerShape(8.dp))
         ) {
-            val segs = listOf(
-                0.26f to DuskDay,
-                0.15f to DuskCivil,
-                0.15f to DuskNautical,
-                0.13f to DuskAstro,
-                0.31f to DuskNight
-            )
-            var x = 0f
-            segs.forEach { (w, c) ->
-                val ww = size.width * w
-                drawRect(color = c, topLeft = Offset(x, 0f), size = Size(ww, size.height))
-                x += ww
-            }
-            /* 霞光窗口 */
-            if (win != null && winEnd > winStart) {
-                drawRect(
-                    color = Color(0xFFFF4D82).copy(alpha = if (breathOn) winAlpha else 0.9f),
-                    topLeft = Offset(size.width * winStart, size.height - 3.dp.toPx()),
-                    size = Size(size.width * (winEnd - winStart), 3.dp.toPx())
+            val segs = band?.segments
+            if (segs != null) {
+                val totalW = segs.sumOf { it.weight.toDouble() }.toFloat().coerceAtLeast(0.01f)
+                var x = 0f
+                segs.forEach { s ->
+                    val ww = size.width * (s.weight / totalW)
+                    drawRect(color = skyColor(s.key), topLeft = Offset(x, 0f), size = Size(ww, size.height))
+                    x += ww
+                }
+                /* 霞光窗口 */
+                if (band.winWidth > 0f) {
+                    drawRect(
+                        color = Color(0xFFFF4D82).copy(alpha = if (breathOn) winAlpha else 0.9f),
+                        topLeft = Offset(size.width * band.winLeft, size.height - 3.dp.toPx()),
+                        size = Size(size.width * band.winWidth, 3.dp.toPx())
+                    )
+                }
+                /* 此刻：用缓动后的百分比，每分钟平滑推进 */
+                if (band.nowPct != null) {
+                    drawLine(
+                        color = Color.White.copy(alpha = 0.9f),
+                        start = Offset(size.width * nowPct, 0f),
+                        end = Offset(size.width * nowPct, size.height),
+                        strokeWidth = 1.dp.toPx()
+                    )
+                }
+            } else {
+                /* 极端情况（太阳事件算不出）退回固定五段 */
+                val fixed = listOf(
+                    0.26f to DuskDay,
+                    0.15f to DuskCivil,
+                    0.15f to DuskNautical,
+                    0.13f to DuskAstro,
+                    0.31f to DuskNight
                 )
+                var x = 0f
+                fixed.forEach { (w, c) ->
+                    val ww = size.width * w
+                    drawRect(color = c, topLeft = Offset(x, 0f), size = Size(ww, size.height))
+                    x += ww
+                }
             }
-            /* 此刻 */
-            drawLine(
-                color = Color.White.copy(alpha = 0.9f),
-                start = Offset(size.width * nowPct, 0f),
-                end = Offset(size.width * nowPct, size.height),
-                strokeWidth = 1.dp.toPx()
-            )
         }
         Spacer(Modifier.height(4.dp))
         Row(modifier = Modifier.fillMaxWidth()) {
-            listOf("白昼", "民用", "航海", "天文", "夜间").forEachIndexed { i, nm ->
-                Text(
-                    text = nm,
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp),
-                    color = colors.faint,
-                    modifier = Modifier.weight(
-                        when (i) { 0 -> 26f; 1 -> 15f; 2 -> 15f; 3 -> 13f; else -> 31f }
+            val current = band
+            if (current != null) {
+                current.segments.forEach { s ->
+                    Text(
+                        text = skyShortName(s.key),
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp),
+                        color = colors.faint,
+                        modifier = Modifier.weight(s.weight)
                     )
-                )
+                }
+                if (current.nowPct != null) {
+                    Text(
+                        text = "此刻 " + current.nowText,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 8.5.sp,
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        color = colors.accentCool
+                    )
+                }
+            } else {
+                listOf("白昼", "民用", "航海", "天文", "夜间").forEachIndexed { i, nm ->
+                    Text(
+                        text = nm,
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp),
+                        color = colors.faint,
+                        modifier = Modifier.weight(
+                            when (i) { 0 -> 26f; 1 -> 15f; 2 -> 15f; 3 -> 13f; else -> 31f }
+                        )
+                    )
+                }
             }
-            Text(
-                text = "此刻 " + fmtClock(now, result.tz),
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 8.5.sp,
-                    fontWeight = FontWeight.SemiBold
-                ),
-                color = colors.accentCool
-            )
         }
     }
 }
 
 /* ---------- 模型卡 ---------- */
+
+/** 五段曙暮光配色（与网页 --dusk-* 同值） */
+private fun skyColor(key: String): Color = when (key) {
+    "day" -> DuskDay
+    "civil" -> DuskCivil
+    "naut" -> DuskNautical
+    "astro" -> DuskAstro
+    else -> DuskNight
+}
+
+/** 轴标短名：段宽按真实时长，名字要压到两个字 */
+private fun skyShortName(key: String): String = when (key) {
+    "day" -> "白昼"
+    "civil" -> "民用"
+    "naut" -> "航海"
+    "astro" -> "天文"
+    else -> "夜间"
+}
 
 @Composable
 private fun ModelSection(
