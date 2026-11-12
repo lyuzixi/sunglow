@@ -48,7 +48,9 @@ data class HomeUiState(
     val trendLoading: Boolean = false,
     val trendDone: Int = 0,
     val trendTotal: Int = 0,
-    val trendError: String? = null
+    val trendError: String? = null,
+    /** 0 跟随系统 / 1 深色 / 2 浅色 */
+    val themeMode: Int = 0
 )
 
 val DEFAULT_CITY = City("北京市", 116.4074, 39.9042, "北京市")
@@ -60,10 +62,16 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = CityRepository(app)
     private val location = LocationProvider(app)
     private val engine = ForecastEngine(OpenMeteoClient())
+    private val prefs = app.getSharedPreferences("sunglow_prefs", android.content.Context.MODE_PRIVATE)
 
     private val startCity = repo.lastCity() ?: DEFAULT_CITY
 
-    private val _state = MutableStateFlow(HomeUiState(city = startCity))
+    private val _state = MutableStateFlow(
+        HomeUiState(
+            city = startCity,
+            themeMode = prefs.getInt("theme_mode", 0)
+        )
+    )
     val state: StateFlow<HomeUiState> = _state.asStateFlow()
 
     private var job: Job? = null
@@ -151,6 +159,12 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setCitySheetOpen(open: Boolean) {
         _state.update { it.copy(citySheetOpen = open) }
+    }
+
+    /** 主题三档：0 跟随系统 / 1 深色 / 2 浅色 */
+    fun setThemeMode(mode: Int) {
+        prefs.edit().putInt("theme_mode", mode).apply()
+        _state.update { it.copy(themeMode = mode) }
     }
 
     /* ---------- 城市检索 / 定位 ---------- */

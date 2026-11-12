@@ -101,6 +101,9 @@ import com.sunglow.spectrum.core.uDist
 import com.sunglow.spectrum.core.verdictViewOf
 import com.sunglow.spectrum.core.VerdictView
 import com.sunglow.spectrum.ui.HomeViewModel
+import com.sunglow.spectrum.ui.components.ChevronRight
+import com.sunglow.spectrum.ui.components.MoreIcon
+import com.sunglow.spectrum.ui.components.ShareIcon
 import com.sunglow.spectrum.ui.motion.AnimatedNumberText
 import com.sunglow.spectrum.ui.motion.confirm
 import com.sunglow.spectrum.ui.motion.open
@@ -174,6 +177,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 modelSel = modelSel,
                 motion = motion,
                 onOpenCity = { vm.setCitySheetOpen(true) },
+                onOpenSettings = { sheet = "settings" },
                 onCycleModel = cycleModel,
                 onShare = {
                     if (result != null) {
@@ -288,6 +292,10 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 "factors" -> FactorsSheet(result)
                 "ray" -> RaySheet(result)
                 "share" -> ShareSheet(result, verdictViewOf(result, modelSel))
+                "settings" -> SettingsSheet(
+                    themeMode = state.themeMode,
+                    onSetTheme = vm::setThemeMode
+                )
             }
         }
     }
@@ -302,6 +310,7 @@ private fun HeroBlock(
     modelSel: ModelSel,
     motion: Boolean,
     onOpenCity: () -> Unit,
+    onOpenSettings: () -> Unit,
     onCycleModel: () -> Unit,
     onShare: () -> Unit
 ) {
@@ -403,7 +412,19 @@ private fun HeroBlock(
                     .clickable(onClick = onShare),
                 contentAlignment = Alignment.Center
             ) {
-                Text("↑", style = MaterialTheme.typography.bodyLarge, color = Color.White)
+                ShareIcon(Color.White, 15.dp)
+            }
+            Spacer(Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .background(Color(0x6111161F))
+                    .border(1.dp, Color(0x29FFFFFF), CircleShape)
+                    .clickable(onClick = onOpenSettings),
+                contentAlignment = Alignment.Center
+            ) {
+                MoreIcon(Color.White, 15.dp)
             }
         }
 
@@ -414,17 +435,15 @@ private fun HeroBlock(
                 .padding(start = 20.dp, end = 20.dp, bottom = 14.dp)
         ) {
             if (view == null) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (state.loading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp,
-                            color = colors.accentCool
-                        )
-                        Spacer(Modifier.width(10.dp))
+                if (state.loading) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        SkeletonBar(Modifier.width(72.dp).height(36.dp))
+                        Spacer(Modifier.width(22.dp))
+                        SkeletonBar(Modifier.width(72.dp).height(36.dp))
                     }
+                } else {
                     Text(
-                        text = state.error ?: if (state.loading) "正在取数…" else "点我开始观测",
+                        text = state.error ?: "点我开始观测",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.White.copy(alpha = 0.8f)
                     )
@@ -838,6 +857,7 @@ private fun ModelCard(
             .clickable(
                 interactionSource = interaction,
                 indication = null,
+                onClickLabel = "切换到$title",
                 onClick = onClick
             )
             .padding(horizontal = 11.dp, vertical = 9.dp)
@@ -959,15 +979,9 @@ private fun FoldRow(title: String, note: String, onClick: () -> Unit) {
             color = colors.faint
         )
         Spacer(Modifier.weight(1f))
-        Text(
-            text = "›",
-            style = MaterialTheme.typography.bodyLarge,
-            color = colors.accentCool
-        )
+        ChevronRight(colors.accentCool, 14.dp)
     }
 }
-
-/* ---------- 底部 sheet 内容 ---------- */
 
 @Composable
 private fun FactorsSheet(result: ForecastResult) {
@@ -1141,6 +1155,84 @@ private fun ShareSheet(result: ForecastResult, view: VerdictView) {
             }
         }
     }
+}
+
+/* ---------- 设置 ---------- */
+
+@Composable
+private fun SettingsSheet(themeMode: Int, onSetTheme: (Int) -> Unit) {
+    val colors = SunglowTheme.colors
+    Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 28.dp)) {
+        Text(
+            text = "设置",
+            style = MaterialTheme.typography.titleMedium,
+            color = colors.ink
+        )
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = "主题",
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.faint
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("跟随系统" to 0, "深色" to 1, "浅色" to 2).forEach { (label, mode) ->
+                val on = themeMode == mode
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(
+                            if (on) Brush.horizontalGradient(colors.spectrum) else colors.glass
+                        )
+                        .border(
+                            1.dp,
+                            if (on) Color.Transparent else colors.ruleStrong,
+                            RoundedCornerShape(999.dp)
+                        )
+                        .clickable {
+                            onSetTheme(mode)
+                        }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (on) Color(0xFF06101C) else colors.muted
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.height(20.dp))
+        Text(
+            text = "霞光档案 1.0.0 · 光谱观测版",
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.faint
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = "数据 Open-Meteo · 概率预报仅供参考",
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.faint
+        )
+    }
+}
+
+@Composable
+private fun SkeletonBar(modifier: Modifier) {
+    val breath = rememberInfiniteTransition(label = "skeleton")
+    val a by breath.animateFloat(
+        initialValue = 0.26f,
+        targetValue = 0.5f,
+        animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
+        label = "skeletonAlpha"
+    )
+    Box(
+        modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(Color.White.copy(alpha = a))
+    )
 }
 
 /* ---------- 状态卡 ---------- */
