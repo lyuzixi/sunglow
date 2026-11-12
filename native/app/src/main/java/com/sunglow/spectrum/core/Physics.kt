@@ -343,7 +343,7 @@ fun analyseTransect(transect: List<TransectPt>?, levelKey: String): TransectResu
             hasDeck = false
         )
     }
-    val main = runs.firstOrNull { it.first == 0 } ?: runs.last()
+    var main = runs.firstOrNull { it.first == 0 } ?: runs.last()
     val step = if (transect.size > 1) transect[1].d - transect[0].d else 25.0
     val dNear = if (transect[main.first].d == 0.0) 0.0
     else max(0.0, transect[main.first].d - step / 2)

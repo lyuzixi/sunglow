@@ -2,7 +2,7 @@
    SUNGLOW v2 · 全局状态
    偏好键：SUNGLOW.v2.pref（独立命名空间，不碰V1 sunsetbot.pref.v1）
    ========================================================================= */
-import { reactive, computed, ref } from "vue";
+import { reactive, computed, ref, watch } from "vue";
 import { detectLang, setLang, type Lang } from "./core/i18n";
 import type { City } from "./core/city";
 import type { ForecastResult } from "./core/forecast";
@@ -16,6 +16,16 @@ import {
 export type ThemeMode = "dark" | "light" | "system";
 
 export const PREF_KEY = "SUNGLOW.v2.pref";
+
+/**
+ * 日期可选窗口（相对**所选城市的当地今天**）：顶部月历与观测场下拉共用同一对常量。
+ * 两处曾各自写死 -2~+15 / -2~+7；日期联动之后如果不同窗，顶部选到 +10 天时
+ * 观测场 Select 的 options 里没有那一项，触发器会显示空白（curLabel 取不到匹配项）。
+ * 上限 15 是取数接口能覆盖的范围；远处日期的 ECMWF / 气溶胶可能取不到，
+ * 由 mapload 的 note 如实提示，不影响此处窗口。
+ */
+export const DATE_MIN_OFFSET = -2;
+export const DATE_MAX_OFFSET = 15;
 
 /* ---- 偏好白名单（口径对齐V1 PREF_BOOL/PREF_STR） ---- */
 export const PREF_BOOL = [
@@ -59,6 +69,7 @@ export interface AppState {
   useMock: boolean;
   mapDim: "mix" | "p" | "q" | "dv";
   mapModel: "ens" | "gfs" | "ec" | "rt";
+  /** 观测场日期：dateStr 的联动镜像（见下方日期同步器），不再是独立设置 */
   mapDateS: string;
   mapPeriod: "am" | "pm";
   calibOn: boolean;
@@ -103,10 +114,11 @@ export const hasSavedCity = (): boolean =>
   typeof prefs.cityName === "string" && !!cityByName(prefs.cityName);
 
 /**
- * 观测场日期是否已保存、且仍落在可选窗口内（与 MapView 日期选择器的 -2~+7 天同窗）。
+ * 上次查看的日期是否已保存、且仍落在可选窗口内（DATE_MIN_OFFSET ~ DATE_MAX_OFFSET）。
  * 缓存键含日期：以前 mapDateS 每次启动都重置成「今天」，隔天或换过日期再打开
  * 就直接 miss，页面显示「该日期尚未取数」，看起来像缓存丢了（2026-11-11）。
- * 超出窗口（隔一周回来）仍回落到今天，避免开局停在一张过期日期上。
+ * 两处日期联动后，这个偏好同时决定**整页**的初始日期，不只是观测场。
+ * 超出窗口仍回落到今天，避免开局停在一张过期日期上。
  * 读的是启动时的偏好快照，语义即「本次打开时有没有可用的上次日期」。
  */
 export function hasSavedMapDate(): boolean {
@@ -114,7 +126,7 @@ export function hasSavedMapDate(): boolean {
   if (typeof raw !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return false;
   const diff =
     (Date.parse(raw + "T00:00:00Z") - Date.parse(todayStr() + "T00:00:00Z")) / 86400000;
-  return Number.isFinite(diff) && diff >= -2 && diff <= 7;
+  return Number.isFinite(diff) && diff >= DATE_MIN_OFFSET && diff <= DATE_MAX_OFFSET;
 }
 
 function prefBool(k: string, dflt: boolean): boolean {
@@ -209,14 +221,37 @@ export const state = reactive<AppState>({
   })()
 });
 
+/* ---------------------------------------------------------------- 日期联动
+   顶部月历写 dateStr、观测场下拉写 mapDateS，历史上是两个互不相干的设置。
+   2026-11-12 起全页只认一个「当前查看日期」，任意一处改动立刻同步到另一处。
+   · 用 flush:"sync" 而非默认 pre：初始化、打包快照、读缓存时不能出现半拍
+     不一致（pack 里的 mapDate 会在 dateStr 已改、mapDateS 未改的间隙写成旧日期）。
+   · 两个 watch 互为反向，靠 !== 守卫收敛，不会来回弹；下游各自的 watch
+     （MapView 清图面只读缓存、HomeView 清分享链接）照常各跑一次。
+   · 刻意保留 mapDateS 这个字段名：缓存键、快照包、分享卡、门禁都按它读，
+     改成单一字段会牵动十几处且抹掉「观测场日期」的语义。 */
+watch(() => state.dateStr, (v) => {
+  if (state.mapDateS !== v) state.mapDateS = v;
+}, { flush: "sync" });
+watch(() => state.mapDateS, (v) => {
+  if (state.dateStr !== v) state.dateStr = v;
+}, { flush: "sync" });
+
+/* 首屏对齐：偏好里存着「上次查看的观测场日期」时，把它提升为整页日期。
+   否则刷新后顶部回今天、观测场回上次，两边一开局就分叉，且观测场缓存键
+   还会因日期漂移 miss（2026-11-11 修过的坑）。 */
+if (hasSavedMapDate() && state.mapDateS !== state.dateStr) {
+  state.dateStr = state.mapDateS;
+}
+
 /** 城市切换后把「今天」重新对齐到新的城市：
     只在该字段仍然等于旧城市的今天时才改，避免覆盖用户手选的日期。 */
 export function reanchorToday(prev: City): void {
   const oldT = todayInTz(cityTz(prev.lat, prev.lon));
   const newT = todayInTz(cityTz(state.city.lat, state.city.lon));
   if (oldT === newT) return;
+  /* 只写 dateStr，mapDateS 由上面的日期同步器跟随（别在两处各写一半） */
   if (state.dateStr === oldT) state.dateStr = newT;
-  if (state.mapDateS === oldT) state.mapDateS = newT;
 }
 
 export function savePrefs(): void {

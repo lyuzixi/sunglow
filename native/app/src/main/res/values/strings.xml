@@ -9,7 +9,7 @@
     <string name="shell_section_core">已完成</string>
     <string name="shell_section_next">下一步</string>
     <string name="core_math">数学与球面几何</string>
-    <string name="core_astro">太阳位置与曙光时刻</string>
+    <string name="core_astro">太阳位置与曙暮时刻</string>
     <string name="core_physics">光路消光与云幕模型</string>
     <string name="core_scoring">统计评分与光追评分</string>
     <string name="next_api">气象取数（Open-Meteo）</string>

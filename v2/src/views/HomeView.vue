@@ -11,6 +11,7 @@ import RayDetail from "../components/RayDetail.vue";
 import NotesCard from "../components/NotesCard.vue";
 import ShareQrDialog from "../components/ShareQrDialog.vue";
 import ShareComposer from "../components/ShareComposer.vue";
+import ShareTiles from "../components/ShareTiles.vue";
 import { state, hasSavedCity, hasSavedMapDate, reanchorToday, dataStamp } from "../state";
 import { nearestCity, cityByName, CITIES } from "../core/city";
 import { runForecast } from "../core/forecast";
@@ -21,6 +22,7 @@ import { snapEncode, type SnapInput, type SnapData } from "../core/snap";
 import { t } from "../core/i18n";
 import { pointName } from "../core/citylang";
 import { armReveal } from "../composables/useReveal";
+import { provideShareHub, type ShareTileKey, type ShareTileItem } from "../core/sharehub";
 import {
   applyUrlState, syncUrl, baseQuery, readUrl, shareBaseUrl, SHARE_SITE, readPackRaw
 } from "../core/urlstate";
@@ -70,6 +72,69 @@ const caption = computed(() => {
   const v = shareView.value;
   return r && v ? captionOf(r, v) : "";
 });
+
+/* ---------- 分享板块八磁贴（方案 A「一处总览」，2026-11-12） ----------
+   前四枚把散在结论 / 趋势 / 观测场卡里的图片出口收拢到这里，动作由 sharehub
+   登记表转发给各自那张卡（产物同源）；后四枚仍是本页的链接 / 提醒动作。
+   全程只读已有结果，绝不因为点了一下磁贴就发起取数。 */
+const shareHub = provideShareHub();
+const SHARE_TILE_KEYS: ShareTileKey[] =
+  ["card", "story", "trend", "map", "link", "qr", "caption", "ics"];
+const captionBrief = computed(() => {
+  const s = caption.value.replace(/\s+/g, " ").trim();
+  if (!s) return t("一句话转发今晚的霞");
+  /* 按分句截：磁贴只有一窄行，硬按字数砍会留下「，一…」这种半截词。
+     中文按「，」、英文按 ", " 取前两句，过长再退回收尾省略。 */
+  const sep = s.includes("，") ? "，" : ", ";
+  const parts = s.split(/[，,]\s*/).filter(Boolean);
+  const brief = parts.length > 1 ? parts.slice(0, 2).join(sep) : s;
+  return brief.length > 24 ? brief.slice(0, 23) + "…" : brief;
+});
+const shareTiles = computed<ShareTileItem[]>(() => {
+  void dataStamp.value; /* 结果换了要重判就绪 */
+  const e = shareHub.entries;
+  const hasResult = !!state.result && !!shareView.value;
+  const why = t(NO_SNAP_TIP);
+  const ready: Record<ShareTileKey, boolean> = {
+    card: !!e.card?.ready(), story: !!e.story?.ready(),
+    trend: !!e.trend?.ready(), map: !!e.map?.ready(),
+    link: !!snapUrl.value, qr: !!snapUrl.value,
+    caption: hasResult, ics: hasResult
+  };
+  const hint: Record<ShareTileKey, string> = {
+    card: why, story: why, trend: t("先在上方加载趋势"), map: t("先在上方加载地图"),
+    link: why, qr: why, caption: why, ics: why
+  };
+  const name: Record<ShareTileKey, string> = {
+    card: t("结论卡"), story: t("竖版故事卡"), trend: t("十日趋势图"), map: t("观测场图"),
+    link: t("复制链接"), qr: t("二维码"), caption: t("复制文案"), ics: t("加入日历")
+  };
+  const sub: Record<ShareTileKey, string> = {
+    card: "780×1024 · " + t("完整版"),
+    story: "1080×1920 · 9:16",
+    trend: t("含最佳窗口标注"),
+    map: t("热力面 + 城市名"),
+    link: copied.value ? t("已复制") : t("快照链接，对方零取数"),
+    qr: t("扫码看同一份结论"),
+    caption: copiedText.value ? t("已复制") : captionBrief.value,
+    ics: icsDone.value ? t("已下载") : t("覆盖观赏窗口，提前 30 分钟")
+  };
+  return SHARE_TILE_KEYS.map((k) => ({
+    k, n: name[k], s: sub[k], ready: ready[k],
+    main: k === "card", hint: ready[k] ? "" : hint[k]
+  }));
+});
+
+function onTile(k: ShareTileKey) {
+  if (k === "card" || k === "story" || k === "trend" || k === "map") {
+    void shareHub.entries[k]?.save();
+    return;
+  }
+  if (k === "link") void copySnap();
+  else if (k === "qr") openQr();
+  else if (k === "caption") void copyCaption();
+  else if (k === "ics") addCalendar();
+}
 
 /* ---------- 结果落地时的视口锚定 ----------
    首屏取数前，结论 / 影响因素 / 光追三节都是空态：整页 6333px；结果一到，
@@ -423,12 +488,11 @@ onMounted(async () => {
   /* 默认日期按**城市当地**的今天（不是浏览器今天）：北京时间 10-21 时，
      纽约此刻可能还是 10-20，用本机日期会默认「明天」。URL 明确给了 date 就不动。 */
   const u = readUrl();
-  if (!u.date) {
-    const t0 = todayInTz(cityTz(state.city.lat, state.city.lon));
-    state.dateStr = t0;
-    /* 上次查看的观测场日期已写进偏好：有就别覆盖，否则缓存键的日期段变了，
-       刷新后明明有缓存也读不到（2026-11-11）。 */
-    if (!hasSavedMapDate()) state.mapDateS = t0;
+  /* 只有「URL 没给日期」且「本机没存过上次日期」时，才按城市当地今天落默认。
+     存过就整页沿用那天：两处日期已在 state.ts 对齐，这里覆盖会让顶部回今天、
+     观测场跟着回今天，缓存键又漂回去（2026-11-11）。mapDateS 由同步器跟随。 */
+  if (!u.date && !hasSavedMapDate()) {
+    state.dateStr = todayInTz(cityTz(state.city.lat, state.city.lon));
   }
   await tryLoadSnap();
   /* 全功能快照也要跑一次：runForecast 会命中 overlay 里的单点结果，
@@ -491,40 +555,8 @@ onMounted(async () => {
               <p v-if="isLocalFile" class="share-tip">{{ t(LOCAL_SHARE_TIP, { site: SHARE_SITE }) }}</p>
               <p class="share-tip">{{ t("二维码、文案与日历文件均由本机生成，不经过服务器。") }}</p>
             </div>
-            <div class="share-acts">
-              <button
-                class="btn btn-primary"
-                :disabled="!snapUrl"
-                :title="!snapUrl ? t(NO_SNAP_TIP) : undefined"
-                @click="copySnap"
-              >
-                {{ copied ? t("已复制") : t("复制链接") }}
-              </button>
-              <button
-                class="btn btn-ghost"
-                :disabled="!snapUrl"
-                :title="!snapUrl ? t(NO_SNAP_TIP) : undefined"
-                @click="openQr"
-              >
-                {{ t("二维码") }}
-              </button>
-              <button
-                class="btn btn-ghost"
-                :disabled="!shareView"
-                :title="!shareView ? t(NO_SNAP_TIP) : undefined"
-                @click="copyCaption"
-              >
-                {{ copiedText ? t("已复制") : t("复制文案") }}
-              </button>
-              <button
-                class="btn btn-ghost"
-                :disabled="!shareView"
-                :title="!shareView ? t(NO_SNAP_TIP) : undefined"
-                @click="addCalendar"
-              >
-                {{ icsDone ? t("已下载") : t("加入日历") }}
-              </button>
-            </div>
+            <!-- 方案 A「一处总览」：4 张图片产物 + 4 个链接 / 提醒动作，2×4 磁贴 -->
+            <ShareTiles :items="shareTiles" @pick="onTile" />
           </div>
           <!-- 全功能快照打包状态：缺哪块就给一个显式的补齐入口（绝不自动取数） -->
           <div class="share-pack">
@@ -592,17 +624,8 @@ onMounted(async () => {
   color: var(--tx-3);
   font-size: var(--fs-tiny);
 }
-/* 四个动作同排：主按钮 + 三个 ghost，窄屏自动换行；文字链版已撤 */
-.share-row {
-  display: flex; flex-wrap: wrap; gap: 18px;
-  align-items: center; justify-content: space-between;
-}
-.share-acts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: flex-end;
-}
+/* 说明文字在上，八枚磁贴在下（方案 A 一处总览） */
+.share-row { min-width: 0; }
 .share-why {
   /* 链接没生成时把原因写在按钮下方（disabled 元素的 title 浏览器通常不显示） */
   margin: 10px 0 0;
@@ -638,16 +661,5 @@ onMounted(async () => {
   font-size: var(--fs-tiny);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
-@media (max-width: 720px) {
-  /* 四个按钮 2×2 等宽：flex:1 1 auto 会把落单的第 4 个拉成整行长条 */
-  .share-acts {
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .share-acts .btn {
-    min-width: 0;
-    padding-inline: 10px;
-  }
-}
+
 </style>

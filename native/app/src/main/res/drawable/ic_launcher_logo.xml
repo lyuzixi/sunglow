@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  自适应图标前景：直接用网页端顶栏那张 logo（CI 从 v2/src/assets 复制到 drawable-nodpi）。
+  四周内缩 18dp，让 108dp 视口里只剩 72dp 安全区，等于把方图裁成内切圆，
+  与网页 .brand .logo（28px 圆形、center/cover）的观感一致。
+-->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/logo_mark"
+    android:insetLeft="18dp"
+    android:insetTop="18dp"
+    android:insetRight="18dp"
+    android:insetBottom="18dp" />

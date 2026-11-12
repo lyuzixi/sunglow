@@ -44,7 +44,7 @@ function rnd() {
 const pick = (a) => a[Math.floor(rnd() * a.length)]
 const round = (v, n = 6) => (typeof v === "number" && isFinite(v) ? Number(v.toFixed(n)) : v)
 
-/* 数值统一收敛到6 位小数，避免浮点尾数把"1e-16 级差异"当成不一致 */
+/* 数值统一收敛到 6 位小数，避免浮点尾数把"1e-16 级差异"当成不一致 */
 function deepRound(v) {
   if (Array.isArray(v)) return v.map(deepRound)
   if (v && typeof v === "object") {

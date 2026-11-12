@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
-import { state, savePrefs, mapBox, dataStamp } from "../state";
+import { state, savePrefs, mapBox, dataStamp, DATE_MIN_OFFSET, DATE_MAX_OFFSET } from "../state";
 import { t, ageText, getLang } from "../core/i18n";
 import { clamp, isNum, haversineKm } from "../core/math";
 import {
@@ -30,6 +30,7 @@ import {
 import { eventAzimuth, dirWordOf } from "../core/astro";
 import { typeDetail } from "../core/physics";
 import { saveMapCard, captureMapComposite as captureMap, type MapCardLabel } from "../core/sharecard";
+import { useShareImage } from "../core/sharehub";
 
 /* ---------------- 地图实例 / 投影 ---------------- */
 const box = ref<HTMLDivElement | null>(null);
@@ -296,13 +297,21 @@ const dateOptions = computed(() => {
   const out: Array<{ v: string; label: string }> = [];
   /* 「今天 / 明天」按城市当地时间算：北京时间 10-21 时，纽约可能还是 10-20 */
   const today = todayInTz(cityTz(state.city.lat, state.city.lon));
-  for (let k = -2; k <= 7; k++) {
+  /* 范围必须与顶部月历同窗（DATE_MIN_OFFSET ~ DATE_MAX_OFFSET）：两处日期
+     已经联动，顶部选到 +10 天时这里若没那一项，触发器会显示空白。 */
+  for (let k = DATE_MIN_OFFSET; k <= DATE_MAX_OFFSET; k++) {
     const v = addDaysIso(today, k);
     out.push({
       v,
       label: k === 0 ? t("今天") + " " + v.slice(5)
         : k === 1 ? t("明天") + " " + v.slice(5) : v.slice(5)
     });
+  }
+  /* URL / 快照 / 偏好可能带来一个窗口外的日期（比如上周分享的链接）。
+     两处日期联动后 mapDateS 就等于它；不列出来，Select 的 curLabel 取不到
+     匹配项，触发器会是一块空白。用完整 YYYY-MM-DD，让「不是这周」看得出来。 */
+  if (!out.some((o) => o.v === state.mapDateS)) {
+    out.unshift({ v: state.mapDateS, label: state.mapDateS });
   }
   return out;
 });
@@ -749,6 +758,12 @@ async function saveImg() {
     saveBusy.value = false;
   }
 }
+/* 底部「分享」板块的「观测场图」磁贴：MapCardOpts 只在这里凑得齐，
+   （当前点集 / 屏幕截屏 / 色面缓存 / 方位角），所以由本卡登记动作。 */
+useShareImage("map", {
+  save: saveImg,
+  ready: () => curPts.value.length > 0 && !loading.value
+});
 
 const ranked = computed(() => {
   const arr = curPts.value

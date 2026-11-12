@@ -11,12 +11,13 @@
    ========================================================================= */
 /* 占位值：发布时由 publish-root.mjs 按 index.html 内容哈希重写为
    glowcast-v2-pwa-<12 位哈希>，源文件不写死版本号（写死会让人以为改它就能升版）。 */
-const VERSION = "glowcast-v2-pwa-f3179525e0f8";
+const VERSION = "glowcast-v2-pwa-a9fffc24b169";
 const CORE = [
   "./",
   "./index.html",
   "./tutorial.html",
   "./404.html",
+  "./download.html",
   "./manifest.webmanifest",
   "./favicon-192.png",
   "./icon-192.png",
@@ -63,17 +64,25 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(req.url);
   if (url.pathname.endsWith("/sw.js")) return;
 
-  /* 导航：网络优先，断网回落缓存里的 index.html（hash 路由，任意 hash 都算首页） */
+  /* 导航：网络优先，断网回落缓存里对应的那个 HTML（hash 路由统一算首页）。
+     2026-11-12：旧实现把任何导航都写进 "./index.html"，独立静态页联网打开一次
+     之后会把首页缓存覆盖掉；改成按各自的路径写，CORE 里的页面才不会互相污染。 */
   if (req.mode === "navigate") {
     e.respondWith((async () => {
       try {
         const fresh = await fetch(req);
         const cache = await caches.open(VERSION);
-        cache.put("./index.html", fresh.clone()).catch(() => {});
+        const key = new URL(req.url);
+        key.search = ""; key.hash = "";
+        cache.put(key.toString(), fresh.clone()).catch(() => {});
         return fresh;
       } catch {
         const cache = await caches.open(VERSION);
-        return (await cache.match("./index.html")) ||
+        /* 先按请求本身找（ignoreSearch 让 ?lang= 之类参数也能命中）：
+           独立静态页各自回落自己，只有 hash 路由 / 未知路径才回落到 index.html。
+           旧实现一律回落首页，离线打开 tutorial / download 会看到错误页面。 */
+        return (await cache.match(req, { ignoreSearch: true })) ||
+          (await cache.match("./index.html")) ||
           (await cache.match("./")) ||
           new Response("<h1>离线</h1><p>还没有缓存到首屏，请连网打开一次。</p>",
             { headers: { "Content-Type": "text/html; charset=utf-8" } });

@@ -7,6 +7,7 @@ import { cityName } from "../core/citylang";
 import { rampColor } from "../core/ramp";
 import { QUALITY_BANDS } from "../core/scoring";
 import { saveTrendCard } from "../core/sharecard";
+import { useShareImage } from "../core/sharehub";
 import { loadTrend, type TrendRow } from "../core/trend";
 import FoldNote from "./FoldNote.vue";
 import ShareButton from "./ShareButton.vue";
@@ -116,7 +117,8 @@ async function jumpTo(date: string, period: "am" | "pm") {
   if (state.loading) return;
   state.dateStr = date;
   state.period = period;
-  state.mapDateS = date;
+  /* mapDateS 由 state.ts 的日期同步器跟随，别在这里各写一半。
+     mapPeriod 仍单独跳：用户没要求时段联动，趋势卡点朝霞就带去朝霞。 */
   state.mapPeriod = period;
   state.result = null;
   /* 先跳回结论区再取数：用户立刻看到加载态，不用等 9 秒超时预算 */
@@ -152,6 +154,11 @@ async function saveImg() {
     busy.value = false;
   }
 }
+/* 底部「分享」板块的「十日趋势图」磁贴：同一份 byDay，不重取数 */
+useShareImage("trend", {
+  save: saveImg,
+  ready: () => byDay.value.length > 0 && !loading.value
+});
 </script>
 
 <template>

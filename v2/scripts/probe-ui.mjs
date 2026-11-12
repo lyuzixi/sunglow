@@ -505,7 +505,8 @@ ev(`document.querySelectorAll('.ctl button.sel')[0].click()`);
 wait(280);
 const p1 = ev(POP_GEO);
 ok("点触发器弹出列表", !!p1);
-eq("日期下拉 10 项，恰好一项选中并带勾", [p1?.n, p1?.sel, p1?.tick], [10, 1, 1]);
+/* -2 ~ +15 共 18 项：与顶部月历同窗，日期联动后任一边选到的日子都列得出来 */
+eq("日期下拉 18 项，恰好一项选中并带勾", [p1?.n, p1?.sel, p1?.tick], [18, 1, 1]);
 ok("弹层贴在触发器下方 6px", Math.abs(p1.t - (p1.tb + 6)) <= 2, `popTop=${p1.t} trigBottom=${p1.tb}`);
 ok("弹层四边都留在视口内（各留 12px）",
   p1.l >= 12 && p1.t >= 12 && p1.r <= p1.vw - 12 && p1.b <= p1.vh - 12, JSON.stringify(p1));
@@ -524,7 +525,7 @@ ok("选中即关闭", ev(`!document.querySelector('.sel-pop')`) === true);
 ab("focus", ".ctl button.sel");
 ab("press", "ArrowDown");
 wait(240);
-eq("↓ 键打开列表", ev(`document.querySelectorAll('.sel-pop [role=option]').length`), 10);
+eq("↓ 键打开列表", ev(`document.querySelectorAll('.sel-pop [role=option]').length`), 18);
 ab("press", "ArrowDown");
 ab("press", "ArrowDown");
 ok("↓↓ 把焦点移到了列表项上",
@@ -1247,20 +1248,30 @@ takeCalls(); /* 丢掉挂载期与重算的调用，下面只数被测动作 */
 let SHARE_SNAP_URL = "";
 {
   /* 必须滚按钮本身：滚 #share（整节比视口高）会把按钮送到视口顶端，被 sticky 顶栏盖住 */
-  ev(`(()=>{const b=document.querySelector('#share .share-acts .btn-primary');
+  ev(`(()=>{const b=document.querySelector('#share .share-tile[data-share="link"]');
     if(b)b.scrollIntoView({block:'center',behavior:'instant'});return 1})()`);
   wait(300);
-  const sb = ev(`(()=>[...document.querySelectorAll('#share .share-acts .btn')]
-    .map(b=>({txt:b.textContent.trim(),disabled:b.disabled,opacity:getComputedStyle(b).opacity})))()`);
-  ok("分享区四个动作都做成按钮且顺序正确（复制链接 / 二维码 / 复制文案 / 加入日历）",
-    Array.isArray(sb) && sb.length === 4 &&
-    /复制链接/.test(sb[0].txt) && /二维码/.test(sb[1].txt) &&
-    /复制文案/.test(sb[2].txt) && /加入日历/.test(sb[3].txt) &&
-    sb.every((x) => x.disabled === false), JSON.stringify(sb));
+  const sb = ev(`(()=>[...document.querySelectorAll('#share .share-tile')]
+    .map(b=>({k:b.dataset.share,txt:b.textContent.trim(),disabled:b.disabled,
+      opacity:getComputedStyle(b).opacity})))()`);
+  ok("分享板块八磁贴顺序正确（四张图 + 四个动作），四个动作都可用",
+    Array.isArray(sb) && sb.length === 8 &&
+    sb.map((x)=>x.k).join(",") === "card,story,trend,map,link,qr,caption,ics" &&
+    /结论卡/.test(sb[0].txt) && /竖版故事卡/.test(sb[1].txt) &&
+    /复制链接/.test(sb[4].txt) && /二维码/.test(sb[5].txt) &&
+    /复制文案/.test(sb[6].txt) && /加入日历/.test(sb[7].txt) &&
+    sb.slice(4).every((x) => x.disabled === false), JSON.stringify(sb));
+  ok("图片磁贴有登记的动作源（至少结论卡可用）",
+    Array.isArray(sb) && sb.length === 8 && sb[0].disabled === false,
+    JSON.stringify(sb && sb.slice(0, 4)));
+  ok("没数据的图片磁贴禁用且有可见反馈",
+    Array.isArray(sb) && sb.slice(0, 4).every((x) =>
+      x.disabled === false || parseFloat(x.opacity) < 0.7),
+    JSON.stringify(sb && sb.slice(0, 4)));
   ok("「更多：」文字链已彻底移除",
     ev(`(!document.querySelector('#share .share-more') && !document.querySelector('#share .mlink'))`) === true);
   /* 无结果时按钮仍会禁用，这时必须有灰化 + not-allowed，否则又变成「点了没反应」 */
-  const dis = ev(`(()=>{const b=document.querySelector('#share .share-acts .btn-primary');
+  const dis = ev(`(()=>{const b=document.querySelector('#share .share-tile[data-share="link"]');
     if(!b)return null;b.setAttribute('disabled','');const cs=getComputedStyle(b);
     const r={opacity:parseFloat(cs.opacity),cursor:cs.cursor};b.removeAttribute('disabled');return r})()`);
   ok("禁用态有可见反馈（灰化 + not-allowed）",
@@ -1271,7 +1282,7 @@ let SHARE_SNAP_URL = "";
   ev(`(()=>{window.__shareCopied='';try{Object.defineProperty(navigator,'clipboard',{
     value:{writeText:(s)=>{window.__shareCopied=String(s);return Promise.resolve()}},configurable:true});
   }catch(e){window.__shareCopied='__HOOK_FAIL__'}return 1})()`);
-  const hitCopy = ev(`(()=>{const b=document.querySelector('#share .share-acts .btn-primary');
+  const hitCopy = ev(`(()=>{const b=document.querySelector('#share .share-tile[data-share="link"]');
     if(!b)return 'no-btn';const r=b.getBoundingClientRect();
     const el=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
     if(el!==b&&!b.contains(el))return 'blocked:'+(el?el.tagName+'.'+el.className:'null');
@@ -1293,9 +1304,8 @@ let SHARE_SNAP_URL = "";
     Array.isArray(packChips) && packChips.some((x) => typeof x === "string" && /观测场|趋势|结论/.test(x)),
     JSON.stringify(packChips));
   ok("复制后按钮给「已复制」反馈",
-    ev(`/已复制/.test((document.querySelector('#share .share-acts .btn-primary')||{}).textContent||'')`) === true);
-  const hitQr = ev(`(()=>{const b=[...document.querySelectorAll('#share .share-acts .btn')]
-    .find(x=>/二维码/.test(x.textContent));
+    ev(`/已复制/.test((document.querySelector('#share .share-tile[data-share="link"]')||{}).textContent||'')`) === true);
+  const hitQr = ev(`(()=>{const b=document.querySelector('#share .share-tile[data-share="qr"]');
     if(!b)return 'no-btn';const r=b.getBoundingClientRect();
     const el=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
     if(el!==b&&!b.contains(el))return 'blocked:'+(el?el.tagName:'null');
@@ -1310,7 +1320,7 @@ let SHARE_SNAP_URL = "";
     if(b)b.click();return 1})()`);
   wait(250);
   /* 复制文案 / 加入日历改回按钮后，也要真的能点（文字链版看着不像可点） */
-  const hitCaption = ev(`(()=>{const b=[...document.querySelectorAll('#share .share-acts .btn')][2];
+  const hitCaption = ev(`(()=>{const b=document.querySelector('#share .share-tile[data-share="caption"]');
     if(!b)return 'no-btn';b.scrollIntoView({block:'center',behavior:'instant'});
     const r=b.getBoundingClientRect();const el=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
     if(el!==b&&!b.contains(el))return 'blocked:'+(el?el.tagName+'.'+el.className:'null');
@@ -1318,24 +1328,43 @@ let SHARE_SNAP_URL = "";
   wait(350);
   ok("「复制文案」按钮真实可点并给「已复制」反馈",
     hitCaption === "ok" &&
-    ev(`/已复制/.test([...document.querySelectorAll('#share .share-acts .btn')][2]?.textContent||'')`) === true,
+    ev(`/已复制/.test((document.querySelector('#share .share-tile[data-share="caption"]')||{}).textContent||'')`) === true,
     hitCaption);
-  const calHit = ev(`(()=>{const b=[...document.querySelectorAll('#share .share-acts .btn')][3];
+  const calHit = ev(`(()=>{const b=document.querySelector('#share .share-tile[data-share="ics"]');
     if(!b)return 'no-btn';b.scrollIntoView({block:'center',behavior:'instant'});
     const r=b.getBoundingClientRect();const el=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
     return el===b||b.contains(el)?'ok':'blocked:'+(el?el.tagName:'null')})()`);
-  ok("「加入日历」按钮可点命中（不触发 .ics 下载）", calHit === "ok", calHit);
+  ok("「加入日历」磁贴可点命中（不触发 .ics 下载）", calHit === "ok", calHit);
+  /* 八枚磁贴都要过命中测试：el.click() 会绕过覆盖层，看不出被谁挡住 */
+  const tileHits = ev(`(()=>['card','story','trend','map','link','qr','caption','ics'].map(k=>{
+    const b=document.querySelector('#share .share-tile[data-share="'+k+'"]');
+    if(!b)return k+':missing'; b.scrollIntoView({block:'center',behavior:'instant'});
+    const r=b.getBoundingClientRect();
+    const el=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
+    return k+':'+(el===b||b.contains(el)?'ok':'blocked');}))()`);
+  ok("八枚磁贴都能被真实点到（elementFromPoint）",
+    Array.isArray(tileHits) && tileHits.length === 8 && tileHits.every((x) => /:ok$/.test(x)),
+    JSON.stringify(tileHits));
   takeCalls(); /* 分享动作不取数，别把后续额度断言搅乱 */
 }
 
-/* --- 地图 --- */
+/* --- 地图 ---
+   地图缓存 TTL 6h。日期联动后缓存键不再随「顶部 / 观测场日期不同步」漂移，
+   同一天重复跑探针会命中上次留下的缓存 —— 「缓存优先」本来就是设计行为，
+   不能再硬要求冷启动取数。按结果分两路，两条都仍能抓「点了没反应」。 */
 ev(`document.querySelector('#field .btn-primary').click()`);
 wait(5000);
 const mq1 = takeCalls();
-ok("点「加载地图」会取数", mq1.length > 0, JSON.stringify(mq1.length));
 const mfq1 = ev(FRESH_INFO("#field"));
-ok("新取数据标「刚刚取数」且不给重取入口",
-  !!mfq1 && /刚刚取数/.test(mfq1.txt) && mfq1.refetch === false, JSON.stringify(mfq1));
+const mapFromCache = !!mfq1 && /缓存/.test(mfq1.txt) && !/刚刚取数/.test(mfq1.txt);
+if (mapFromCache) {
+  ok("地图命中 6h 缓存：点加载不重复取数并给重取入口",
+    mq1.length === 0 && mfq1.refetch === true, JSON.stringify([mq1.length, mfq1]));
+} else {
+  ok("点「加载地图」会取数并标「刚刚取数」且不给重取入口",
+    mq1.length > 0 && !!mfq1 && /刚刚取数/.test(mfq1.txt) && mfq1.refetch === false,
+    JSON.stringify([mq1.length, mfq1]));
+}
 
 ev(`document.querySelector('#field .btn-primary').click()`);
 wait(3000);
@@ -1602,8 +1631,12 @@ if (MB) {
 ev(`(()=>{document.querySelector('#field .ctl .sel').click(); return 1})()`);
 wait(600);
 const beforeDate = ev(`document.querySelector('#field .ctl .sel').innerText`);
-ev(`(()=>{const it=[...document.querySelectorAll('.pop-item')]; const i=it.findIndex(x=>x.className.includes('on'));
-  (it[i+1]||it[i-1]||it[0]).click(); return 1})()`);
+/* 选中态在 aria-selected 上（class 里没有 .on）；挑最后一个未选中项，
+   既保证一定换了日期，也保证是最远处、不可能碰巧命中缓存的那天。
+   日期联动后下拉首项可能是「窗口外的链接日期」，别再靠索引 0 猜。 */
+ev(`(()=>{const it=[...document.querySelectorAll('.pop-item')];
+  const others=it.filter(x=>x.getAttribute('aria-selected')!=='true');
+  (others[others.length-1]||it[0]).click(); return 1})()`);
 wait(3000);
 const afterDate = ev(`document.querySelector('#field .ctl .sel').innerText`);
 ok("日期确实换掉了（否则后面的断言没有意义）", beforeDate !== afterDate,
@@ -1615,11 +1648,20 @@ ok("未命中缓存时清空图面并提示「该日期尚未取数」",
 eq("图面确实被清空（排行榜回到待取数）",
   ev(`document.querySelector('#field .rank-empty')?.innerText || ''`), "待取数");
 
-/* --- 趋势 --- */
+/* --- 趋势 ---
+   与地图同理：趋势缓存 TTL 6h，同一天重复跑探针会命中缓存，
+   「缓存优先」是设计行为。按结果分两路，仍抓「点了没反应」。 */
 ev(`document.querySelector('#trend .btn').click()`);
 wait(6000);
 const tq1 = takeCalls();
-ok("点「加载趋势」会取数", tq1.length > 0, JSON.stringify(tq1.length));
+const tf1 = ev(FRESH_INFO("#trend"));
+const trendFromCache = !!tf1 && /缓存/.test(tf1.txt) && !/刚刚取数/.test(tf1.txt);
+if (trendFromCache) {
+  ok("趋势命中 6h 缓存：点加载不重复取数", tq1.length === 0,
+    JSON.stringify([tq1.length, tf1]));
+} else {
+  ok("点「加载趋势」会取数", tq1.length > 0, JSON.stringify([tq1.length, tf1]));
+}
 ev(`document.querySelector('#trend .btn').click()`);
 wait(3000);
 eq("趋势命中缓存后再点不发请求", takeCalls().length, 0);
@@ -2207,7 +2249,12 @@ if (SHARE_SNAP_URL.includes("&snap=")) {
     field:document.querySelectorAll('#field .rank-row').length,
     cached:[...document.querySelectorAll('.fresh')].filter(x=>/缓存/.test(x.innerText)).length,
     exitBtn:!![...document.querySelectorAll('.snap-banner .btn')].find(b=>/退出快照/.test(b.textContent)),
-    hasPack:/#\\/\\?pack=/.test(location.href)
+    hasPack:/#\\/\\?pack=/.test(location.href),
+    /* 诊断：区分「包里根本没打包趋势」与「包里有但没还原」 */
+    parts:[...document.querySelectorAll('.snap-banner .sb-part')].map(x=>x.innerText.trim()),
+    url:location.search.slice(0,120),
+    dp:document.querySelector('.hero .dp-trigger .dp-val')?.textContent.trim()||'',
+    trendKeys:Object.keys(localStorage).filter(k=>k.indexOf('SUNGLOW.v2.trend.')===0).slice(0,4)
   }))()`);
   ok("快照链接打开后是完整主页（孤立快照卡已撤）",
     !!snapState.banner && snapState.isolated === false && snapState.home === true &&
@@ -2216,6 +2263,59 @@ if (SHARE_SNAP_URL.includes("&snap=")) {
     Number(snapState.trend) >= 1 && Number(snapState.field) >= 1 &&
     Number(snapState.cached) >= 2 && snapState.hasPack === true, JSON.stringify(snapState));
 }
+
+/* --- 全页日期联动：顶部月历 ↔ 观测场日期（2026-11-12） ---
+   另开一页跑，别扰动前面所有已断言的状态；装桩确保这一轮零取数。
+   顶部触发器显示 YYYY-MM-DD，观测场触发器显示「今天 MM-DD」/「MM-DD」，
+   所以用 MM-DD 对齐两边，同时要求「确实变了」，避免同值假通过。 */
+ab("open", PAGE + "?name=%E5%8C%97%E4%BA%AC&lat=39.9042&lon=116.4074&date=2026-10-21&period=pm");
+ab("eval", FETCH_STUB);
+ab("reload");
+wait(1200);
+ab("eval", FETCH_STUB);
+const HERO_ISO = `document.querySelector('.hero .dp-trigger .dp-val')?.textContent.trim() || ''`;
+const FIELD_LABEL = `document.querySelector('#field .ctl button.sel .sel-txt')?.textContent.trim() || ''`;
+/* ISO（2026-10-21）要先剥年份，否则正则会先命中 "26-10"；
+   观测场 label 是「今天 11-10」/「11-10」/「2026-10-21」三种形态之一。 */
+const mmdd = (s) => {
+  const str = String(s || "");
+  const iso = str.match(/\d{4}-(\d{2}-\d{2})/);
+  return iso ? iso[1] : (str.match(/\d{2}-\d{2}/) || [""])[0];
+};
+
+const iso0 = ev(HERO_ISO), lab0 = ev(FIELD_LABEL);
+ok("日期联动开局：顶部与观测场指向同一天",
+  !!mmdd(iso0) && mmdd(iso0) === mmdd(lab0), JSON.stringify([iso0, lab0]));
+
+/* 改观测场下拉 → 顶部月历必须跟着变 */
+ev(`document.querySelector('#field .ctl button.sel').click()`);
+wait(280);
+const fieldPicked = ev(`(()=>{const it=[...document.querySelectorAll('.pop-item')];
+  const i=it.findIndex(x=>x.getAttribute('aria-selected')==='true');
+  const n=it[i+1]||it[i-1]; if(!n) return null;
+  const label=n.querySelector('.pop-name')?.textContent.trim()||n.textContent.trim();
+  n.click(); return label;})()`);
+wait(500);
+const iso1 = ev(HERO_ISO), lab1 = ev(FIELD_LABEL);
+ok("改观测场日期 → 顶部月历跟着改",
+  !!fieldPicked && iso1 !== iso0 && mmdd(iso1) === mmdd(fieldPicked),
+  JSON.stringify([fieldPicked, iso0, iso1]));
+ok("观测场触发器也确实换了", lab1 !== lab0, JSON.stringify([lab0, lab1]));
+
+/* 改顶部月历 → 观测场日期必须跟着变 */
+ev(`document.querySelector('.dp-trigger').click()`);
+wait(280);
+const dpPicked2 = ev(`(()=>{const days=[...document.querySelectorAll('.dp-day:not(:disabled)')];
+  const other=days.find(d=>!d.classList.contains('cur'));
+  if(!other) return null; const iso=other.getAttribute('aria-label'); other.click(); return iso;})()`);
+wait(500);
+const iso2 = ev(HERO_ISO), lab2 = ev(FIELD_LABEL);
+ok("改顶部月历 → 观测场日期跟着改",
+  !!dpPicked2 && mmdd(lab2) === mmdd(dpPicked2) && lab2 !== lab1,
+  JSON.stringify([dpPicked2, lab1, lab2]));
+ok("两处最终仍指向同一天", !!mmdd(iso2) && mmdd(iso2) === mmdd(lab2),
+  JSON.stringify([iso2, lab2]));
+eq("日期联动全程零取数（换日期只清图面、只读缓存）", takeCalls().length, 0);
 
 /* 断言全部跑完，把偏好还给用户（缓存只清自己那族，map/trend 全程没动过） */
 try {

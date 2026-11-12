@@ -4,6 +4,14 @@
    ========================================================================= */
 
 export const HANT_EXTRA: Record<string, string> = {
+  "十日趋势图": "十日趨勢圖",
+  "含最佳窗口标注": "含最佳窗口標註",
+  "热力面 + 城市名": "熱力面 + 城市名",
+  "快照链接，对方零取数": "快照連結，對方零取數",
+  "扫码看同一份结论": "掃碼看同一份結論",
+  "覆盖观赏窗口，提前 30 分钟": "覆蓋觀賞窗口，提前 30 分鐘",
+  "一句话转发今晚的霞": "一句話轉發今晚的霞",
+  "先在上方加载趋势": "先在上方載入趨勢",
   "综合指数": "綜合指數",
   "模型分歧": "模型分歧",
   "模型分歧 ΔI": "模型分歧 ΔI",
@@ -592,9 +600,33 @@ export const HANT_EXTRA: Record<string, string> = {
   "右＝质量分": "右＝質量分",
   "①②③＝前三名": "①②③＝前三名",
   "—＝该时段无数据": "—＝該時段無資料",
+
+  /* ---- Android 内测包入口（2026-11-12）：下载页 / 浮层 / 顶栏 / 页脚 / 关于页共用 ---- */
+  "下载 Android 版": "下載 Android 版",
+  "下载 App": "下載 App",
+  "Android 内测版": "Android 內測版",
+  "Android 内测版已开放下载": "Android 內測版已開放下載",
+  "扫码下载 Android 内测版": "掃碼下載 Android 內測版",
+  "下载链接二维码": "下載連結二維碼",
+  "不再提示": "不再提示",
+  "收起二维码": "收起二維碼",
+  "展开二维码": "展開二維碼",
+  "原生 Android 版（内测）": "原生 Android 版（內測）",
+  "查看下载页与安装说明": "查看下載頁與安裝說明",
+  "Android 下载浮层的已关闭状态": "Android 下載浮層的已關閉狀態",
+  "原生 App 目前只有「今晚」单点预报界面：独立桌面图标、原生界面与 6 小时取数缓存。趋势、观测场、多地对比与分享图片请继续用网页；网页也可以「添加到主屏幕」作为 PWA 使用。": "原生 App 目前只有「今晚」單點預報介面：獨立桌面圖示、原生介面與 6 小時取數快取。趨勢、觀測場、多地對比與分享圖片請繼續使用網頁；網頁也可以「加入主畫面」作為 PWA 使用。",
+  "两者可以同时安装，但偏好与缓存数据不互通。安装包是未签正式证书的 debug 内测版，需要允许「安装未知来源应用」；将来发布正式签名版时，必须先卸载本包才能升级。": "兩者可同時安裝，但偏好與快取資料不相通。安裝包是未簽正式憑證的 debug 內測版，需要允許「安裝未知來源應用程式」；將來發布正式簽章版時，必須先移除本包才能升級。",
 };
 
 export const EN_EXTRA: Record<string, string> = {
+  "十日趋势图": "10-Day Trend",
+  "含最佳窗口标注": "Includes best-window notes",
+  "热力面 + 城市名": "Heat field + city labels",
+  "快照链接，对方零取数": "Snapshot link, no refetch needed",
+  "扫码看同一份结论": "Scan to see the same forecast",
+  "覆盖观赏窗口，提前 30 分钟": "Covers the window, 30-min alert",
+  "一句话转发今晚的霞": "One line to share tonight",
+  "先在上方加载趋势": "Load the trend above first",
   "综合指数": "Composite Index",
   "模型分歧": "Model Divergence",
   "模型分歧 ΔI": "Divergence ΔI",
@@ -1182,4 +1214,20 @@ export const EN_EXTRA: Record<string, string> = {
   "右＝质量分": "Right = quality",
   "①②③＝前三名": "① ② ③ = top three",
   "—＝该时段无数据": "— = no data for that period",
+
+  /* ---- Android beta entry (2026-11-12) ---- */
+  "下载 Android 版": "Get the Android app",
+  "下载 App": "Get app",
+  "Android 内测版": "Android beta",
+  "Android 内测版已开放下载": "Android beta is available",
+  "扫码下载 Android 内测版": "Scan to get the Android beta",
+  "下载链接二维码": "QR code for the download link",
+  "不再提示": "Don't show again",
+  "收起二维码": "Collapse QR code",
+  "展开二维码": "Expand QR code",
+  "原生 Android 版（内测）": "Native Android app (beta)",
+  "查看下载页与安装说明": "Download page and install guide",
+  "Android 下载浮层的已关闭状态": "Whether the Android download banner was dismissed",
+  "原生 App 目前只有「今晚」单点预报界面：独立桌面图标、原生界面与 6 小时取数缓存。趋势、观测场、多地对比与分享图片请继续用网页；网页也可以「添加到主屏幕」作为 PWA 使用。": "The native app currently has only the Tonight single-point screen: its own launcher icon, native UI and a 6-hour forecast cache. Keep using the web app for the 10-day trend, field map, city comparison and share cards; the web app can also be added to your home screen as a PWA.",
+  "两者可以同时安装，但偏好与缓存数据不互通。安装包是未签正式证书的 debug 内测版，需要允许「安装未知来源应用」；将来发布正式签名版时，必须先卸载本包才能升级。": "Both can be installed side by side, but preferences and cached data are not shared. This is an unsigned debug beta build and requires allowing apps from unknown sources; a future release-signed build will require uninstalling this one first.",
 };

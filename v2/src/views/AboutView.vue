@@ -60,6 +60,7 @@ import { openFeedback } from "../composables/useFeedback";
             <li><code>SUNGLOW.v2.calib</code><span>{{ t("实况校准记录") }}</span></li>
             <li><code>SUNGLOW.v2.cmp.v1</code><span>{{ t("多观测点清单") }}</span></li>
             <li><code>SUNGLOW.v2.mapTestNote.v1</code><span>{{ t("地图测试提示的已读状态") }}</span></li>
+            <li><code>SUNGLOW.v2.apkBannerDismissed</code><span>{{ t("Android 下载浮层的已关闭状态") }}</span></li>
           </ul>
           <p>{{ t("已选城市与观测场日期会写入偏好，方便刷新后恢复；定位只在点「定位」时请求一次；坐标会随取数请求发送给 Open-Meteo 或地图代理，用于返回该点数据。当前查询会出现在地址栏（便于分享与刷新恢复）；气象结果按「日期+时段+坐标」缓存 6 小时，过期后仍占位，可在设置面板清除。") }}</p>
           <p>{{ t("清除浏览器站点数据即可清空全部本地记录；设置面板也提供缓存清理。") }}</p>
@@ -74,6 +75,15 @@ import { openFeedback } from "../composables/useFeedback";
             <button class="btn btn-primary" @click="openFeedback">{{ t("打开反馈") }}</button>
             <a class="btn btn-ghost" href="./tutorial.html">{{ t("使用教程") }}</a>
             <router-link class="btn btn-ghost" to="/">{{ t("返回首页") }}</router-link>
+          </div>
+        </section>
+
+        <section class="glass about-card wide">
+          <h2><span class="no">05</span>{{ t("原生 Android 版（内测）") }}</h2>
+          <p>{{ t("原生 App 目前只有「今晚」单点预报界面：独立桌面图标、原生界面与 6 小时取数缓存。趋势、观测场、多地对比与分享图片请继续用网页；网页也可以「添加到主屏幕」作为 PWA 使用。") }}</p>
+          <p>{{ t("两者可以同时安装，但偏好与缓存数据不互通。安装包是未签正式证书的 debug 内测版，需要允许「安装未知来源应用」；将来发布正式签名版时，必须先卸载本包才能升级。") }}</p>
+          <div class="about-acts">
+            <a class="btn btn-ghost" href="./download.html">{{ t("查看下载页与安装说明") }}</a>
           </div>
         </section>
       </div>

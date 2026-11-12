@@ -14,6 +14,14 @@
 _backup/
 _scratch/
 
+# ---- Android 内测包（2026-11-12）----
+# CI 从 native/ 构建并把 debug APK 挂到 Release 标签 apk-latest；网页只放直链，
+# 本地这些 11 MB 二进制不入库，避免把可重新生成的包塞进 git 历史。
+/*.apk
+/build-out/*.apk
+# 浏览器验证脚本的产物（在 v2/ 下跑时生成，不在根目录那条 /.tmp-preview/ 覆盖范围内）
+/v2/.tmp-preview/
+
 # ---- 构建/联调产物 ----
 # preview.html 由 mkpreview.py 生成（用 SDK 桩替换腾讯地图脚本），随时可重跑。
 V1/_check/preview.html

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>下载 Android 版 · SUNGLOW</title>
+<meta name="description" content="霞光档案 SUNGLOW 原生 Android 内测版下载：二维码、安装说明与内测须知。">
+<link rel="icon" type="image/png" href="./favicon-192.png">
+<meta name="theme-color" content="#070b14">
+<meta name="theme-color" content="#f5f7fb">
+<script>
+/* 首帧前定主题与语言：与主页 / 教程页 / 404 同一份偏好（SUNGLOW.v2.pref），防刷新闪白。
+   ?lang= 优先于偏好，方便站内互跳与分享链接直接指定语言。 */
+(function () {
+  var pref = {};
+  try { pref = JSON.parse(localStorage.getItem("SUNGLOW.v2.pref") || "{}") || {}; } catch (e) { pref = {}; }
+  var theme = pref.theme === "dark" || pref.theme === "light" ? pref.theme : "auto";
+  var dark = theme === "dark" || (theme === "auto" && !(window.matchMedia && matchMedia("(prefers-color-scheme: light)").matches));
+  document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  document.documentElement.setAttribute("data-theme-pref", theme);
+  document.documentElement.style.colorScheme = dark ? "dark" : "light";
+  var lang = pref.lang === "hant" || pref.lang === "en" ? pref.lang : "zh";
+  try {
+    var q = new URLSearchParams(location.search).get("lang");
+    if (q === "zh" || q === "hant" || q === "en") lang = q;
+  } catch (e) { /* 老内核不支持 URLSearchParams 时退回偏好 */ }
+  document.documentElement.setAttribute("lang", lang === "zh" ? "zh-CN" : lang === "hant" ? "zh-Hant-TW" : "en");
+  window.__dlPref = { lang: lang, theme: theme };
+})();
+</script>
+<style>
+:root{
+  --spectrum-1:#ff4d82; --spectrum-2:#ff9c3f; --spectrum-3:#2ed5e8;
+  --spectrum:linear-gradient(90deg,var(--spectrum-1),var(--spectrum-2),var(--spectrum-3));
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --r-md:14px; --r-lg:22px; --r-full:999px;
+}
+html[data-theme="dark"]{
+  --bg:#070b14; --card:rgba(15,23,42,.62); --solid:#101a2e;
+  --stroke:rgba(148,178,232,.14); --stroke-2:rgba(148,178,232,.26);
+  --tx-1:#e9eefb; --tx-2:#a0b1cd; --tx-3:#7f8fb0; --chip:rgba(130,160,220,.10);
+}
+html[data-theme="light"]{
+  --bg:#f2f5fb; --card:rgba(255,255,255,.78); --solid:#ffffff;
+  --stroke:rgba(40,60,100,.10); --stroke-2:rgba(40,60,100,.20);
+  --tx-1:#111a2c; --tx-2:#46556f; --tx-3:#667287; --chip:rgba(40,60,100,.06);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; background:var(--bg); color:var(--tx-1);
+  font-family:var(--font); font-size:15px; line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{width:min(100% - 32px,780px); margin:0 auto}
+.top{
+  position:sticky; top:0; z-index:5; background:var(--bg);
+  border-bottom:1px solid var(--stroke);
+}
+.top-in{display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:12px 0}
+.back{
+  display:inline-flex; align-items:center; gap:6px; height:34px; padding:0 13px;
+  border:1px solid var(--stroke); border-radius:var(--r-full); color:var(--tx-2);
+  font-size:13px; text-decoration:none; white-space:nowrap;
+}
+.back:hover{color:var(--tx-1); border-color:var(--stroke-2); text-decoration:none}
+.brand{font-size:13px; color:var(--tx-3); white-space:nowrap}
+.brand b{color:var(--tx-1); font-weight:500; letter-spacing:.04em}
+.segs{display:flex; align-items:center; gap:8px; margin-left:auto; flex-wrap:wrap}
+.cap{font-size:11px; color:var(--tx-3); letter-spacing:.06em}
+.seg{display:inline-flex; border:1px solid var(--stroke); border-radius:var(--r-full); overflow:hidden}
+.seg button{
+  min-height:32px; padding:0 11px; border:0; background:transparent; color:var(--tx-2);
+  font-family:var(--font); font-size:12px; cursor:pointer;
+}
+.seg button:hover{color:var(--tx-1)}
+.seg button.on{background:var(--chip); color:var(--tx-1)}
+.hero{position:relative; padding:38px 0 24px; border-bottom:1px solid var(--stroke); margin-bottom:20px}
+.hero::after{content:""; position:absolute; left:0; bottom:-1px; width:96px; height:2px; background:var(--spectrum)}
+.pill{
+  display:inline-block; padding:3px 12px; border:1px solid var(--stroke-2); border-radius:var(--r-full);
+  font-size:11px; color:var(--tx-2); letter-spacing:.06em;
+}
+h1{margin:14px 0 6px; font-size:30px; font-weight:500; letter-spacing:-.01em}
+.lead{margin:0; color:var(--tx-2); font-size:14px}
+.card{
+  position:relative; background:var(--card); border:1px solid var(--stroke);
+  border-radius:var(--r-lg); padding:24px; margin-bottom:14px; overflow:hidden;
+}
+.card::before{content:""; position:absolute; inset:0 0 auto 0; height:2px; background:var(--spectrum)}
+h2{margin:0 0 12px; font-size:16px; font-weight:500}
+h2 .no{margin-right:9px; font-family:var(--mono); font-size:11px; color:var(--tx-3)}
+.dl-row{display:flex; flex-wrap:wrap; gap:22px; align-items:center}
+.qr-box{
+  flex:none; width:160px; height:160px; padding:8px; background:#ffffff;
+  border:1px solid var(--stroke); border-radius:var(--r-md);
+}
+.qr-box svg{display:block; width:100%; height:100%}
+.dl-main{flex:1 1 240px; min-width:0}
+.dl-main .tag{display:inline-block; margin-bottom:10px; font-size:12px; color:var(--tx-3)}
+.btn-dl{
+  display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:0 22px;
+  border:0; border-radius:var(--r-full); background:var(--spectrum); color:#0b1020;
+  font-family:var(--font); font-size:14px; font-weight:500; text-decoration:none;
+}
+.btn-dl:hover{text-decoration:none; filter:brightness(1.06)}
+.url{margin:12px 0 0; font-family:var(--mono); font-size:11px; color:var(--tx-3); word-break:break-all}
+.ver{
+  margin-top:18px; padding-top:14px; border-top:1px solid var(--stroke);
+  font-size:13px; color:var(--tx-2); min-height:22px;
+}
+.ver[data-state="loading"]{color:var(--tx-3)}
+.ver[data-state="fail"]{color:var(--tx-3)}
+.steps{list-style:none; margin:0; padding:0; display:grid; gap:10px; counter-reset:s}
+.steps li{display:flex; gap:12px; align-items:flex-start; font-size:14px; color:var(--tx-2)}
+.steps li::before{
+  counter-increment:s; content:counter(s); flex:none; width:24px; height:24px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; background:var(--chip);
+  color:var(--tx-1); font-family:var(--mono); font-size:11px;
+}
+p{margin:0 0 10px; font-size:14px; color:var(--tx-2)}
+p:last-child{margin-bottom:0}
+code{font-family:var(--mono); font-size:12px; color:var(--tx-1)}
+.warn-box{border-color:var(--stroke-2)}
+.foot{padding:26px 0 40px; color:var(--tx-3); font-size:12px}
+.foot a{color:var(--tx-2); text-decoration:none; margin-left:14px}
+.foot a:hover{color:var(--tx-1); text-decoration:none}
+@media (max-width:560px){
+  .segs{margin-left:0; width:100%}
+  .card{padding:18px}
+  .dl-row{gap:16px}
+  .qr-box{width:132px; height:132px}
+  h1{font-size:25px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap top-in">
+    <a class="back" href="./index.html"><span aria-hidden="true">←</span><span data-i18n="返回首页">返回首页</span></a>
+    <span class="brand"><b>SUNGLOW</b> · <span data-i18n="下载 Android 版">下载 Android 版</span></span>
+    <div class="segs">
+      <span class="cap" data-i18n="语言">语言</span>
+      <div class="seg" id="langSeg" role="group" data-i18n-aria="语言">
+        <button type="button" data-k="zh">简体中文</button>
+        <button type="button" data-k="hant">繁體中文</button>
+        <button type="button" data-k="en">English</button>
+      </div>
+      <span class="cap" data-i18n="主题">主题</span>
+      <div class="seg" id="themeSeg" role="group" data-i18n-aria="主题">
+        <button type="button" data-k="auto" data-i18n="自动">自动</button>
+        <button type="button" data-k="light" data-i18n="浅色">浅色</button>
+        <button type="button" data-k="dark" data-i18n="深色">深色</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="hero">
+    <span class="pill" data-i18n="原生 App 内测版">原生 App 内测版</span>
+    <h1 data-i18n="下载 Android 版">下载 Android 版</h1>
+    <p class="lead" data-i18n="让每一次追霞，都有迹可循">让每一次追霞，都有迹可循</p>
+  </div>
+
+  <section class="card">
+    <div class="dl-row">
+      <div class="qr-box" id="qrBox" role="img" data-i18n-aria="下载链接二维码"><svg xmlns="http://www.w3.org/2000/svg" width="246" height="246" viewBox="0 0 246 246" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#ffffff"/><path d="M24 24h6v6h-6zM30 24h6v6h-6zM36 24h6v6h-6zM42 24h6v6h-6zM48 24h6v6h-6zM54 24h6v6h-6zM60 24h6v6h-6zM78 24h6v6h-6zM102 24h6v6h-6zM132 24h6v6h-6zM144 24h6v6h-6zM150 24h6v6h-6zM180 24h6v6h-6zM186 24h6v6h-6zM192 24h6v6h-6zM198 24h6v6h-6zM204 24h6v6h-6zM210 24h6v6h-6zM216 24h6v6h-6zM24 30h6v6h-6zM60 30h6v6h-6zM108 30h6v6h-6zM120 30h6v6h-6zM126 30h6v6h-6zM144 30h6v6h-6zM150 30h6v6h-6zM180 30h6v6h-6zM216 30h6v6h-6zM24 36h6v6h-6zM36 36h6v6h-6zM42 36h6v6h-6zM48 36h6v6h-6zM60 36h6v6h-6zM78 36h6v6h-6zM96 36h6v6h-6zM114 36h6v6h-6zM138 36h6v6h-6zM150 36h6v6h-6zM156 36h6v6h-6zM162 36h6v6h-6zM180 36h6v6h-6zM192 36h6v6h-6zM198 36h6v6h-6zM204 36h6v6h-6zM216 36h6v6h-6zM24 42h6v6h-6zM36 42h6v6h-6zM42 42h6v6h-6zM48 42h6v6h-6zM60 42h6v6h-6zM72 42h6v6h-6zM78 42h6v6h-6zM96 42h6v6h-6zM102 42h6v6h-6zM120 42h6v6h-6zM126 42h6v6h-6zM150 42h6v6h-6zM162 42h6v6h-6zM168 42h6v6h-6zM180 42h6v6h-6zM192 42h6v6h-6zM198 42h6v6h-6zM204 42h6v6h-6zM216 42h6v6h-6zM24 48h6v6h-6zM36 48h6v6h-6zM42 48h6v6h-6zM48 48h6v6h-6zM60 48h6v6h-6zM72 48h6v6h-6zM90 48h6v6h-6zM120 48h6v6h-6zM132 48h6v6h-6zM138 48h6v6h-6zM144 48h6v6h-6zM150 48h6v6h-6zM156 48h6v6h-6zM162 48h6v6h-6zM168 48h6v6h-6zM180 48h6v6h-6zM192 48h6v6h-6zM198 48h6v6h-6zM204 48h6v6h-6zM216 48h6v6h-6zM24 54h6v6h-6zM60 54h6v6h-6zM78 54h6v6h-6zM96 54h6v6h-6zM108 54h6v6h-6zM144 54h6v6h-6zM156 54h6v6h-6zM180 54h6v6h-6zM216 54h6v6h-6zM24 60h6v6h-6zM30 60h6v6h-6zM36 60h6v6h-6zM42 60h6v6h-6zM48 60h6v6h-6zM54 60h6v6h-6zM60 60h6v6h-6zM72 60h6v6h-6zM84 60h6v6h-6zM96 60h6v6h-6zM108 60h6v6h-6zM120 60h6v6h-6zM132 60h6v6h-6zM144 60h6v6h-6zM156 60h6v6h-6zM168 60h6v6h-6zM180 60h6v6h-6zM186 60h6v6h-6zM192 60h6v6h-6zM198 60h6v6h-6zM204 60h6v6h-6zM210 60h6v6h-6zM216 60h6v6h-6zM84 66h6v6h-6zM90 66h6v6h-6zM108 66h6v6h-6zM120 66h6v6h-6zM132 66h6v6h-6zM144 66h6v6h-6zM156 66h6v6h-6zM168 66h6v6h-6zM24 72h6v6h-6zM30 72h6v6h-6zM54 72h6v6h-6zM60 72h6v6h-6zM66 72h6v6h-6zM78 72h6v6h-6zM90 72h6v6h-6zM96 72h6v6h-6zM102 72h6v6h-6zM108 72h6v6h-6zM126 72h6v6h-6zM156 72h6v6h-6zM162 72h6v6h-6zM168 72h6v6h-6zM192 72h6v6h-6zM198 72h6v6h-6zM24 78h6v6h-6zM30 78h6v6h-6zM36 78h6v6h-6zM42 78h6v6h-6zM48 78h6v6h-6zM78 78h6v6h-6zM84 78h6v6h-6zM90 78h6v6h-6zM96 78h6v6h-6zM114 78h6v6h-6zM126 78h6v6h-6zM132 78h6v6h-6zM138 78h6v6h-6zM150 78h6v6h-6zM156 78h6v6h-6zM162 78h6v6h-6zM186 78h6v6h-6zM192 78h6v6h-6zM204 78h6v6h-6zM210 78h6v6h-6zM36 84h6v6h-6zM42 84h6v6h-6zM48 84h6v6h-6zM60 84h6v6h-6zM84 84h6v6h-6zM102 84h6v6h-6zM114 84h6v6h-6zM120 84h6v6h-6zM126 84h6v6h-6zM144 84h6v6h-6zM156 84h6v6h-6zM168 84h6v6h-6zM186 84h6v6h-6zM192 84h6v6h-6zM198 84h6v6h-6zM210 84h6v6h-6zM36 90h6v6h-6zM42 90h6v6h-6zM66 90h6v6h-6zM72 90h6v6h-6zM78 90h6v6h-6zM90 90h6v6h-6zM108 90h6v6h-6zM120 90h6v6h-6zM138 90h6v6h-6zM168 90h6v6h-6zM174 90h6v6h-6zM180 90h6v6h-6zM186 90h6v6h-6zM192 90h6v6h-6zM204 90h6v6h-6zM30 96h6v6h-6zM48 96h6v6h-6zM60 96h6v6h-6zM66 96h6v6h-6zM78 96h6v6h-6zM90 96h6v6h-6zM96 96h6v6h-6zM120 96h6v6h-6zM138 96h6v6h-6zM180 96h6v6h-6zM186 96h6v6h-6zM210 96h6v6h-6zM216 96h6v6h-6zM24 102h6v6h-6zM42 102h6v6h-6zM48 102h6v6h-6zM54 102h6v6h-6zM66 102h6v6h-6zM72 102h6v6h-6zM90 102h6v6h-6zM108 102h6v6h-6zM114 102h6v6h-6zM138 102h6v6h-6zM144 102h6v6h-6zM162 102h6v6h-6zM180 102h6v6h-6zM210 102h6v6h-6zM216 102h6v6h-6zM24 108h6v6h-6zM36 108h6v6h-6zM54 108h6v6h-6zM60 108h6v6h-6zM66 108h6v6h-6zM72 108h6v6h-6zM108 108h6v6h-6zM114 108h6v6h-6zM120 108h6v6h-6zM126 108h6v6h-6zM144 108h6v6h-6zM156 108h6v6h-6zM174 108h6v6h-6zM180 108h6v6h-6zM186 108h6v6h-6zM192 108h6v6h-6zM210 108h6v6h-6zM24 114h6v6h-6zM30 114h6v6h-6zM48 114h6v6h-6zM54 114h6v6h-6zM72 114h6v6h-6zM108 114h6v6h-6zM114 114h6v6h-6zM120 114h6v6h-6zM144 114h6v6h-6zM168 114h6v6h-6zM174 114h6v6h-6zM192 114h6v6h-6zM204 114h6v6h-6zM216 114h6v6h-6zM24 120h6v6h-6zM36 120h6v6h-6zM42 120h6v6h-6zM54 120h6v6h-6zM60 120h6v6h-6zM72 120h6v6h-6zM102 120h6v6h-6zM126 120h6v6h-6zM156 120h6v6h-6zM162 120h6v6h-6zM168 120h6v6h-6zM174 120h6v6h-6zM186 120h6v6h-6zM192 120h6v6h-6zM210 120h6v6h-6zM30 126h6v6h-6zM36 126h6v6h-6zM42 126h6v6h-6zM66 126h6v6h-6zM78 126h6v6h-6zM84 126h6v6h-6zM90 126h6v6h-6zM102 126h6v6h-6zM114 126h6v6h-6zM120 126h6v6h-6zM126 126h6v6h-6zM132 126h6v6h-6zM138 126h6v6h-6zM144 126h6v6h-6zM150 126h6v6h-6zM162 126h6v6h-6zM180 126h6v6h-6zM186 126h6v6h-6zM198 126h6v6h-6zM210 126h6v6h-6zM216 126h6v6h-6zM30 132h6v6h-6zM42 132h6v6h-6zM60 132h6v6h-6zM72 132h6v6h-6zM78 132h6v6h-6zM90 132h6v6h-6zM96 132h6v6h-6zM114 132h6v6h-6zM120 132h6v6h-6zM138 132h6v6h-6zM150 132h6v6h-6zM162 132h6v6h-6zM168 132h6v6h-6zM192 132h6v6h-6zM216 132h6v6h-6zM42 138h6v6h-6zM66 138h6v6h-6zM90 138h6v6h-6zM96 138h6v6h-6zM108 138h6v6h-6zM132 138h6v6h-6zM144 138h6v6h-6zM162 138h6v6h-6zM168 138h6v6h-6zM174 138h6v6h-6zM186 138h6v6h-6zM204 138h6v6h-6zM24 144h6v6h-6zM30 144h6v6h-6zM36 144h6v6h-6zM42 144h6v6h-6zM54 144h6v6h-6zM60 144h6v6h-6zM78 144h6v6h-6zM84 144h6v6h-6zM96 144h6v6h-6zM102 144h6v6h-6zM108 144h6v6h-6zM114 144h6v6h-6zM120 144h6v6h-6zM126 144h6v6h-6zM156 144h6v6h-6zM162 144h6v6h-6zM192 144h6v6h-6zM210 144h6v6h-6zM24 150h6v6h-6zM54 150h6v6h-6zM66 150h6v6h-6zM72 150h6v6h-6zM84 150h6v6h-6zM90 150h6v6h-6zM108 150h6v6h-6zM114 150h6v6h-6zM126 150h6v6h-6zM132 150h6v6h-6zM138 150h6v6h-6zM150 150h6v6h-6zM156 150h6v6h-6zM162 150h6v6h-6zM186 150h6v6h-6zM192 150h6v6h-6zM198 150h6v6h-6zM210 150h6v6h-6zM24 156h6v6h-6zM36 156h6v6h-6zM48 156h6v6h-6zM54 156h6v6h-6zM60 156h6v6h-6zM66 156h6v6h-6zM78 156h6v6h-6zM84 156h6v6h-6zM114 156h6v6h-6zM120 156h6v6h-6zM156 156h6v6h-6zM174 156h6v6h-6zM180 156h6v6h-6zM186 156h6v6h-6zM198 156h6v6h-6zM210 156h6v6h-6zM24 162h6v6h-6zM42 162h6v6h-6zM48 162h6v6h-6zM54 162h6v6h-6zM72 162h6v6h-6zM78 162h6v6h-6zM84 162h6v6h-6zM108 162h6v6h-6zM132 162h6v6h-6zM144 162h6v6h-6zM156 162h6v6h-6zM174 162h6v6h-6zM180 162h6v6h-6zM192 162h6v6h-6zM198 162h6v6h-6zM204 162h6v6h-6zM24 168h6v6h-6zM30 168h6v6h-6zM36 168h6v6h-6zM42 168h6v6h-6zM48 168h6v6h-6zM60 168h6v6h-6zM66 168h6v6h-6zM72 168h6v6h-6zM78 168h6v6h-6zM90 168h6v6h-6zM96 168h6v6h-6zM114 168h6v6h-6zM120 168h6v6h-6zM144 168h6v6h-6zM162 168h6v6h-6zM168 168h6v6h-6zM174 168h6v6h-6zM180 168h6v6h-6zM186 168h6v6h-6zM192 168h6v6h-6zM198 168h6v6h-6zM210 168h6v6h-6zM72 174h6v6h-6zM78 174h6v6h-6zM90 174h6v6h-6zM108 174h6v6h-6zM114 174h6v6h-6zM120 174h6v6h-6zM126 174h6v6h-6zM132 174h6v6h-6zM138 174h6v6h-6zM144 174h6v6h-6zM156 174h6v6h-6zM162 174h6v6h-6zM168 174h6v6h-6zM192 174h6v6h-6zM198 174h6v6h-6zM204 174h6v6h-6zM216 174h6v6h-6zM24 180h6v6h-6zM30 180h6v6h-6zM36 180h6v6h-6zM42 180h6v6h-6zM48 180h6v6h-6zM54 180h6v6h-6zM60 180h6v6h-6zM72 180h6v6h-6zM84 180h6v6h-6zM96 180h6v6h-6zM114 180h6v6h-6zM120 180h6v6h-6zM126 180h6v6h-6zM144 180h6v6h-6zM156 180h6v6h-6zM162 180h6v6h-6zM168 180h6v6h-6zM180 180h6v6h-6zM192 180h6v6h-6zM198 180h6v6h-6zM210 180h6v6h-6zM24 186h6v6h-6zM60 186h6v6h-6zM72 186h6v6h-6zM108 186h6v6h-6zM114 186h6v6h-6zM162 186h6v6h-6zM168 186h6v6h-6zM192 186h6v6h-6zM198 186h6v6h-6zM204 186h6v6h-6zM210 186h6v6h-6zM216 186h6v6h-6zM24 192h6v6h-6zM36 192h6v6h-6zM42 192h6v6h-6zM48 192h6v6h-6zM60 192h6v6h-6zM96 192h6v6h-6zM102 192h6v6h-6zM108 192h6v6h-6zM126 192h6v6h-6zM168 192h6v6h-6zM174 192h6v6h-6zM180 192h6v6h-6zM186 192h6v6h-6zM192 192h6v6h-6zM210 192h6v6h-6zM216 192h6v6h-6zM24 198h6v6h-6zM36 198h6v6h-6zM42 198h6v6h-6zM48 198h6v6h-6zM60 198h6v6h-6zM78 198h6v6h-6zM90 198h6v6h-6zM108 198h6v6h-6zM114 198h6v6h-6zM132 198h6v6h-6zM138 198h6v6h-6zM144 198h6v6h-6zM150 198h6v6h-6zM162 198h6v6h-6zM168 198h6v6h-6zM174 198h6v6h-6zM192 198h6v6h-6zM24 204h6v6h-6zM36 204h6v6h-6zM42 204h6v6h-6zM48 204h6v6h-6zM60 204h6v6h-6zM78 204h6v6h-6zM84 204h6v6h-6zM90 204h6v6h-6zM102 204h6v6h-6zM108 204h6v6h-6zM114 204h6v6h-6zM120 204h6v6h-6zM126 204h6v6h-6zM132 204h6v6h-6zM138 204h6v6h-6zM144 204h6v6h-6zM162 204h6v6h-6zM174 204h6v6h-6zM192 204h6v6h-6zM204 204h6v6h-6zM216 204h6v6h-6zM24 210h6v6h-6zM60 210h6v6h-6zM72 210h6v6h-6zM84 210h6v6h-6zM120 210h6v6h-6zM138 210h6v6h-6zM156 210h6v6h-6zM162 210h6v6h-6zM174 210h6v6h-6zM180 210h6v6h-6zM198 210h6v6h-6zM204 210h6v6h-6zM24 216h6v6h-6zM30 216h6v6h-6zM36 216h6v6h-6zM42 216h6v6h-6zM48 216h6v6h-6zM54 216h6v6h-6zM60 216h6v6h-6zM72 216h6v6h-6zM90 216h6v6h-6zM96 216h6v6h-6zM102 216h6v6h-6zM114 216h6v6h-6zM126 216h6v6h-6zM144 216h6v6h-6zM156 216h6v6h-6zM162 216h6v6h-6zM168 216h6v6h-6zM198 216h6v6h-6zM210 216h6v6h-6z" fill="#0b1020"/></svg></div>
+      <div class="dl-main">
+        <span class="tag" data-i18n="内测 · debug 包">内测 · debug 包</span><br>
+        <a class="btn-dl" href="https://github.com/lyuzixi/sunglow/releases/download/apk-latest/app-debug.apk" data-i18n="下载 APK">下载 APK</a>
+        <p class="url">app-debug.apk</p>
+      </div>
+    </div>
+    <div class="ver" id="verInfo" data-state="loading" role="status" aria-live="polite">正在读取最新包信息…</div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">01</span><span data-i18n="安装步骤">安装步骤</span></h2>
+    <ol class="steps">
+      <li data-i18n="点「下载 APK」，浏览器会下载安装包文件。">点「下载 APK」，浏览器会下载安装包文件。</li>
+      <li data-i18n="在系统提示里允许浏览器「安装未知来源应用」。">在系统提示里允许浏览器「安装未知来源应用」。</li>
+      <li data-i18n="打开下载好的 APK，按系统提示完成安装。">打开下载好的 APK，按系统提示完成安装。</li>
+    </ol>
+    <p style="margin-top:14px"><span data-i18n="或直接打开下载链接">或直接打开下载链接</span>：<code>https://github.com/lyuzixi/sunglow/releases/download/apk-latest/app-debug.apk</code></p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">02</span><span data-i18n="关于这个内测版">关于这个内测版</span></h2>
+    <p data-i18n="原生界面 + 独立桌面图标 + 6 小时取数缓存；当前内测版只有「今晚」单点预报界面。">原生界面 + 独立桌面图标 + 6 小时取数缓存；当前内测版只有「今晚」单点预报界面。</p>
+    <p data-i18n="十日趋势、观测场、多地对比与分享图片请继续用网页。">十日趋势、观测场、多地对比与分享图片请继续用网页。</p>
+    <p data-i18n="网页也可以「添加到主屏幕」作为 PWA 使用；两者可以同时安装，但偏好与缓存数据不互通。">网页也可以「添加到主屏幕」作为 PWA 使用；两者可以同时安装，但偏好与缓存数据不互通。</p>
+  </section>
+
+  <section class="card warn-box">
+    <h2><span class="no">03</span><span data-i18n="免责与须知">免责与须知</span></h2>
+    <p data-i18n="这是未签正式证书的 debug 内测包，不是应用商店版本；安装前请自行确认来源为 lyuzixi/sunglow 仓库。">这是未签正式证书的 debug 内测包，不是应用商店版本；安装前请自行确认来源为 lyuzixi/sunglow 仓库。</p>
+    <p data-i18n="将来发布正式签名版时签名不一致，必须先卸载本内测包才能升级，内测期的偏好不会迁移。">将来发布正式签名版时签名不一致，必须先卸载本内测包才能升级，内测期的偏好不会迁移。</p>
+    <p data-i18n="气象数据来自 Open-Meteo，仅限非商业用途；预报仅供观赏参考，不构成出行、航海、航空等安全决策依据。">气象数据来自 Open-Meteo，仅限非商业用途；预报仅供观赏参考，不构成出行、航海、航空等安全决策依据。</p>
+  </section>
+</main>
+
+<footer class="foot wrap">
+  SUNGLOW · <span data-i18n="数据源">数据源</span> Open-Meteo（<span data-i18n="非商业用途">非商业用途</span>）
+  <a href="./index.html" data-i18n="返回首页">返回首页</a>
+  <a href="./tutorial.html" data-i18n="使用教程">使用教程</a>
+</footer>
+
+<script>
+(function () {
+  var P = window.__dlPref || { lang: "zh", theme: "auto" };
+  var cur = P.lang;
+  var DICT = {
+    hant: {
+      "返回首页": "返回首頁", "语言": "語言", "主题": "主題", "自动": "自動", "浅色": "淺色", "深色": "深色",
+      "下载 Android 版": "下載 Android 版", "原生 App 内测版": "原生 App 內測版",
+      "让每一次追霞，都有迹可循": "讓每一次追霞，都有跡可循",
+      "内测 · debug 包": "內測 · debug 包", "下载 APK": "下載 APK",
+      "下载链接二维码": "下載連結二維碼",
+      "正在读取最新包信息…": "正在讀取最新套件資訊…",
+      "版本信息暂不可用，点上方按钮直接下载": "版本資訊暫不可用，點上方按鈕直接下載",
+      "文件大小": "檔案大小", "更新于": "更新於", "已下载": "已下載", "次": "次",
+      "安装步骤": "安裝步驟",
+      "点「下载 APK」，浏览器会下载安装包文件。": "點「下載 APK」，瀏覽器會下載安裝檔。",
+      "在系统提示里允许浏览器「安装未知来源应用」。": "在系統提示中允許瀏覽器「安裝未知來源應用程式」。",
+      "打开下载好的 APK，按系统提示完成安装。": "開啟下載好的 APK，依系統提示完成安裝。",
+      "或直接打开下载链接": "或直接開啟下載連結",
+      "关于这个内测版": "關於這個內測版",
+      "原生界面 + 独立桌面图标 + 6 小时取数缓存；当前内测版只有「今晚」单点预报界面。": "原生介面 + 獨立桌面圖示 + 6 小時取數快取；目前內測版只有「今晚」單點預報介面。",
+      "十日趋势、观测场、多地对比与分享图片请继续用网页。": "十日趨勢、觀測場、多地對比與分享圖片請繼續使用網頁。",
+      "网页也可以「添加到主屏幕」作为 PWA 使用；两者可以同时安装，但偏好与缓存数据不互通。": "網頁也可以「加入主畫面」作為 PWA 使用；兩者可同時安裝，但偏好與快取資料不相通。",
+      "免责与须知": "免責與須知",
+      "这是未签正式证书的 debug 内测包，不是应用商店版本；安装前请自行确认来源为 lyuzixi/sunglow 仓库。": "這是未簽正式憑證的 debug 內測包，不是應用程式商店版本；安裝前請自行確認來源為 lyuzixi/sunglow 儲存庫。",
+      "将来发布正式签名版时签名不一致，必须先卸载本内测包才能升级，内测期的偏好不会迁移。": "將來發布正式簽章版時簽章不一致，必須先移除本內測包才能升級，內測期的偏好不會轉移。",
+      "气象数据来自 Open-Meteo，仅限非商业用途；预报仅供观赏参考，不构成出行、航海、航空等安全决策依据。": "氣象資料來自 Open-Meteo，僅限非商業用途；預報僅供觀賞參考，不構成出行、航海、航空等安全決策依據。",
+      "数据源": "資料來源", "非商业用途": "非商業用途", "使用教程": "使用教學"
+    },
+    en: {
+      "返回首页": "Back to home", "语言": "Language", "主题": "Theme", "自动": "Auto", "浅色": "Light", "深色": "Dark",
+      "下载 Android 版": "Get the Android app", "原生 App 内测版": "Native app · beta",
+      "让每一次追霞，都有迹可循": "Every glow chase, with a trail to follow",
+      "内测 · debug 包": "Beta · debug build", "下载 APK": "Download APK",
+      "下载链接二维码": "QR code for the download link",
+      "正在读取最新包信息…": "Fetching the latest build info…",
+      "版本信息暂不可用，点上方按钮直接下载": "Build info is unavailable; just tap the button above to download",
+      "文件大小": "Size", "更新于": "Updated", "已下载": "Downloads", "次": "",
+      "安装步骤": "Install steps",
+      "点「下载 APK」，浏览器会下载安装包文件。": "Tap Download APK; your browser saves the install package.",
+      "在系统提示里允许浏览器「安装未知来源应用」。": "When prompted, allow your browser to install apps from unknown sources.",
+      "打开下载好的 APK，按系统提示完成安装。": "Open the downloaded APK and follow the system prompts.",
+      "或直接打开下载链接": "Or open the download link directly",
+      "关于这个内测版": "About this beta",
+      "原生界面 + 独立桌面图标 + 6 小时取数缓存；当前内测版只有「今晚」单点预报界面。": "Native UI, its own launcher icon and a 6-hour forecast cache. This beta has only the Tonight single-point screen.",
+      "十日趋势、观测场、多地对比与分享图片请继续用网页。": "Keep using the web app for the 10-day trend, field map, city comparison and share cards.",
+      "网页也可以「添加到主屏幕」作为 PWA 使用；两者可以同时安装，但偏好与缓存数据不互通。": "The web app can also be added to your home screen as a PWA. Both can be installed side by side, but preferences and cached data are not shared.",
+      "免责与须知": "Disclaimers",
+      "这是未签正式证书的 debug 内测包，不是应用商店版本；安装前请自行确认来源为 lyuzixi/sunglow 仓库。": "This is an unsigned debug beta build, not an app-store release. Verify that it comes from the lyuzixi/sunglow repository before installing.",
+      "将来发布正式签名版时签名不一致，必须先卸载本内测包才能升级，内测期的偏好不会迁移。": "A future release-signed build will have a different signature: you must uninstall this beta first, and beta preferences will not carry over.",
+      "气象数据来自 Open-Meteo，仅限非商业用途；预报仅供观赏参考，不构成出行、航海、航空等安全决策依据。": "Weather data comes from Open-Meteo (non-commercial use only). Forecasts are for sky-watching only and are not a basis for travel, marine or aviation safety decisions.",
+      "数据源": "Data", "非商业用途": "non-commercial", "使用教程": "Guide"
+    }
+  };
+
+  /* 空串也是合法译文（例如英文的计量单位「次」不译），不能用 || 兜底回简体。 */
+  function tr(s) {
+    var d = DICT[cur];
+    if (d && Object.prototype.hasOwnProperty.call(d, s)) return d[s];
+    return s;
+  }
+  function each(sel, fn) { Array.prototype.forEach.call(document.querySelectorAll(sel), fn); }
+  function fmtSize(b) {
+    var n = Number(b) || 0;
+    return n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.round(n / 1024) + " KB";
+  }
+  function fmtDate(s) {
+    try { var d = new Date(s); return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2); }
+    catch (e) { return String(s || ""); }
+  }
+  var ver = { state: "loading", asset: null };
+  function renderVer() {
+    var el = document.getElementById("verInfo");
+    if (!el) return;
+    el.setAttribute("data-state", ver.state);
+    if (ver.state === "fail") { el.textContent = tr("版本信息暂不可用，点上方按钮直接下载"); return; }
+    if (ver.state === "loading") { el.textContent = tr("正在读取最新包信息…"); return; }
+    var a = ver.asset;
+    var dl = tr("已下载") + " " + Number(a.download_count || 0).toLocaleString() + (tr("次") ? " " + tr("次") : "");
+    el.textContent = tr("文件大小") + " " + fmtSize(a.size) + " · " + tr("更新于") + " " + fmtDate(a.updated_at) + " · " + dl;
+  }
+  function apply() {
+    each("[data-i18n]", function (el) { el.textContent = tr(el.getAttribute("data-i18n")); });
+    each("[data-i18n-aria]", function (el) { el.setAttribute("aria-label", tr(el.getAttribute("data-i18n-aria"))); });
+    document.title = tr("下载 Android 版") + " · SUNGLOW";
+    each("#langSeg [data-k]", function (b) {
+      var on = b.getAttribute("data-k") === cur;
+      b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    each("#themeSeg [data-k]", function (b) {
+      var on = b.getAttribute("data-k") === P.theme;
+      b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    renderVer();
+  }
+  function writePref(k, v) {
+    try {
+      var p = JSON.parse(localStorage.getItem("SUNGLOW.v2.pref") || "{}") || {};
+      p[k] = v; localStorage.setItem("SUNGLOW.v2.pref", JSON.stringify(p));
+    } catch (e) { /* 隐私模式：只影响本次会话 */ }
+  }
+  function setLang(k) {
+    cur = k; P.lang = k;
+    document.documentElement.setAttribute("lang", k === "hant" ? "zh-Hant-TW" : k === "en" ? "en" : "zh-CN");
+    writePref("lang", k);
+    /* ?lang= 优先于偏好：换语言后把它从地址栏去掉，刷新才不会被旧参数盖回去 */
+    try { var u = new URL(location.href); u.searchParams.delete("lang"); history.replaceState(null, "", u.toString()); } catch (e) { }
+    apply();
+  }
+  function setTheme(k) {
+    P.theme = k;
+    var dark = k === "dark" || (k === "auto" && !(window.matchMedia && matchMedia("(prefers-color-scheme: light)").matches));
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme-pref", k);
+    document.documentElement.style.colorScheme = dark ? "dark" : "light";
+    writePref("theme", k);
+    apply();
+  }
+  each("#langSeg [data-k]", function (b) { b.addEventListener("click", function () { setLang(b.getAttribute("data-k")); }); });
+  each("#themeSeg [data-k]", function (b) { b.addEventListener("click", function () { setTheme(b.getAttribute("data-k")); }); });
+  apply();
+
+  /* 版本信息只影响这一小块：3 秒超时、失败给兜底文案、结果不缓存。
+     下载按钮与二维码是纯静态的，任何情况下都不被这个请求阻塞。 */
+  (function () {
+    var done = false;
+    var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+    var opts = { headers: { Accept: "application/vnd.github+json" } };
+    if (ctrl) opts.signal = ctrl.signal;
+    function fail() { if (done) return; done = true; ver.state = "fail"; renderVer(); }
+    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); fail(); }, 3000);
+    fetch("https://api.github.com/repos/lyuzixi/sunglow/releases/tags/apk-latest", opts).then(function (r) {
+      if (done) return null;
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }).then(function (j) {
+      if (done || !j) return;
+      var list = j.assets || [], a = null;
+      for (var i = 0; i < list.length; i++) { if (/\.apk$/i.test(list[i].name || "")) { a = list[i]; break; } }
+      if (!a) throw new Error("no apk asset");
+      done = true; ver.state = "ok"; ver.asset = a; clearTimeout(timer); renderVer();
+    }).catch(function () { clearTimeout(timer); fail(); });
+  })();
+})();
+</script>
+</body>
+</html>

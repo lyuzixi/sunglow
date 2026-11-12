@@ -6,7 +6,7 @@
   "description": "霞光档案 · SUNGLOW · 大气光谱观测站版",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/check-consistency.mjs && node scripts/check-ui.mjs && vite build && node scripts/emit-single.mjs && node scripts/publish-root.mjs",
+    "build": "node scripts/emit-download-qr.mjs && node scripts/check-consistency.mjs && node scripts/check-ui.mjs && vite build && node scripts/emit-single.mjs && node scripts/publish-root.mjs",
     "typecheck": "tsc --noEmit",
     "check:docs": "node scripts/check-consistency.mjs",
     "check:ui": "node scripts/check-ui.mjs",

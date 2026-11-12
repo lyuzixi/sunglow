@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import TopBar from "./components/TopBar.vue";
 import PwaUpdatePrompt from "./components/PwaUpdatePrompt.vue";
+import DownloadBanner from "./components/DownloadBanner.vue";
 import FeedbackDialog from "./components/FeedbackDialog.vue";
 import { state, applyTheme } from "./state";
 import { t } from "./core/i18n";
@@ -31,6 +32,8 @@ watchEffect(() => {
       </div>
       <div class="foot-links">
         <a href="./tutorial.html">{{ t("使用教程") }}</a>
+        <!-- 2026-11-12：原生 Android 内测包常驻入口（浮层被永久关闭后仍可从这里进） -->
+        <a href="./download.html">{{ t("下载 Android 版") }}</a>
         <a href="#feedback" @click.prevent="openFeedback">{{ t("反馈") }}</a>
         <router-link to="/about">{{ t("关于 / 隐私") }}</router-link>
         <!-- 版本切换（2026-10-27）：V1 仍按根位置写（publish-root 禁止 ../ 跨目录链接）；
@@ -46,5 +49,7 @@ watchEffect(() => {
     </div>
   </footer>
   <PwaUpdatePrompt />
+  <!-- 语言/主题切换时重挂：t() 读模块级 curLang，重挂可让浮层文案与二维码 aria 一起更新 -->
+  <DownloadBanner :key="state.lang + state.theme" />
   <FeedbackDialog />
 </template>

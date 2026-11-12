@@ -22,7 +22,12 @@ const root = path.resolve(import.meta.dirname, "..");   // v2/
 const repo = path.resolve(root, "..");                  // 仓库根
 
 /* 交付文件全集：index.html 是构建产物，其余是静态伴侣（404/教程/PWA 配套）。
-   注意 app.html / README / package.json / src/ 等工程文件不发布。 */
+   注意 app.html / README / package.json / src/ 等工程文件不发布。
+
+   2026-11-12 例外：根 download.html（Android 内测包下载页）**不在这里**。
+   它需要先按 Release 直链生成内联二维码，不能原样拷贝；由 emit-download-qr.mjs
+   从 v2/download.src.html 生成并直接落到仓库根，已在 build 链最前面跑。
+   不把它计入 FILES，也避免改动「N 个交付文件」这一被门禁卡住的文档口径。 */
 const FILES = [
   "index.html",
   "404.html",

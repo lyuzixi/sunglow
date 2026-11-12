@@ -2,7 +2,7 @@
    SUNGLOW v2 · URL 状态同步（口径对齐V1 syncUrl/readUrl/baseQuery）
    快照 snap= 与查询状态共存；只存内部键值，解码前限长逐字段校验。
    ========================================================================= */
-import { state, savePrefs, hasSavedMapDate } from "../state";
+import { state, savePrefs } from "../state";
 import { snapDecode, type SnapData } from "./snap";
 import { safeLabel, clamp } from "./math";
 import { PACK_PARAM, activePackRaw } from "./snapshot";
@@ -109,10 +109,9 @@ export function readUrl(): UrlState {
 /** 把 URL 状态应用到 store（初始化时调用一次） */
 export function applyUrlState(): UrlState {
   const u = readUrl();
+  /* 只写 dateStr：观测场日期由 state.ts 的日期同步器跟随，这里不再各自同步。
+     URL 明确给日期时它优先于偏好里的上次日期（分享链接要还原分享者当天）。 */
   if (u.date) state.dateStr = u.date;
-  /* 分享链接明确给了日期、而本机没有保存过观测场日期时，让观测场一起对齐；
-     用户自己选过的日期优先（hasSavedMapDate），不能被 URL 冲掉。 */
-  if (u.date && !hasSavedMapDate()) state.mapDateS = u.date;
   if (u.period) state.period = u.period;
   return u;
 }

@@ -84,7 +84,6 @@ class ForecastAssembleTest {
     @Test
     fun clearSkyHasNoGlow() {
         val r = runCase(0.0, 0.0, 0.0, 0.15)
-        println("DIAG clear p=${r.p} q=${r.q} grade=${r.grade} nModels=${r.models.size} nFactors=${r.factorRows.size}")
         assertTrue("概率必须在 2–97，实际 ${r.p}", r.p in 2.0..97.0)
         assertTrue("质量分必须在 0–100，实际 ${r.q}", r.q in 0.0..100.0)
         assertEquals(3, r.models.size)
@@ -96,7 +95,6 @@ class ForecastAssembleTest {
     fun highCloudDeckScoresHigher() {
         val clear = runCase(0.0, 0.0, 0.0, 0.15)
         val deck = runCase(5.0, 25.0, 62.0, 0.15)
-        println("DIAG deck p=${deck.p} q=${deck.q} clear p=${clear.p} q=${clear.q}")
 
         assertTrue("有高云幕时概率应更高", deck.p > clear.p)
         assertTrue("有高云幕时质量分应更高", deck.q > clear.q)

@@ -8,6 +8,7 @@ import { state } from "../state";
 import { t } from "../core/i18n";
 import type { VerdictView } from "../core/verdict";
 import { saveShareCard, saveStoryCard } from "../core/sharecard";
+import { useShareImage } from "../core/sharehub";
 
 const props = defineProps<{ view: VerdictView | null }>();
 
@@ -28,6 +29,17 @@ async function pick(kind: "card" | "story") {
     busy.value = false;
   }
 }
+
+/* 底部「分享」板块八磁贴里的两个图片入口：复用就地下拉的同一套动作，
+   不另造一份 ForecastResult / VerdictView 取数口径。 */
+useShareImage("card", {
+  save: () => pick("card"),
+  ready: () => !!state.result && !!props.view
+});
+useShareImage("story", {
+  save: () => pick("story"),
+  ready: () => !!state.result && !!props.view
+});
 
 function onDoc(e: MouseEvent) {
   if (root.value && !root.value.contains(e.target as Node)) open.value = false;

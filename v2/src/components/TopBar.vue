@@ -348,6 +348,10 @@ onBeforeUnmount(() => {
           :aria-current="active === n.id ? 'true' : undefined"
           @click.prevent="jumpTo(n.id)"
         >{{ t(n.label) }}</a>
+        <!-- 下载页是独立静态文件，不是 #section：不能进 NAV 数组（那是 scroll-spy 与
+             IntersectionObserver 的唯一口径），只作为独立链接挂在目录末尾参与折行判定。
+             mode-menu / mode-mini 会隐藏整条 nav-tabs，此时入口由「更多项目」下拉与抽屉承接。 -->
+        <a class="dl-nav" href="./download.html">{{ t("下载 App") }}</a>
       </nav>
 
       <!-- 手机极简档（mini）：徽标留在顶栏里，占品牌与设置之间的剩余宽度。
@@ -409,6 +413,10 @@ onBeforeUnmount(() => {
             <a role="menuitem" href="https://sky.sunglow.cloud/">
               <span class="ver-tx">{{ t("Skyglow 移植增强版") }}<em class="ver-ind">{{ t("独立项目") }}</em></span><i class="arw">↗</i>
             </a>
+            <!-- 2026-11-12：英文界面永远落 menu 档、nav-tabs 被隐藏，这条是桌面的兜底入口 -->
+            <a role="menuitem" href="./download.html">
+              <span class="ver-tx">{{ t("Android 内测版") }}</span><i class="arw">↗</i>
+            </a>
           </div>
         </div>
 
@@ -468,6 +476,10 @@ onBeforeUnmount(() => {
     <div class="md-group">
       <h4>{{ t("指南") }}</h4>
       <a class="ext" href="./tutorial.html"><span>{{ t("使用教程") }}</span><i class="arw">↗</i></a>
+      <!-- 手机端（menu / mini）唯一常驻的下载入口：顶栏导航被隐藏时靠这里 -->
+      <a class="ext" href="./download.html" @click="closeDrawer">
+        <span>{{ t("下载 Android 版") }}</span><i class="arw">↗</i>
+      </a>
       <a class="ext" href="#/about" @click="closeDrawer">
         <span>{{ t("关于 / 隐私") }}</span><i class="arw">↗</i>
       </a>

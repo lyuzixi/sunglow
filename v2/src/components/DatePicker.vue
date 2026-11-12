@@ -5,7 +5,7 @@
    免得选到 2027 年再点「计算」才报错。 */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { t } from "../core/i18n";
-import { state } from "../state";
+import { state, DATE_MIN_OFFSET, DATE_MAX_OFFSET } from "../state";
 import { useAnchoredPopup } from "../core/popover";
 import { cityTz, todayInTz } from "../core/tz";
 
@@ -43,8 +43,10 @@ function addDays(s: string, n: number) {
 const today = computed(() =>
   todayInTz(cityTz(state.city.lat, state.city.lon))
 );
-const minIso = computed(() => props.min || addDays(today.value, -2));
-const maxIso = computed(() => props.max || addDays(today.value, 15));
+/* 与观测场下拉共用同一对范围常量：日期联动后，任一边选到的日子
+   另一边必须也列得出来，否则 Select 的触发器会显示空白。 */
+const minIso = computed(() => props.min || addDays(today.value, DATE_MIN_OFFSET));
+const maxIso = computed(() => props.max || addDays(today.value, DATE_MAX_OFFSET));
 
 const open = ref(false);
 const triggerEl = ref<HTMLButtonElement | null>(null);

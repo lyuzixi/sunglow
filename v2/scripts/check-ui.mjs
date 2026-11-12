@@ -93,8 +93,9 @@ must(/shareBaseUrl\(\) \+ baseQuery\(\)/.test(home) &&
   "HomeView 仍用 location.href 拼分享链接（本地打开时是本机路径）");
 must(!/:disabled="!snapUrl \|\| isLocalFile"/.test(home) && !/if \(isLocalFile\) return;/.test(home),
   "分享按钮仍因本地打开被禁用 / 点击被拦截");
-must(/:disabled="!snapUrl"/.test(home) && /share-why/.test(home),
-  "分享按钮缺少无结果时的禁用态与可见原因");
+must(/link: !!snapUrl\.value/.test(home) && /share-why/.test(home) &&
+     /:disabled="!it.ready"/.test(read("src/components/ShareTiles.vue")),
+  "分享磁贴缺少无结果时的禁用态与可见原因");
 must(/\.btn:disabled[\s\S]{0,220}cursor: not-allowed/.test(shareMainCss),
   "全局 .btn:disabled 缺少可见禁用态（用户会以为按钮坏了）");
 must(/writeClipboard/.test(home) && /document\.execCommand\("copy"\)/.test(home) && /linkFallback/.test(home),
@@ -167,16 +168,37 @@ must(/err-note[\s\S]{0,600}重新计算/.test(read("src/components/ConclusionCar
 must(/这次没有取到数据/.test(read("src/core/i18n-extra.ts")),
   "「没有取到数据」缺少繁 / 英词条");
 
-/* ---------- 1.11 分享页四按钮 + 方案 D 合成卡 ----------
-   2026-11-11 用户拍板：复制文案 / 加入日历改回 .btn 按钮，不再收进「更多」
-   文字链 —— 文字链看着不像能点，也没有触屏热区。 */
-const shareActs = home.match(/<div class="share-acts">([\s\S]*?)<\/div>/);
-must(!!shareActs && (shareActs[1].match(/<button/g) || []).length === 4,
-  "分享区四个动作没有都做成按钮（复制链接 / 二维码 / 复制文案 / 加入日历）");
+/* ---------- 1.11 分享板块八磁贴 + 方案 D 合成卡 ----------
+   2026-11-12 用户拍板：把方案 A「一处总览」落地 —— 4 张图片产物 +
+   4 个链接 / 提醒动作排成 2×4 磁贴；旧的四按钮 .share-acts 撤掉。 */
+must(/<ShareTiles :items="shareTiles" @pick="onTile" \/>/.test(home),
+  "分享板块不是八磁贴（ShareTiles）");
+must(/SHARE_TILE_KEYS: ShareTileKey\[\] =[\s\S]{0,160}"card", "story", "trend", "map", "link", "qr", "caption", "ics"/.test(home),
+  "八磁贴顺序不对（前四张图片、后四个动作）");
+must(/provideShareHub\(\)/.test(home) && /shareHub\.entries\[k\]\?\.save\(\)/.test(home),
+  "图片磁贴没有经 sharehub 转发给各卡自己的保存函数");
+must(/if \(k === "link"\) void copySnap\(\)/.test(home) &&
+     /else if \(k === "qr"\) openQr\(\)/.test(home) &&
+     /else if \(k === "caption"\) void copyCaption\(\)/.test(home) &&
+     /else if \(k === "ics"\) addCalendar\(\)/.test(home),
+  "四个动作磁贴没有接回原处理函数");
+must(!/share-acts/.test(home), "分享板块仍残留旧的四按钮 .share-acts");
 must(!/share-more/.test(home) && !/class="mlink"/.test(home) && !/t\("更多："\)/.test(home),
   "分享页仍残留「更多：」文字链");
-must(/:disabled="!shareView"/.test(home) && /@click="copyCaption"/.test(home) && /@click="addCalendar"/.test(home),
-  "复制文案 / 加入日历按钮没接回原处理函数，或无结果时未禁用");
+const tiles = read("src/components/ShareTiles.vue");
+must(/:data-share="it.k"/.test(tiles) && /:disabled="!it.ready"/.test(tiles),
+  "磁贴缺少 data-share 身份 / 就绪禁用态");
+must(/grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/.test(tiles) &&
+     /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/.test(tiles),
+  "磁贴不是桌面 4 列 / 窄屏 2 列");
+const hubSrc = read("src/core/sharehub.ts");
+must(/provide\(HUB_KEY, hub\)/.test(hubSrc) && /onMounted\(\(\) => hub.register/.test(hubSrc),
+  "sharehub 不是 provide / onMounted 登记");
+must(/useShareImage\("card"/.test(read("src/components/ShareDropdown.vue")) &&
+     /useShareImage\("story"/.test(read("src/components/ShareDropdown.vue")) &&
+     /useShareImage\("trend"/.test(read("src/components/TrendSection.vue")) &&
+     /useShareImage\("map"/.test(read("src/components/MapView.vue")),
+  "四张图片产物没有全部登记到 sharehub（各卡自己的保存函数）");
 must(!/"更多：":/.test(read("src/core/i18n-extra.ts")), "i18n-extra 仍留着已弃用的「更多：」词条");
 must(/<ShareComposer/.test(home), "分享页没有接入合成分享卡（方案 D）");
 const composer = read("src/components/ShareComposer.vue");
@@ -379,6 +401,10 @@ const critical = [
   "最佳窗口", "逐日明细（概率条与质量徽章）", "最值得出门", "值得安排", "可以留意",
   "整体偏弱",
   "竖版故事卡", "分享", "二维码", "复制文案", "加入日历",
+  /* 八磁贴（2026-11-12）：副文案也要三语齐全 */
+  "十日趋势图", "含最佳窗口标注", "热力面 + 城市名", "先在上方加载趋势",
+  "快照链接，对方零取数", "扫码看同一份结论", "一句话转发今晚的霞",
+  "覆盖观赏窗口，提前 30 分钟",
   "当前从本地文件打开，复制链接与二维码会自动指向 {site}，对方打开即可查看快照，无需重新取数。",
   "先算出结果，才能生成分享链接：点上方「重新计算」取得本次预报。",
   "复制失败，请选中下面的链接手动复制",
@@ -523,6 +549,39 @@ must(!/startsWith\('SUNGLOW\.v2\.'\)[\s\S]{0,100}removeItem/.test(probeSrc),
 must(/mapDateS:\s*hasSavedMapDate\(\)/.test(state)
   && /mapDateS:\s*state\.mapDateS/.test(state),
   "观测场日期没写进偏好（刷新后日期漂移会 miss 缓存）");
+
+/* ---------- 1.18 全页日期联动（2026-11-12） ----------
+   顶部月历与观测场日期曾是两套独立设置。现在只认一个「当前查看日期」，
+   任一边改动都同步到另一边；两处控件的可选窗口也必须同源，否则
+   顶部选到 +10 天时观测场 Select 取不到匹配项，触发器会显示空白。 */
+const dpSrc = read("src/components/DatePicker.vue");
+const mapSrc = read("src/components/MapView.vue");
+const urlSrc = read("src/core/urlstate.ts");
+const homeSrc = read("src/views/HomeView.vue");
+const trendSrc = read("src/components/TrendSection.vue");
+must(/export const DATE_MIN_OFFSET = -2;/.test(state)
+  && /export const DATE_MAX_OFFSET = 15;/.test(state),
+  "日期窗口常量没落在 state.ts（两处控件会各写一套范围）");
+must(/addDays\(today\.value, DATE_MIN_OFFSET\)/.test(dpSrc)
+  && /addDays\(today\.value, DATE_MAX_OFFSET\)/.test(dpSrc)
+  && /k = DATE_MIN_OFFSET; k <= DATE_MAX_OFFSET/.test(mapSrc),
+  "顶部月历与观测场下拉没有共用同一对范围常量");
+must(/flush: "sync"/.test(state)
+  && /watch\(\(\) => state\.dateStr, \(v\) => \{[\s\S]{0,140}state\.mapDateS = v/.test(state)
+  && /watch\(\(\) => state\.mapDateS, \(v\) => \{[\s\S]{0,140}state\.dateStr = v/.test(state),
+  "dateStr ↔ mapDateS 缺少双向 sync 同步器（会在初始化/打包时差半拍）");
+must(/hasSavedMapDate\(\) && state\.mapDateS !== state\.dateStr/.test(state),
+  "首屏没有按偏好把整页日期对齐（刷新后两边一分家就 miss 缓存）");
+must(/diff >= DATE_MIN_OFFSET && diff <= DATE_MAX_OFFSET/.test(state),
+  "偏好日期有效性窗口没跟着扩大（+8~+15 天会被误判过期）");
+must(!/state\.mapDateS\s*=/.test(urlSrc)
+  && !/state\.mapDateS\s*=/.test(trendSrc)
+  && !/if \(state\.mapDateS === oldT\)/.test(state),
+  "还有别处在各自同步观测场日期（日期口径必须单点）");
+must(/!out\.some\(\(o\) => o\.v === state\.mapDateS\)/.test(mapSrc),
+  "观测场下拉没有把窗口外的当前日期补进选项（旧分享链接打开会显示空白触发器）");
+must(/if \(!u\.date && !hasSavedMapDate\(\)\)/.test(homeSrc),
+  "onMounted 仍会无条件把日期覆盖成今天（会冲掉偏好恢复的上次日期）");
 
 if (issues.length) {
   console.error(`check-ui: ${issues.length} 处 UI 断言失败`);
