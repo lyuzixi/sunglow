@@ -18,24 +18,28 @@ import androidx.core.view.WindowCompat
  */
 
 private val DarkScheme = darkColorScheme(
-    primary = SpectrumMagenta,
-    secondary = SpectrumCyan,
-    tertiary = SpectrumAmber,
+    primary = DarkTokens.accent,
+    secondary = DarkTokens.accentCool,
+    tertiary = DarkTokens.accentAlt,
     background = DarkTokens.bg,
     surface = DarkTokens.bg2,
+    surfaceVariant = DarkTokens.bg3,
     onBackground = DarkTokens.ink,
     onSurface = DarkTokens.ink,
+    onSurfaceVariant = DarkTokens.muted,
     outline = DarkTokens.ruleStrong
 )
 
 private val LightScheme = lightColorScheme(
-    primary = SpectrumMagenta,
-    secondary = SpectrumCyan,
-    tertiary = SpectrumAmber,
+    primary = LightTokens.accent,
+    secondary = LightTokens.accentCool,
+    tertiary = LightTokens.accentAlt,
     background = LightTokens.bg,
     surface = LightTokens.bg2,
+    surfaceVariant = LightTokens.bg3,
     onBackground = LightTokens.ink,
     onSurface = LightTokens.ink,
+    onSurfaceVariant = LightTokens.muted,
     outline = LightTokens.ruleStrong
 )
 
@@ -44,6 +48,8 @@ object SunglowTheme {
         @Composable get() = LocalSunglowColors.current
     val spacing: SunglowSpacing
         @Composable get() = LocalSunglowSpacing.current
+    val radius: SunglowRadius
+        @Composable get() = LocalSunglowRadius.current
 }
 
 @Composable
@@ -67,7 +73,8 @@ fun SunglowTheme(
 
     CompositionLocalProvider(
         LocalSunglowColors provides colors,
-        LocalSunglowSpacing provides SunglowSpacing()
+        LocalSunglowSpacing provides SunglowSpacing(),
+        LocalSunglowRadius provides SunglowRadius()
     ) {
         MaterialTheme(
             colorScheme = scheme,
