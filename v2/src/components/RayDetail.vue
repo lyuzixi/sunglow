@@ -4,124 +4,59 @@
 import { computed } from "vue";
 import { state } from "../state";
 import { t } from "../core/i18n";
-import { uAlt, uDist } from "../core/units";
-import { clamp, clamp01, isNum } from "../core/math";
+import { clamp, clamp01 } from "../core/math";
+import { rayRows, rayFactors, rayCurve, rayTimeline } from "../core/raydetail";
 import FoldCard from "./FoldCard.vue";
 
 const res = computed(() => state.result);
 
-const n1 = (v: number | null | undefined, d = 1): string =>
-  isNum(v) ? v.toFixed(d) : "—";
+const rows = computed(() => (res.value ? rayRows(res.value) : []));
+const facs = computed(() => (res.value ? rayFactors(res.value) : []));
 
-const fmtDur = (min: number): string => {
-  if (!isNum(min)) return "—";
-  if (min <= 0) return t("0 分");
-  const m = Math.floor(min), s = Math.round((min - m) * 60);
-  return m > 0 ? t("{m} 分 {s} 秒", { m, s }) : t("{s} 秒", { s });
-};
-
-const rows = computed(() => {
-  const r = res.value;
-  if (!r) return [];
-  const s = r.sRT, g = s.geom;
-  return [
-    { k: "主云型", v: `${t(s.primary.type)} · ${t(s.primary.name)}` },
-    { k: "云底高度", v: uAlt(s.primary.base * 1000) },
-    { k: "云量", v: `${Math.round(s.primary.cover)}%` },
-    { k: "视线距离", v: uDist(s.d, 0) },
-    { k: "几何窗口", v: `${Math.round(g.dur)} ${t("分钟")}` },
-    { k: "亮度等级", v: t(s.bright.txt) },
-    { k: "峰值透射率 T(550nm)", v: s.peak.T550.toExponential(2) },
-    { k: "峰值路径光学厚度 τ", v: s.peak.tau550.toFixed(1) },
-    { k: "峰值颜色", v: `${t(s.peak.name)} · ${t("饱和")} ${Math.round(s.peak.sat * 100)}%` },
-    { k: "色相跨距（颜色丰富度）", v: `${s.hueSpread.toFixed(0)}°` },
-    { k: "气溶胶标高 Hs", v: `${n1(s.Hs, 2)} km` },
-    { k: "近边界角（云遮挡）", v: `${n1(g.thNearDeg, 2)}°` },
-    { k: "远边界角（地球遮挡）", v: `${n1(g.thFarDeg, 2)}°` }
-  ];
-});
-
-const facs = computed(() => {
-  const r = res.value;
-  if (!r) return [];
-  const s = r.sRT;
-  return [
-    { k: "几何", raw: `${t("边界")} ${uDist(s.d, 0)}`, v: s.geomF },
-    { k: "云量", raw: `${Math.round(s.primary.cover)}%`, v: s.coverF },
-    { k: "通透度", raw: `AOD ${s.aodUp.toFixed(2)}`, v: s.aeroF }
-  ];
-});
-
-/* 强度-彩度时间曲线：与V1 rayCurve 同式 —— 横轴由 ω 把各采样点的
-   掠射角换算成「事件后分钟数」，纵轴各自归一到峰值，竖线用采样点实际颜色。 */
+/* 以下只把 core 里的归一化结果映射成 SVG 坐标（100×34 的局部坐标系），
+   数值口径全部来自 core/raydetail.ts —— 同步给分享卡用。 */
+const CW = 100, CH = 34, CPT = 4, CPB = 6;
 const curve = computed(() => {
-  const r = res.value;
-  if (!r) return null;
-  const sm = r.sRT.samples || [];
-  if (sm.length < 2) return null;
-  const g = r.sRT.geom;
-  const om = isNum(r.omega) && r.omega > 0.01 ? r.omega : 0.2;
-  const okGeo = isNum(g.thNearDeg) && isNum(g.thFarDeg);
-  const mins = sm.map((x, i) =>
-    okGeo ? (g.thNearDeg + x.t * (g.thFarDeg - g.thNearDeg)) / om : i * 3
-  );
-  const mx = Math.max(Math.max(...mins) * 1.06, 0.5);
-  const maxL = Math.max(...sm.map((x) => x.lumRel || 0)) || 1;
-  const maxC = Math.max(...sm.map((x) => x.chroma || 0)) || 1;
-  const W = 100, H = 34, PT = 4, PB = 6;
-  const X = (i: number) => (mins[i] / mx) * (W - 2) + 1;
-  const Y = (v: number) => H - PB - clamp01(v) * (H - PT - PB);
-  const poly = (key: "lumRel" | "chroma", mxv: number) =>
-    sm.map((x, i) => `${X(i).toFixed(2)},${Y((x[key] || 0) / mxv).toFixed(2)}`).join(" ");
-  let pk = 0;
-  for (let i = 1; i < sm.length; i++) if ((sm[i].lumRel || 0) > (sm[pk].lumRel || 0)) pk = i;
+  const cv = res.value ? rayCurve(res.value) : null;
+  if (!cv) return null;
+  const X = (min: number) => (min / cv.maxMin) * (CW - 2) + 1;
+  const Y = (v: number) => CH - CPB - clamp01(v) * (CH - CPT - CPB);
+  const poly = (get: (p: { lum: number; chroma: number }) => number) =>
+    cv.points.map((p) => X(p.min).toFixed(2) + ',' + Y(get(p)).toFixed(2)).join(' ');
   return {
-    lPoints: poly("lumRel", maxL),
-    cPoints: poly("chroma", maxC),
+    lPoints: poly((p) => p.lum),
+    cPoints: poly((p) => p.chroma),
     gridYs: [0, 0.25, 0.5, 0.75, 1].map((f) => Y(f).toFixed(2)),
-    bars: sm.map((x, i) => ({ x: X(i).toFixed(2), hex: x.hex })),
-    peakMin: mins[pk].toFixed(1),
-    maxC: maxC.toFixed(3),
-    axis: [t("0 分"), fmtDur(mx / 2), fmtDur(mx)]
+    bars: cv.points.map((p) => ({ x: X(p.min).toFixed(2), hex: p.hex })),
+    peakMin: cv.peakMin.toFixed(1),
+    maxC: cv.maxC.toFixed(3),
+    axis: cv.axis
   };
 });
 
-/* 火烧云三角时间轴：把 θnear→θfar 的掠射区间按 ω 换算成事件后分钟数，
-   与上方曲线共用同一时间口径；几何不成立时给出原因，不画轴。 */
+/* 火烧云三角时间轴：起止比例来自 core，这里只换成百分比字符串 */
 const timeline = computed(() => {
   const r = res.value;
   if (!r) return null;
-  const g = r.sRT.geom;
-  if (!g.ok) {
-    const why = isNum(r.sRT.d)
-      ? t("云边界距离 {d} 已超过霞光深入距离上限 {m}（该云盘范围内阳光无法从云底下方射入）", {
-          d: uDist(r.sRT.d), m: uDist(g.xMax)
-        })
-      : t("日出/日落方向 400 km 内没有找到可承载霞光的云盘");
-    return {
-      ok: false as const,
-      warn: t("几何条件不成立：{why}。光追结果按最接近的掠射情形估算，仅作参考。", { why })
-    };
-  }
-  const om = isNum(r.omega) && r.omega > 0 ? r.omega : 0.2;
-  const t0 = g.thNearDeg / om, t1 = g.thFarDeg / om;
-  const mx = Math.max(t1 * 1.12, 0.8);
+  const tl = rayTimeline(r);
+  if (!tl.ok) return { ok: false as const, warn: tl.warn };
+  const l = tl.startFrac * 100, rr2 = tl.endFrac * 100;
   return {
     ok: true as const,
-    segLeft: `${(t0 / mx * 100).toFixed(1)}%`,
-    segWidth: `${((t1 - t0) / mx * 100).toFixed(1)}%`,
-    nearLeft: `${(t0 / mx * 100).toFixed(1)}%`,
-    farLeft: `${(t1 / mx * 100).toFixed(1)}%`,
-    nearLabelLeft: `${clamp(t0 / mx * 100, 6, 62).toFixed(1)}%`,
-    farLabelLeft: `${clamp(t1 / mx * 100, 40, 94).toFixed(1)}%`,
-    start: fmtDur(t0),
-    end: fmtDur(t1)
+    segLeft: l.toFixed(1) + '%',
+    segWidth: (rr2 - l).toFixed(1) + '%',
+    nearLeft: l.toFixed(1) + '%',
+    farLeft: rr2.toFixed(1) + '%',
+    nearLabelLeft: clamp(l, 6, 62).toFixed(1) + '%',
+    farLabelLeft: clamp(rr2, 40, 94).toFixed(1) + '%',
+    start: tl.start,
+    end: tl.end
   };
 });
 </script>
 
 <template>
-  <FoldCard fold-key="rayFold" anchor="ray" title="光追算法细节" :sub="t('来自同一份取数结果，不额外请求')">
+  <FoldCard fold-key="rayFold" anchor="ray" title="光追算法细节" :sub="t('来自同一份取数结果，不额外请求')" outside-title>
     <p v-if="!res" class="hint">{{ t("先计算一次预报，这里才会出现光追推导的中间量。") }}</p>
     <template v-else>
       <dl class="rd-grid">

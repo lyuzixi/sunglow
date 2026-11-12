@@ -246,7 +246,7 @@ export async function loadMapData(
     finalizeRefGap(box.am.pts);
     finalizeRefGap(box.pm.pts);
 
-    mapCachePut(dateS, lat, lon, box, stillCurrent);
+    mapCachePut(dateS, lat, lon, box);
     return { ok: true, box, fromCache: false };
   } catch (e) {
     if (!stillCurrent()) return { ok: false, reason: "stale" };

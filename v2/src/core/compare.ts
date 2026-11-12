@@ -8,11 +8,12 @@
    · 取数三档与全局一致：auto 只看缓存绝不取数 / click 缓存优先 / force 绕开。
    · 列表持久化 SUNGLOW.v2.cmp.v1（与 pref 分键），「清空对比」才清。
    ========================================================================= */
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import {
   runForecast, pointCacheGet, pointCacheAge,
   type ForecastResult
 } from "./forecast";
+import { snapCmpList, snapshotReady } from "./snapshot";
 import { ensConfOf, mixedIndex, type EnsBand } from "./scoring";
 import { isNum } from "./math";
 import type { MapPoint } from "./mapdata";
@@ -32,7 +33,9 @@ export interface ComparePt {
 /* ---- 列表（跨组件共享：MapView 加点、ComparePanel 展示） ---- */
 function readList(): ComparePt[] {
   try {
-    const raw = localStorage.getItem(CMP_KEY);
+    /* 快照链接里带了分享者的对比点列表；没有快照才读本机 */
+    const snap = snapCmpList();
+    const raw = snap ? JSON.stringify(snap) : localStorage.getItem(CMP_KEY);
     if (!raw) return [];
     const v = JSON.parse(raw) as unknown;
     if (!Array.isArray(v)) return [];
@@ -52,6 +55,8 @@ function readList(): ComparePt[] {
 
 export const cmpList = ref<ComparePt[]>(readList());
 export const cmpFlash = ref(""); /* 加入/满员/重复 的瞬时提示 */
+/* 快照包是父组件异步解压后才装好的，这里补一次读取 */
+watch(snapshotReady, () => { cmpList.value = readList(); });
 
 function persist() {
   try {

@@ -15,6 +15,7 @@ import {
 import { refScore } from "./refmodel";
 import { analyseTransect, cloudBlockOf } from "./physics";
 import { makeSeries, mergeSeries, type Series } from "./series";
+import { snapCacheEntry, snapCacheAge } from "./snapshot";
 
 /* ---- 网格参数 ----
    2026-10-22 热力图重做：格距 120 km → 80 km（121 点）。
@@ -118,6 +119,9 @@ export interface MapDateBox {
 }
 
 export function mapCacheGet(dateS: string, lat: number, lon: number): MapDateBox | null {
+  /* 快照包里的观测场：优先、且不受 6h TTL 限制（分享的是冻结的那一刻） */
+  const snap = snapCacheEntry(mapKeyOf(dateS, lat, lon));
+  if (snap && snap.obj) return snap.obj as MapDateBox;
   try {
     const s = localStorage.getItem(mapKeyOf(dateS, lat, lon));
     if (!s) return null;
@@ -135,6 +139,8 @@ export function mapCacheGet(dateS: string, lat: number, lon: number): MapDateBox
 
 /** 缓存条目的年龄（毫秒）；没有可用条目返回 null。用于「缓存 · N 分钟前」提示。 */
 export function mapCacheAge(dateS: string, lat: number, lon: number): number | null {
+  const sa = snapCacheAge(mapKeyOf(dateS, lat, lon));
+  if (sa != null) return sa;
   try {
     const s = localStorage.getItem(mapKeyOf(dateS, lat, lon));
     if (!s) return null;
@@ -148,20 +154,22 @@ export function mapCacheAge(dateS: string, lat: number, lon: number): number | n
   }
 }
 
+/**
+ * 落盘（2026-11-11 改）：数据已经算完，它属于「日期 + 坐标」，不属于「当前这次
+ * UI 请求」，所以同步写入，不再等 requestIdleCallback，也不再拿取数令牌当闸门。
+ *
+ * 旧实现实测最坏要等 7~9 秒（121 点算完 + idle 排队 1.2s）才落盘；用户看到
+ * 「刚刚取数」就刷新/关页，缓存根本没写。更隐蔽的是 stillWanted()：挂载末尾的
+ * autoFromCache()、换日期 watch 都会 ++loadToken，把排队中的写盘整个取消。
+ * 单条约 150 KB，一次取数才一次 stringify + setItem，主线程开销可忽略。
+ */
 export function mapCachePut(
-  dateS: string, lat: number, lon: number, obj: MapDateBox, stillWanted: () => boolean
+  dateS: string, lat: number, lon: number, obj: MapDateBox
 ): void {
-  const run = () => {
-    if (!stillWanted()) return;
-    try {
-      localStorage.setItem(mapKeyOf(dateS, lat, lon), JSON.stringify({ ts: Date.now(), obj }));
-      mapCacheSweep(lat, lon);
-    } catch { /* 配额不足 */ }
-  };
-  if (typeof requestIdleCallback === "function")
-    (window as unknown as { requestIdleCallback: (f: () => void, o?: object) => void })
-      .requestIdleCallback(run, { timeout: 250 });
-  else setTimeout(run, 0);
+  try {
+    localStorage.setItem(mapKeyOf(dateS, lat, lon), JSON.stringify({ ts: Date.now(), obj }));
+    mapCacheSweep(lat, lon);
+  } catch { /* 隐私模式 / 配额不足 */ }
 }
 
 /** 键族清理：升版本时清掉上一版残留；LRU 保留最近 MAP_CACHE_MAX 条（豁免当前地点） */

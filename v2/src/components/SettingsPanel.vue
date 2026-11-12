@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { state, savePrefs } from "../state";
-import { t } from "../core/i18n";
+import { state, savePrefs, setLangAndSave, setThemeAndSave, type ThemeMode } from "../state";
+import { t, LANGS, LANG_NAMES, type Lang } from "../core/i18n";
 import { cacheReport, clearCache, fmtBytes } from "../core/cache";
 import { openFeedback } from "../composables/useFeedback";
 import { ref as vueRef, onMounted as vueMounted } from "vue";
@@ -32,6 +32,15 @@ function setHeroMode(m: "off" | "band" | "full" | "window") {
   state.heroPhotoMode = m;
   savePrefs();
 }
+/* 语言与主题 2026-11-10 从顶栏搬进设置：顶栏两个图标位让给导航与徽标，
+   这两项本来就是「偶尔改一次」的偏好，放在设置里更顺。
+   写入仍走 state 的唯一入口（setLangAndSave / setThemeAndSave），别在这里各写一份。 */
+function setTheme(m: ThemeMode) {
+  setThemeAndSave(m);
+}
+function setLang(l: Lang) {
+  setLangAndSave(l);
+}
 /** 从设置菜单进入关于 / 反馈前，先收起面板，避免浮层互相压住 */
 function closePanel() {
   open.value = false;
@@ -52,6 +61,34 @@ function openFeedbackFromSettings() {
       </svg>
     </button>
     <div v-if="open" class="panel glass">
+      <div class="grp">
+        <div class="grp-h">{{ t("界面") }}</div>
+        <div class="sub-h">{{ t("主题") }}</div>
+        <div class="seg seg-photo" role="group" :aria-label="t('主题')">
+          <button :class="{ on: state.theme === 'dark' }" @click="setTheme('dark')">
+            {{ t("深色") }}
+          </button>
+          <button :class="{ on: state.theme === 'light' }" @click="setTheme('light')">
+            {{ t("浅色") }}
+          </button>
+          <button :class="{ on: state.theme === 'system' }" @click="setTheme('system')">
+            {{ t("跟随系统") }}
+          </button>
+        </div>
+
+        <div class="sub-h">{{ t("语言") }}</div>
+        <div class="seg seg-photo" role="group" :aria-label="t('语言')">
+          <button
+            v-for="l in LANGS"
+            :key="l"
+            :class="{ on: state.lang === l }"
+            @click="setLang(l)"
+          >
+            {{ LANG_NAMES[l] }}
+          </button>
+        </div>
+      </div>
+
       <div class="grp">
         <div class="grp-h">{{ t("外观") }}</div>
         <div class="sub-h">{{ t("照片背景") }}</div>

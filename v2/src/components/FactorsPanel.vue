@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { state } from "../state";
+import { state, toggleFold } from "../state";
 import { t } from "../core/i18n";
 import { facDisplayRows } from "../core/factors";
 
@@ -25,33 +25,52 @@ function tone(s: number | null): string {
     <div class="wrap">
       <div class="section-head">
         <h2>{{ t("影响因素") }}</h2>
-        <div class="sub">{{ t("13 项判据") }} · {{ t("算法说明") }}</div>
-      </div>
-
-      <div class="grid grid-2" v-if="rows.length">
-        <div v-for="f in rows" :key="f.key" class="glass fac-card" :data-fkey="f.key">
-          <div class="fac-top">
-            <b>{{ f.name }}</b>
-            <span class="fac-right">
-              <em class="fj" :class="f.judgeCls">{{ f.judge }}</em>
-              <span class="fac-score" :style="{ color: tone(f.score) }">
-                {{ f.score != null ? Math.round(f.score * 100) : "—" }}
-              </span>
-            </span>
-          </div>
-          <div class="fac-val">{{ f.val }}</div>
-          <div class="bar"><i :style="{ width: (f.score != null ? f.score * 100 : 0) + '%' }" /></div>
-          <p>{{ f.desc }}</p>
+        <!-- 13 项卡很长，默认收起（factorsFold 默认 true，手点后写偏好记忆）。
+             按钮与光追 / 附注的整卡胶囊同款，点目录里的「影响因素」也会就地展开。 -->
+        <div class="fac-head">
+          <span class="sub">{{ t("13 项判据") }} · {{ t("算法说明") }}</span>
+          <button
+            class="btn btn-ghost sm fac-fold"
+            :aria-expanded="!state.folds.factorsFold"
+            aria-controls="factors-body"
+            @click="toggleFold('factorsFold')"
+          >
+            {{ state.folds.factorsFold ? t("展开") : t("收起") }}
+          </button>
         </div>
       </div>
-      <div v-else class="glass" style="padding: 24px; color: var(--tx-3)">
-        {{ state.loading ? t("加载中") + "…" : t("暂无数据") }}
+
+      <div v-show="!state.folds.factorsFold" id="factors-body">
+        <div class="grid grid-2" v-if="rows.length">
+          <div v-for="f in rows" :key="f.key" class="glass fac-card" :data-fkey="f.key">
+            <div class="fac-top">
+              <b>{{ f.name }}</b>
+              <span class="fac-right">
+                <em class="fj" :class="f.judgeCls">{{ f.judge }}</em>
+                <span class="fac-score" :style="{ color: tone(f.score) }">
+                  {{ f.score != null ? Math.round(f.score * 100) : "—" }}
+                </span>
+              </span>
+            </div>
+            <div class="fac-val">{{ f.val }}</div>
+            <div class="bar"><i :style="{ width: (f.score != null ? f.score * 100 : 0) + '%' }" /></div>
+            <p>{{ f.desc }}</p>
+          </div>
+        </div>
+        <div v-else class="glass" style="padding: 24px; color: var(--tx-3)">
+          {{ state.loading ? t("加载中") + "…" : t("暂无数据") }}
+        </div>
       </div>
     </div>
   </section>
 </template>
 
 <style scoped>
+/* 标题行右侧：副标题 + 折叠胶囊；窄屏让整行换行，别把标题挤成竖排 */
+.fac-head { display: flex; align-items: center; gap: 10px; }
+@media (max-width: 720px) {
+  .section-head { flex-wrap: wrap; row-gap: 8px; }
+}
 .fac-card {
   padding: 18px 20px;
 }

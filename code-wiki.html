@@ -448,7 +448,7 @@ footer.foot .src-url{display:block;margin-top:2px;font-size:12px;color:var(--acc
             <tr><td>多模型</td><td>GFS / ECMWF-IFS / 光追三路各自出分，按 <code>W_ENS = 0.30 / 0.34 / 0.36</code> 加权<strong>几何</strong>平均合成</td><td><span class="ref">V1/_p4.js:455</span> · <span class="ref">v2/src/core/scoring.ts:374</span></td></tr>
             <tr><td>趋势 / 机会日历</td><td>未来 10 天（V1 <code>TREND_DAYS=10</code>）逐日打分，可切朝/晚；只缓存算好的 rows</td><td><span class="ref">V1/_p5.js:1712</span> · <span class="ref">v2/src/core/trend.ts</span></td></tr>
             <tr><td>地图</td><td>查询点周边 500 km 局部网格热力场；多档色阶 + 等值线 + 经纬网 + 云纹；悬停取值、点击定位</td><td><span class="ref">V1/_p6.js</span> · <span class="ref">v2/core/mapdata.ts</span> · <span class="ref">Skyglow/core/glowmap.py</span></td></tr>
-            <tr><td>分享卡 / 快照</td><td>canvas 导出结论卡 PNG；<code>?snap=</code> 链接零气象请求还原结论（跨版本互通，<code>SNAP_VER=1</code>）</td><td><span class="ref">V1/_p5.js:1466</span> · <span class="ref">v2/src/core/sharecard.ts</span></td></tr>
+            <tr><td>分享卡 / 快照</td><td>canvas 导出结论卡 PNG（v2 为完整结论区 780×1024：指标 / 太阳与云 / 霞色条 / 四张模型卡 / 口径说明）；<code>?snap=</code> 链接零气象请求还原结论（跨版本互通，<code>SNAP_VER=1</code>）；v2 另以 <code>#/?pack=</code> 打包全部板块缓存，打开即完整主页（见 <code>v2/src/core/snapshot.ts</code>）</td><td><span class="ref">V1/_p5.js:1466</span> · <span class="ref">v2/src/core/sharecard.ts</span></td></tr>
             <tr><td>多观测点对比</td><td>收藏最多 5 个机位一次取数横向排序；缓存点不进请求</td><td><span class="ref">v2/src/core/compare.ts</span>（V1 也有 F2）</td></tr>
             <tr><td>本地校准</td><td>事后回填「实际看到什么」，本机累积统计偏差；纯展示、不回改模型、样本不足不给结论</td><td><span class="ref">V1/_p5.js:366-500</span> · <span class="ref">v2/src/core/calib.ts</span></td></tr>
             <tr><td>多语言 / 深色</td><td>简 / 繁（台港用语）/ EN；浅 / 深 / 跟随系统三态，刷新不闪</td><td><span class="ref">V1/_pi18n.js</span> · <span class="ref">v2/src/core/i18n.ts</span></td></tr>
@@ -1140,7 +1140,7 @@ PWA=1 SITE_BASE=sunglow python assemble.py  <span class="c"># 可选 PWA 四件�
             <tr>
               <td><a href="v2/src/core/api.ts" target="_blank" rel="noopener noreferrer" class="ref">api.ts</a></td>
               <td><code>HOURLY_VARS</code> (26) · <code>AQ_VARS</code> (35) · <code>fetchForecastBundle</code> (145) · <code>withBudget</code> (169) · <code>makeMockBundle</code> (190) · <code>makeReader</code> (107)</td>
-              <td>端点参数集中定义；6 s 超时、2 次重试、429 不重试；12 s 总预算；失败回落确定性 mock</td>
+              <td>端点参数集中定义；6 s 超时、2 次重试、429 不重试；12 s 总预算；失败直接返回 <code>ok:false</code>（2026-11-10 起不再回落演示数据）</td>
             </tr>
             <tr>
               <td><a href="v2/src/core/forecast.ts" target="_blank" rel="noopener noreferrer" class="ref">forecast.ts</a></td>
@@ -1222,7 +1222,7 @@ PWA=1 SITE_BASE=sunglow python assemble.py  <span class="c"># 可选 PWA 四件�
         <li><b>输入</b>：<code>state.city</code> / <code>dateStr</code> / <code>period</code>；HomeView 调 <code>runForecast({city,dateStr,period,force})</code>（<span class="ref">v2/src/views/HomeView.vue:28-50</span>）。</li>
         <li><b>缓存</b>：先 <code>pointCacheGet</code>，键 = <code>SUNGLOW.v2.point.v3.日期|时段@lat.toFixed(1),lon.toFixed(1)</code>，TTL 6 h、LRU 12。命中直接返回，一个请求都不发。</li>
         <li><b>太阳事件</b>：用城市时区把日期锚到当地零点，再求日出/日落与高度角变化率。</li>
-        <li><b>取数</b>：沿事件方位构造 17 点样带（0…400 km），GFS 走 12 s 总预算，EC 与 AQ 失败可降级为 <code>null</code>；全失败则回落 mock 并标 <code>src:"mock"</code>。</li>
+        <li><b>取数</b>：沿事件方位构造 17 点样带（0…400 km），GFS 走 12 s 总预算，EC 与 AQ 失败可降级为 <code>null</code>；全失败则返回 <code>ok:false</code>（页面出「没有取到数据」提示，不回落 <code>mock</code>）。</li>
         <li><b>评分</b>：<code>analyseTransect</code> → <code>scoreStat</code> + <code>scoreRay</code> → <code>wgeo</code> 按 <code>W_ENS</code> 合成。</li>
         <li><b>结论</b>：<code>ForecastResult</code> 携带 <code>envM / sRT / sG / sE / models / P / Q / grade / consist / dvI / spread / conf / factorRows / src</code>（<span class="ref">v2/src/core/forecast.ts:394-409</span>）。</li>
         <li><b>落盘</b>：只有 <code>src==="live"</code> 才写缓存；mock 不写，避免假数据被当成真预报（<span class="ref">v2/src/core/forecast.ts:410-411</span>）。</li>

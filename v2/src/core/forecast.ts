@@ -18,6 +18,12 @@ import {
 } from "./api";
 import { MODEL_NAME, F_VARS, apiForecastBatched, apiAQBatched, TRANSECT } from "./mapload";
 import { MAP_TZ } from "./mapdata";
+import { snapCacheEntry, snapCacheAge } from "./snapshot";
+import { t } from "./i18n";
+
+/* 取数失败时的唯一文案（不造演示数据）：键即简体原文，繁 / 英在 i18n-extra 里 */
+const NO_DATA_MSG =
+  "这次没有取到数据：气象接口没有响应或网络中断。稍后点「重新计算」再试一次。";
 import { makeSeries, mergeSeries, type Series } from "./series";
 import { primaryDeckOf } from "./scoring";
 import type { City } from "./city";
@@ -159,6 +165,10 @@ function pointKeyOf(lat: number, lon: number, dateStr: string, period: string): 
 export function pointCacheGet(
   lat: number, lon: number, dateStr: string, period: "am" | "pm"
 ): ForecastResult | null {
+  /* 全功能快照链接：分享者打包的条目优先于本机缓存，且不参与 6h TTL。
+     只放在内存 overlay 里，绝不写进被分享者的 localStorage。 */
+  const snap = snapCacheEntry(pointKeyOf(lat, lon, dateStr, period));
+  if (snap && snap.obj) return snap.obj as ForecastResult;
   try {
     const s2 = localStorage.getItem(pointKeyOf(lat, lon, dateStr, period));
     if (!s2) return null;
@@ -186,6 +196,8 @@ export function pointCacheGet(
 export function pointCacheAge(
   lat: number, lon: number, dateStr: string, period: "am" | "pm"
 ): number | null {
+  const sa = snapCacheAge(pointKeyOf(lat, lon, dateStr, period));
+  if (sa != null) return sa;
   try {
     const s = localStorage.getItem(pointKeyOf(lat, lon, dateStr, period));
     if (!s) return null;
@@ -278,35 +290,41 @@ export async function runForecast(opts: {
   let sE: (Series | null)[] | null = null;
   let sA: (Series | null)[] | null = null;
   let tz: TzInfo = tz0;
-  try {
-    if (opts.useMock) throw new Error("mock");
-    sG = await withBudget(
-      apiForecastBatched(MODEL_NAME.gfs, ptsLL, dateStr, dateStr, MAP_TZ, F_VARS),
-      12000
-    ) as Series[];
-    sE = await apiForecastBatched(
-      MODEL_NAME.ec, ptsLL, dateStr, dateStr, MAP_TZ, F_VARS
-    ).catch(() => null);
-    sA = await apiAQBatched(ptsLL, dateStr, dateStr, MAP_TZ).catch(() => null);
-  } catch (e) {
-    const err = e as { friendly?: string; fatal?: boolean; status?: number; code?: string };
-    /* 额度用尽（429）不回退演示数据：一份假的真实预报比没有结果更糟。
-       断网 / 超时 / 演示模式（useMock）仍回落确定性 mock。 */
-    if (err && (err.status === 429 || err.code === "429")) {
-      const head = err.friendly ||
-        "气象接口暂时限流（同一 IP 请求过于频繁），请稍候约 1 分钟后重试。";
-      const tail = err.fatal
-        ? "想继续使用的话：地图数据占单次首屏约 88% 的调用量，不点「加载周边地图」就不会消耗；也可以改用付费计划或自建实例。"
-        : "";
-      return { ok: false, error: tail ? head + "\n" + tail : head };
-    }
-    src = "mock";
+
+  if (opts.useMock) {
+    /* 演示模式只在**显式打开**时造数（本地调试开关，无 UI 入口）。
+       2026-11-10：取数失败不再回落演示数据 —— 一份假的真实预报比没有结果更糟，
+       用户会拿着编造的概率出门。失败一律返回 ok:false，由页面给「无数据」提示。 */
     const bundle = makeMockBundle(city.lat, city.lon, 8);
     const rd = makeReader(bundle);
     sG = ptsLL.map(() => rd as unknown as Series);
     sE = null;
     sA = null;
     tz = { iana: null, offsetSec: bundle.tzOffsetSec, est: true };
+    src = "mock";
+  } else {
+    try {
+      sG = await withBudget(
+        apiForecastBatched(MODEL_NAME.gfs, ptsLL, dateStr, dateStr, MAP_TZ, F_VARS),
+        12000
+      ) as Series[];
+      sE = await apiForecastBatched(
+        MODEL_NAME.ec, ptsLL, dateStr, dateStr, MAP_TZ, F_VARS
+      ).catch(() => null);
+      sA = await apiAQBatched(ptsLL, dateStr, dateStr, MAP_TZ).catch(() => null);
+    } catch (e) {
+      const err = e as { friendly?: string; fatal?: boolean; status?: number; code?: string };
+      /* 额度用尽（429）单独说清楚：这是限流不是故障，等一分钟或改用付费计划即可 */
+      if (err && (err.status === 429 || err.code === "429")) {
+        const head = err.friendly ||
+          "气象接口暂时限流（同一 IP 请求过于频繁），请稍候约 1 分钟后重试。";
+        const tail = err.fatal
+          ? "想继续使用的话：地图数据占单次首屏约 88% 的调用量，不点「加载周边地图」就不会消耗；也可以改用付费计划或自建实例。"
+          : "";
+        return { ok: false, error: tail ? head + "\n" + tail : head };
+      }
+      return { ok: false, error: t(NO_DATA_MSG) };
+    }
   }
   /* 取数回来先确认自己仍是最新一次请求：被取代的一律丢弃，不写时区 / 预报缓存 */
   if (opts.stillCurrent && !opts.stillCurrent()) return { ok: false, error: "", stale: true };

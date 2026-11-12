@@ -8,14 +8,18 @@ import { t } from "../core/i18n";
 const props = defineProps<{
   busy?: boolean;
   disabled?: boolean;
-  /** card = 横版分享卡；story = 9:16 竖版故事卡 */
-  kind?: "card" | "story";
+  /** card = 结论卡；story = 9:16 竖版故事卡；trend = 十日趋势图；map = 观测场图 */
+  kind?: "card" | "story" | "trend" | "map";
 }>();
 const emit = defineEmits<{ (e: "click"): void }>();
 
+/* 方案 C：三个同名「保存图片」改成各自的产物名，点之前就知道会得到哪张图 */
 const label = computed(() => {
   if (props.busy) return t("正在生成…");
-  return props.kind === "story" ? t("竖版故事卡") : t("保存图片");
+  if (props.kind === "story") return t("竖版故事卡");
+  if (props.kind === "trend") return t("趋势图");
+  if (props.kind === "map") return t("观测场图");
+  return t("保存图片");
 });
 </script>
 

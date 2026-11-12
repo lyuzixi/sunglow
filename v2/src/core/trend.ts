@@ -17,6 +17,7 @@ import { makeSeries, mergeSeries, type Series } from "./series";
 import { sunEvents as _se } from "./astro";
 import { gradeOf } from "./scoring";
 import { cityTz, rememberTz, type TzInfo } from "./tz";
+import { snapCacheEntry, snapCacheAge } from "./snapshot";
 
 void _se;
 
@@ -37,6 +38,8 @@ export function trendKeyOf(day0: number, lat: number, lon: number): string {
 }
 
 export function trendCacheGet(day0: number, lat: number, lon: number): TrendRow[] | null {
+  const snap = snapCacheEntry(trendKeyOf(day0, lat, lon));
+  if (snap && Array.isArray(snap.rows)) return snap.rows as TrendRow[];
   try {
     const s = localStorage.getItem(trendKeyOf(day0, lat, lon));
     if (!s) return null;
@@ -49,6 +52,8 @@ export function trendCacheGet(day0: number, lat: number, lon: number): TrendRow[
 }
 /** 缓存条目的年龄（毫秒）；没有可用条目返回 null */
 export function trendCacheAge(day0: number, lat: number, lon: number): number | null {
+  const sa = snapCacheAge(trendKeyOf(day0, lat, lon));
+  if (sa != null) return sa;
   try {
     const s = localStorage.getItem(trendKeyOf(day0, lat, lon));
     if (!s) return null;

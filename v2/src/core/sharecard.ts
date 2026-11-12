@@ -19,9 +19,13 @@ import { skyBandOf } from "./skyband";
 import { t, getLang } from "./i18n";
 import { cityName } from "./citylang";
 import { uAlt, uDist, uClock } from "./units";
-import { mixedIndex, QUALITY_BANDS } from "./scoring";
+import { mixedIndex, QUALITY_BANDS, gradeOf, type StatResult } from "./scoring";
+import { typeDetail } from "./physics";
 import { isNum } from "./math";
 import type { TrendRow } from "./trend";
+import { trendCacheGet } from "./trend";
+import { SNAP_FAC_NAME, snapFacFmt } from "./factors";
+import { mapCacheGet, type MapPoint, type MapDateBox } from "./mapdata";
 import { glowWindowOf } from "./shareextras";
 import { isForeignTz, tzLabel } from "./tz";
 import {
@@ -31,16 +35,38 @@ import {
 import { glowColor, glowRgb, glowAlpha, GLOW_BANDS, rampColor } from "./ramp";
 import heroPhoto from "../assets/hero-photo.webp";
 import qrcode from "qrcode-generator";
+import { qrSafeUrl } from "./snapshot";
 
-const W = 780, H = 400, S = 2;
+/* 2026-11-11：结论卡从 780×400 扩成 780×1024 —— 用户要求「把整个结论板块的
+   内容全部做进去」，只留概率大字的横版塞不下。宽度不变（社交平台友好），
+   高度按内容固定；合成卡的可选块继续接在 H 之下。 */
+const W = 780, H = 1024, S = 2;
 /** 顶部实拍报头带高度（与首屏 M2 报头带同一套照片与署名） */
 const BAND_H = 88;
+
+/* =========================================================================
+   合成块（方案 D）—— 一张卡，模块自己拼
+   结论层 780×400 是不动的核；天色带 / 十日趋势 / 观测场缩略 / 三因子 / 二维码
+   按勾选追加在结论层下方，卡片高度随内容走（780×400 ~ 780×1430）。
+   全部不勾 = 与结论卡逐像素相同（COMPOSE_DEFAULT 就是全关，别改）。
+   ========================================================================= */
+export interface ComposeMods { sky: boolean; trend: boolean; map: boolean; fac: boolean; qr: boolean }
+export const COMPOSE_DEFAULT: ComposeMods =
+  { sky: false, trend: false, map: false, fac: false, qr: false };
+export const COMPOSE_BLOCK_H = { sky: 150, trend: 232, map: 300, fac: 148, qr: 300 } as const;
+export function composeExtraH(m: ComposeMods): number {
+  return (m.sky ? COMPOSE_BLOCK_H.sky : 0) + (m.trend ? COMPOSE_BLOCK_H.trend : 0) +
+    (m.map ? COMPOSE_BLOCK_H.map : 0) + (m.fac ? COMPOSE_BLOCK_H.fac : 0) +
+    (m.qr ? COMPOSE_BLOCK_H.qr : 0);
+}
+/** 观测场缩略的点：相对城市的公里偏移 + 值 + 颜色（只读缓存，不取数） */
+export interface MapPtLite { dxKm: number; dyKm: number; v: number; color: string }
 
 /* 字体栈与 tokens.css 的 --font-display / --font-body 同源（canvas 读不到 CSS 变量，
    只能写同一串字面量；改栈时两处一起改）。构建把 woff2 内联进单文件，族名照可用。 */
 const DISPLAY = '"Space Grotesk","PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif';
 const BODY = '"Inter","PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif';
-const f = (w: number, size: number, display = false) =>
+export const f = (w: number, size: number, display = false) =>
   w + " " + size + "px " + (display ? DISPLAY : BODY);
 
 export interface ShareMeta {
@@ -56,6 +82,8 @@ export interface ShareMeta {
   bg: string;
   grade: string;
   band: boolean;
+  /** 结论区内容实际画到的最底 y（不含页脚）；只有完整结论卡会填 */
+  contentEnd?: number;
 }
 
 /* ---------- 小工具 ---------- */
@@ -63,7 +91,7 @@ function tok(name: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 /** 令牌可能是 var() 引用（--acc-1 → var(--spectrum-1)），canvas 不认，退一层 */
-function tokColor(name: string, fallback: string): string {
+export function tokColor(name: string, fallback: string): string {
   const v = tok(name);
   if (!v) return fallback;
   const m = /^var\((--[\w-]+)\)$/.exec(v);
@@ -73,7 +101,7 @@ function tokColor(name: string, fallback: string): string {
   }
   return v;
 }
-function withAlpha(color: string, a: number): string {
+export function withAlpha(color: string, a: number): string {
   if (/^#[0-9a-f]{6}$/i.test(color)) {
     const n = parseInt(color.slice(1), 16);
     return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + a + ")";
@@ -85,7 +113,7 @@ function withAlpha(color: string, a: number): string {
   }
   return color;
 }
-function rr(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, rd: number) {
+export function rr(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, rd: number) {
   c.beginPath();
   c.moveTo(x + rd, y);
   c.arcTo(x + w, y, x + w, y + h, rd);
@@ -95,13 +123,13 @@ function rr(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: num
   c.closePath();
 }
 /** 超宽截断加省略号 —— 长城市名不会把排版顶出画布 */
-function fit(c: CanvasRenderingContext2D, s: string, maxW: number): string {
+export function fit(c: CanvasRenderingContext2D, s: string, maxW: number): string {
   if (c.measureText(s).width <= maxW) return s;
   let i = s.length;
   while (i > 1 && c.measureText(s.slice(0, i) + "…").width > maxW) i--;
   return s.slice(0, i) + "…";
 }
-function gradeColor(grade: string, dark: boolean): string {
+export function gradeColor(grade: string, dark: boolean): string {
   const b = QUALITY_BANDS.find((x) => x.key === grade) || QUALITY_BANDS[QUALITY_BANDS.length - 1];
   return dark ? b.dark : b.color;
 }
@@ -115,10 +143,167 @@ export function shareFileName(r: ForecastResult): string {
     t(r.period === "am" ? "朝霞" : "晚霞") + ".png";
 }
 
+/* ---------- 多行文本 / 模型卡（结论区完整版共用） ---------- */
+/** 按画布宽度逐字断行；返回下一行的基线 y。maxLines 之后截断加省略号。 */
+function wrapText(
+  c: CanvasRenderingContext2D, text: string, x: number, y: number,
+  maxW: number, lh: number, maxLines = 3
+): number {
+  const chars = Array.from(String(text));
+  let line = "", ly = y, n = 1;
+  for (const ch of chars) {
+    const next = line + ch;
+    if (c.measureText(next).width > maxW && line) {
+      if (n >= maxLines) {
+        let cut = line;
+        while (cut && c.measureText(cut + "…").width > maxW) cut = cut.slice(0, -1);
+        c.fillText(cut + "…", x, ly);
+        return ly + lh;
+      }
+      c.fillText(line, x, ly);
+      ly += lh; n++;
+      line = ch;
+    } else line = next;
+  }
+  if (line) { c.fillText(line, x, ly); ly += lh; }
+  return ly;
+}
+
+export interface ModelCardView {
+  id: string;
+  name: string;
+  sub: string;
+  P: number;
+  Q: number;
+  grade: string;
+  facts: Array<[string, string]>;
+  missing?: boolean;
+}
+const MC_DOT: Record<string, string> = {
+  ens: "#BA7517", gfs: "#378ADD", ec: "#1D9E75", rt: "#D85A30"
+};
+
+/** 与 components/ModelCards.vue 同一份口径：四张卡、各自的事实行。
+    点（这里没有交互）不需要，但数字与页面必须一模一样。 */
+export function modelCardsOf(r: ForecastResult): ModelCardView[] {
+  const out: ModelCardView[] = [{
+    id: "ens",
+    name: "多模型综合",
+    sub: "GFS 30% + EC 34% + 光追 36%",
+    P: r.P, Q: r.Q, grade: r.grade,
+    facts: [
+      [t("可信度"), t(r.conf.lv)],
+      ["ΔI", r.dvI != null ? String(Math.round(r.dvI)) : "—"],
+      ["ΔP", r.spread != null ? String(Math.round(r.spread)) : "—"],
+      ["ΔQ", r.spreadQ != null ? String(Math.round(r.spreadQ)) : "—"],
+      [t("等级"), t(r.grade)],
+      [t("时效"), r.leadH > 0 ? Math.round(r.leadH) + " " + t("小时") : t("实况/历史")],
+      [t("综合指数"), String(Math.round(mixedIndex(r.P, r.Q)))]
+    ]
+  }];
+  const pack = (id: "gfs" | "ec", name: string, sub: string, s: StatResult): ModelCardView => ({
+    id, name, sub, P: s.P, Q: s.Q, grade: gradeOf(s.Q),
+    facts: [
+      [t("云型"), t(s.primary.type)],
+      [t("主云量"), Math.round(s.primary.cover) + "%"],
+      [t("云底高度"), uAlt(s.primary.base * 1000)],
+      [t("云边界"), isNum(s.d) ? uDist(s.d as number) : t("无明显边界")],
+      [t("等效云底"), uDist(s.hEff, 2)],
+      [t("持续时间"), Math.round(s.geom.dur) + " " + t("分钟")],
+      ["AOD", isNum(s.aodUp) ? (s.aodUp as number).toFixed(2) : "—"]
+    ]
+  });
+  out.push(pack("gfs", "GFS 模式", "NOAA 全球模式 · 1 小时分辨率", r.sG));
+  const e = r.sE;
+  if (e) out.push(pack("ec", "ECMWF-IFS 模式", "欧洲中心全球模式", e));
+  else {
+    out.push({
+      id: "ec", name: "ECMWF-IFS 模式", sub: "欧洲中心全球模式",
+      P: NaN, Q: NaN, grade: "", facts: [], missing: true
+    });
+  }
+  const rt = r.sRT;
+  out.push({
+    id: "rt", name: "光追算法", sub: "纯物理：多波长光路积分 + CIE 色度",
+    P: rt.P, Q: rt.Q, grade: gradeOf(rt.Q),
+    facts: [
+      [t("主云型"), t(rt.primary.type)],
+      [t("等效地表"), uDist(rt.Heq, 2)],
+      [t("峰值透射"), rt.peak.T550.toExponential(2)],
+      [t("亮度"), t(rt.bright.txt).split(/[（(]/)[0].trim()],
+      [t("颜色"), t(rt.peak.name)],
+      [t("饱和"), Math.round(rt.peak.sat * 100) + "%"],
+      [t("几何"), t(rt.geom.ok ? "成立" : "不成立")]
+    ]
+  });
+  return out;
+}
+
+export function drawModelCard(
+  c: CanvasRenderingContext2D, cd: ModelCardView,
+  x: number, y: number, w: number, h: number,
+  o: { dark: boolean; T1: string; T2: string; T3: string; LINE: string }
+): void {
+  const gc = gradeColor(cd.grade, o.dark);
+  rr(c, x, y, w, h, 12);
+  c.fillStyle = withAlpha(o.T1, o.dark ? 0.045 : 0.03); c.fill();
+  c.strokeStyle = o.LINE; c.lineWidth = 1; c.stroke();
+
+  const px = x + 14, py = y + 14;
+  c.fillStyle = MC_DOT[cd.id] || o.T2;
+  c.beginPath(); c.arc(px + 3, py + 7, 3, 0, Math.PI * 2); c.fill();
+  c.font = f(600, 12.5); c.fillStyle = o.T1;
+  c.fillText(fit(c, t(cd.name), w - 172), px + 13, py + 11);
+  c.font = f(500, 9); c.fillStyle = o.T3; c.textAlign = "right";
+  c.fillText(fit(c, t(cd.sub), 152), x + w - 14, py + 11);
+  c.textAlign = "left";
+
+  if (cd.missing) {
+    c.font = f(500, 10.5); c.fillStyle = o.T3;
+    wrapText(c, t("该日期/点位未取到 ECMWF 数据，本次综合结果由 GFS 与光追算法构成。"),
+      px, py + 32, w - 28, 15, 3);
+    return;
+  }
+
+  c.font = f(700, 26, true); c.fillStyle = o.T1;
+  const ps = Math.round(cd.P) + "%";
+  c.fillText(ps, px, py + 48);
+
+  const tag = t(cd.grade);
+  c.font = f(600, 9.5);
+  const tw = c.measureText(tag).width + 14;
+  const gx = x + w - 14 - tw, gy = py + 30;
+  rr(c, gx, gy, tw, 18, 9);
+  c.fillStyle = withAlpha(gc, o.dark ? 0.18 : 0.12); c.fill();
+  c.strokeStyle = withAlpha(gc, 0.45); c.lineWidth = 1; c.stroke();
+  c.fillStyle = gc; c.textAlign = "center";
+  c.fillText(tag, gx + tw / 2, gy + 13);
+  c.textAlign = "left";
+
+  const barY = py + 57, barW = w - 28;
+  c.fillStyle = withAlpha(o.T1, o.dark ? 0.1 : 0.07);
+  rr(c, px, barY, barW, 3, 1.5); c.fill();
+  c.fillStyle = MC_DOT[cd.id] || o.T2;
+  rr(c, px, barY, Math.max(2, barW * Math.min(1, Math.max(0, cd.P / 100))), 3, 1.5); c.fill();
+
+  c.font = f(500, 9.8);
+  let fx = px, fy = py + 78;
+  for (const [k, v] of cd.facts) {
+    const segW = c.measureText(k + " " + v).width + 12;
+    if (fx + segW > x + w - 14 && fx > px) { fx = px; fy += 13; }
+    if (fy > y + h - 8) break;
+    c.fillStyle = o.T3; c.fillText(k, fx, fy);
+    const kw = c.measureText(k).width;
+    c.fillStyle = o.T2; c.fillText(" " + v, fx + kw, fy);
+    fx += segW;
+  }
+}
+
 /* ---------- 绘制 ---------- */
-/** 实拍报头图：产物里是 base64 data URL，加载一次缓存复用 */
+/** 实拍报头图：产物里是 base64 data URL，加载一次缓存复用。
+    合成面板画预览要用同一张图，故对外暴露；不要在别处再建第二个加载器。 */
 let photoPromise: Promise<HTMLImageElement> | null = null;
-function loadHeroPhoto(): Promise<HTMLImageElement> {
+export function loadHeroPhoto(): Promise<HTMLImageElement> {
   if (!photoPromise) {
     photoPromise = new Promise((resolve, reject) => {
       const im = new Image();
@@ -132,12 +317,23 @@ function loadHeroPhoto(): Promise<HTMLImageElement> {
 
 export function drawShareCard(
   cv: HTMLCanvasElement, r: ForecastResult, view: VerdictView, nowMs = Date.now(),
-  photo?: HTMLImageElement | null
+  photo?: HTMLImageElement | null,
+  compose?: {
+    mods: ComposeMods; url?: string; days?: TrendDay[];
+    map?: { pts: MapPtLite[]; n: number } | null;
+    /** 地图本体截屏（captureMapComposite）：有就直接贴，出图＝屏上看到的那张图 */
+    mapImg?: HTMLCanvasElement | null;
+  }
 ): ShareMeta {
   const dark = document.documentElement.dataset.theme === "dark";
   const theme: "dark" | "light" = dark ? "dark" : "light";
 
-  cv.width = W * S; cv.height = H * S;
+  /* 可选块：默认全关时 extraH = 0，画布与页脚位置与旧版完全一致 */
+  const mods = compose?.mods ?? COMPOSE_DEFAULT;
+  const extraH = composeExtraH(mods);
+  const CH = H + extraH;
+
+  cv.width = W * S; cv.height = CH * S;
   const c = cv.getContext("2d");
   if (!c) throw new Error("canvas 2d unavailable");
 
@@ -166,7 +362,7 @@ export function drawShareCard(
   c.textAlign = "left";
 
   /* 底 + 顶部光谱线（v2 的识别，替代V1 6px 等级色条） */
-  c.fillStyle = BG; c.fillRect(0, 0, W, H);
+  c.fillStyle = BG; c.fillRect(0, 0, W, CH);
   const sg = c.createLinearGradient(0, 0, W, 0);
   sg.addColorStop(0, SP[0]); sg.addColorStop(0.5, SP[1]); sg.addColorStop(1, SP[2]);
   c.fillStyle = sg; c.fillRect(0, 0, W, 3);
@@ -257,112 +453,484 @@ export function drawShareCard(
       Math.max(px(darkMk.p), BX + 200), BY + BH + 18
     );
     c.textAlign = "left";
+
+    /* 与页面 .skyfoot 同一句：这条带子怎么读 */
+    c.font = f(500, 10.5); c.fillStyle = TX3;
+    const footL = t("五段曙暮光：白昼余晖 / 民用 / 航海 / 天文 / 夜间") +
+      (band.win ? "　·　" + t("底部橙条＝霞光窗口") : "");
+    c.fillText(fit(c, footL, BW * 0.72), BX, BY + BH + 36);
+    if (band.tzHint) {
+      c.textAlign = "right";
+      c.fillText(fit(c, t("当地时间") + " " + band.tzHint, BW * 0.26), BX + BW, BY + BH + 36);
+      c.textAlign = "left";
+    }
   }
 
-  /* 左栏：概率大字 */
-  const LY = 252;
-  c.fillStyle = TX1; c.font = f(700, 46, true);
-  c.fillText(Math.round(view.P) + "%", 44, LY);
-  c.fillStyle = TX3; c.font = f(500, 12);
-  c.fillText(t("出现概率"), 44, LY + 20);
+  /* =====================================================================
+     结论区：整块照搬页面 #verdict（2026-11-11 用户要求「全做进去」）
+     可信度 → 标题与结论词 → 说明 → 四项指标 → 太阳与云的事实 → 几何判定
+     → 霞色条 → 四张模型卡 → 口径说明。所有数字都取同一份 ForecastResult。
+     ===================================================================== */
+  const PAD = 44, innerW = W - PAD * 2;
+  const cfb = r.conf;
+  const confCol = dark ? cfb.dark.color : cfb.color;
 
-  /* 右栏：城市 / 日期 / 质量 / 结论 / 细节 */
-  const X = 252, maxW = W - X - 44;
-  c.fillStyle = TX1; c.font = f(700, 22, true);
-  c.fillText(fit(c, cityName(r.city.name, getLang()), maxW), 44, 178);
+  /* ① 可信度胶囊：可信度 高 · 三套算法结论接近 */
+  const confTxt = t("可信度") + " " + t(cfb.lv) + " · " + t(cfb.txt);
+  c.font = f(600, 12);
+  const confW = c.measureText(confTxt).width + 26;
+  const pillY = 194;
+  rr(c, PAD, pillY, confW, 24, 12);
+  c.fillStyle = withAlpha(confCol, dark ? 0.16 : 0.1); c.fill();
+  c.strokeStyle = withAlpha(confCol, 0.42); c.lineWidth = 1; c.stroke();
+  c.fillStyle = confCol;
+  c.fillText(confTxt, PAD + 13, pillY + 16);
 
-  /* 副标题：日期 + 朝/晚霞 + 非 live 标注 + 单模型标注 */
-  c.font = f(500, 13); c.fillStyle = TX2;
-  let sub = r.dateStr + "　" + t(isAM ? "朝霞" : "晚霞");
-  if (r.src === "cache") sub += "　·　" + t("缓存");
-  let subX = 44;
-  c.fillText(sub, subX, 197);
-  subX += c.measureText(sub + "　").width;
+  /* 单模型：紧跟可信度标出这是哪一路（页面上的 .mk-tag） */
   if (view.single) {
     const tag = t(view.label);
-    c.font = f(600, 12);
-    const tw = c.measureText(tag).width + 16;
-    rr(c, subX, 184, tw, 18, 9);
+    c.font = f(600, 11);
+    const tw = c.measureText(tag).width + 18;
+    const tx = PAD + confW + 8;
+    rr(c, tx, pillY, tw, 24, 12);
     c.fillStyle = withAlpha(ACC, 0.12); c.fill();
     c.strokeStyle = withAlpha(ACC, 0.4); c.lineWidth = 1; c.stroke();
-    c.fillStyle = ACC; c.textAlign = "center";
-    c.fillText(tag, subX + tw / 2, 197);
-    c.textAlign = "left";
+    c.fillStyle = ACC;
+    c.fillText(tag, tx + 9, pillY + 16);
   }
 
-  /* 质量分 + 等级胶囊 */
-  const qNum = String(Math.round(view.Q));
-  c.font = f(700, 34, true); c.fillStyle = gc;
-  c.fillText(qNum, X, LY);
-  const qw = c.measureText(qNum).width;
-  c.font = f(600, 16); c.fillStyle = TX1;
-  c.fillText(t("分"), X + qw + 5, LY);
-  const uw = c.measureText(t("分")).width;
-  const pillTxt = t("观赏质量") + " " + t(view.grade);
-  c.font = f(600, 13);
-  const pw = c.measureText(pillTxt).width + 24;
-  const px = X + qw + 5 + uw + 14;
-  rr(c, px, LY - 20, pw, 26, 13);
-  c.fillStyle = withAlpha(gc, dark ? 0.16 : 0.12); c.fill();
-  c.strokeStyle = withAlpha(gc, 0.4); c.lineWidth = 1; c.stroke();
-  c.fillStyle = gc; c.textAlign = "center";
-  c.fillText(pillTxt, px + pw / 2, LY - 2);
-  c.textAlign = "left";
+  /* ② 标题：城市 日期 朝/晚霞 + 结论词（结论词吃掉光谱渐变） */
+  c.font = f(700, 22, true);
+  let head = cityName(r.city.name, getLang()) + " " + r.dateStr + " " + t(isAM ? "朝霞" : "晚霞");
+  if (r.src === "cache") head += " · " + t("缓存");
+  head = fit(c, head, innerW - 150);
+  c.fillStyle = TX1;
+  c.fillText(head, PAD, 248);
+  const headW = c.measureText(head).width;
+  const word = t(conclWord(view.P));
+  const wordW = c.measureText(word).width;
+  const wordX = PAD + headW + 14;
+  if (wordX + wordW <= W - PAD) {
+    const wg2 = c.createLinearGradient(wordX, 0, wordX + wordW, 0);
+    wg2.addColorStop(0, SP[0]); wg2.addColorStop(0.5, SP[1]); wg2.addColorStop(1, SP[2]);
+    c.fillStyle = wg2;
+    c.fillText(word, wordX, 248);
+  }
 
-  /* 结论句：与页面标题里那句同源 */
-  c.font = f(500, 18); c.fillStyle = TX1;
-  c.fillText(
-    fit(c, t(conclWord(view.P)) + " · " + t("概率") + " " + Math.round(view.P) + "%", maxW),
-    X, 288
-  );
+  /* ③ 说明行：概率 / 观赏质量 / 等级 + 可信度提示（最多两行） */
+  c.font = f(500, 13); c.fillStyle = TX2;
+  const desc =
+    t("概率") + " " + Math.round(view.P) + "%，" +
+    t("观赏质量") + " " + Math.round(view.Q) + " " + t("分") + " · " +
+    t("等级") + " " + t(view.grade) + "。" + t(cfb.hint);
+  let dy = wrapText(c, desc, PAD, 270, innerW, 19, 2);
 
-  /* 四行细节（口径同V1分享卡） */
-  const p2 = r.sRT.primary;
-  const cfb = r.conf;
-  const rowList: string[] = [];
-  rowList.push(
-    t("载霞云层 {v}", { v: t(p2.type) }) + " · " +
-    t("覆盖 {v}", { v: Math.round(p2.cover) + "%" }) + " · " +
-    t("云底高度") + " " + uAlt(p2.base * 1000)
-  );
-  rowList.push(
-    t("云边界距离") + " " + (isNum(r.sRT.d) ? uDist(r.sRT.d as number) : t("无明显边界")) +
-    " · " + t("等效云底高度") + " " + uAlt(r.sRT.hEff * 1000) +
-    " · AOD " + (isNum(r.sRT.aodUp) ? (r.sRT.aodUp as number).toFixed(2) : "—")
-  );
-  rowList.push(
-    t("可信度") + " " + t(cfb.lv) + " · " + t(cfb.txt) +
-    (isNum(r.dvI) ? " · ΔI " + Math.round(r.dvI as number) : "")
-  );
-  const mname = (id: string) => (id === "gfs" ? "GFS " : id === "ec" ? "EC " : t("光追") + " ");
-  rowList.push(
-    r.models.map((m) => mname(m.id) + Math.round(m.P) + "%").join(" · ") +
-    " · " + t("综合 I {v}", { v: Math.round(mixedIndex(r.P, r.Q)) })
-  );
+  /* 气溶胶兜底提示（只有真兜底才出现，与页面同一条） */
+  if (r.aodFallback) {
+    c.font = f(500, 11.5);
+    c.fillStyle = tokColor("--q-mid", "#c08a2e");
+    dy = wrapText(
+      c, t("本次没有取到气溶胶数据，颜色浓淡按默认值估算，实际霞光可能比预报更淡或更浓。"),
+      PAD, dy + 3, innerW, 17, 2
+    );
+  }
 
-  c.font = f(500, 12.5);
-  rowList.forEach((s, k) => {
-    c.fillStyle = k === 2 ? (dark ? cfb.dark.color : cfb.color) : TX2;
-    c.fillText(fit(c, s, maxW), X, 310 + k * 15);
+  /* ④ 四项指标：出现概率 / 观赏质量 / 等级 / 模型分歧 ΔI */
+  const metY = dy + 10, metH = 58, metGap = 10;
+  const metW = (innerW - metGap * 3) / 4;
+  const met = [
+    { v: Math.round(view.P) + "%", l: t("出现概率"), col: tokColor("--acc-1", "#ff4d82") },
+    { v: String(Math.round(view.Q)), l: t("观赏质量"), col: tokColor("--acc-2", "#ff9c3f") },
+    { v: t(view.grade), l: t("等级"), col: gc },
+    /* 这一格画的是 ΔI 原始值：越大＝三路越不一致，别再标成「可信度」 */
+    { v: r.dvI != null ? (r.dvI as number).toFixed(1) : "—", l: t("模型分歧 ΔI"), col: TX2 }
+  ];
+  met.forEach((m, i) => {
+    const mx = PAD + i * (metW + metGap);
+    rr(c, mx, metY, metW, metH, 10);
+    c.fillStyle = withAlpha(TX1, dark ? 0.05 : 0.035); c.fill();
+    c.strokeStyle = LINE; c.lineWidth = 1; c.stroke();
+    c.fillStyle = m.col; c.font = f(700, 23, true);
+    c.fillText(fit(c, m.v, metW - 22), mx + 12, metY + 31);
+    c.fillStyle = TX3; c.font = f(500, 11);
+    c.fillText(fit(c, m.l, metW - 22), mx + 12, metY + 49);
   });
 
-  /* 左栏底部：品牌 slogan。照片报头占了竖向空间后，概率下方留出这块空档，
-     用它压住，比空着更像一张排过版的卡（右栏四行细节不受影响）。 */
-  c.font = f(500, 12); c.fillStyle = TX3;
-  c.fillText(fit(c, t("让每一次追霞，都有迹可循"), 190), 44, 340);
+  /* ⑤ 太阳与云的事实：页面 .v-right 的六行，两列摆 */
+  const p2 = r.sRT.primary;
+  const tzs = r.tz && isForeignTz(r.tz) ? " " + tzLabel(r.tz) : "";
+  const factRows: Array<[string, string]> = [
+    [t(r.evName), uClock(r.evMs, r.tz) + tzs],
+    [t("方位角"), r.evAz.toFixed(1) + "°"],
+    [t("云型"), typeDetail(p2.type, r.sRT.decks.map((d) => d.cover))],
+    [t("云底高度"), uAlt(p2.base * 1000)],
+    [t("持续时间"), Math.round(r.sRT.geom.dur) + " " + t("分钟")],
+    [t("能见度"), uDist(r.envM.vis ? r.envM.vis / 1000 : null, 1)]
+  ];
+  const factY = metY + metH + 22, colW = (innerW - 30) / 2;
+  factRows.forEach(([k, v], i) => {
+    const cx = PAD + (i % 2) * (colW + 30);
+    const cy = factY + Math.floor(i / 2) * 30;
+    c.fillStyle = TX3; c.font = f(500, 11.5);
+    c.fillText(k, cx, cy);
+    c.fillStyle = TX2; c.font = f(600, 12);
+    c.fillText(fit(c, v, colW - 74), cx + 74, cy);
+  });
 
-  /* 页脚 */
+  /* 几何条件：不成立时给出具体原因（可换两行），与页面 .geom-no 同一句 */
+  const geomOk = !!r.sRT.geom.ok;
+  const geomTxt = geomOk
+    ? t("火烧云三角几何条件成立")
+    : isNum(r.sRT.d)
+      ? t("几何条件不成立：云边界距离 {d} 已超过霞光深入距离上限 {m}（该云盘范围内阳光无法从云底下方射入）", {
+          d: uDist(r.sRT.d as number), m: uDist(r.sRT.geom.xMax)
+        })
+      : t("几何条件不成立：日出/日落方向 400 km 内没有找到可承载霞光的云盘");
+  const geomY = factY + 3 * 30 - 4;
+  c.font = f(500, 11.5); c.fillStyle = TX3;
+  c.fillText(t("几何条件"), PAD, geomY);
+  c.font = f(500, 12);
+  c.fillStyle = geomOk ? TX2 : tokColor("--q-bad", "#c2603a");
+  const geomEnd = wrapText(c, geomTxt, PAD + 74, geomY, innerW - 74, 17, 2);
+
+  /* ⑥ 霞色条 + 颜色名（页面 .color-strip / .color-names） */
+  let colY = Math.max(geomY + 18, geomEnd + 6);
+  const samples = r.sRT.samples || [];
+  if (samples.length) {
+    const sw = innerW / samples.length;
+    c.save();
+    rr(c, PAD, colY, innerW, 14, 7); c.clip();
+    samples.forEach((s, i) => {
+      c.fillStyle = s.hex;
+      c.fillRect(PAD + i * sw, colY, sw + 0.5, 14);
+    });
+    c.restore();
+    c.font = f(500, 10); c.fillStyle = TX3;
+    samples.forEach((s, i) => {
+      c.fillText(fit(c, t(s.name), sw - 4), PAD + i * sw, colY + 28);
+    });
+    colY += 40;
+  } else colY += 6;
+
+  /* ⑦ 各模型独立结果：2×2，与页面上四张卡同数据 */
+  const mcTop = colY + 6;
+  c.font = f(600, 13); c.fillStyle = TX1;
+  c.fillText(t("各模型独立结果"), PAD, mcTop + 12);
+  c.font = f(500, 10); c.fillStyle = TX3; c.textAlign = "right";
+  /* 静态图上不能写「点任意一张卡」——那是页面交互，出图后没有可点的地方 */
+  c.fillText(t("同一份取数，四路独立评分"), W - PAD, mcTop + 12);
+  c.textAlign = "left";
+
+  const cards = modelCardsOf(r);
+  const cardGap = 12, cardW = (innerW - cardGap) / 2, cardH = 118;
+  cards.slice(0, 4).forEach((cd, i) => {
+    drawModelCard(
+      c, cd,
+      PAD + (i % 2) * (cardW + cardGap),
+      mcTop + 22 + Math.floor(i / 2) * (cardH + cardGap),
+      cardW, cardH, { dark, T1: TX1, T2: TX2, T3: TX3, LINE }
+    );
+  });
+  const endY = mcTop + 22 + 2 * cardH + cardGap;
+
+  /* ⑧ 口径说明：页面上是可折叠的 FoldNote，图上直接铺开（最多两行一段） */
+  const noteY = endY + 14;
+  c.fillStyle = LINE; c.fillRect(PAD, noteY, innerW, 1);
+  c.font = f(600, 11.5); c.fillStyle = TX2;
+  c.fillText(t("说明 · 概率与质量分怎么算"), PAD, noteY + 18);
+  c.font = f(500, 10.5); c.fillStyle = TX3;
+  let ny = noteY + 34;
+  ny = wrapText(c, t("概率 P 来自多模型的加权几何平均：GFS、ECMWF 与光追物理各给一份，缺哪一路就自动剔除，其余权重不变。"),
+    PAD, ny, innerW, 15, 2);
+  ny = wrapText(c, t("质量分 Q 由云型、云量、云底高度、几何持续与大气通透度共同评分，再换算成等级；它回答「好不好看」，概率回答「有没有」。" ),
+    PAD, ny, innerW, 15, 2);
+  ny = wrapText(c, t("可信度看模型分歧 ΔI：分歧越小，综合值越可信；有效模型少于两路时不给分歧值，右上角显示为破折号。ΔI 是三套算法综合指数的极差，ΔP / ΔQ 是出现概率与质量分的极差。"),
+    PAD, ny, innerW, 15, 2);
+  void ny;
+
+  /* meta.rows：探针与外部消费的摘要（4 行，口径与旧版一致） */
+  const rowList: string[] = [
+    t("载霞云层 {v}", { v: t(p2.type) }) + " · " +
+    t("覆盖 {v}", { v: Math.round(p2.cover) + "%" }) + " · " +
+    t("云底高度") + " " + uAlt(p2.base * 1000),
+    t("云边界距离") + " " + (isNum(r.sRT.d) ? uDist(r.sRT.d as number) : t("无明显边界")) +
+    " · " + t("等效云底高度") + " " + uAlt(r.sRT.hEff * 1000) +
+    " · AOD " + (isNum(r.sRT.aodUp) ? (r.sRT.aodUp as number).toFixed(2) : "—"),
+    t("可信度") + " " + t(cfb.lv) + " · " + t(cfb.txt) +
+    (isNum(r.dvI) ? " · ΔI " + Math.round(r.dvI as number) : ""),
+    r.models.map((m) => (m.id === "gfs" ? "GFS " : m.id === "ec" ? "EC " : t("光追") + " ") +
+      Math.round(m.P) + "%").join(" · ") +
+    " · " + t("综合 I {v}", { v: Math.round(mixedIndex(r.P, r.Q)) })
+  ];
+
+  /* ---- 可选块（方案 D）：接在结论层下方、页脚之前 ----
+     块内坐标都是绝对值；改块内容时同步改 COMPOSE_BLOCK_H。 */
+  const ctx = c;
+  let by = H - 32;
+  /* padL 与结论区的 PAD 同值；innerW 已在上方声明，这里不重复定义 */
+  const padL = 44;
+
+  if (mods.sky) {
+    const top = by + 22;
+    ctx.font = f(600, 13); ctx.fillStyle = TX1;
+    ctx.fillText(t("天色带与观赏窗口"), padL, top);
+    ctx.font = f(500, 10); ctx.fillStyle = TX3; ctx.textAlign = "right";
+    ctx.fillText(t("同页面口径"), W - padL, top);
+    ctx.textAlign = "left";
+
+    const sb = band;
+    const bx = padL, bw = innerW, bh = 46, byy = top + 16;
+    if (sb) {
+      const totalM = sb.segs.reduce((a, s) => a + s.m, 0) || 1;
+      ctx.save();
+      rr(ctx, bx, byy, bw, bh, 9); ctx.clip();
+      let x = bx;
+      sb.segs.forEach((s) => {
+        const w = (s.m / totalM) * bw;
+        ctx.fillStyle = DUSK[s.cls] || "#ccc";
+        ctx.fillRect(x, byy, Math.ceil(w) + 0.5, bh);
+        x += w;
+      });
+      const gx = bx + (sb.glowX / 100) * bw;
+      const rg = ctx.createRadialGradient(gx, byy + bh, 0, gx, byy + bh, bw * 0.46);
+      rg.addColorStop(0, "rgba(255,166,87,0.30)");
+      rg.addColorStop(0.68, "rgba(255,166,87,0)");
+      ctx.fillStyle = rg; ctx.fillRect(bx, byy, bw, bh);
+      if (sb.win) {
+        const wx = bx + (sb.win.left / 100) * bw;
+        const ww = Math.max(3, (sb.win.width / 100) * bw);
+        ctx.fillStyle = ACC;
+        ctx.fillRect(wx, byy + bh - 5, ww, 5);
+        ctx.fillStyle = dark ? "rgba(255,255,255,.55)" : "rgba(255,255,255,.85)";
+        ctx.fillRect(wx, byy + bh - 5, ww, 1);
+      }
+      ctx.restore();
+      ctx.strokeStyle = LINE; ctx.lineWidth = 1;
+      rr(ctx, bx + 0.5, byy + 0.5, bw - 1, bh - 1, 9); ctx.stroke();
+
+      /* 轴标注：左右各两点，时间取自同一份 skyBandOf */
+      const tzs2 = r.tz && isForeignTz(r.tz) ? " " + tzLabel(r.tz) : "";
+      const px2 = (p: number) => bx + (p / 100) * bw;
+      ctx.font = f(500, 11); ctx.fillStyle = TX3;
+      ctx.textAlign = "left";
+      ctx.fillText(
+        fit(ctx, sb.marks[0].name + " " + sb.marks[0].time + tzs2, 200),
+        Math.max(px2(sb.marks[0].p), bx), byy + bh + 18
+      );
+      ctx.textAlign = "right";
+      ctx.fillText(
+        fit(ctx, sb.marks[3].name + " " + sb.marks[3].time, 200),
+        Math.min(px2(sb.marks[3].p), bx + bw), byy + bh + 18
+      );
+      ctx.textAlign = "left";
+    } else {
+      ctx.font = f(500, 12); ctx.fillStyle = TX3;
+      ctx.fillText(t("该时段没有天色带数据"), padL, byy + 20);
+    }
+    by += COMPOSE_BLOCK_H.sky;
+  }
+
+  if (mods.trend) {
+    const top = by + 22;
+    ctx.font = f(600, 13); ctx.fillStyle = TX1;
+    ctx.fillText(t("十日趋势"), padL, top);
+
+    const days = (compose?.days ?? []).slice(0, 10);
+    const pick = (d: TrendDay): TrendRow | undefined => isAM ? d.am || d.pm : d.pm || d.am;
+    let best: TrendDay | undefined; let bestQ = -1;
+    for (const d of days) {
+      const q = pick(d)?.Q ?? -1;
+      if (q > bestQ) { bestQ = q; best = d; }
+    }
+    ctx.font = f(500, 11); ctx.fillStyle = TX3; ctx.textAlign = "right";
+    ctx.fillText(
+      days.length
+        ? t("最佳 {d} · {q} 分", { d: (best?.date ?? "").slice(5), q: Math.round(Math.max(0, bestQ)) })
+        : t("趋势尚未加载"),
+      W - padL, top
+    );
+    ctx.textAlign = "left";
+
+    const baseY = by + COMPOSE_BLOCK_H.trend - 30;
+    const areaH = 122;
+    const colW = innerW / 10;
+    days.forEach((d, i) => {
+      const row = pick(d);
+      if (!row) return;
+      const x = padL + i * colW + colW * 0.22;
+      const bw = colW * 0.56;
+      const bh = 10 + (Math.max(0, Math.min(100, row.P)) / 100) * (areaH - 10);
+      ctx.fillStyle = d === best ? SP[1] : withAlpha(SP[0], 0.52);
+      rr(ctx, x, baseY - bh, bw, bh, 3); ctx.fill();
+      ctx.textAlign = "center";
+      ctx.font = f(600, 10); ctx.fillStyle = TX2;
+      ctx.fillText(Math.round(row.P) + "%", x + bw / 2, baseY - bh - 6);
+      ctx.font = f(500, 9.5); ctx.fillStyle = TX3;
+      ctx.fillText(d.date.slice(5), x + bw / 2, baseY + 15);
+      ctx.textAlign = "left";
+    });
+    by += COMPOSE_BLOCK_H.trend;
+  }
+
+  if (mods.map) {
+    const top = by + 22;
+    ctx.font = f(600, 13); ctx.fillStyle = TX1;
+    ctx.fillText(t("观测场缩略"), padL, top);
+    const mp = compose?.map;
+    ctx.font = f(500, 10); ctx.fillStyle = TX3; ctx.textAlign = "right";
+    ctx.fillText(
+      mp && mp.n ? t("{n} 格点 · 半径 500 km", { n: mp.n }) : t("地图尚未加载"),
+      W - padL, top
+    );
+    ctx.textAlign = "left";
+
+    const fx = padL, fy = top + 16, fw = innerW, fh = 210;
+    rr(ctx, fx, fy, fw, fh, 12);
+    ctx.fillStyle = dark ? "rgba(255,255,255,0.028)" : "rgba(20,30,50,0.028)";
+    ctx.fill();
+    ctx.strokeStyle = LINE; ctx.lineWidth = 1; ctx.stroke();
+
+    const mi = compose?.mapImg;
+    if (mi && mi.width > 1) {
+      /* 有地图本体截屏就贴截屏（居中裁成块比例，不变形）——
+         底图、热力面、地名都在，观感与屏上一致，远好于自绘色斑。 */
+      ctx.save();
+      rr(ctx, fx + 1, fy + 1, fw - 2, fh - 2, 11); ctx.clip();
+      const ta = fw / fh, ia = mi.width / mi.height;
+      let sw = mi.width, sh = mi.height, sx = 0, sy = 0;
+      if (ia > ta) { sw = mi.height * ta; sx = (mi.width - sw) / 2; }
+      else { sh = mi.width / ta; sy = (mi.height - sh) / 2; }
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(mi, sx, sy, sw, sh, fx + 1, fy + 1, fw - 2, fh - 2);
+      ctx.restore();
+    } else if (mp && mp.pts.length) {
+      const cx = fx + fw / 2, cy = fy + fh / 2;
+      const R = Math.min(fw, fh) / 2 - 10;
+      ctx.save();
+      rr(ctx, fx + 1, fy + 1, fw - 2, fh - 2, 11); ctx.clip();
+      /* 自绘兜底：热力场用径向渐变斑。alpha 比早先更实（0.18~0.62），
+         否则淡得像一层脏雾；采样点用反差芯 + 发丝光环，保证同色面上仍看得见落点。 */
+      const blobR = Math.max(12, (R / 6.25));
+      for (const p of mp.pts) {
+        const x = cx + (p.dxKm / 500) * R;
+        const y = cy - (p.dyKm / 500) * R;
+        const a = 0.18 + 0.44 * Math.max(0, Math.min(1, p.v / 100));
+        const g = ctx.createRadialGradient(x, y, 0, x, y, blobR);
+        g.addColorStop(0, withAlpha(p.color, a));
+        g.addColorStop(1, withAlpha(p.color, 0));
+        ctx.fillStyle = g;
+        ctx.fillRect(x - blobR, y - blobR, blobR * 2, blobR * 2);
+      }
+      /* 采样点：反差芯 + 发丝光环，保证在同色面上仍看得见落点 */
+      for (const p of mp.pts) {
+        const x = cx + (p.dxKm / 500) * R;
+        const y = cy - (p.dyKm / 500) * R;
+        ctx.beginPath(); ctx.arc(x, y, 2.6, 0, Math.PI * 2);
+        ctx.fillStyle = withAlpha(TX1, 0.16); ctx.fill();
+        ctx.beginPath(); ctx.arc(x, y, 1.2, 0, Math.PI * 2);
+        ctx.fillStyle = dark ? "rgba(255,255,255,.82)" : "rgba(255,255,255,.92)";
+        ctx.fill();
+      }
+      /* 城市锚点：空心圆 + 外环，落在正中 */
+      ctx.beginPath(); ctx.arc(cx, cy, 6.5, 0, Math.PI * 2);
+      ctx.fillStyle = dark ? "#0d1526" : "#fff"; ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = ACC; ctx.stroke();
+      ctx.restore();
+    } else {
+      ctx.font = f(500, 12); ctx.fillStyle = TX3;
+      ctx.fillText(t("先在观测场点「加载地图」，本次不含此块"), padL + 18, fy + 28);
+    }
+    ctx.font = f(500, 10); ctx.fillStyle = TX3;
+    ctx.fillText(
+      mi ? t("地图截屏 · 与屏上同一张图") : t("热力面 + 采样点 + 城市锚点 · 与地图同一份数据"),
+      padL, fy + fh + 18
+    );
+    by += COMPOSE_BLOCK_H.map;
+  }
+
+  if (mods.fac) {
+    const top = by + 20;
+    ctx.font = f(600, 13); ctx.fillStyle = TX1;
+    ctx.fillText(t("关键因素"), padL, top);
+    ctx.font = f(500, 10); ctx.fillStyle = TX3; ctx.textAlign = "right";
+    ctx.fillText(t("越靠右越有利"), W - padL, top);
+    ctx.textAlign = "left";
+
+    r.factorRows.slice(0, 3).forEach((row, i) => {
+      const y = top + 28 + i * 34;
+      ctx.font = f(500, 11.5); ctx.fillStyle = TX2;
+      ctx.fillText(fit(ctx, t(SNAP_FAC_NAME[row[0]] || row[0]), 150), padL, y);
+      ctx.textAlign = "right"; ctx.font = f(600, 11.5); ctx.fillStyle = TX1;
+      ctx.fillText(snapFacFmt(row[0], row[1]), 268, y);
+      ctx.textAlign = "left";
+      const bx = 288, bw = W - padL - bx;
+      ctx.fillStyle = withAlpha(TX3, 0.16);
+      rr(ctx, bx, y - 7, bw, 6, 3); ctx.fill();
+      const sc = Math.max(0, Math.min(1, Number(row[2]) || 0));
+      if (sc > 0.02) {
+        ctx.fillStyle = sc >= 0.6 ? SP[1] : withAlpha(SP[0], 0.7);
+        rr(ctx, bx, y - 7, bw * sc, 6, 3); ctx.fill();
+      }
+    });
+    by += COMPOSE_BLOCK_H.fac;
+  }
+
+  if (mods.qr) {
+    const qy = by + 24;
+    const PL = 216;
+    if (compose?.url) {
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,.20)"; ctx.shadowBlur = 18; ctx.shadowOffsetY = 6;
+      ctx.fillStyle = "#ffffff";
+      rr(ctx, padL, qy, PL, PL, 18); ctx.fill();
+      ctx.restore();
+
+      const qr = qrcode(0, "L");
+      /* 完整链接带 pack 会超出二维码容量：码里用精简链接，复制按钮给完整版 */
+      qr.addData(qrSafeUrl(compose.url));
+      qr.make();
+      const n = qr.getModuleCount();
+      const pad = 14;
+      const cell = Math.max(1, Math.floor((PL - pad * 2) / n));
+      const qs = cell * n;
+      const qx = padL + (PL - qs) / 2, qy2 = qy + (PL - qs) / 2;
+      ctx.fillStyle = "#0b1020";
+      for (let yy2 = 0; yy2 < n; yy2++) {
+        for (let xx2 = 0; xx2 < n; xx2++) {
+          if (qr.isDark(yy2, xx2)) ctx.fillRect(qx + xx2 * cell, qy2 + yy2 * cell, cell, cell);
+        }
+      }
+
+      const tx = padL + PL + 32;
+      ctx.fillStyle = TX1; ctx.font = f(600, 16);
+      ctx.fillText(t("扫码查看完整结论"), tx, qy + 40);
+      ctx.fillStyle = TX2; ctx.font = f(500, 12);
+      ctx.fillText(t("快照链接 · 打开不重新取数"), tx, qy + 66);
+      ctx.fillStyle = TX3; ctx.font = f(500, 11);
+      ctx.fillText(t("趋势、地图、因子明细都在里面"), tx, qy + 92);
+      ctx.font = f(600, 11); ctx.fillStyle = withAlpha(ACC, 0.9);
+      ctx.fillText("SUNGLOW.CLOUD", tx, qy + 128);
+    } else {
+      ctx.fillStyle = TX3; ctx.font = f(500, 12);
+      ctx.fillText(t("快照链接尚未生成，本次不含二维码"), padL, qy + 20);
+    }
+    by += COMPOSE_BLOCK_H.qr;
+  }
+
+  /* 页脚：跟着块高一起下移，永远压在卡片最后一屏 */
+  const FY = H - 32 + extraH;
   c.strokeStyle = LINE; c.lineWidth = 1;
-  c.beginPath(); c.moveTo(44, 368); c.lineTo(W - 44, 368); c.stroke();
+  c.beginPath(); c.moveTo(44, FY); c.lineTo(W - 44, FY); c.stroke();
   c.font = f(500, 12); c.fillStyle = TX3;
   c.fillText(
     fit(c, t("霞光档案 · 数据源 Open-Meteo（GFS / ECMWF-IFS / CAMS 气溶胶）· 结论仅供观赏参考"), W - 250),
-    44, 388
+    44, FY + 20
   );
   c.textAlign = "right";
   c.fillText(
     r.leadH > 0 ? t("预报时效约 {n} 小时", { n: Math.round(r.leadH) }) : t("实况 / 历史分析场"),
-    W - 44, 388
+    W - 44, FY + 20
   );
   c.textAlign = "left";
 
@@ -372,13 +940,15 @@ export function drawShareCard(
     const badge = t("演示数据");
     c.font = f(600, 12);
     const bw = c.measureText(badge).width + 22;
-    const bx = 44, by = 292, bh = 26;
-    rr(c, bx, by, bw, bh, 13);
+    /* 放在可信度胶囊同一行的最右：不压任何数字、说明与页脚 */
+    /* 放在可信度胶囊同一行的最右：不压任何数字、说明与页脚 */
+    const bx = W - 44 - bw, mby = 194, bh = 26;
+    rr(c, bx, mby, bw, bh, 13);
     c.fillStyle = withAlpha("#e2b45e", dark ? 0.18 : 0.16); c.fill();
     c.strokeStyle = withAlpha("#e2b45e", 0.55); c.lineWidth = 1; c.stroke();
     c.fillStyle = dark ? "#e2b45e" : "#8a5a00";
     c.textAlign = "center";
-    c.fillText(badge, bx + bw / 2, by + 17);
+    c.fillText(badge, bx + bw / 2, mby + 17);
     c.textAlign = "left";
   }
 
@@ -392,7 +962,8 @@ export function drawShareCard(
     rows: rowList,
     bg: BG,
     grade: view.grade,
-    band: !!band
+    band: !!band,
+    contentEnd: Math.round(ny)
   };
 }
 
@@ -564,7 +1135,7 @@ export async function saveQrCard(url: string, r: ForecastResult): Promise<void> 
   c.restore();
 
   const qr = qrcode(0, "L");
-  qr.addData(url);
+  qr.addData(qrSafeUrl(url));
   qr.make();
   const n = qr.getModuleCount();
   const cell = Math.max(1, Math.floor((PLATE - PIN * 2) / n));
@@ -639,6 +1210,158 @@ export async function saveShareCard(
 
   const blob = await canvasToBlob(cv);
   return deliverBlob(blob, meta.fileName);
+}
+
+/* ---------- 合成卡（方案 D）的取数口径：只读缓存，绝不触发请求 ----------
+   「不自动取数」是硬约束：趋势只查 6h 趋势缓存、观测场只查地图缓存；
+   查不到就把对应块置灰，而不是偷偷跑一次请求补数据。 */
+export function trendDaysCached(r: ForecastResult): TrendDay[] {
+  const [Y, M, D] = r.dateStr.split("-").map(Number);
+  const day0 = Date.UTC(Y, (M || 1) - 1, D || 1);
+  const rows = trendCacheGet(day0, r.city.lat, r.city.lon);
+  if (!rows || !rows.length) return [];
+  const byDate = new Map<string, TrendDay>();
+  for (const row of rows) {
+    const day = byDate.get(row.date) || { date: row.date };
+    if (row.period === "am") day.am = row; else day.pm = row;
+    byDate.set(row.date, day);
+  }
+  return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/** 观测场缩略：从地图缓存取当前时段的格点，换算成相对城市的公里偏移。
+    没缓存就返回 null —— 勾选项置灰，绝不自动加载地图（地图是额度大头）。 */
+/* =========================================================================
+   地图本体截图（观测场图 / 合成卡的「观测场缩略」共用）
+   —— 直接合成 .map-host 里的 SDK 画布 + 我们的 overlay，出图与屏上看到的是
+   同一张图（底图、热力面、地名、方位环都在），不再用程序化的色斑代替。
+   —— 不做 getImageData 的「空图判定」：跨域瓦片会把画布污染（tainted），
+   getImageData 直接抛 SecurityError，判定会把好图误判成空图。是否污染留给
+   导出环节（canvasToBlob 抛错再回退自绘）。
+   ========================================================================= */
+export function captureMapComposite(): HTMLCanvasElement | null {
+  const host = document.querySelector<HTMLElement>(".map-host");
+  const overlay = document.querySelector<HTMLCanvasElement>(".map-box canvas.overlay");
+  if (!host) return null;
+  const layers = Array.from(host.querySelectorAll("canvas")) as HTMLCanvasElement[];
+  if (!layers.length) return null;
+  const w = layers[0].width, h = layers[0].height;
+  if (w < 2 || h < 2) return null;
+  try {
+    const out = document.createElement("canvas");
+    out.width = w; out.height = h;
+    const c = out.getContext("2d");
+    if (!c) return null;
+    /* SDK 可能把底图与注记放在不同画布上，按 DOM 顺序叠一遍最稳 */
+    for (const layer of layers) {
+      if (layer.width > 1 && layer.height > 1) c.drawImage(layer, 0, 0, w, h);
+    }
+    if (overlay && overlay.width > 1 && overlay.height > 1) c.drawImage(overlay, 0, 0, w, h);
+    /* 空图判定（缓冲没保留时整张全透明）—— 但要在污染面前让路：
+       getImageData 在 tainted 画布上抛 SecurityError，而抛错恰恰说明有跨域瓦片
+       （有内容），按「非空」继续用；真读到像素才做透明度判定。 */
+    try {
+      let opaque = 0;
+      for (const [x, y] of [[4, 4], [w - 5, 4], [w >> 1, h >> 1], [4, h - 5]]) {
+        if (c.getImageData(x, y, 1, 1).data[3] > 0) opaque++;
+      }
+      if (opaque < 2) return captureFieldLayer();
+    } catch { /* tainted：有瓦片内容，不作空图处理 */ }
+    return out;
+  } catch {
+    return null;
+  }
+}
+
+/** 只截我们自己的覆盖层（热力面 + 地名 + 方位环 + 采样点）。
+    2D 画布从不被跨域污染，导出永远安全 —— SDK 层污染导致 toBlob 抛错时，
+    用它顶上，好过退回一堆自绘色斑。 */
+export function captureFieldLayer(): HTMLCanvasElement | null {
+  const overlay = document.querySelector<HTMLCanvasElement>(".map-box canvas.overlay");
+  if (!overlay || overlay.width < 2 || overlay.height < 2) return null;
+  try {
+    const out = document.createElement("canvas");
+    out.width = overlay.width; out.height = overlay.height;
+    const c = out.getContext("2d");
+    if (!c) return null;
+    c.drawImage(overlay, 0, 0);
+    return out;
+  } catch {
+    return null;
+  }
+}
+
+/** 观测场缩略的点：从一份 MapDateBox 换算成相对城市的公里偏移。
+    纯函数，不碰 localStorage —— 内存里的地图数据（MapView 装载即写入 mapBox）
+    才是「现在有没有观测场」的权威来源；缓存落盘是延迟的、localStorage 满了
+    还会静默失败，只配当回落。 */
+export function mapThumbFromBox(
+  box: MapDateBox | null, period: "am" | "pm",
+  city: { lat: number; lon: number }
+): { pts: MapPtLite[]; n: number } | null {
+  if (!box) return null;
+  const per = period === "am" ? box.am : box.pm;
+  const src: MapPoint[] = per && per.pts ? per.pts : [];
+  if (!src.length) return null;
+  const pts: MapPtLite[] = src.map((p) => ({
+    dxKm: (p.lon - city.lon) * Math.cos((city.lat * Math.PI) / 180) * 111.32,
+    dyKm: (city.lat - p.lat) * 110.57,
+    v: p.P,
+    /* MapPoint.color 是「霞色名」（绯红/粉紫…，供对比卡当标签用），
+       不是 CSS 颜色，直接拿去 fillStyle 会静默画不出任何东西。
+       这里按值走与页面同源的光谱 ramp。 */
+    color: rampColor(p.P)
+  }));
+  return { pts, n: src.length };
+}
+
+/** 落盘缓存里的观测场（跨会话恢复用的回落路径） */
+export function mapThumbCached(r: ForecastResult): { pts: MapPtLite[]; n: number } | null {
+  return mapThumbFromBox(
+    mapCacheGet(r.dateStr, r.city.lat, r.city.lon), r.period, r.city
+  );
+}
+
+/** 合成卡落地：一张卡，勾了哪些块由 mods 决定，产物永远一个文件。
+    days / map 可由调用方传入（分享面板用内存里那份，保证预览与导出同源），
+    不传才回落到只读缓存。 */
+export async function saveComposeCard(
+  r: ForecastResult, view: VerdictView, mods: ComposeMods, url = "",
+  extra?: {
+    days?: TrendDay[];
+    map?: { pts: MapPtLite[]; n: number } | null;
+    mapImg?: HTMLCanvasElement | null;
+  }
+): Promise<ShareOutcome> {
+  await ensureFonts();
+  const photo = await loadHeroPhoto().catch(() => null);
+  const days = extra?.days ?? (mods.trend ? trendDaysCached(r) : []);
+  const map = extra?.map ?? (mods.map ? mapThumbCached(r) : null);
+  const cv = document.createElement("canvas");
+  const meta = drawShareCard(cv, r, view, Date.now(), photo,
+    { mods, url, days, map, mapImg: extra?.mapImg ?? null });
+  cv.dataset.shareMeta = JSON.stringify(meta);
+  try {
+    const blob = await canvasToBlob(cv);
+    return deliverBlob(blob, meta.fileName);
+  } catch (e) {
+    /* 地图截屏被跨域瓦片污染时 toBlob 抛 SecurityError。
+       两级回退：先换「只截覆盖层」（真实热力面 + 地名，永不污染），再无截屏自绘。 */
+    if (extra?.mapImg) {
+      for (const alt of [captureFieldLayer(), null] as (HTMLCanvasElement | null)[]) {
+        if (alt === extra.mapImg) continue;
+        try {
+          const cv2 = document.createElement("canvas");
+          const meta2 = drawShareCard(cv2, r, view, Date.now(), photo,
+            { mods, url, days, map, mapImg: alt });
+          cv2.dataset.shareMeta = JSON.stringify(meta2);
+          const blob2 = await canvasToBlob(cv2);
+          return deliverBlob(blob2, meta2.fileName);
+        } catch { /* 继续试下一级 */ }
+      }
+    }
+    throw e;
+  }
 }
 
 /* =========================================================================
@@ -1622,8 +2345,27 @@ export async function saveMapCard(o: MapCardOpts): Promise<ShareOutcome> {
   const cv = document.createElement("canvas");
   const meta = drawMapCard(cv, o, photo);
   cv.dataset.shareMeta = JSON.stringify(meta);
-  const blob = await canvasToBlob(cv);
-  return deliverBlob(blob, meta.fileName);
+  try {
+    const blob = await canvasToBlob(cv);
+    return deliverBlob(blob, meta.fileName);
+  } catch (e) {
+    /* 跨域瓦片会把地图截屏污染（tainted），toBlob 抛 SecurityError ——
+       这时整张图都导不出。两级回退：先换「只截覆盖层」（2D 画布永不污染，
+       仍是真实的热力面与地名），再退回完全无截屏的自绘版。 */
+    if (o.base) {
+      for (const alt of [captureFieldLayer(), null] as (HTMLCanvasElement | null)[]) {
+        if (alt === o.base) continue;
+        try {
+          const cv2 = document.createElement("canvas");
+          const meta2 = drawMapCard(cv2, { ...o, base: alt }, photo);
+          cv2.dataset.shareMeta = JSON.stringify(meta2);
+          const blob2 = await canvasToBlob(cv2);
+          return deliverBlob(blob2, meta2.fileName);
+        } catch { /* 继续试下一级 */ }
+      }
+    }
+    throw e;
+  }
 }
 
 export { W as SHARE_CARD_W, H as SHARE_CARD_H, TW as TREND_CARD_W, TH as TREND_CARD_H };

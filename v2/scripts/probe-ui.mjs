@@ -21,8 +21,10 @@ const ROOT = path.resolve(HERE, "..");
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), "glowcast-probe-"));
 const PAGE = "file:///" + path.join(ROOT, "index.html").replace(/\\/g, "/");
 
-const NAV_LABELS = ["结论", "十日趋势", "观测场", "多地对比", "影响因素", "实况校准", "光追细节"];
-const NAV_IDS = ["#verdict", "#trend", "#field", "#compare", "#factors", "#calib", "#ray"];
+/* 目录口径（2026-11-10）：分享提为页内一节，插在多地对比之后；
+   实况校准撤出目录（页面仍在，位置在光追之后、附注之前） */
+const NAV_LABELS = ["结论", "十日趋势", "观测场", "多地对比", "分享", "影响因素", "光追细节"];
+const NAV_IDS = ["#verdict", "#trend", "#field", "#compare", "#share", "#factors", "#ray"];
 
 let pass = 0;
 const fails = [];
@@ -130,15 +132,58 @@ const PANEL_RECT = `(()=>{const p=document.querySelector('.settings .panel');
 const OPEN_SETTINGS = `(()=>{const b=document.querySelector('.settings > .icon-btn'); if(!b) return false; b.click(); return true;})()`;
 const CLICK_OUTSIDE = `(()=>{document.querySelector('footer')?.click(); return true;})()`;
 
+/* 假成功 fetch 桩：只回合法 JSON、绝不碰网络，因此跑探针不烧额度。
+   取数失败已不回落 mock（2026-11-10），所有依赖「页面上有结果」的段落
+   都必须先装这个桩，否则一碰真实限流就是整段落空。 */
+const FETCH_STUB = `(()=>{window.__calls=[];
+  const fake=(u)=>{u=String(u); window.__calls.push(u);
+    const q=new URL(u, location.href).searchParams;
+    const nLoc=(q.get('latitude')||'').split(',').filter(Boolean).length||1;
+    const vars=(q.get('hourly')||'').split(',').filter(Boolean);
+    const sd=q.get('start_date'), ed=q.get('end_date'), fd=+q.get('forecast_days')||7;
+    let t0,nH;
+    if(sd){t0=Date.parse(sd+'T00:00:00Z');const t1=ed?Date.parse(ed+'T00:00:00Z'):t0;
+      nH=Math.round((t1-t0)/3600000)+24;}
+    else{t0=Date.now()-3*86400000;nH=24*(fd+3);}
+    const time=[];
+    for(let i=0;i<nH;i++) time.push(new Date(t0+i*3600000).toISOString().slice(0,16));
+    const DEF={temperature_2m:15,dew_point_2m:8,relative_humidity_2m:60,
+      cloud_cover_low:20,cloud_cover_mid:45,cloud_cover_high:30,visibility:20000,
+      pressure_msl:1013,boundary_layer_height:800,freezing_level_height:2000,
+      aerosol_optical_depth:0.2};
+    const hourly={time};
+    for(const v of vars) hourly[v]=time.map(()=>(v in DEF?DEF[v]:null));
+    const one={hourly,utc_offset_seconds:28800,timezone:'Asia/Shanghai'};
+    const body=nLoc>1?Array.from({length:nLoc},()=>one):one;
+    return Promise.resolve({ok:true,status:200,headers:{get:()=>null},
+      json:()=>Promise.resolve(body),text:()=>Promise.resolve('')});
+  };
+  window.fetch=(u)=>fake(u); return 1})()`;
+
+/* 切语言：2026-11-10 起顶栏不再有语言图标，改到设置面板的「界面」组。
+   开面板 → 点对应语言 → Esc 收起，后续断言仍在干净的页面上跑。 */
+function pickLang(name) {
+  if (!ev(OPEN_SETTINGS)) return false;
+  wait(260);
+  const hit = ev(`(()=>{const b=[...document.querySelectorAll('.settings .panel .seg button')]
+    .find(x=>x.textContent.trim()==='${name}'); if(!b) return false; b.click(); return true;})()`);
+  ab("eval", `document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}))`);
+  wait(1200);
+  return hit;
+}
+
 console.log("v2 顶栏探针 · " + PAGE);
 ab("open", PAGE);
+/* 探针会为固定断言反复覆写语言 / 主题 / 城市。file:// 下与用户双击打开的
+   是同一份 localStorage，跑完必须把偏好还回去（见脚本末尾）。 */
+const ORIG_PREF = ev(`(()=>({raw:localStorage.getItem('SUNGLOW.v2.pref')}))()`);
 /* 上一轮可能把 lang / theme / 折叠态留在 localStorage 里，先清干净再开跑，
    否则断言会拿到上一轮的语言与折叠状态 */
 ab("eval", `localStorage.removeItem('SUNGLOW.v2.pref')`);
 ab("reload");
 wait(1500);
 
-/* ================= 1280px：单行（one）—— 徽标胶囊在四按钮右侧 ================= */
+/* ================= 1280px：单行（one）—— 徽标胶囊在三个按钮右侧 ================= */
 console.log("\n[1280px 宽屏单行]");
 vp(1280, 900);
 wait(450);
@@ -161,7 +206,7 @@ const pill = ev(PILL);
 ok("宽屏徽标是胶囊 .meta-pill 且可见", !!pill && pill.vis === true, JSON.stringify(pill));
 ok("胶囊文案 = 城市 · 日期 · 朝/晚霞",
   !!pill && /^.+ · \d{4}-\d{2}-\d{2} · (朝霞|晚霞)$/.test(pill.txt), pill && pill.txt);
-ok("胶囊紧跟五按钮右侧（间距 10–18px）", !!pill && pill.gapLeft >= 10 && pill.gapLeft <= 18, JSON.stringify(pill && pill.gapLeft));
+ok("胶囊紧跟三按钮右侧（间距 10–18px）", !!pill && pill.gapLeft >= 10 && pill.gapLeft <= 18, JSON.stringify(pill && pill.gapLeft));
 ok("胶囊在顶栏里垂直居中", !!pill && Math.abs(pill.cy - pill.barCy) <= 2, JSON.stringify(pill && [pill.cy, pill.barCy]));
 ok("胶囊高 26–34px（不撑高单行顶栏）", !!pill && pill.h >= 26 && pill.h <= 34, JSON.stringify(pill && pill.h));
 ok("胶囊是圆角胶囊（999）", !!pill && pill.rad >= 100, JSON.stringify(pill && pill.rad));
@@ -170,11 +215,15 @@ eq("窄屏时代那个第二行徽标已彻底移除（DOM 里没有 .topbar-met
   ev(`document.querySelectorAll('.topbar-meta').length`), 0);
 
 /* 第 7 项是 2026-10-26 新增：点它必须滚到 #ray，且滚动高亮要跟过去。
-   先等结果区真正长出来（首屏取数/骨架切换期间点导航可能落空），
-   smooth scroll 时长随页长变化，和上面 #calib 一样轮询到进视口再断言。 */
-for (let i = 0; i < 16; i++) {
-  wait(250);
-  if (ev(`!!document.querySelector('#ray') && document.querySelector('#ray').getBoundingClientRect().height > 200`)) break;
+   2026-11-10 加了「分享与保存」一节后暴露了一个既有竞态：结果区是异步长高的，
+   点导航时算出的目标坐标在平滑滚动途中就过期了，实测会停在上一节（多地对比）。
+   所以先等「页面总高度连续两次不变」再点；万一途中又长高，12 帧后补点一次。 */
+let prevH = 0;
+for (let i = 0; i < 20; i++) {
+  wait(300);
+  const h = Number(ev(`document.documentElement.scrollHeight`));
+  if (h > 2000 && h === prevH) break;
+  prevH = h;
 }
 ev(`document.querySelectorAll('.nav-tabs a')[6].click()`);
 let rayNav = null;
@@ -184,6 +233,7 @@ for (let i = 0; i < 40; i++) {
     const on=document.querySelector('.nav-tabs a.on');
     return {top:Math.round(r.top),h:innerHeight,on:on?on.textContent.trim():null};})()`);
   if (rayNav && rayNav.top >= 0 && rayNav.top < rayNav.h && rayNav.on === "光追细节") break;
+  if (i === 12) ev(`document.querySelectorAll('.nav-tabs a')[6].click()`);
 }
 ok("点「光追细节」后 #ray 进入视口", !!rayNav && rayNav.top >= 0 && rayNav.top < rayNav.h, JSON.stringify(rayNav));
 eq("滚动高亮落在「光追细节」", rayNav && rayNav.on, "光追细节");
@@ -221,13 +271,18 @@ ok("861px 徽标仍在第一行（不再有第二行）",
   ev(`getComputedStyle(document.querySelector('.top-actions > .meta-pill')).display`) !== "none"
   && ev(`document.querySelectorAll('.topbar-meta').length`) === 0);
 
-eq("7 个锚点都能落到真实 section",
+eq("7 个导航锚点都能落到真实 section",
   ev(`[${NAV_IDS.map((s) => `!!document.querySelector('${s}')`).join(",")}]`),
   NAV_IDS.map(() => true));
+/* 实况校准已撤出目录，但页面必须还在（用户要求：目录删、页面留） */
+ok("实况校准仍在页面上（只是不在目录里）",
+  ev(`!!document.querySelector('#calib')`) === true);
+ok("目录里没有实况校准",
+  ev(`![...document.querySelectorAll('.nav-tabs a')].some(a=>a.getAttribute('href')==='#calib')`) === true);
 
 const icons861 = ev(SAMPLE_ICONS);
-eq("顶栏图标共 5 个（设置+语言+主题+教程+版本）", icons861.length, 5);
-eq("图标尺寸统一 34×34", icons861.map((i) => [i.w, i.h]), [[34, 34], [34, 34], [34, 34], [34, 34], [34, 34]]);
+eq("顶栏图标共 3 个（设置+教程+版本；语言与主题已并入设置）", icons861.length, 3);
+eq("图标尺寸统一 34×34", icons861.map((i) => [i.w, i.h]), [[34, 34], [34, 34], [34, 34]]);
 eq("图标圆角统一", [...new Set(icons861.map((i) => i.r))].length, 1);
 ok("设置按钮走的是 .icon-btn", String(icons861[0].cls).includes("icon-btn"), String(icons861[0].cls));
 
@@ -269,20 +324,16 @@ ok("点「观测场」后 #field 停在 scroll-margin 处",
   !!field && Math.abs(field.top - smTop) <= 6, JSON.stringify({ top: field && field.top, smTop }));
 eq("滚动高亮落在「观测场」", field.on, "观测场");
 
-/* 末段：页尾那节顶不到判定线，高亮必须靠「到底兜底」跟过去
-   （smooth scroll 时长随页长变化，必须轮询到 #calib 进视口且高亮归位再断言
-   ——只断「进视口」会在滚动途中取样，高亮还停在上一节） */
-ev(`document.querySelectorAll('.nav-tabs a')[5].click()`);
-let calib = null;
-for (let i = 0; i < 40; i++) {
-  wait(250);
-  calib = ev(`(()=>{const el=document.querySelector('#calib');const r=el.getBoundingClientRect();
-    const on=document.querySelector('.nav-tabs a.on');
-    return {top:Math.round(r.top), h:innerHeight, on:on?on.textContent.trim():null};})()`);
-  if (calib && calib.top >= 0 && calib.top < calib.h && calib.on === "实况校准") break;
-}
-ok("点「实况校准」后 #calib 进入视口", calib.top >= 0 && calib.top < calib.h, JSON.stringify(calib));
-eq("页尾高亮仍落在「实况校准」", calib.on, "实况校准");
+/* 末段：滚到页底，高亮必须停在目录最后一项。
+   实况校准撤出目录后，页底最后两节（实况校准 / 附注）都不在 NAV 里 ——
+   这一条守的就是 computeActive 的「到底兜底」，否则高亮会卡在影响因素。 */
+ev(`document.querySelectorAll('.nav-tabs a')[${NAV_IDS.length - 1}].click()`);
+wait(1200);
+ev(`window.scrollTo(0, document.documentElement.scrollHeight)`);
+wait(900);
+ok("滚到页底时高亮停在目录最后一项（到底兜底）",
+  ev(`(()=>{const on=document.querySelector('.nav-tabs a.on');
+    return on ? on.textContent.trim() : null;})()`) === "光追细节");
 
 /* ================= 860px：断点交回抽屉 ================= */
 console.log("\n[860px 断点]");
@@ -291,10 +342,8 @@ wait(300);
 ok("860px 导航隐藏", ev(`getComputedStyle(document.querySelector('.nav-tabs')).display`) === "none");
 ok("860px 汉堡出现", ev(`getComputedStyle(document.querySelector('.hamburger')).display`) !== "none");
 
-/* ================= 660px：首帧无滚动条 → 有滚动条 的窄带 =================
-   回归：refit() 首次跑时页面还没有纵向滚动条，.topbar-in 量到 620px 判「menu 放得下」，
-   滚动条随后出现把可用宽压到 610px，品牌名被挤成两行却没有任何事件重判。
-   现在由 ResizeObserver 监听顶栏宽度重跑判定 —— 这条断言防的就是那个回归。 */
+/* 660px 仍落在竞态带里（首帧无滚动条 → 有滚动条）。语言/主题移入设置后顶栏少了
+   两个按钮，menu 档能撑到更窄，所以 660 现在停在 menu（更窄的 mini 见下方 390px 段）。 */
 console.log("\n[660px 首帧竞态带]");
 vp(660, 900);
 wait(700);
@@ -303,10 +352,10 @@ const band660 = ev(`(()=>{const tb=document.querySelector('.topbar');
   let lh=parseFloat(cs.lineHeight); if(!isFinite(lh)) lh=parseFloat(cs.fontSize)*1.4;
   return {cls:tb.className.replace('topbar','').trim(), nameH:Math.round(nm.getBoundingClientRect().height),
     lh:Math.round(lh), fit:window.__gcFit};})()`);
-eq("660px 落到 mode-mini（menu 放不下就不硬撑）", band660.cls, "mode-mini");
+eq("660px 收成 mode-menu（少两个图标后 menu 档仍放得下）", band660.cls, "mode-menu");
 ok("660px 品牌名保持单行（不被挤成两行）",
   band660.nameH <= band660.lh * 1.35, JSON.stringify(band660));
-eq("判定链完整走到最后一级", band660.fit, "one!>tight!>menu!>mini");
+ok("660px 判定链已走到 menu（mini 的触发见 390px）", /one!>tight!>menu/.test(band660.fit), band660.fit);
 
 /* ================= 390px：手机 ================= */
 console.log("\n[390px 手机]");
@@ -321,9 +370,24 @@ eq("390px 走 mode-mini（判定链 one>tight>menu>mini）",
   ev(`[...document.querySelector('.topbar').classList]`), ["topbar", "mode-mini"]);
 eq("390px 顶栏是单行 57px（不再折回第二行 80px）",
   ev(`Math.round(document.querySelector('.topbar').getBoundingClientRect().height)`), 57);
-ok("390px 顶栏不再有徽标（胶囊隐藏 + 第二行 DOM 已删除）",
-  ev(`getComputedStyle(document.querySelector('.top-actions > .meta-pill')).display`) === "none"
-  && ev(`document.querySelectorAll('.topbar-meta').length`) === 0);
+/* 2026-11-10：手机徽标搬回顶栏（.mp-mini），抽屉里那行状态行删除 */
+const miniPill = ev(`(()=>{const p=document.querySelector('.topbar .mp-mini');
+  if(!p) return null; const r=p.getBoundingClientRect();
+  const brand=document.querySelector('.brand').getBoundingClientRect();
+  const set=document.querySelector('.settings').getBoundingClientRect();
+  const cs=getComputedStyle(p);
+  return {txt:p.innerText.replace(/\\s+/g,' ').trim(), l:Math.round(r.left), r:Math.round(r.right),
+    w:Math.round(r.width), h:Math.round(r.height), afterBrand:r.left>=brand.right-1,
+    beforeSettings:r.right<=set.left+1, fs:parseFloat(cs.fontSize), vis:cs.display!=='none'};})()`);
+ok("390px 顶栏有徽标（.mp-mini 可见）", !!miniPill && miniPill.vis === true, JSON.stringify(miniPill));
+ok("390px 徽标在品牌与设置之间、不出视口",
+  !!miniPill && miniPill.afterBrand && miniPill.beforeSettings && miniPill.r <= 390,
+  JSON.stringify(miniPill && [miniPill.l, miniPill.r, miniPill.afterBrand, miniPill.beforeSettings]));
+ok("390px 徽标内容＝城市 · MM-DD · 朝/晚霞（日期收短）",
+  !!miniPill && /^.+ · \d{2}-\d{2} · (朝霞|晚霞)$/.test(miniPill.txt), miniPill && miniPill.txt);
+ok("390px 徽标字号收到 11.5px 且不换行",
+  !!miniPill && miniPill.fs <= 12 && miniPill.h <= 30, JSON.stringify(miniPill && [miniPill.fs, miniPill.h]));
+eq("390px 判定链完整走到最后一级", ev(`window.__gcFit`), "one!>tight!>menu!>mini");
 ok("390px 教程按钮撤出顶栏（入口在抽屉「指南」组）",
   ev(`getComputedStyle(document.querySelector('.tut-btn')).display`) === "none"
   && ev(`!!document.querySelector('.mdrawer .md-group a[href$="tutorial.html"]')`) === true);
@@ -334,23 +398,17 @@ ok("390px 品牌名单行（藏 SUNGLOW 副标，不被挤成两行）", ev(`(()
     && getComputedStyle(nm.querySelector('em')).display === 'none';})()`) === true);
 ok("390px 顶栏自身不横向溢出", ev(`(()=>{const i=document.querySelector('.topbar-in');
   return i.scrollWidth - i.clientWidth <= 0 && document.querySelector('.topbar').getBoundingClientRect().right <= 390;})()`) === true);
-/* .icon-btn 仍是 5 个 DOM（教程与版本在 mini 档 display:none，量到 0×0），只看实际渲染的三个 */
+/* .icon-btn 仍是 3 个 DOM（教程与版本在 mini 档 display:none，量到 0×0），
+   实际只剩设置按钮可渲染 —— 语言 / 主题已并入设置面板，不再占顶栏 */
 eq("mini 态图标收到 32×32（给 360/375 机型让出余量）",
   ev(SAMPLE_ICONS).filter((i) => i.w > 0).map((i) => [i.w, i.h]),
-  [[32, 32], [32, 32], [32, 32]]);
+  [[32, 32]]);
 
-/* 手机顶栏没徽标了，状态改由抽屉顶部一行承担 —— 打开抽屉验它 */
+/* 徽标已搬回顶栏，抽屉里不该再有那行状态（同一句话显示两遍是冗余） */
 ev(`document.querySelector('.hamburger').click()`);
 wait(420);
-const mdStatus = ev(`(()=>{const s=document.querySelector('.mdrawer .md-status');
-  if(!s) return null; const r=s.getBoundingClientRect();
-  return {txt:s.innerText.replace(/\\s+/g,' ').trim(), l:Math.round(r.left), r:Math.round(r.right),
-    top:Math.round(r.top), pre:Math.round(document.querySelector('.mdrawer .md-label').getBoundingClientRect().top)};})()`);
-ok("抽屉顶部补出状态行（城市 · 日期 · 朝/晚霞）",
-  !!mdStatus && /^.+ · \d{4}-\d{2}-\d{2} · (朝霞|晚霞)$/.test(mdStatus.txt), JSON.stringify(mdStatus));
-ok("状态行在「目录」标题之上且不出界",
-  !!mdStatus && mdStatus.top < mdStatus.pre && mdStatus.l >= 0 && mdStatus.r <= 390,
-  JSON.stringify(mdStatus && [mdStatus.top, mdStatus.pre, mdStatus.l, mdStatus.r]));
+ok("抽屉里不再有状态行（徽标已在顶栏）",
+  ev(`document.querySelectorAll('.mdrawer .md-status').length`) === 0);
 ok("抽屉有「更多项目」组，经典原版 / Skyglow 独立项目 两条真链接（Skyglow 走跨域绝对地址）",
   ev(`(()=>{const h=[...document.querySelectorAll('.mdrawer .md-group h4')].some(x=>x.textContent.trim()==='更多项目');
     return h && !!document.querySelector('.mdrawer a[href="V1/index.html"]')
@@ -594,15 +652,17 @@ wait(150);
 console.log("\n[折叠接线]");
 vp(1200, 900);
 ab("eval", `localStorage.removeItem('SUNGLOW.v2.pref')`);
-ab("reload");
-wait(1800);
+loadWithStub();
+wait(400);
 
 const FOLD_STATE = `(()=>{const p=JSON.parse(localStorage.getItem('SUNGLOW.v2.pref')||'{}');
   return {
-    pref:['rayFold','notesFold','heroFold','trendFold','legendFold'].map(k=>k in p?p[k]:null),
+    pref:['rayFold','notesFold','heroFold','trendFold','legendFold','factorsFold'].map(k=>k in p?p[k]:null),
     details:[...document.querySelectorAll('.fnote')].map(d=>d.open),
     ray:getComputedStyle(document.querySelector('#ray-body')).display!=='none',
     notes:getComputedStyle(document.querySelector('#notes-body')).display!=='none',
+    factors:getComputedStyle(document.querySelector('#factors-body')).display!=='none',
+    factorsBtn:document.querySelector('#factors .fac-fold')?.textContent.trim(),
     rayBtn:document.querySelector('#ray .fc-head .btn')?.textContent.trim(),
     notesBtn:document.querySelector('#notes .fc-head .btn')?.textContent.trim()
   };})()`;
@@ -616,8 +676,10 @@ ok("初始态：三处卡内说明块全部收起（结论/趋势/图例）",
 ok("初始态：光追详情与附注两张整卡展开",
   f0.ray === true && f0.notes === true, JSON.stringify([f0.ray, f0.notes]));
 eq("初始态：偏好里还没有折叠键（默认来自代码而非落盘）",
-  f0.pref, [null, null, null, null, null]);
+  f0.pref, [null, null, null, null, null, null]);
 eq("整卡胶囊初始文案是「收起」", [f0.rayBtn, f0.notesBtn], ["收起", "收起"]);
+ok("初始态：影响因素默认收起（13 项卡隐藏、按钮写「展开」）",
+  f0.factors === false && f0.factorsBtn === "展开", JSON.stringify(f0));
 
 /* 设置页不再提供「折叠默认」组 */
 ev(`document.querySelector('.settings > .icon-btn').click()`);
@@ -674,6 +736,21 @@ wait(1600);
 const f4 = ev(FOLD_STATE);
 ok("刷新后附注仍是收起态", f4.notes === false && f4.pref[1] === true, JSON.stringify(f4));
 
+/* 影响因素默认收起（2026-11-11）：目录跳转要就地展开，按钮要能双向写偏好。
+   此时 vp=1200，桌面导航第 6 项就是「影响因素」。 */
+const fx0 = ev(FOLD_STATE);
+ok("刷新后影响因素仍按默认收起", fx0.factors === false && fx0.factorsBtn === "展开", JSON.stringify(fx0));
+ev(`document.querySelectorAll('.nav-tabs a')[5].click()`);
+wait(350);
+const fx1 = ev(FOLD_STATE);
+ok("目录点「影响因素」会就地展开并写偏好 factorsFold=false",
+  fx1.factors === true && fx1.pref[5] === false && fx1.factorsBtn === "收起", JSON.stringify(fx1));
+ev(`document.querySelector('#factors .fac-fold').click()`);
+wait(300);
+const fx2 = ev(FOLD_STATE);
+ok("点「收起」后 13 项隐藏并写回 factorsFold=true",
+  fx2.factors === false && fx2.pref[5] === true && fx2.factorsBtn === "展开", JSON.stringify(fx2));
+
 /* 抽屉点「附注」→ 就地展开并写偏好（用户明确去找它 = 意图） */
 vp(390, 844);
 ab("reload");
@@ -691,10 +768,7 @@ ev(`document.querySelector('.hamburger').click()`);
 wait(200);
 vp(1200, 900);
 wait(200);
-ab("eval", `(()=>{const b=[...document.querySelectorAll('.icon-btn')].find(x=>/简|繁|EN/.test(x.textContent)); b.click(); return 1})()`);
-wait(250);
-ab("eval", `(()=>{const b=[...document.querySelectorAll('.menu-pop button')].find(x=>x.textContent.includes('English')); b.click(); return 1})()`);
-wait(1200);
+ok("设置面板里能切到英文", pickLang("English") === true);
 const en = ev(`(()=>{const b=document.querySelector('#ray-body')?document.querySelector('#ray-body').innerText:'';
   return {notes:[...document.querySelectorAll('.fnote summary')].map(s=>s.textContent.trim()),
           cards:['#ray h2','#notes h2'].map(s=>document.querySelector(s)?.textContent.trim()),
@@ -710,8 +784,17 @@ console.log("\n[模型卡]");
 vp(1200, 900);
 ab("open", PAGE + "?name=%E5%8C%97%E4%BA%AC&lat=39.9042&lon=116.4074&date=2026-10-21&period=pm");
 ab("eval", `localStorage.setItem('SUNGLOW.v2.pref', JSON.stringify({lang:'zh',theme:'dark'}))`);
+ab("eval", FETCH_STUB);
 ab("reload");
-wait(5200);
+/* reload 会把桩冲掉，必须重装，否则又落回真网络（限流即无结果） */
+ab("eval", FETCH_STUB);
+ab("eval", `document.querySelector('.hero .btn-primary')?.click()`);
+/* 等结果真的落到 DOM，而不是睡个固定时长：接口慢一次就会整段误报（实测偶发） */
+for (let i = 0; i < 24; i++) {
+  wait(500);
+  if (ev(`document.querySelectorAll('.mc-grid .mcard').length >= 3`)) break;
+}
+wait(300);
 
 const MC = `(()=>{const cs=[...document.querySelectorAll('.mc-grid .mcard')];
   const num=e=>{const x=e&&e.querySelector('.mnum');return x?x.textContent.replace(/\\s+/g,'').trim():null;};
@@ -747,14 +830,14 @@ ok("每张有数的卡都给了主数字与至少 5 条事实行",
 eq("卡上的综合数字与上方大字一致", m0.nums[0], m0.bigNum);
 
 /* 点 GFS 卡 → 主数字跟着换（这是方案 A 的核心承诺） */
-ev(`document.querySelector('.mc-grid .mcard[data-mid="gfs"]').click()`);
+ev(`(document.querySelector('.mc-grid .mcard[data-mid="gfs"]')||{click:()=>{}}).click()`);
 wait(300);
 const m1 = ev(MC);
 eq("点 GFS 卡后选中态转移", m1.on, [false, true, false, false]);
 eq("点 GFS 卡后上方大字换成 GFS 的概率", m1.bigNum, m1.nums[1]);
 
 /* 键盘：聚焦 + 回车等价于点击 */
-ev(`document.querySelector('.mc-grid .mcard[data-mid="rt"]').focus()`);
+ev(`(document.querySelector('.mc-grid .mcard[data-mid="rt"]')||{focus:()=>{}}).focus()`);
 ab("press", "Enter");
 wait(300);
 const m2 = ev(MC);
@@ -773,10 +856,7 @@ ok("390px 下综合卡的权重副标题仍然可见", m3.subShown[0] === true, 
 /* 英文：卡名与事实行不能留中文 */
 vp(1200, 900);
 wait(300);
-ab("eval", `(()=>{const b=[...document.querySelectorAll('.icon-btn')].find(x=>/简|繁|EN/.test(x.textContent)); b.click(); return 1})()`);
-wait(250);
-ab("eval", `(()=>{const b=[...document.querySelectorAll('.menu-pop button')].find(x=>x.textContent.includes('English')); b.click(); return 1})()`);
-wait(1200);
+ok("设置面板里能再切到英文", pickLang("English") === true);
 const m4 = ev(`(()=>{const w=document.querySelector('.mc-wrap'); if(!w) return null;
   return {cjk:/[\\u4e00-\\u9fa5]/.test(w.innerText), txt:w.innerText.replace(/\\s+/g,' ').slice(0,160)};})()`);
 ok("英文下模型卡无残留中文", m4 && m4.cjk === false, JSON.stringify(m4));
@@ -799,11 +879,13 @@ for (const c of TZ_CASES) {
   ab("eval", `localStorage.setItem('SUNGLOW.v2.pref', JSON.stringify({lang:'zh',theme:'dark'}))`);
   ab("eval", `Object.keys(localStorage).filter(k=>k.startsWith('SUNGLOW.v2.point')||k.startsWith('SUNGLOW.v2.tz')).forEach(k=>localStorage.removeItem(k))`);
   ab("reload");
-  /* 固定等待在网络慢时会读到空 DOM（时刻=null、又不是 mock）——
-     轮询到「结果就绪」或「mock 兜底」再取样。 */
+  /* 固定等待在网络慢时会读到空 DOM（时刻=null、又不是兜底）——
+     轮询到「结果就绪」/「无数据提示」/「mock 兜底」再取样。
+     2026-11-10 起取数失败不再回落演示数据，改出「无数据」错误态。 */
   for (let i = 0; i < 24; i++) {
     wait(500);
     const ready = ev(`document.querySelectorAll('.sun-row').length > 0 ||
+      !!document.querySelector('.err-note') ||
       !![...document.querySelectorAll('.hero-city .pill')].find(e=>e.textContent.trim()==='MOCK')`);
     if (ready) break;
   }
@@ -814,12 +896,13 @@ for (const c of TZ_CASES) {
     const txt = b ? b.innerText.trim() : '';
     const marks = [...document.querySelectorAll('.skyaxis .mk')].map(e => e.innerText.replace(/\\s+/g, ' ').trim());
     const mock = !![...document.querySelectorAll('.hero-city .pill')].find(e => e.textContent.trim() === 'MOCK');
-    return { time: (txt.match(/\\d{2}:\\d{2}/) || [null])[0], hint: hint ? hint.textContent.trim() : null, marks, mock };
+    const err = !!document.querySelector('.err-note');
+    return { time: (txt.match(/\\d{2}:\\d{2}/) || [null])[0], hint: hint ? hint.textContent.trim() : null, marks, mock, err };
   })()`);
-  if (r.mock) {
-    /* mock 模式下时区只能靠经度估算（夏令时地区会差 1 小时），这几条不计分 */
+  if (r.mock || r.err) {
+    /* 没有实时数据（网络失败 / 显式 mock）：时区只能靠经度估算，这几条不计分 */
     tzSkipped++;
-    console.log("  – " + c.name + "：本次是 mock 数据，跳过精确时刻断言");
+    console.log("  – " + c.name + "：" + (r.err ? "本次没有取到数据" : "本次是 mock 数据") + "，跳过精确时刻断言");
     continue;
   }
   eq(c.name + " 日落按当地钟显示（" + c.time + "）", r.time, c.time);
@@ -884,7 +967,13 @@ const SHARE_GEO = `(()=>{
 ab("open", PAGE + "?name=%E5%8C%97%E4%BA%AC&lat=39.9042&lon=116.4074&date=2026-10-21&period=pm");
 ab("eval", `localStorage.setItem('SUNGLOW.v2.pref', JSON.stringify({lang:'zh',theme:'dark'}))`);
 ab("eval", `Object.keys(localStorage).filter(k=>k.startsWith('SUNGLOW.v2.point')||k.startsWith('SUNGLOW.v2.tz')).forEach(k=>localStorage.removeItem(k))`);
+/* 2026-11-10 起取数失败不再回落 mock：这一段必须装 fetch 桩，否则一碰上
+   真实限流（429）按钮就是禁用态，整段断言全部落空。 */
+ab("eval", FETCH_STUB);
 ab("reload");
+wait(1500);
+ab("eval", FETCH_STUB);
+ab("eval", `document.querySelector('.hero .btn-primary')?.click()`);
 wait(4500);
 vp(1200, 900);
 wait(400);
@@ -899,10 +988,13 @@ ok("按钮有可读的 aria-label", !!sg && sg.label.length > 0 && sg.label === 
 
 ev(SHARE_SETUP);
 /* canvas 是异步绘制的：固定 wait 偶发读到上一张或 null（实测两轮一次）。
-   一律「清空标记 → 点 → 轮询到新结果」，不靠睡固定时长。 */
+   一律「清空标记 → 点 → 轮询到新结果」，不靠睡固定时长。
+   2026-11-10 起结论卡是「保存图片 ▾」下拉（方案 C）：先开菜单再点第一项产物。 */
 function shootShare() {
   ev(`window.__share = null`);
   ev(`document.querySelector('.share-btn').click()`);
+  wait(260);
+  ev(`(document.querySelector('.sdd-menu button')||{click:()=>{}}).click()`);
   for (let i = 0; i < 40; i++) {
     wait(250);
     const s = ev(`window.__share`);
@@ -910,11 +1002,26 @@ function shootShare() {
   }
   return null;
 }
+/* 下拉里的产物名（方案 C 的核心承诺：点之前就知道会得到哪张图）。
+   菜单是点开后下一拍才渲染，同步读会读到空数组（实测）。 */
+ev(`document.querySelector('.share-btn').click()`);
+wait(280);
+const menuItems = ev(`[...document.querySelectorAll('.sdd-menu button')].map(x=>x.innerText.replace(/\\s+/g,' ').trim())`);
+ev(`document.querySelector('.share-btn').click()`);
+ok("「保存图片 ▾」下拉里写的是产物名（结论卡 / 竖版故事卡）",
+  Array.isArray(menuItems) && menuItems.length === 2 &&
+  menuItems.some((x) => /结论卡|Verdict/.test(x)) && menuItems.some((x) => /故事卡|Story/.test(x)),
+  JSON.stringify(menuItems));
 const sh1 = shootShare();
 const dl1 = ev(`window.__dl`);
 ok("点一下真的画出了画布", !!sh1 && !sh1.err, JSON.stringify(sh1 && sh1.err));
-eq("画布 2 倍像素密度（1560×800）", [sh1?.w, sh1?.h], [1560, 800]);
+eq("画布 2 倍像素密度（1560×2048）", [sh1?.w, sh1?.h], [1560, 2048]);
 ok("画面不是空白（取样出足够多颜色）", !!sh1 && sh1.colors > 30, String(sh1 && sh1.colors));
+/* 2026-11-11：结论卡 = 整个结论板块（780×1024），内容要画到页脚线（992）之上 */
+ok("结论卡已扩成完整结论区（内容画到 700 以下）",
+  !!sh1?.meta && sh1.meta.contentEnd > 700, JSON.stringify(sh1?.meta && sh1.meta.contentEnd));
+ok("结论区内容没有越过页脚线",
+  !!sh1?.meta && sh1.meta.contentEnd < 992, JSON.stringify(sh1?.meta && sh1.meta.contentEnd));
 ok("元信息挂在画布上（模型/来源/细节行）",
   !!sh1?.meta && sh1.meta.rows.length === 4, JSON.stringify(sh1?.meta && sh1.meta.rows));
 ok("文件名＝霞光档案_城市_日期_晚霞.png",
@@ -972,6 +1079,8 @@ const sgEn = ev(SHARE_GEO);
 ok("英文下按钮文案是 Save image", !!sgEn && /^Save image$/.test(sgEn.label), JSON.stringify(sgEn));
 ev(SHARE_SETUP);
 ev(`document.querySelector('.share-btn').click()`);
+wait(260);
+ev(`(document.querySelector('.sdd-menu button')||{click:()=>{}}).click()`);
 wait(1800);
 const dlEn = ev(`window.__dl`);
 ok("英文下文件名也翻译（SUNGLOW_…）",
@@ -981,30 +1090,18 @@ ok("英文下文件名也翻译（SUNGLOW_…）",
    断言「点了不取数」必须数真实请求数 —— 看界面文案是看不出来的。
    用假成功 fetch 桩：只回合法 JSON、绝不碰网络，因此跑探针不烧额度。 */
 console.log("\n[缓存优先与显式取数]");
-const FETCH_STUB = `(()=>{window.__calls=[];
-  const fake=(u)=>{u=String(u); window.__calls.push(u);
-    const q=new URL(u, location.href).searchParams;
-    const nLoc=(q.get('latitude')||'').split(',').filter(Boolean).length||1;
-    const vars=(q.get('hourly')||'').split(',').filter(Boolean);
-    const sd=q.get('start_date'), ed=q.get('end_date'), fd=+q.get('forecast_days')||7;
-    let t0,nH;
-    if(sd){t0=Date.parse(sd+'T00:00:00Z');const t1=ed?Date.parse(ed+'T00:00:00Z'):t0;
-      nH=Math.round((t1-t0)/3600000)+24;}
-    else{t0=Date.now()-3*86400000;nH=24*(fd+3);}
-    const time=[];
-    for(let i=0;i<nH;i++) time.push(new Date(t0+i*3600000).toISOString().slice(0,16));
-    const DEF={temperature_2m:15,dew_point_2m:8,relative_humidity_2m:60,
-      cloud_cover_low:20,cloud_cover_mid:45,cloud_cover_high:30,visibility:20000,
-      pressure_msl:1013,boundary_layer_height:800,freezing_level_height:2000,
-      aerosol_optical_depth:0.2};
-    const hourly={time};
-    for(const v of vars) hourly[v]=time.map(()=>(v in DEF?DEF[v]:null));
-    const one={hourly,utc_offset_seconds:28800,timezone:'Asia/Shanghai'};
-    const body=nLoc>1?Array.from({length:nLoc},()=>one):one;
-    return Promise.resolve({ok:true,status:200,headers:{get:()=>null},
-      json:()=>Promise.resolve(body),text:()=>Promise.resolve('')});
-  };
-  window.fetch=(u)=>fake(u); return 1})()`;
+/* FETCH_STUB 的定义挪到了文件头（保存图片 / 模型卡等段落现在也要用它，
+   因为取数失败已不回落 mock，靠真网络的段落一碰限流就会整段落空） */
+/* 用桩装载页面：取数失败已不回落 mock，真网络一限流整段都落空。
+   reload 会把桩冲掉、且应用会先跑一次 run()（撞真网络）—— 装桩后必须再点一次「计算」。 */
+function loadWithStub() {
+  ab("eval", FETCH_STUB);
+  ab("reload");
+  ab("wait", "1300");
+  ab("eval", FETCH_STUB);
+  ab("eval", `document.querySelector('.hero .btn-primary')?.click()`);
+  ab("wait", "3800");
+}
 const takeCalls = () => ev(`(()=>{const c=window.__calls.slice(); window.__calls=[]; return c;})()`);
 const FRESH_INFO = (sec) => `(()=>{const s=document.querySelector('${sec} .fresh');
   return s?{txt:s.innerText,refetch:!!s.querySelector('.linkbtn')}:null;})()`;
@@ -1013,7 +1110,10 @@ const FRESH_INFO = (sec) => `(()=>{const s=document.querySelector('${sec} .fresh
    语言强制回简体 —— 上一段留了英文 pref，会让中文断言全部失效 */
 ab("open", PAGE + "?name=%E5%8C%97%E4%BA%AC&lat=39.9042&lon=116.4074&date=2026-10-21&period=pm");
 ab("eval", `localStorage.setItem('SUNGLOW.v2.pref', JSON.stringify({lang:'zh',theme:'light'}))`);
-ab("eval", `Object.keys(localStorage).filter(k=>k.startsWith('SUNGLOW.v2.')&&k!=='SUNGLOW.v2.pref').forEach(k=>localStorage.removeItem(k))`);
+/* 只清探针自己会用到的点 / 时区缓存。绝不能整族清 SUNGLOW.v2.*：
+   file:// 下探针与用户双击打开的 index.html 共用 localStorage，整族清会把
+   用户已取数的观测场 / 趋势缓存一起删掉（2026-11-11「缓存不见了」的根因）。 */
+ab("eval", `Object.keys(localStorage).filter(k=>k.startsWith('SUNGLOW.v2.point')||k.startsWith('SUNGLOW.v2.tz')).forEach(k=>localStorage.removeItem(k))`);
 ab("eval", FETCH_STUB);
 ab("reload");
 wait(1200);
@@ -1023,7 +1123,210 @@ wait(4500);
    结论卡就不标来源了。统一用桩重算一次把状态钉成「桩数据」，再丢掉这批调用。 */
 ev(`document.querySelector('.hero .btn-primary')?.click()`);
 wait(4500);
+/* 挂载期撞真网络时重算按钮可能还处在 loading / 错误态，一次点击不一定落地。
+   没看到 #verdict .fresh 就补点（最多 3 次），否则整段「缓存优先」会连锁误报。 */
+for (let i = 0; i < 3; i++) {
+  if (ev(`!!document.querySelector('#verdict .fresh')`) === true) break;
+  ev(`document.querySelector('.hero .btn-primary')?.click()`);
+  wait(2500);
+}
 takeCalls(); /* 丢掉挂载期与重算的调用，下面只数被测动作 */
+
+/* --- 标题外置（2026-11-11）：光追 / 分享标题在白卡外，「附注」卡保持原样 --- */
+{
+  const hs = ev(`(()=>{
+    const q=(s)=>document.querySelector(s);
+    const inGlass=(s)=>{const e=q(s);return e?!!e.closest('.glass'):null};
+    const fs=(s)=>{const e=q(s);return e?parseFloat(getComputedStyle(e).fontSize):null};
+    return {
+      ray:inGlass('#ray h2'), share:inGlass('#share h2'), notes:inGlass('#notes h2'),
+      rayTxt:q('#ray h2')?.textContent.trim(), shareTxt:q('#share h2')?.textContent.trim(),
+      tipInCard:!!q('#share .glass .share-tip'), composerInCard:!!q('#share .glass .cmp'),
+      sizeCmp:fs('#compare h2'), sizeRay:fs('#ray h2'), sizeShare:fs('#share h2'),
+      rayBtn:!!q('#ray .fc-head .btn'), notesBtn:!!q('#notes .fc-head .btn')
+    };})()`);
+  ok("光追算法细节 / 分享的标题都排在白卡外",
+    hs.ray === false && hs.share === false, JSON.stringify(hs));
+  eq("两个外置标题文字正确", [hs.rayTxt, hs.shareTxt], ["光追算法细节", "分享"]);
+  ok("「附注」标题仍在白卡内（附注不动）", hs.notes === true, JSON.stringify(hs));
+  ok("分享的说明附注与合成面板仍留在同一张白卡内",
+    hs.tipInCard === true && hs.composerInCard === true, JSON.stringify(hs));
+  ok("外置标题字号与其它板块一致（.section-head h2）",
+    hs.sizeCmp > 0 && hs.sizeRay === hs.sizeCmp && hs.sizeShare === hs.sizeCmp, JSON.stringify(hs));
+  ok("两处折叠按钮选择器仍可命中", hs.rayBtn === true && hs.notesBtn === true, JSON.stringify(hs));
+}
+
+/* --- 合成卡放大预览（2026-11-11） ---
+   320px 的预览看不清长图细节：整块预览是按钮，点开弹层看整张，Esc / 关闭可退。 */
+{
+  const pre = ev(`(()=>{const p=document.querySelector('#share .cmp-preview');
+    if(!p) return null;
+    return {tag:p.tagName,label:p.getAttribute('aria-label')||'',disabled:p.disabled,
+      clickable:getComputedStyle(p).cursor,
+      w:Math.round(p.getBoundingClientRect().width),
+      mask:!!document.querySelector('.zoom-mask')};})()`);
+  ok("合成卡预览整块可点（button + aria-label + zoom-in 光标）",
+    !!pre && pre.tag === "BUTTON" && pre.label.length > 0 && pre.disabled === false &&
+    pre.clickable === "zoom-in" && pre.w > 120 && pre.mask === false, JSON.stringify(pre));
+
+  ev(`(()=>{const p=document.querySelector('#share .cmp-preview');
+    p.scrollIntoView({block:'center',behavior:'instant'});p.click();return 1})()`);
+  wait(600);
+  const zoom = ev(`(()=>{const m=document.querySelector('.zoom-mask'),
+    c=document.querySelector('.zoom-cv'), p=document.querySelector('.cmp-cv');
+    return {mask:!!m,
+      cv:[c?c.width:0,c?c.height:0], pre:[p?p.width:0,p?p.height:0],
+      locked:getComputedStyle(document.body).overflow,
+      label:(document.querySelector('.zoom-bar b')||{}).textContent||'',
+      dim:(document.querySelector('.zoom-dim')||{}).textContent||''};})()`);
+  ok("点预览弹出放大层，画布与预览同尺寸",
+    zoom.mask === true && zoom.cv[0] === zoom.pre[0] && zoom.cv[1] === zoom.pre[1] &&
+    zoom.cv[0] > 0 && zoom.cv[1] > 0, JSON.stringify(zoom));
+  ok("放大层锁住页面滚动，并写出成图尺寸",
+    zoom.locked === "hidden" && /预览/.test(zoom.label) && /780×/.test(zoom.dim),
+    JSON.stringify([zoom.locked, zoom.label, zoom.dim]));
+
+  ev(`(()=>{window.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}));return 1})()`);
+  wait(300);
+  ok("Esc 关闭放大层并恢复页面滚动",
+    ev(`!document.querySelector('.zoom-mask') &&
+      getComputedStyle(document.body).overflow !== 'hidden'`) === true);
+}
+
+/* --- 合成卡模块化（2026-11-11）：14 个可选块 + 三档预设 + 拖拽排序 --- */
+{
+  const base = ev(`(()=>({
+    rows: document.querySelectorAll('#share .cmp-row').length,
+    grips: document.querySelectorAll('#share .cmp-row .grip').length,
+    moves: document.querySelectorAll('#share .cmp-row .mv').length,
+    cvH: (document.querySelector('#share .cmp-cv')||{}).height,
+    info: (window.__gcCompose ? window.__gcCompose() : null)
+  }))()`);
+  ok("合成面板列出 14 个可选模块（每个都有拖拽手柄与上下钮）",
+    base.rows === 14 && base.grips === 14 && base.moves === 28, JSON.stringify(base));
+  ok("预览画布高度＝实测高度 ×2", !!base.info && base.cvH === base.info.h * 2,
+    JSON.stringify([base.cvH, base.info && base.info.h]));
+
+  ev(`(()=>{[...document.querySelectorAll('.cmp-presets button')].find(b=>b.textContent.trim()==='极简').click();return 1})()`);
+  wait(600);
+  const min = ev(`window.__gcCompose()`);
+  ok("极简预设 = 天色带 + 二维码",
+    !!min && min.mods.length === 2 && min.mods.includes("sky") && min.mods.includes("qr") &&
+    min.h < 700, JSON.stringify(min && [min.mods, min.h]));
+
+  ev(`(()=>{[...document.querySelectorAll('.cmp-presets button')].find(b=>b.textContent.trim()==='完整').click();return 1})()`);
+  wait(900);
+  const full = ev(`window.__gcCompose()`);
+  ok("完整预设勾上全部可用模块，卡片按内容长高",
+    !!full && full.mods.length === Object.values(full.avail).filter(Boolean).length &&
+    full.mods.length >= 9 && full.h > min.h + 500,
+    JSON.stringify(full && [full.mods.length, Object.values(full.avail).filter(Boolean).length, full.h]));
+
+  /* 拖拽：把二维码拖到列表第二行（天色带之后） */
+  const before = full && full.order ? full.order.slice() : [];
+  ev(`(()=>{
+    const rows=[...document.querySelectorAll('#share .cmp-row')];
+    const qr=rows.find(r=>r.dataset.mid==='qr');
+    const first=rows[1];
+    const g=qr.querySelector('.grip'); const gr=g.getBoundingClientRect();
+    const fr=first.getBoundingClientRect();
+    g.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:gr.left+5,clientY:gr.top+5}));
+    window.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,clientX:gr.left+5,clientY:fr.top+2}));
+    window.dispatchEvent(new PointerEvent('pointerup',{bubbles:true}));
+    return 1})()`);
+  wait(500);
+  const after = ev(`window.__gcCompose().order`);
+  ok("拖拽手柄能改模块顺序（二维码移到天色带之后）",
+    Array.isArray(after) && after[0] === "sky" && after[1] === "qr" &&
+    before[1] !== "qr", JSON.stringify([before.slice(0, 3), after.slice(0, 3)]));
+}
+
+/* --- 分享按钮可点性（file:// 下也必须能用；2026-11-11） ---
+   这里跑的就是用户双击根 index.html 的场景：以前两个按钮恒为 disabled
+   而 .btn 没有禁用态，看着能点、点了毫无反应。 */
+let SHARE_SNAP_URL = "";
+{
+  /* 必须滚按钮本身：滚 #share（整节比视口高）会把按钮送到视口顶端，被 sticky 顶栏盖住 */
+  ev(`(()=>{const b=document.querySelector('#share .share-acts .btn-primary');
+    if(b)b.scrollIntoView({block:'center',behavior:'instant'});return 1})()`);
+  wait(300);
+  const sb = ev(`(()=>[...document.querySelectorAll('#share .share-acts .btn')]
+    .map(b=>({txt:b.textContent.trim(),disabled:b.disabled,opacity:getComputedStyle(b).opacity})))()`);
+  ok("分享区四个动作都做成按钮且顺序正确（复制链接 / 二维码 / 复制文案 / 加入日历）",
+    Array.isArray(sb) && sb.length === 4 &&
+    /复制链接/.test(sb[0].txt) && /二维码/.test(sb[1].txt) &&
+    /复制文案/.test(sb[2].txt) && /加入日历/.test(sb[3].txt) &&
+    sb.every((x) => x.disabled === false), JSON.stringify(sb));
+  ok("「更多：」文字链已彻底移除",
+    ev(`(!document.querySelector('#share .share-more') && !document.querySelector('#share .mlink'))`) === true);
+  /* 无结果时按钮仍会禁用，这时必须有灰化 + not-allowed，否则又变成「点了没反应」 */
+  const dis = ev(`(()=>{const b=document.querySelector('#share .share-acts .btn-primary');
+    if(!b)return null;b.setAttribute('disabled','');const cs=getComputedStyle(b);
+    const r={opacity:parseFloat(cs.opacity),cursor:cs.cursor};b.removeAttribute('disabled');return r})()`);
+  ok("禁用态有可见反馈（灰化 + not-allowed）",
+    !!dis && dis.opacity < 0.7 && dis.cursor === "not-allowed", JSON.stringify(dis));
+  ok("本地打开时明确提示链接会指向线上站点",
+    ev(`/sunglow\\.cloud/.test((document.querySelector('#share .share-tip')||{}).textContent||'')`) === true);
+  /* 复制内容用 hook 捕获：headless 下剪贴板未必授权，但产品必须给出可见反馈 */
+  ev(`(()=>{window.__shareCopied='';try{Object.defineProperty(navigator,'clipboard',{
+    value:{writeText:(s)=>{window.__shareCopied=String(s);return Promise.resolve()}},configurable:true});
+  }catch(e){window.__shareCopied='__HOOK_FAIL__'}return 1})()`);
+  const hitCopy = ev(`(()=>{const b=document.querySelector('#share .share-acts .btn-primary');
+    if(!b)return 'no-btn';const r=b.getBoundingClientRect();
+    const el=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
+    if(el!==b&&!b.contains(el))return 'blocked:'+(el?el.tagName+'.'+el.className:'null');
+    el.click();return 'ok'})()`);
+  wait(450);
+  /* 用对象包一层：ev() 对纯字符串会再 JSON.parse 一次，URL 不是合法 JSON 会抛错 */
+  const copied = ev(`({url: window.__shareCopied})`);
+  SHARE_SNAP_URL = copied && typeof copied.url === "string" ? copied.url : "";
+  ok("「复制链接」真实可点且写出链接",
+    hitCopy === "ok" && SHARE_SNAP_URL.length > 60, JSON.stringify([hitCopy, SHARE_SNAP_URL.slice(0, 100)]));
+  ok("本地打开时分享链接指向线上站点且带 snap",
+    SHARE_SNAP_URL.startsWith("https://sunglow.cloud/") && SHARE_SNAP_URL.includes("&snap="),
+    SHARE_SNAP_URL.slice(0, 160));
+  ok("复制链接带全功能快照包（hash 查询串，不发给服务器）",
+    SHARE_SNAP_URL.includes("#/?pack=") && SHARE_SNAP_URL.length < 12000,
+    "len=" + SHARE_SNAP_URL.length);
+  const packChips = ev(`[...document.querySelectorAll('#share .share-pack .sb-part')].map(x=>x.innerText.trim())`);
+  ok("分享卡标出链接里打包了哪些板块",
+    Array.isArray(packChips) && packChips.some((x) => typeof x === "string" && /观测场|趋势|结论/.test(x)),
+    JSON.stringify(packChips));
+  ok("复制后按钮给「已复制」反馈",
+    ev(`/已复制/.test((document.querySelector('#share .share-acts .btn-primary')||{}).textContent||'')`) === true);
+  const hitQr = ev(`(()=>{const b=[...document.querySelectorAll('#share .share-acts .btn')]
+    .find(x=>/二维码/.test(x.textContent));
+    if(!b)return 'no-btn';const r=b.getBoundingClientRect();
+    const el=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
+    if(el!==b&&!b.contains(el))return 'blocked:'+(el?el.tagName:'null');
+    el.click();return 'ok'})()`);
+  wait(500);
+  const qrUrl = ev(`(()=>({box:!!document.querySelector('.qr-box'),
+    url:(document.querySelector('.qr-box .qr-url')||{}).textContent||''}))()`);
+  ok("「二维码」真实可点并弹出二维码层", hitQr === "ok" && qrUrl.box === true, JSON.stringify([hitQr, qrUrl]));
+  ok("二维码里的链接也指向线上站点",
+    typeof qrUrl.url === "string" && qrUrl.url.startsWith("https://sunglow.cloud/"), String(qrUrl.url).slice(0, 140));
+  ev(`(()=>{const b=[...document.querySelectorAll('.qr-box button')].find(x=>/关闭/.test(x.textContent));
+    if(b)b.click();return 1})()`);
+  wait(250);
+  /* 复制文案 / 加入日历改回按钮后，也要真的能点（文字链版看着不像可点） */
+  const hitCaption = ev(`(()=>{const b=[...document.querySelectorAll('#share .share-acts .btn')][2];
+    if(!b)return 'no-btn';b.scrollIntoView({block:'center',behavior:'instant'});
+    const r=b.getBoundingClientRect();const el=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
+    if(el!==b&&!b.contains(el))return 'blocked:'+(el?el.tagName+'.'+el.className:'null');
+    el.click();return 'ok'})()`);
+  wait(350);
+  ok("「复制文案」按钮真实可点并给「已复制」反馈",
+    hitCaption === "ok" &&
+    ev(`/已复制/.test([...document.querySelectorAll('#share .share-acts .btn')][2]?.textContent||'')`) === true,
+    hitCaption);
+  const calHit = ev(`(()=>{const b=[...document.querySelectorAll('#share .share-acts .btn')][3];
+    if(!b)return 'no-btn';b.scrollIntoView({block:'center',behavior:'instant'});
+    const r=b.getBoundingClientRect();const el=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
+    return el===b||b.contains(el)?'ok':'blocked:'+(el?el.tagName:'null')})()`);
+  ok("「加入日历」按钮可点命中（不触发 .ics 下载）", calHit === "ok", calHit);
+  takeCalls(); /* 分享动作不取数，别把后续额度断言搅乱 */
+}
 
 /* --- 地图 --- */
 ev(`document.querySelector('#field .btn-primary').click()`);
@@ -1328,7 +1631,21 @@ wait(6000);
 const tq3 = takeCalls();
 ok("趋势「重新取数」会真的取数", tq3.length > 0, JSON.stringify(tq3.length));
 
-/* --- 结论卡同一套 --- */
+/* --- 结论卡同一套 ---
+   注意：趋势卡点「最佳窗口」会走 inject 的 sunglow.run 重算点预报，探针的 fetch 桩
+   对那张新日期不一定有货，runForecast 会退回 mock —— 此时 src='mock'，
+   卡上本来就没有「刚刚取数」行（那是 live/cache 才有）。所以这里重开一次页面
+   （仍是桩、不烧额度），拿到一份 live/cache 的点结果再断言来源标注。 */
+ab("open", PAGE + "?name=%E5%8C%97%E4%BA%AC&lat=39.9042&lon=116.4074&date=2026-10-21&period=pm");
+ab("eval", `localStorage.setItem('SUNGLOW.v2.pref', JSON.stringify({lang:'zh',theme:'light'}))`);
+ab("eval", FETCH_STUB);
+ab("reload");
+wait(1500);
+ab("eval", FETCH_STUB);
+for (let i = 0; i < 20; i++) {
+  if (ev(`!!document.querySelector('#verdict .fresh')`)) break;
+  wait(300);
+}
 const cfq = ev(FRESH_INFO("#verdict"));
 ok("结论卡也标出数据来源（缓存 · N … / 刚刚取数）",
   !!cfq && (/缓存/.test(cfq.txt) || /刚刚取数/.test(cfq.txt)), JSON.stringify(cfq));
@@ -1354,7 +1671,14 @@ ok("geom-no 标记与文案一致（成立不标、不成立标）",
 
 /* ================= 因素面板（2026-10-21 详细化） =================
    判据：13 项（含模式一致性）、每卡有判定 pill、数值是富文本（不是裸 0）、
-   描述换成长文案。dedge 那条是本轮修的根因（nz(sRT.d,0) 把「无边界」压成 0）。 */
+   描述换成长文案。dedge 那条是本轮修的根因（nz(sRT.d,0) 把「无边界」压成 0）。
+   2026-11-11：整节默认收起，而 innerText 对 display:none 元素返回空串，
+   所以先按用户动作点开（顺带留一条断言），再读 13 项内容。 */
+ev(`(()=>{const b=document.querySelector('#factors-body');
+  if(b&&getComputedStyle(b).display==='none')document.querySelector('#factors .fac-fold').click();return 1})()`);
+wait(300);
+ok("展开后 13 项因素卡可读",
+  ev(`getComputedStyle(document.querySelector('#factors-body')).display!=='none'`) === true);
 if (ev(`document.querySelectorAll('#factors .fac-card').length`) < 13) {
   ev(`document.querySelector('#verdict .linkbtn')?.click() || document.querySelector('.hero .btn-primary')?.click()`);
   wait(4000);
@@ -1526,12 +1850,14 @@ const enTop = ev(`(()=>{const tb=document.querySelector('.topbar');
     pill:getComputedStyle(tb.querySelector('.top-actions > .meta-pill')).display,
     meta:document.querySelectorAll('.topbar-meta').length,
     armed:tb.parentElement.querySelector('.mdrawer').classList.contains('armed')};})()`);
-eq("1280px 英文落到汉堡档（单行/收紧都放不下）", enTop.cls, "topbar mode-menu");
+/* 英文比中文宽 251px：1280 放不进单行。语言/主题移入设置后顶栏少了两个图标，
+   收紧档（保留导航、压间距）已经够用，不必再退到汉堡 —— 这条从 menu 改成 tight。 */
+eq("1280px 英文落在收紧档（放不进单行，但仍保留导航）", enTop.cls, "topbar mode-tight");
 ok("英文顶栏不横向溢出", enTop.overflow <= 0, JSON.stringify(enTop.overflow));
 ok("英文导航没有被折成两行（隐藏或一行）", enTop.lines <= 1, JSON.stringify(enTop.lines));
 ok("英文品牌名仍是单行", enTop.nameH <= enTop.lh * 1.35, JSON.stringify(enTop));
 ok("英文徽标仍在第一行（第二行结构已删除）",
-  enTop.bar === 63 && enTop.pill !== "none" && enTop.meta === 0 && enTop.armed === true, JSON.stringify(enTop));
+  enTop.bar === 63 && enTop.pill !== "none" && enTop.meta === 0, JSON.stringify(enTop));
 
 /* ================= 英文手机 390：品牌名不许把页面顶出横向滚动 =================
    "霞光档案" 与 "SUNGLOW" 之间没有空格，行内断不开，改前会把整页顶出 65px。 */
@@ -1748,7 +2074,7 @@ eq("滞回全程：≤120 开、滞回带保持现状、>132 关",
 console.log("\n[城市名选点（点广州市必须给广州市）]");
 ab("open", PAGE + "?name=%E9%A6%99%E6%B8%AF&lat=22.3193&lon=114.1694&date=2026-10-22&period=pm");
 ab("eval", `localStorage.setItem('SUNGLOW.v2.pref', JSON.stringify({lang:'zh',theme:'light',cityName:'香港'}))`);
-ab("eval", `Object.keys(localStorage).filter(k=>k.startsWith('SUNGLOW.v2.')&&k!=='SUNGLOW.v2.pref').forEach(k=>localStorage.removeItem(k))`);
+ab("eval", `Object.keys(localStorage).filter(k=>k.startsWith('SUNGLOW.v2.point')||k.startsWith('SUNGLOW.v2.tz')).forEach(k=>localStorage.removeItem(k))`);
 ab("eval", FETCH_STUB);
 ab("reload");
 wait(1400);
@@ -1867,6 +2193,37 @@ if (GZ && HKP) {
   wait(300);
   ok("点空白清掉城市卡", ev(`document.querySelector('.pincard') === null`) === true);
 }
+
+/* --- 复制出去的链接本身要能打开：直接是完整主页，不再是孤立快照卡 ---
+   全功能 pack 装在 hash 里，PAGE + query 拼装后 hash 自动带上。 */
+if (SHARE_SNAP_URL.includes("&snap=")) {
+  ab("open", PAGE + SHARE_SNAP_URL.slice(SHARE_SNAP_URL.indexOf("?")));
+  wait(2200);
+  const snapState = ev(`(()=>({
+    banner:!!document.querySelector('.snap-banner'),
+    isolated:!!document.querySelector('.snap-card'),
+    home:!!document.querySelector('#verdict .verdict-card'),
+    trend:document.querySelectorAll('#trend .t-day').length,
+    field:document.querySelectorAll('#field .rank-row').length,
+    cached:[...document.querySelectorAll('.fresh')].filter(x=>/缓存/.test(x.innerText)).length,
+    exitBtn:!![...document.querySelectorAll('.snap-banner .btn')].find(b=>/退出快照/.test(b.textContent)),
+    hasPack:/#\\/\\?pack=/.test(location.href)
+  }))()`);
+  ok("快照链接打开后是完整主页（孤立快照卡已撤）",
+    !!snapState.banner && snapState.isolated === false && snapState.home === true &&
+    snapState.exitBtn === true, JSON.stringify(snapState));
+  ok("全功能快照还原趋势 / 观测场并保留缓存标记",
+    Number(snapState.trend) >= 1 && Number(snapState.field) >= 1 &&
+    Number(snapState.cached) >= 2 && snapState.hasPack === true, JSON.stringify(snapState));
+}
+
+/* 断言全部跑完，把偏好还给用户（缓存只清自己那族，map/trend 全程没动过） */
+try {
+  if (ORIG_PREF && typeof ORIG_PREF.raw === "string")
+    ab("eval", `localStorage.setItem('SUNGLOW.v2.pref', ${JSON.stringify(ORIG_PREF.raw)})`);
+  else
+    ab("eval", `localStorage.removeItem('SUNGLOW.v2.pref')`);
+} catch { /* 浏览器已关闭：不影响本次结果 */ }
 
 console.log(`\n结果：${pass} 通过 / ${fails.length} 失败`);
 if (fails.length) {

@@ -211,6 +211,21 @@ for (const s of [`${POINT_BUDGET_S}s`, `${REQ_TIMEOUT_S}s`, `${MAP_BUDGET_S}s`])
 }
 if (/预算\s*9s/.test(v2Readme)) issues.push("v2/README.md: 仍写「预算 9s」（应为 12s）");
 
+/* 全功能快照：文档口径必须与 snapshot.ts / urlstate.ts 对齐。
+   快照包走 hash 查询串是硬约束（普通 query 超过 8 KB 线上直接 414）。 */
+if (!v2Readme.includes("src/core/snapshot.ts") || !v2Readme.includes("#/?pack=")) {
+  issues.push("v2/README.md: 缺少全功能快照包（snapshot.ts / #/?pack=）说明");
+}
+if (countOf("全功能快照：链接同时打包") < 6) {
+  issues.push("v2/tutorial.html: 全功能快照段应出现在用户版 / 开发者版正文（各 2 次）与两个词典键");
+}
+if (!tutText.includes("Full snapshot: the link also packs")) {
+  issues.push("v2/tutorial.html: 英文词典缺少全功能快照条目");
+}
+if (!tutText.includes("全功能快照：連結同時打包")) {
+  issues.push("v2/tutorial.html: 繁体词典缺少全功能快照条目");
+}
+
 if (issues.length) {
   console.error(`check-consistency: ${issues.length} 处不一致`);
   for (const s of issues) console.error("  ✗ " + s);

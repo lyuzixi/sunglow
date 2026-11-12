@@ -9,6 +9,9 @@ import type { ForecastResult } from "./core/forecast";
 import type { MapDateBox } from "./core/mapdata";
 import { cityByName, CITIES } from "./core/city";
 import { cityTz, todayInTz } from "./core/tz";
+import {
+  COMPOSE_DEFAULT_ON, COMPOSE_DEFAULT_ORDER, isComposeId, type ComposeModId
+} from "./core/composemods";
 
 export type ThemeMode = "dark" | "light" | "system";
 
@@ -18,12 +21,13 @@ export const PREF_KEY = "SUNGLOW.v2.pref";
 export const PREF_BOOL = [
   "numLabels", "showPts", "showTx", "showGrid", "showContours", "hour12", "calibOff"
 ] as const;
-/* 折叠目标分两类，默认值不同：
+/* 折叠目标分三类，默认值不同：
    · 整卡（光追详情 / 附注）—— 卡头有胶囊按钮，默认**展开**
+   · 影响因素 —— 标题行有胶囊按钮，13 项卡很长，默认**收起**
    · 卡内说明块（结论 / 趋势 / 图例）—— 原生 details，默认**收起**
    设置页不再提供「折叠默认」开关，之后一律按用户在页面上手点的结果记忆。 */
 export const FOLD_KEYS = [
-  "rayFold", "notesFold", "heroFold", "trendFold", "legendFold"
+  "rayFold", "notesFold", "heroFold", "trendFold", "legendFold", "factorsFold"
 ] as const;
 /** 首次访问（偏好里没有该键）时的初始状态，true = 收起 */
 export const FOLD_DEFAULT: Record<string, boolean> = {
@@ -31,7 +35,8 @@ export const FOLD_DEFAULT: Record<string, boolean> = {
   notesFold: false,
   heroFold: true,
   trendFold: true,
-  legendFold: true
+  legendFold: true,
+  factorsFold: true
 };
 export const PREF_STR: Record<string, readonly string[]> = {
   units: ["metric", "imperial"],
@@ -67,6 +72,9 @@ export interface AppState {
   calibOff: boolean;
   /** 首屏照片模式：off 原深空 / band M2 报头带 / full M3 全幅 / window M4 天幕窗 */
   heroPhotoMode: "off" | "band" | "full" | "window";
+  /** 合成分享卡：已勾选的模块 id（顺序另存 cmpOrder，拖拽后写入） */
+  cmpOn: ComposeModId[];
+  cmpOrder: ComposeModId[];
   folds: Record<string, boolean>;
 }
 
@@ -94,6 +102,21 @@ const prefs = loadPrefs();
 export const hasSavedCity = (): boolean =>
   typeof prefs.cityName === "string" && !!cityByName(prefs.cityName);
 
+/**
+ * 观测场日期是否已保存、且仍落在可选窗口内（与 MapView 日期选择器的 -2~+7 天同窗）。
+ * 缓存键含日期：以前 mapDateS 每次启动都重置成「今天」，隔天或换过日期再打开
+ * 就直接 miss，页面显示「该日期尚未取数」，看起来像缓存丢了（2026-11-11）。
+ * 超出窗口（隔一周回来）仍回落到今天，避免开局停在一张过期日期上。
+ * 读的是启动时的偏好快照，语义即「本次打开时有没有可用的上次日期」。
+ */
+export function hasSavedMapDate(): boolean {
+  const raw = prefs.mapDateS;
+  if (typeof raw !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return false;
+  const diff =
+    (Date.parse(raw + "T00:00:00Z") - Date.parse(todayStr() + "T00:00:00Z")) / 86400000;
+  return Number.isFinite(diff) && diff >= -2 && diff <= 7;
+}
+
 function prefBool(k: string, dflt: boolean): boolean {
   return typeof prefs[k] === "boolean" ? (prefs[k] as boolean) : dflt;
 }
@@ -119,6 +142,31 @@ function prefStr<T extends string>(k: string, dflt: T): T {
 
 /** 观测场地图当前日期盒 —— MapView 写入，多观测点对比读取（地图选点免额度的依据） */
 export const mapBox = ref<MapDateBox | null>(null);
+/** 数据到达戳：趋势 / 地图加载完成后 +1。合成分享卡据此刷新「缓存就绪」，
+    否则勾选框会一直停在「先在上方加载…」——数据到了面板却不知道。 */
+export const dataStamp = ref(0);
+
+/* 合成卡选择迁移：旧版是 5 个布尔（cmpSky/cmpTrend/…），新版是模块 id 数组。
+   没存过就落到「极简」默认值；储过空数组表示用户故意全关，尊重它。 */
+const LEGACY_CMP: Array<[string, ComposeModId]> = [
+  ["cmpSky", "sky"], ["cmpTrend", "trend"], ["cmpMap", "map"],
+  ["cmpFac", "facCloud"], ["cmpQr", "qr"]
+];
+function loadCmpOn(): ComposeModId[] {
+  const raw = prefs.cmpOn;
+  if (Array.isArray(raw)) return raw.filter(isComposeId);
+  const legacy = LEGACY_CMP
+    .filter(([k]) => typeof prefs[k] === "boolean" && prefs[k])
+    .map(([, id]) => id);
+  return legacy.length ? legacy : COMPOSE_DEFAULT_ON.slice();
+}
+/** 顺序：老偏好里没有的新模块自动追加到末尾，不打断用户已调好的顺序 */
+function loadCmpOrder(): ComposeModId[] {
+  const raw = prefs.cmpOrder;
+  const out: ComposeModId[] = Array.isArray(raw) ? raw.filter(isComposeId) : [];
+  for (const id of COMPOSE_DEFAULT_ORDER) if (!out.includes(id)) out.push(id);
+  return out;
+}
 
 export const state = reactive<AppState>({
   lang: prefStr<Lang>("lang", detectLang()),
@@ -138,7 +186,7 @@ export const state = reactive<AppState>({
   useMock: false,
   mapDim: prefStr("mapDim", "mix"),
   mapModel: prefStr("mapModel", "ens"),
-  mapDateS: todayStr(),
+  mapDateS: hasSavedMapDate() ? (prefs.mapDateS as string) : todayStr(),
   mapPeriod: "pm",
   calibOn: !prefBool("calibOff", false),
   units: prefStr("units", "metric"),
@@ -152,6 +200,8 @@ export const state = reactive<AppState>({
   hour12: prefBool("hour12", false),
   calibOff: prefBool("calibOff", false),
   heroPhotoMode: prefStr<"off" | "band" | "full" | "window">("heroPhotoMode", "off"),
+  cmpOn: loadCmpOn(),
+  cmpOrder: loadCmpOrder(),
   folds: (() => {
     const out: Record<string, boolean> = {};
     for (const k of FOLD_KEYS) out[k] = prefBool(k, FOLD_DEFAULT[k]);
@@ -175,11 +225,14 @@ export function savePrefs(): void {
       lang: state.lang,
       theme: state.theme === "system" ? "auto" : state.theme,
       cityName: state.city.name,
+      mapDateS: state.mapDateS,
       units: state.units,
       mapDim: state.mapDim,
       mapModel: state.mapModel,
       heroPhotoMode: state.heroPhotoMode,
-      calibOff: state.calibOff
+      calibOff: state.calibOff,
+      cmpOn: state.cmpOn,
+      cmpOrder: state.cmpOrder
     };
     for (const k of PREF_BOOL) {
       if (k === "calibOff") out[k] = state.calibOff;

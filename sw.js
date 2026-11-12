@@ -11,7 +11,7 @@
    ========================================================================= */
 /* 占位值：发布时由 publish-root.mjs 按 index.html 内容哈希重写为
    glowcast-v2-pwa-<12 位哈希>，源文件不写死版本号（写死会让人以为改它就能升版）。 */
-const VERSION = "glowcast-v2-pwa-d05631bccf2b";
+const VERSION = "glowcast-v2-pwa-f3179525e0f8";
 const CORE = [
   "./",
   "./index.html",

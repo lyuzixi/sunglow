@@ -39,17 +39,24 @@ const state = read("src/state.ts");
 const foldBlock = state.match(/export const FOLD_KEYS = \[([\s\S]*?)\]/);
 must(!!foldBlock && !/trendDetailFold/.test(foldBlock[1]), "state.ts 的 FOLD_KEYS 仍登记逐日明细");
 
-/* ---------- 1.5 三处「保存图片」共用同一呈现 ---------- */
+/* ---------- 1.5 三处保存按钮：各自的产物名（方案 C） ---------- */
 const shareBtn = read("src/components/ShareButton.vue");
-const shareImg = read("src/components/ShareImageButton.vue");
+const shareDrop = read("src/components/ShareDropdown.vue");
 const map = read("src/components/MapView.vue");
-must(/<ShareButton/.test(shareImg), "结论卡保存按钮没有使用 ShareButton");
-must(/<ShareButton[\s\S]{0,200}@click="saveImg"/.test(trend), "趋势卡保存按钮没有使用 ShareButton");
-must(/<ShareButton[\s\S]{0,200}@click="saveImg"/.test(map), "地图卡保存按钮没有使用 ShareButton");
+must(/kind="trend"/.test(trend) && /kind="map"/.test(map),
+  "趋势 / 地图按钮没有用自己的产物名（kind=trend / kind=map）");
+must(/t\("趋势图"\)/.test(shareBtn) && /t\("观测场图"\)/.test(shareBtn),
+  "ShareButton 缺少「趋势图 / 观测场图」产物名");
+must(/ShareDropdown/.test(read("src/components/ConclusionCard.vue")),
+  "结论卡没有「保存图片 ▾」下拉（方案 C）");
+must(/saveShareCard/.test(shareDrop) && /saveStoryCard/.test(shareDrop),
+  "下拉里没有两个产物（结论卡 / 竖版故事卡）");
 must(/@media \(max-width: 720px\)[\s\S]{0,200}\.sb-txt \{ display: none; \}/.test(shareBtn),
   "ShareButton 缺少 ≤720 图标化（隐藏文字）样式");
 must(/@media \(pointer: coarse\)[\s\S]{0,120}height: 44px/.test(shareBtn),
   "ShareButton 缺少触屏 44px 热区");
+must(/@media \(pointer: coarse\)[\s\S]{0,120}height: 44px/.test(shareDrop),
+  "ShareDropdown 缺少触屏 44px 热区");
 
 /* ---------- 1.6 分享闭环：故事卡 / 二维码 / 文案 / 日历 ---------- */
 const home = read("src/views/HomeView.vue");
@@ -58,7 +65,8 @@ const extras = read("src/core/shareextras.ts");
 const qrDialog = read("src/components/ShareQrDialog.vue");
 must(/drawStoryCard/.test(storyCard) && /STW = 540, STH = 960/.test(storyCard),
   "缺少 9:16 竖版故事卡（540×960）");
-must(/kind="story"/.test(read("src/components/ConclusionCard.vue")), "结论卡没有竖版故事卡入口");
+must(/saveStoryCard/.test(shareDrop) && /pick\('story'\)/.test(shareDrop),
+  "结论卡下拉里没有竖版故事卡入口");
 must(/captionOf/.test(extras) && /buildIcs/.test(extras), "分享扩展缺少文案或日历实现");
 must(/<ShareQrDialog/.test(home), "底部分享区没有接入二维码弹层");
 must(/复制文案/.test(home) && /加入日历/.test(home) && /二维码/.test(home),
@@ -71,6 +79,30 @@ const feedbackDialogSrc = read("src/components/FeedbackDialog.vue");
 must(/z-index: 320/.test(feedbackDialogSrc), "反馈弹层层级低于设置面板 / 顶栏");
 must(/saveQr/.test(feedbackDialogSrc) && /a\.download/.test(feedbackDialogSrc),
   "反馈弹层缺少保存二维码图片的入口");
+/* ---------- 1.61 分享按钮可点性（2026-11-11） ----------
+   本地双击 index.html 时两个按钮曾恒为 disabled，而 .btn 没有禁用态，
+   看着能点、点了毫无反应。快照模式与换参数后 snapUrl 为空也会禁用。 */
+const urlstate = read("src/core/urlstate.ts");
+const shareMainCss = read("src/styles/main.css");
+must(/export const SHARE_SITE = "https:\/\/sunglow\.cloud\/";/.test(urlstate),
+  "分享链接缺少线上正式站点常量 SHARE_SITE");
+must(/export function shareBaseUrl/.test(urlstate) && /location\.protocol === "file:"/.test(urlstate),
+  "shareBaseUrl 没有把 file:// 换到线上地址");
+must(/shareBaseUrl\(\) \+ baseQuery\(\)/.test(home) &&
+  !/location\.href\.split\("#"\)\[0\]\.split\("\?"\)\[0\] \+ baseQuery/.test(home),
+  "HomeView 仍用 location.href 拼分享链接（本地打开时是本机路径）");
+must(!/:disabled="!snapUrl \|\| isLocalFile"/.test(home) && !/if \(isLocalFile\) return;/.test(home),
+  "分享按钮仍因本地打开被禁用 / 点击被拦截");
+must(/:disabled="!snapUrl"/.test(home) && /share-why/.test(home),
+  "分享按钮缺少无结果时的禁用态与可见原因");
+must(/\.btn:disabled[\s\S]{0,220}cursor: not-allowed/.test(shareMainCss),
+  "全局 .btn:disabled 缺少可见禁用态（用户会以为按钮坏了）");
+must(/writeClipboard/.test(home) && /document\.execCommand\("copy"\)/.test(home) && /linkFallback/.test(home),
+  "复制缺少剪贴板回退与手动复制入口");
+must(/new URLSearchParams\(location\.search\)\.get\("snap"\)/.test(home),
+  "快照模式没有生成可继续转发的分享链接");
+must(/flush: "sync"/.test(home), "参数 watch 不是同步（初始化会把快照链接清空）");
+
 const pwaBar = read("src/components/PwaUpdatePrompt.vue");
 must(/\.pwa-bar \{[\s\S]{0,500}overflow: hidden/.test(pwaBar),
   "更新提示条顶部光谱线没有裁到胶囊轮廓（直线会越过两端圆角）");
@@ -122,6 +154,154 @@ for (const rel of ["tutorial.html", "404.html", "sw.js", "app.html", "README.md"
   must(!noOfflineClaim.test(read(rel)), `${rel} 仍宣称断网可完整使用（气象取数需要联网）`);
 }
 
+/* ---------- 1.10 取数失败不造数据（2026-11-10） ----------
+   一份编造的概率会让人拿着它出门，比没有结果更糟：失败只能给「没有取到数据」提示。
+   src="mock" 只允许出现在显式 useMock 分支里，不允许再有任何自动回落。 */
+const fc = read("src/core/forecast.ts");
+must(/NO_DATA_MSG/.test(fc) && /return \{ ok: false, error: t\(NO_DATA_MSG\) \}/.test(fc),
+  "取数失败没有返回「没有取到数据」提示");
+must((fc.match(/src = "mock"/g) || []).length === 1 && /if \(opts\.useMock\)/.test(fc),
+  "mock 仍有自动回落分支（src=\"mock\" 只允许出现在显式 useMock 分支）");
+must(/err-note[\s\S]{0,600}重新计算/.test(read("src/components/ConclusionCard.vue")),
+  "无数据提示没有给「重新计算」出口");
+must(/这次没有取到数据/.test(read("src/core/i18n-extra.ts")),
+  "「没有取到数据」缺少繁 / 英词条");
+
+/* ---------- 1.11 分享页四按钮 + 方案 D 合成卡 ----------
+   2026-11-11 用户拍板：复制文案 / 加入日历改回 .btn 按钮，不再收进「更多」
+   文字链 —— 文字链看着不像能点，也没有触屏热区。 */
+const shareActs = home.match(/<div class="share-acts">([\s\S]*?)<\/div>/);
+must(!!shareActs && (shareActs[1].match(/<button/g) || []).length === 4,
+  "分享区四个动作没有都做成按钮（复制链接 / 二维码 / 复制文案 / 加入日历）");
+must(!/share-more/.test(home) && !/class="mlink"/.test(home) && !/t\("更多："\)/.test(home),
+  "分享页仍残留「更多：」文字链");
+must(/:disabled="!shareView"/.test(home) && /@click="copyCaption"/.test(home) && /@click="addCalendar"/.test(home),
+  "复制文案 / 加入日历按钮没接回原处理函数，或无结果时未禁用");
+must(!/"更多：":/.test(read("src/core/i18n-extra.ts")), "i18n-extra 仍留着已弃用的「更多：」词条");
+must(/<ShareComposer/.test(home), "分享页没有接入合成分享卡（方案 D）");
+const composer = read("src/components/ShareComposer.vue");
+const composeCore = read("src/core/composecard.ts");
+const composeMods = read("src/core/composemods.ts");
+must(/drawComposeCard\(el, input/.test(composer) && /saveComposeCard\(input/.test(composer),
+  "合成面板没有复用 drawComposeCard / saveComposeCard（预览与导出同源）");
+must(/trendDaysCached/.test(composer) && /mapThumbCached/.test(composer),
+  "合成面板的取数口径不是只读缓存（趋势 / 观测场都必须查缓存）");
+must(!/loadTrend|apiForecast|apiAQ/.test(composer),
+  "合成面板会触发取数——只允许读缓存");
+/* 2026-11-11 重做：底卡回到 780×400 原版结论核心，14 个可选模块按实高累加 */
+must(/const MEASURE_H = \d+/.test(composeCore) && /paint\(c, d, mods\)/.test(composeCore),
+  "合成卡不是两遍绘制（先量后定高）");
+must(/function composeRenderList/.test(composeCore) && /function composeAvail/.test(composeCore),
+  "合成卡缺少可用性过滤 / 渲染顺序整理");
+must((composeMods.match(/id: "/g) || []).length === 14,
+  "模块清单不是 14 个可选模块");
+must(/COMPOSE_DEFAULT_ON: ComposeModId\[\] = \["sky", "qr"\]/.test(composeMods),
+  "默认勾选不是极简（天色带 + 二维码）");
+must(/anchored: true/.test(composeMods) && /anchored/.test(composeCore),
+  "天色带没有锚定在结论层上方（模块 2 的版式会被打乱）");
+
+/* ---------- 1.17 十日趋势 = 结论胶囊 + 双行热力格（2026-11-12 三次改版） ----------
+   演进：单柱（柱高=概率+橙标最佳，两套指标抢通道）→ 双行热力格（读不出「该去哪天」）
+   → 并排双柱（柱高=质量，柱顶两行数字互相挤）→ 现在：顶部三枚「最值得出门」胶囊
+   先给答案，下面 10×2 热力格给全量数据（格内左概率右质量）。 */
+const trendBody = composeCore.slice(
+  composeCore.indexOf("function drawTrend"), composeCore.indexOf("模块 6：观测场"));
+must(!!trendBody, "找不到 drawTrend");
+must(/const marks = \["①", "②", "③"\]/.test(trendBody) && /t\("最值得出门"\)/.test(trendBody),
+  "趋势顶部没有「最值得出门」结论胶囊");
+must(/pers: Array<"am" \| "pm"> = \["am", "pm"\]/.test(trendBody) &&
+     /dd\.am/.test(trendBody) && /dd\.pm/.test(trendBody),
+  "趋势没有分别读 am / pm 两条数据");
+must(/const ramp = TREND_RAMP;/.test(trendBody) &&
+     /mixHex\(ramp\[0\], ramp\[1\], tt \* 0\.\d+\)/.test(trendBody) &&
+     /mixHex\("#1B2436", ramp\[1\]/.test(trendBody),
+  "格子底色没有按概率在 TREND_RAMP 两端之间插值（浅色/深色两条分支都要有）");
+must(/export const TREND_RAMP: \[string, string\] = \["#[0-9A-Fa-f]{6}", "#[0-9A-Fa-f]{6}"\]/.test(composeCore),
+  "TREND_RAMP 不是一对十六进制颜色");
+must(/gradeColor\(row\.grade, p\.dark\)/.test(trendBody) && /Math\.round\(row\.Q\)/.test(trendBody),
+  "格内右侧不是按质量分档上色的质量分");
+must(/all\.sort\(\(a, b\) => \(b\.Q - a\.Q\) \|\| \(b\.P - a\.P\)\)/.test(trendBody) &&
+     /\.slice\(0, 3\)/.test(trendBody) && /c\.arc\(x \+ cellW \/ 2, cy, 7\.5/.test(trendBody),
+  "前三名没有按质量分排名并画在格子顶边");
+must(/setLineDash\(\[3, 3\]\)/.test(trendBody) && /fillText\("—"/.test(trendBody),
+  "缺时段没有画灰虚线格 + 破折号");
+must(!/const pick = \(dd: TrendDay\)/.test(trendBody),
+  "趋势仍在静默用另一时段补缺");
+must(/weekdayOf\(dd\.date\)/.test(trendBody), "日期行没有标星期");
+must(/cellW = \(INNER - LAB_W - GAP \* \(n - 1\)\) \/ n/.test(trendBody),
+  "列宽没有按实际天数自适应（不足十天会在右侧留空列）");
+must(/while \(fp > 9 && pairW\(fp, fq\) \+ 12 \+ 6 > cellW\)/.test(trendBody),
+  "极值（100% 与三位质量分）没有做逐档降字号的间距兜底");
+must(/①②③＝前三名/.test(trendBody), "图例缺「①②③＝前三名」");
+
+/* ---------- 1.12 标题外置：光追 / 分享的标题排在白卡外，「附注」卡不动 ----------
+   2026-11-11：两个板块的标题原本贴在白卡里，其它板块（对比 / 趋势 / 观测场）
+   一律是 .section-head 在卡外。附注与光追共用 FoldCard，只能按开关区分。 */
+const foldCard = read("src/components/FoldCard.vue");
+const ray = read("src/components/RayDetail.vue");
+const notesCard = read("src/components/NotesCard.vue");
+must(/outsideTitle\?: boolean/.test(foldCard) &&
+     /v-if="outsideTitle" class="section-head fc-head"/.test(foldCard) &&
+     /v-if="!outsideTitle" class="fc-head"/.test(foldCard),
+  "FoldCard 缺少标题外置开关（outsideTitle + 卡外 .section-head / 卡内 fc-head）");
+must(/outside-title/.test(ray), "光追算法细节没有启用标题外置");
+must(!/outside-title/.test(notesCard), "「附注」卡被误改成标题外置（用户要求附注不动）");
+const shareSec = (home.match(/<section id="share"[\s\S]*?<\/section>/) || [""])[0];
+const iHead = shareSec.indexOf('class="section-head"');
+const iGlass = shareSec.indexOf('class="glass"');
+const iTip = shareSec.indexOf('class="share-tip"');
+must(iHead >= 0 && iGlass > iHead && iTip > iGlass &&
+     /<h2>\{\{ t\("分享"\) \}\}<\/h2>/.test(shareSec) && !/<h3[^>]*>\{\{ t\("分享"\) \}\}/.test(shareSec),
+  "分享标题没有移到白卡外、附注跑出了卡片，或卡内仍留着旧 h3");
+
+/* ---------- 1.13 影响因素默认收起（2026-11-11） ----------
+   13 项卡很长，默认收起；目录点过去必须就地展开，否则跳进一个空节。 */
+const factorsPanel = read("src/components/FactorsPanel.vue");
+const topbar = read("src/components/TopBar.vue");
+must(/"factorsFold"/.test(state) && /factorsFold:\s*true/.test(state),
+  "state.ts 没有登记 factorsFold，或默认值不是「收起」");
+must(/v-show="!state\.folds\.factorsFold"/.test(factorsPanel) &&
+     /toggleFold\('factorsFold'\)/.test(factorsPanel) &&
+     /class="btn btn-ghost sm fac-fold"/.test(factorsPanel) &&
+     /aria-controls="factors-body"/.test(factorsPanel),
+  "影响因素没有接上折叠按钮 / v-show / 可达性属性");
+must(/id: "#factors"[^}]*fold: "factorsFold"/.test(topbar),
+  "目录里的「影响因素」没挂 fold，默认收起后点导航会跳进空节");
+
+/* ---------- 1.14 全功能快照：主页直开 + 全部板块随链接走 ----------
+   旧版打开 ?snap= 只给一张孤立的快照结果卡，趋势 / 观测场 / 影响因素全丢。 */
+const snapPack = read("src/core/snapshot.ts");
+const forecastSrc = read("src/core/forecast.ts");
+const trendCore = read("src/core/trend.ts");
+const mapCore = read("src/core/mapdata.ts");
+const compareCore = read("src/core/compare.ts");
+must(/export async function buildSharePack/.test(snapPack) &&
+     /export async function installSharePack/.test(snapPack) &&
+     /CompressionStream\("deflate"\)/.test(snapPack),
+  "全功能快照包缺少打包 / 安装 / deflate 压缩");
+must(/export function readPackRaw/.test(urlstate) &&
+     /location\.hash \|\| ""/.test(urlstate) &&
+     /function hashWithPack/.test(urlstate) && /p\.set\(PACK_PARAM, raw\)/.test(urlstate) &&
+     /export const PACK_PARAM = "pack"/.test(snapPack),
+  "快照包没有走 hash 查询串（普通 query 超过 8 KB 会 414）");
+must((forecastSrc.match(/snapCacheEntry/g) || []).length >= 2 &&
+     (trendCore.match(/snapCacheEntry/g) || []).length >= 1 &&
+     (mapCore.match(/snapCacheEntry/g) || []).length >= 1 &&
+     /snapCmpList/.test(compareCore),
+  "六个缓存读取入口没有全部接上快照 overlay（point/trend/map/compare）");
+must(!/snap-card/.test(home) && !/<template v-else>/.test(home) &&
+     /class="glass snap-banner"/.test(home) && /<ConclusionCard/.test(home) &&
+     /<TrendSection/.test(home) && /<MapView/.test(home) && /<FactorsPanel/.test(home),
+  "快照又变回孤立结果页，或主页板块被 v-else 挡住了");
+must(/await installSharePack\(u\.pack\)/.test(home) && /\n  run\(\);/.test(home),
+  "快照模式没有先装包再跑一次 run()（state.result 不会落地）");
+must(/qrSafeUrl/.test(home) && /qrSafeUrl/.test(read("src/core/sharecard.ts")) &&
+     /lite\?: boolean/.test(qrDialog),
+  "长链接没有二维码降级（qrcode-generator 单码上限约 3 KB）");
+must(/sunglow:fill-snapshot/.test(trend) && /sunglow:fill-snapshot/.test(map) &&
+     /watch\(snapshotReady/.test(trend) && /watch\(snapshotReady/.test(map),
+  "趋势 / 观测场缺少「一键补齐」或快照异步就绪后的补读");
+
 /* ---------- 2. 分享卡：最佳窗口前 3 + 无内部代号 ---------- */
 const card = read("src/core/sharecard.ts");
 must(/TW = 780, TH = 680/.test(card), "趋势分享卡不再是 780×680");
@@ -138,6 +318,47 @@ must(idxBest !== -1 && idxTable !== -1 && idxBest < idxTable, "趋势分享卡�
 must(!/SUNGLOW V2/.test(card), "趋势分享卡仍含内部代号 SUNGLOW V2");
 must(!/SUNGLOW V2/.test(read("tutorial.html")),
   "tutorial.html 仍含内部代号 SUNGLOW V2");
+
+/* ---------- 1.15 结论分享卡 = 整个结论板块（2026-11-11） ----------
+   用户要求「结论分享卡的把整个结论板块的内容全部做进去」：只留概率大字的
+   780×400 横版不够，扩成 780×1024 的完整版，页面 #verdict 的每一块都要在图上。 */
+must(/const W = 780, H = 1024, S = 2;/.test(card),
+  "结论卡画布不是 780×1024（完整结论版）");
+must(/function wrapText/.test(card) && /function modelCardsOf/.test(card) &&
+     /function drawModelCard/.test(card),
+  "结论卡缺少多行文本 / 四张模型卡的绘制实现");
+for (const k of [
+  't("出现概率")', 't("观赏质量")', 't("等级")', 't("可信度")', 't("模型分歧 ΔI")',
+  't("方位角")', 't("云底高度")', 't("持续时间")', 't("能见度")',
+  't("几何条件")', 't("各模型独立结果")', 't("说明 · 概率与质量分怎么算")',
+  't("五段曙暮光：白昼余晖 / 民用 / 航海 / 天文 / 夜间")',
+  't("底部橙条＝霞光窗口")', 't("同一份取数，四路独立评分")'
+]) {
+  must(card.includes(k), "结论分享卡缺少「" + k + "」这一块内容");
+}
+must(/contentEnd: Math\.round\(ny\)/.test(card),
+  "结论卡没有暴露 contentEnd（排版留白靠它核对）");
+must(/heightPx\.value = Math\.round\(meta\.h \/ 2\)/.test(composer),
+  "合成面板没有把实测高度写回「成图 780×h」");
+must(/t\("完整版"\)/.test(read("src/components/ShareDropdown.vue")),
+  "下拉菜单里还是「横版」——卡片已经改成完整版");
+
+/* ---------- 1.16 合成卡预览可放大（2026-11-11） ----------
+   320px 的预览看不清长图细节：整块预览做成按钮，点开弹层看整张。 */
+must(/<button[\s\S]{0,260}class="cmp-preview"/.test(composer) &&
+     /@click="openZoom"/.test(composer) &&
+     /aria-label="t\('放大预览合成分享卡'\)"|:aria-label="t\('放大预览合成分享卡'\)"/.test(composer),
+  "合成卡预览不是可点的按钮（缺 openZoom / aria-label）");
+must(/function openZoom/.test(composer) && /drawImage\(src, 0, 0\)/.test(composer),
+  "放大层没有把当前画布原样拷贝过去（drawImage）");
+must(/class="zoom-mask"/.test(composer) && /class="zoom-cv"/.test(composer) &&
+     /<Teleport to="body">/.test(composer),
+  "缺少放大预览弹层（Teleport + zoom-mask + zoom-cv）");
+must(/key === "Escape"[\s\S]{0,120}closeZoom/.test(composer) &&
+     /document\.body\.style\.overflow = "hidden"/.test(composer),
+  "放大层不支持 Esc 关闭或没有锁滚动");
+must(/\.cmp-preview \{[\s\S]{0,500}cursor: zoom-in/.test(composer),
+  "预览没有 zoom-in 光标提示");
 
 /* ---------- 3. 关键文案三语齐全 ---------- */
 const extra = read("src/core/i18n-extra.ts");
@@ -157,11 +378,29 @@ const hantKeys = keysOf(HANT), enKeys = keysOf(EN);
 const critical = [
   "最佳窗口", "逐日明细（概率条与质量徽章）", "最值得出门", "值得安排", "可以留意",
   "整体偏弱",
-  "竖版故事卡", "分享与保存", "二维码", "复制文案", "加入日历",
+  "竖版故事卡", "分享", "二维码", "复制文案", "加入日历",
+  "当前从本地文件打开，复制链接与二维码会自动指向 {site}，对方打开即可查看快照，无需重新取数。",
+  "先算出结果，才能生成分享链接：点上方「重新计算」取得本次预报。",
+  "复制失败，请选中下面的链接手动复制",
+  "趋势图", "观测场图", "合成分享卡", "可选块", "极简", "标准", "完整",
+  "观测场缩略", "天色带与观赏窗口", "三因子",
   "最佳观赏窗口", "霞光档案 · {city}{period} {p}%", "今晚", "明晚",
   "新版本已就绪", "反馈", "反馈与交流", "反馈及交流请联系官方小红书",
   "前往小红书主页", "小红书主页截图", "保存二维码图片",
-  "关于 / 隐私", "数据来源", "本地存储与隐私"
+  "关于 / 隐私", "数据来源", "本地存储与隐私",
+  /* 全功能快照链接（2026-11-11） */
+  "退出快照，按当前条件查看",
+  "这是分享者当时的完整缓存：结论、十日趋势、观测场、影响因素等板块已在本页还原，本次打开不消耗接口额度；各板块仍保留「缓存」标记。",
+  "这是经典原版的精简快照（只含结论数据）。主页其它板块按当前条件查看，点各板块的加载按钮即可取数。",
+  "观测场已按抽样精度压缩", "结论与影响因素", "链接内含", "尚无缓存数据",
+  "模型分歧 ΔI", "点击放大", "合成分享卡预览", "成图 780×{h}",
+  "模型卡", "云体条件", "光路几何", "大气通透", "动力与对流",
+  "光追关键量", "光谱色样", "照亮时间轴", "亮度·彩度曲线",
+  "可选模块 · 拖动排序", "拖动排序", "固定在结论上方", "当日霞光时段",
+  "已选 {n} 块 · 成图 780×{h}（高随内容走）", "扫码查看完整结论",
+  "补齐全部数据（会取数）",
+  "{n} 日趋势", "左＝出现概率", "右＝质量分", "①②③＝前三名", "—＝该时段无数据",
+  "完整链接较长，二维码用的是精简版（只含结论数据）；要共享全部板块，请点「复制链接」。"
 ];
 for (const k of critical) {
   must(hantKeys.has(k), `i18n-extra 繁体缺键：${k}`);
@@ -269,9 +508,25 @@ if (tutLight) {
   }
 }
 
+/* ---------- 观测场缓存：立即落盘 / 日期可恢复 / 探针不删用户数据 ----------
+   2026-11-11 事故：探针整族清 SUNGLOW.v2.* 把用户的观测场缓存删了；
+   mapCachePut 又排在 requestIdleCallback 里，图出来就刷新等于没存过。 */
+const mapdataSrc = read("src/core/mapdata.ts");
+const putAt = mapdataSrc.indexOf("export function mapCachePut(");
+const putBody = putAt < 0 ? "" : mapdataSrc.slice(putAt, putAt + 900);
+must(putAt >= 0 && /localStorage\.setItem/.test(putBody)
+  && !/requestIdleCallback|stillWanted/.test(putBody),
+  "观测场缓存又改回延迟落盘或取数令牌闸门（图出来就刷新会丢缓存）");
+const probeSrc = read("scripts/probe-ui.mjs");
+must(!/startsWith\('SUNGLOW\.v2\.'\)[\s\S]{0,100}removeItem/.test(probeSrc),
+  "probe-ui 又整族清 SUNGLOW.v2.*（file:// 下会删掉用户的观测场缓存）");
+must(/mapDateS:\s*hasSavedMapDate\(\)/.test(state)
+  && /mapDateS:\s*state\.mapDateS/.test(state),
+  "观测场日期没写进偏好（刷新后日期漂移会 miss 缓存）");
+
 if (issues.length) {
   console.error(`check-ui: ${issues.length} 处 UI 断言失败`);
   for (const s of issues) console.error("  ✗ " + s);
   process.exit(1);
 }
-console.log("check-ui: ✓ 趋势布局 / 分享卡口径 / 三语键 / 触屏热区 / 对比度断言通过");
+console.log("check-ui: ✓ 趋势布局 / 分享卡口径 / 三语键 / 触屏热区 / 对比度 / 缓存落盘断言通过");

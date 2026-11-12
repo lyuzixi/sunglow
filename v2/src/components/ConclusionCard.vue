@@ -6,7 +6,7 @@ import { uAlt, uDist, uClock } from "../core/units";
 import { pointCacheAge } from "../core/forecast";
 import SkyBand from "./SkyBand.vue";
 import FoldNote from "./FoldNote.vue";
-import ShareImageButton from "./ShareImageButton.vue";
+import ShareDropdown from "./ShareDropdown.vue";
 import ModelCards from "./ModelCards.vue";
 import { isForeignTz, tzLabel } from "../core/tz";
 import { typeDetail } from "../core/physics";
@@ -64,8 +64,8 @@ const geomTxt = computed(() => {
       <div class="section-head">
         <h2>{{ t("结论") }}</h2>
         <div class="head-right">
-          <ShareImageButton :view="view" />
-          <ShareImageButton :view="view" kind="story" />
+          <!-- 方案 C：两个产物并成「保存图片 ▾」，菜单里写产物名 -->
+          <ShareDropdown :view="view" />
           <div class="seg" role="group" :aria-label="t('模型')">
             <button
               v-for="m in MK"
@@ -79,8 +79,12 @@ const geomTxt = computed(() => {
         </div>
       </div>
 
+      <!-- 取数失败：不再回落演示数据，这里必须给出可操作的「无数据」出口 -->
       <div v-if="state.error" class="glass err-note">
-        {{ state.error }}
+        <p class="err-tx">{{ state.error }}</p>
+        <button class="btn btn-ghost sm" :disabled="state.loading" @click="emit('refetch')">
+          {{ state.loading ? t("取数中…") : t("重新计算") }}
+        </button>
       </div>
 
       <div v-else-if="!res" class="glass empty">
@@ -142,7 +146,7 @@ const geomTxt = computed(() => {
                 <span class="num" style="color: var(--tx-2)">
                   {{ res.dvI != null ? res.dvI.toFixed(1) : "—" }}
                 </span>
-                <span class="lab">{{ t("可信度") }}</span>
+                <span class="lab">{{ t("模型分歧 ΔI") }}</span>
               </div>
             </div>
           </div>
@@ -222,12 +226,18 @@ const geomTxt = computed(() => {
 .err-note {
   padding: 18px 22px;
   color: var(--q-bad);
-  white-space: pre-line;
   font-weight: 500;
   border-color: var(--q-bad);
   border-color: color-mix(in srgb, var(--q-bad) 38%, transparent);
   background: color-mix(in srgb, var(--q-bad) 8%, transparent);
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
 }
+.err-tx {
+  margin: 0; flex: 1 1 240px; min-width: 0;
+  white-space: pre-line; line-height: 1.7;
+}
+.err-note .btn { color: var(--q-bad); border-color: color-mix(in srgb, var(--q-bad) 42%, transparent); }
+.err-note .btn:hover { color: var(--tx-1); border-color: var(--q-bad); box-shadow: none; }
 .empty-ring {
   width: 90px; height: 90px;
   margin: 0 auto 16px;

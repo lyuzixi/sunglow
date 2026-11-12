@@ -7,7 +7,7 @@ import { t } from "../core/i18n";
 import { state } from "../state";
 import { deliverBlob, saveQrCard } from "../core/sharecard";
 
-const props = defineProps<{ open: boolean; url: string }>();
+const props = defineProps<{ open: boolean; url: string; lite?: boolean }>();
 const emit = defineEmits<{ (e: "close"): void; (e: "copy"): void }>();
 
 const cv = ref<HTMLCanvasElement | null>(null);
@@ -103,6 +103,10 @@ onBeforeUnmount(() => {
         <h3>{{ t("扫码查看快照") }}</h3>
         <canvas ref="cv" class="qr-cv" />
         <p v-if="err" class="qr-err">{{ err }}</p>
+        <!-- 完整链接带全功能数据包，长度超出二维码容量时降级成精简链接，说清楚差别 -->
+        <p v-if="lite && !err" class="qr-note">
+          {{ t("完整链接较长，二维码用的是精简版（只含结论数据）；要共享全部板块，请点「复制链接」。") }}
+        </p>
         <p class="qr-url">{{ url }}</p>
         <div class="qr-acts">
           <button class="btn btn-primary" @click="emit('copy')">{{ t("复制链接") }}</button>
@@ -158,6 +162,12 @@ onBeforeUnmount(() => {
   margin: 12px 0 0;
   font-size: var(--fs-small);
   color: var(--q-bad);
+}
+.qr-note {
+  margin: 10px 0 0;
+  font-size: var(--fs-tiny);
+  line-height: 1.6;
+  color: var(--tx-2);
 }
 .qr-url {
   margin: 12px 0 14px;

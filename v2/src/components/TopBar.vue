@@ -2,19 +2,22 @@
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
 import { useRouter } from "vue-router";
 import SettingsPanel from "./SettingsPanel.vue";
-import { state, setLangAndSave, setThemeAndSave, setFold, type ThemeMode } from "../state";
-import { t, LANGS, LANG_SHORT, LANG_NAMES, type Lang } from "../core/i18n";
+import { state, setFold } from "../state";
+import { t } from "../core/i18n";
 import { cityName } from "../core/citylang";
 import { openFeedback } from "../composables/useFeedback";
 
-/* 徽标三段：地点 / 日期 / 朝晚霞。宽屏在主行按钮右侧；手机（mode-mini）
-   连这一行都放不下，顶栏干脆不显示徽标 —— 改由抽屉顶部的状态行承担。
+/* 徽标三段：地点 / 日期 / 朝晚霞。宽屏在主行按钮右侧；手机（mini）改到品牌与
+   设置之间，地名过长时省掉日期（见 showMiniDate）。
    地点随语言走：英文 Beijing / 繁体 廣州市（口径见 citylang.ts）。 */
 const metaParts = computed(() => [
   cityName(state.city.name, state.lang),
   state.dateStr,
   t(state.period === "am" ? "朝霞" : "晚霞")
 ]);
+/* 「地名 + 时段」短才放得下日期段；英文地名 / 时段都长（Beijing / Evening glow），
+   一律让日期让路（首屏下方本来就有完整日期）。宁可少一段，也不许顶栏溢出。 */
+const showMiniDate = computed(() => metaParts.value[0].length + metaParts.value[2].length <= 6);
 const metaTitle = computed(() => metaParts.value.join(" · "));
 
 /* ---- 桌面/抽屉共用的目录项（顺序 = 页面顺序，单一口径） ----
@@ -25,8 +28,13 @@ const NAV: { id: string; label: string; full?: string; fold?: string }[] = [
   { id: "#trend", label: "十日趋势" },
   { id: "#field", label: "观测场" },
   { id: "#compare", label: "多地对比" },
-  { id: "#factors", label: "影响因素" },
-  { id: "#calib", label: "实况校准" },
+  /* 2026-11-10：分享升为页内一节，插在多地对比之后（页面顺序同步调整）。
+     下载链接、二维码、文案、日历都在这里，属于「主结果」而不是技术细节。 */
+  { id: "#share", label: "分享" },
+  /* 影响因素默认收起（13 项卡很长）；点目录 = 明确要看，jumpTo 就地展开 */
+  { id: "#factors", label: "影响因素", fold: "factorsFold" },
+  /* 实况校准已从目录撤下（页面仍保留，位置改到光追之后、附注之前）：
+     它是一次性的校准动作，不是「看结果」的落点，占一格导航反而打断阅读顺序。 */
   /* 与 RayDetail.vue 的 FoldCard anchor 对应；fold 让 jumpTo 能就地展开收起卡 */
   { id: "#ray", label: "光追细节", full: "光追算法细节", fold: "rayFold" }
 ];
@@ -41,8 +49,8 @@ const DETAIL_NAV: { id: string; label: string; fold: string }[] = [
 ];
 
 const settingsOpen = ref(false);
-const langOpen = ref(false);
-const themeOpen = ref(false);
+/* 语言与主题开关已并入设置面板（2026-11-10）：顶栏不再单独占两个图标，
+   把宽度预算让给导航与徽标。 */
 /* 版本菜单（2026-10-27）：桌面顶栏右侧，条目写正式版名（两行：英文全名 + 中文名），
    手机极简档隐藏按钮，入口交给目录抽屉的「更多项目」组。 */
 const verOpen = ref(false);
@@ -137,11 +145,9 @@ function scheduleRefit() {
   });
 }
 
-/* 顶栏同一时刻只开一个浮层：抽屉 / 设置 / 语言 / 主题 / 版本 互斥 */
-function closeOverlays(keep?: "settings" | "lang" | "theme" | "drawer" | "ver") {
+/* 顶栏同一时刻只开一个浮层：抽屉 / 设置 / 版本 互斥 */
+function closeOverlays(keep?: "settings" | "drawer" | "ver") {
   if (keep !== "settings") settingsOpen.value = false;
-  if (keep !== "lang") langOpen.value = false;
-  if (keep !== "theme") themeOpen.value = false;
   if (keep !== "drawer") drawerOpen.value = false;
   if (keep !== "ver") verOpen.value = false;
 }
@@ -150,16 +156,6 @@ function toggleSettings() {
   closeOverlays("settings");
   settingsOpen.value = next;
   if (next) syncDrawerTop();
-}
-function toggleLang() {
-  const next = !langOpen.value;
-  closeOverlays("lang");
-  langOpen.value = next;
-}
-function toggleTheme() {
-  const next = !themeOpen.value;
-  closeOverlays("theme");
-  themeOpen.value = next;
 }
 function toggleVer() {
   const next = !verOpen.value;
@@ -221,8 +217,8 @@ function computeActive() {
     last = n.id;
     if (el.getBoundingClientRect().top <= line) cur = n.id;
   }
-  /* 到底兜底：页尾那几节顶不到判定线（后面只剩分享卡和页脚），
-     不做这一步高亮会永远卡在倒数第二节 */
+  /* 到底兜底：页尾那几节顶不到判定线（末尾只剩实况校准、附注与页脚，
+     它们不在目录里），不做这一步高亮会永远卡在倒数第二节 */
   const doc = document.documentElement;
   if (last && doc.scrollHeight > window.innerHeight + 8) {
     const bottom = window.scrollY + window.innerHeight >= doc.scrollHeight - 4;
@@ -284,15 +280,6 @@ function lockScroll(on: boolean) {
 }
 watch(drawerOpen, (v) => lockScroll(v));
 
-function pickLang(l: Lang) {
-  setLangAndSave(l);
-  langOpen.value = false;
-}
-function pickTheme(m: ThemeMode) {
-  setThemeAndSave(m);
-  themeOpen.value = false;
-}
-
 onMounted(() => {
   document.addEventListener("click", onDoc);
   document.addEventListener("keydown", onKeydown);
@@ -326,9 +313,6 @@ onBeforeUnmount(() => {
   if (refitRaf) cancelAnimationFrame(refitRaf);
   lockScroll(false);
 });
-
-const themeIcon = () =>
-  state.theme === "dark" ? "☾" : state.theme === "light" ? "☀" : "◐";
 </script>
 
 <template>
@@ -366,53 +350,21 @@ const themeIcon = () =>
         >{{ t(n.label) }}</a>
       </nav>
 
+      <!-- 手机极简档（mini）：徽标留在顶栏里，占品牌与设置之间的剩余宽度。
+           390px 的剩余宽度只够「3 字地名 · 日期 · 朝晚霞」，所以：
+           地名超过 4 字时省掉日期（首屏下方本来就有完整日期），再窄按 media query 让路。
+           2026-11-10 用户要求把徽标搬回顶栏、并删掉抽屉里那行重复的状态。 -->
+      <span v-if="mode === 'mini'" class="meta-pill mp-mini" :title="metaTitle" :aria-label="metaTitle">
+        <span class="mp-city">{{ metaParts[0] }}</span>
+        <span v-if="showMiniDate" class="mp-date-wrap">
+          <i class="dot">·</i><span class="mp-date">{{ metaParts[1].slice(5) }}</span>
+        </span>
+        <i class="dot">·</i>
+        <span class="mp-period">{{ metaParts[2] }}</span>
+      </span>
+
       <div class="top-actions">
         <SettingsPanel v-model="settingsOpen" @toggle="toggleSettings" />
-        <div style="position: relative">
-          <button
-            class="icon-btn"
-            :aria-label="t('语言')"
-            :aria-expanded="langOpen"
-            @click.stop="toggleLang"
-          >
-            {{ LANG_SHORT[state.lang] }}
-          </button>
-          <div v-if="langOpen" class="menu-pop" role="menu">
-            <button
-              v-for="l in LANGS"
-              :key="l"
-              role="menuitemradio"
-              :aria-pressed="state.lang === l"
-              @click="pickLang(l)"
-            >
-              <span>{{ LANG_NAMES[l] }}</span>
-              <span v-if="state.lang === l">✓</span>
-            </button>
-          </div>
-        </div>
-
-        <div style="position: relative">
-          <button
-            class="icon-btn"
-            :aria-label="t('主题')"
-            :aria-expanded="themeOpen"
-            @click.stop="toggleTheme"
-          >
-            {{ themeIcon() }}
-          </button>
-          <div v-if="themeOpen" class="menu-pop" role="menu">
-            <button
-              v-for="m in (['dark', 'light', 'system'] as ThemeMode[])"
-              :key="m"
-              role="menuitemradio"
-              :aria-pressed="state.theme === m"
-              @click="pickTheme(m)"
-            >
-              <span>{{ m === "dark" ? t("深色") : m === "light" ? t("浅色") : t("跟随系统") }}</span>
-              <span v-if="state.theme === m">✓</span>
-            </button>
-          </div>
-        </div>
 
         <a
           class="icon-btn tut-btn"
@@ -460,8 +412,8 @@ const themeIcon = () =>
           </div>
         </div>
 
-        <!-- 徽标：幽灵胶囊，跟在五个按钮右侧（mode-mini 下整块隐藏） -->
-        <span class="meta-pill" :title="metaTitle" :aria-label="metaTitle">
+        <!-- 徽标：幽灵胶囊，跟在按钮右侧（手机 mini 档的位置见上方那一份） -->
+        <span v-if="mode !== 'mini'" class="meta-pill" :title="metaTitle" :aria-label="metaTitle">
           <template v-for="(p, i) in metaParts" :key="i">
             <i v-if="i" class="dot">·</i><span>{{ p }}</span>
           </template>
@@ -482,12 +434,8 @@ const themeIcon = () =>
     role="dialog"
     :aria-label="t('目录')"
   >
-    <!-- 手机（mode-mini）顶栏不显示徽标，状态在这里补回来，滚动到任何位置都能一键看到 -->
-    <div v-if="mode === 'mini'" class="md-status" :title="metaTitle">
-      <template v-for="(p, i) in metaParts" :key="i">
-        <i v-if="i">·</i><span>{{ p }}</span>
-      </template>
-    </div>
+    <!-- 手机（mode-mini）的徽标已经搬回顶栏（见 header 里 .mp-mini），
+         抽屉不再重复显示状态行 —— 打开目录时顶栏仍然可见，没必要再抄一遍。 -->
 
     <div class="md-label">{{ t("目录") }}</div>
 

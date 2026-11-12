@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
-import { state, savePrefs, mapBox } from "../state";
+import { state, savePrefs, mapBox, dataStamp } from "../state";
 import { t, ageText, getLang } from "../core/i18n";
 import { clamp, isNum, haversineKm } from "../core/math";
 import {
@@ -11,11 +11,13 @@ import { nearestCity, CITIES, cityTier, type City } from "../core/city";
 import { pointName, regionName, cityName } from "../core/citylang";
 import {
   buildLocalGrid, dimOf, divergeOf, currentModel, mapCacheAge, MAP_GRID_KM,
+  MAP_CACHE_PREFIX, MAP_CACHE_TTL,
   type GridPt, type MapPoint, type MapDateBox, type MapDim
 } from "../core/mapdata";
 import { loadMapData, MODEL_NAME, type LoadMapResult } from "../core/mapload";
 import { addCmpPt, rowFromResult, type CompareRow } from "../core/compare";
 import { runForecast, pointCacheGet } from "../core/forecast";
+import { snapshotReady } from "../core/snapshot";
 import { cityTz, todayInTz, addDaysIso } from "../core/tz";
 import FoldNote from "./FoldNote.vue";
 import Select from "./Select.vue";
@@ -27,7 +29,7 @@ import {
 } from "../core/maprender";
 import { eventAzimuth, dirWordOf } from "../core/astro";
 import { typeDetail } from "../core/physics";
-import { saveMapCard, type MapCardLabel } from "../core/sharecard";
+import { saveMapCard, captureMapComposite as captureMap, type MapCardLabel } from "../core/sharecard";
 
 /* ---------------- 地图实例 / 投影 ---------------- */
 const box = ref<HTMLDivElement | null>(null);
@@ -43,8 +45,30 @@ let projFn: ((lat: number, lon: number) => { x: number; y: number }) | null = nu
 
 const TMAP_HOST = (import.meta as { env?: Record<string, string> }).env?.VITE_TMAP_SERVICE_HOST || "";
 
+/* 腾讯 GL 会**忽略** Map 构造里的 preserveDrawingBuffer —— 实测上下文属性
+   仍是 false，帧后缓冲被清空，drawImage / readPixels 读到的全是透明，
+   分享图因此永远没有底图。这里在 SDK 建上下文之前从 getContext 源头强制
+   打开该开关（对本页所有 WebGL 画布生效，代价只是多留一份帧缓冲）。 */
+function forcePreserveDrawingBuffer() {
+  const proto = HTMLCanvasElement.prototype as unknown as {
+    getContext: (...args: unknown[]) => unknown;
+    __gcPreserve?: boolean;
+  };
+  if (proto.__gcPreserve) return;
+  const orig = proto.getContext;
+  proto.getContext = function (this: HTMLCanvasElement, type: string, attrs?: Record<string, unknown>) {
+    if (type === "webgl" || type === "webgl2" || type === "experimental-webgl") {
+      attrs = Object.assign({}, attrs, { preserveDrawingBuffer: true });
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (orig as any).call(this, type, attrs);
+  } as typeof proto.getContext;
+  proto.__gcPreserve = true;
+}
+
 function loadSdk(): Promise<boolean> {
   return new Promise((resolve) => {
+    forcePreserveDrawingBuffer();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const w = window as any;
     if (w.TMap && w.TMap.Map) {
@@ -295,6 +319,39 @@ const curNoteText = computed(() =>
   curBox.value?.note ? curBox.value.note.split("；").map((n) => t(n)).join("；") : ""
 );
 
+/* 空态给一条可操作的线索：本地是不是存着「别的日期的有效缓存」或「已过期的
+   缓存」。localStorage 不是响应式对象，挂 dataStamp / mapDateS 作依赖即可；
+   只读键与 ts，不解析 150 KB 的盒体。
+   以前只有一句「尚未取数」，用户明明有缓存却不知道该切回哪天 / 已经过期。 */
+const emptyCacheHint = computed(() => {
+  void dataStamp.value;
+  const cur = state.mapDateS;
+  const now = Date.now();
+  let anyExpired = false;
+  const others: string[] = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || !k.startsWith(MAP_CACHE_PREFIX)) continue;
+      const dateS = k.slice(MAP_CACHE_PREFIX.length).split("@")[0];
+      let ts = 0;
+      try { ts = JSON.parse(localStorage.getItem(k) || "null")?.ts ?? 0; } catch { /* 坏条目 */ }
+      const age = now - ts;
+      const fresh = ts > 0 && age >= 0 && age <= MAP_CACHE_TTL;
+      if (!fresh) anyExpired = true;
+      else if (dateS !== cur) others.push(dateS);
+    }
+  } catch { return ""; }
+  /* 能直接复用的有效缓存优先提示；没有再解释「为什么看不见」——已过期 */
+  if (others.length) {
+    others.sort();
+    return t("本地有 {date} 的缓存，切回该日期即可直接查看，不重复耗额度。",
+      { date: others[others.length - 1] });
+  }
+  if (anyExpired) return t("本地缓存已超过 6 小时有效期，需要重新取数。");
+  return "";
+});
+
 function valOf(p: MapPoint): number | null {
   return dimOf(p, state.mapDim as MapDim, curModel.value);
 }
@@ -302,6 +359,7 @@ function valOf(p: MapPoint): number | null {
 /** 图面来源统一落点：吃缓存记年龄小字，新取的标「刚刚取数」 */
 function applyBox(b: MapDateBox, fromCache: boolean) {
   mapBox.value = b;
+  dataStamp.value++;
   error.value = "";
   retryable.value = true;
   tip.on = false;
@@ -361,6 +419,13 @@ async function autoFromCache() {
   if (still() && res.ok) applyBox(res.box, true);
 }
 
+/** 分享页「补齐全部数据」：图面空着才取一次，用户显式点了才动手 */
+function onFill() {
+  if (!mapBox.value && !loading.value) void load(false);
+}
+/** 全功能快照包异步装好后补一次缓存读取（子组件挂载早于父组件解码） */
+watch(snapshotReady, () => { void autoFromCache(); schedulePaint(); });
+
 /** 换日期/换地点后清空图面，绝不让新标签顶着旧数据 */
 function clearBox() {
   mapBox.value = null;
@@ -391,6 +456,8 @@ watch(
 /* 换日期：只试缓存，绝不自动取数（显式触发纪律）。
    未命中就清空并提示 —— 宁可空着，也不能让新日期顶着旧日期的图。 */
 watch(() => state.mapDateS, () => {
+  /* 记住上次查看的观测场日期，刷新后别漂回「今天」把缓存键错开 */
+  savePrefs();
   clearBox();
   void autoFromCache();
   schedulePaint();
@@ -638,32 +705,8 @@ function exportLabels(): MapCardLabel[] {
    腾讯 GL 要 preserveDrawingBuffer 才能读像素；跨域瓦片若污染画布，
    getImageData 会抛 SecurityError —— 返回 null 让分享卡回退到自绘版本。 */
 function captureMapComposite(): HTMLCanvasElement | null {
-  const host = mapHost.value, overlay = cv.value;
-  if (!host || !overlay) return null;
-  /* SDK 可能把底图与注记放在不同画布上，按 DOM 顺序叠一遍最稳 */
-  const layers = Array.from(host.querySelectorAll("canvas")) as HTMLCanvasElement[];
-  if (!layers.length) return null;
-  const w = layers[0].width, h = layers[0].height;
-  if (w < 2 || h < 2) return null;
-  try {
-    const out = document.createElement("canvas");
-    out.width = w; out.height = h;
-    const c = out.getContext("2d");
-    if (!c) return null;
-    for (const layer of layers) {
-      if (layer.width > 1 && layer.height > 1) c.drawImage(layer, 0, 0, w, h);
-    }
-    /* 先验底图：缓冲没保留时整张全透明，抽四点都空就按失败处理 */
-    let opaque = 0;
-    for (const [x, y] of [[4, 4], [w - 5, 4], [w >> 1, h >> 1], [4, h - 5]]) {
-      if (c.getImageData(x, y, 1, 1).data[3] > 0) opaque++;
-    }
-    if (opaque < 2) return null;
-    c.drawImage(overlay, 0, 0, w, h);
-    return out;
-  } catch {
-    return null;
-  }
+  /* 实现在 core/sharecard.ts（观测场图与合成卡的「观测场缩略」共用同一份截屏） */
+  return captureMap();
 }
 
 async function saveImg() {
@@ -1121,6 +1164,7 @@ function onKey(e: KeyboardEvent) {
 }
 
 onMounted(async () => {
+  window.addEventListener("sunglow:fill-snapshot", onFill);
   rebuildGrid();
   /* 先按回退投影画一帧：SDK 最短也要几百毫秒，失败要等 9s 超时 ——
      那段空窗里图面上连地名都没有，英 / 繁模式尤其难看。 */
@@ -1301,6 +1345,7 @@ onMounted(async () => {
 });
 onUnmounted(() => {
   window.removeEventListener("keydown", onKey);
+  window.removeEventListener("sunglow:fill-snapshot", onFill);
   if (paintRaf) cancelAnimationFrame(paintRaf);
   try { map && map.destroy && map.destroy(); } catch { /* ignore */ }
 });
@@ -1365,7 +1410,7 @@ function fmtV(v: number | null): string {
               {{ t("重新取数") }}
             </button>
           </div>
-          <ShareButton v-if="curPts.length && !loading" :busy="saveBusy" @click="saveImg" />
+          <ShareButton v-if="curPts.length && !loading" kind="map" :busy="saveBusy" @click="saveImg" />
           <button class="btn btn-ghost" @click="toggleFs">{{ fs ? t("退出全屏") : t("全屏") }}</button>
         </div>
 
@@ -1384,6 +1429,7 @@ function fmtV(v: number | null): string {
           </template>
           <template v-else>
             <span class="hint">{{ t("该日期尚未取数，点「加载地图」开始（显式触发，不自动烧额度）") }}</span>
+            <span v-if="emptyCacheHint" class="hint-sub">{{ emptyCacheHint }}</span>
           </template>
         </div>
 
@@ -1874,6 +1920,8 @@ function fmtV(v: number | null): string {
 }
 .sm { padding: 3px 10px; font-size: var(--fs-tiny); }
 .hint { color: var(--tx-3); }
+/* 缓存线索单独占一行，不挤在「尚未取数」后面；用 tx-2 保住浅色主题对比度 */
+.hint-sub { flex-basis: 100%; color: var(--tx-2); font-size: var(--fs-tiny); }
 /* 缓存来源小字 + 「重新取数」文字入口（旁路，不占主按钮位） */
 .fresh {
   display: inline-flex;

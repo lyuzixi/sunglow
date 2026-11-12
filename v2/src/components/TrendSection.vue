@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { inject, ref, computed, onMounted, watch } from "vue";
-import { state, isDark } from "../state";
+import { inject, ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
+import { state, isDark, dataStamp } from "../state";
+import { snapshotReady } from "../core/snapshot";
 import { t, ageText, getLang } from "../core/i18n";
 import { cityName } from "../core/citylang";
 import { rampColor } from "../core/ramp";
@@ -43,6 +44,7 @@ async function go(mode: "auto" | "click" | "force" = "auto") {
   loading.value = false;
   if (res.ok && res.rows) {
     rows.value = res.rows;
+    dataStamp.value++;
     srcKind.value = res.fromCache ? "cache" : "live";
     cacheAgeMs.value = res.fromCache ? res.ageMs ?? null : null;
     error.value = "";
@@ -51,7 +53,17 @@ async function go(mode: "auto" | "click" | "force" = "auto") {
   }
 }
 
-onMounted(() => go("auto"));
+onMounted(() => {
+  go("auto");
+  window.addEventListener("sunglow:fill-snapshot", onFill);
+});
+onBeforeUnmount(() => window.removeEventListener("sunglow:fill-snapshot", onFill));
+/** 分享页「补齐全部数据」：只在还没数据时取一次，绝不静默连点 */
+function onFill() {
+  if (!rows.value.length && !loading.value) void go("click");
+}
+/** 全功能快照包是父组件异步解压后装好的：那时重新查一次缓存 */
+watch(snapshotReady, () => go("auto"));
 watch(() => state.city.name, () => {
   rows.value = [];
   srcKind.value = "";
@@ -154,6 +166,7 @@ async function saveImg() {
           </button>
           <ShareButton
             v-if="rows.length"
+            kind="trend"
             :busy="busy"
             :disabled="loading"
             style="margin-left: 8px"

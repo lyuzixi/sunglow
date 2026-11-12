@@ -304,7 +304,7 @@ html[data-theme="light"] .hero > .ph-band .ph-credit{
   <section class="sec" id="u-forecast">
     <h2><span class="no">01</span><span data-i18n="查一次预报">查一次预报</span></h2>
     <p data-i18n="顶部搜索框输入城市名，或直接给「纬度,经度」；日期选择器可切到过去 2 天内的任意一天与未来 15 天；朝霞 / 晚霞在结论卡上方切换。">顶部搜索框输入城市名，或直接给「纬度,经度」；日期选择器可切到过去 2 天内的任意一天与未来 15 天；朝霞 / 晚霞在结论卡上方切换。</p>
-    <p data-i18n="位置与日期不写进偏好——每次打开都是新的开始；想带走当前结果，用分享链接。">位置与日期不写进偏好——每次打开都是新的开始；想带走当前结果，用分享链接。</p>
+    <p data-i18n="已选城市与观测场日期会记住，缓存按日期 + 城市匹配、6 小时内有效；想带走当前结果，用分享链接。">已选城市与观测场日期会记住，缓存按日期 + 城市匹配、6 小时内有效；想带走当前结果，用分享链接。</p>
   </section>
 
   <section class="sec" id="u-read">
@@ -333,6 +333,7 @@ html[data-theme="light"] .hero > .ph-band .ph-credit{
   <section class="sec" id="u-share">
     <h2><span class="no">06</span><span data-i18n="保存图片与快照链接">保存图片与快照链接</span></h2>
     <p data-i18n="结论卡的「保存图片」导出 PNG 结论卡（纯 canvas 绘制，配色跟随当前主题）；「复制链接」把当前结果编码进 URL（base64url，SNAP_VER=1），对方打开即见快照，不消耗任何接口额度。格式与经典原版互通——经典原版生成的快照这里能解，反之亦然。">结论卡的「保存图片」导出 PNG 结论卡（纯 canvas 绘制，配色跟随当前主题）；「复制链接」把当前结果编码进 URL（base64url，SNAP_VER=1），对方打开即见快照，不消耗任何接口额度。格式与经典原版互通——经典原版生成的快照这里能解，反之亦然。</p>
+    <p data-i18n="全功能快照：链接同时打包结论、十日趋势、观测场与影响因素的缓存（放进 URL 的 #/?pack=，不发给服务器）；对方打开直接是完整主页、零请求零额度，各板块仍保留「缓存」标记。经典原版的精简 ?snap= 链接也照常可解。">全功能快照：链接同时打包结论、十日趋势、观测场与影响因素的缓存（放进 URL 的 #/?pack=，不发给服务器）；对方打开直接是完整主页、零请求零额度，各板块仍保留「缓存」标记。经典原版的精简 ?snap= 链接也照常可解。</p>
   </section>
 
   <section class="sec" id="u-calib">
@@ -347,7 +348,7 @@ html[data-theme="light"] .hero > .ph-band .ph-credit{
 
   <section class="sec" id="u-quota">
     <h2><span class="no">09</span><span data-i18n="缓存、额度与离线">缓存、额度与离线</span></h2>
-    <p data-i18n="所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度：日额度耗尽（429）会直接报错并提示次日重置，不再回退演示数据；短时限流则提示约一分钟恢复，不自动重试。网络不可用或超时（预算 12 秒）才回落到确定性 mock，界面左上角标注 MOCK——别把 mock 当预报。装了 PWA 的话，断网时只能查看已缓存的结果，不能获取新预报。">所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度：日额度耗尽（429）会直接报错并提示次日重置，不再回退演示数据；短时限流则提示约一分钟恢复，不自动重试。网络不可用或超时（预算 12 秒）才回落到确定性 mock，界面左上角标注 MOCK——别把 mock 当预报。装了 PWA 的话，断网时只能查看已缓存的结果，不能获取新预报。</p>
+    <p data-i18n="所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度：日额度耗尽（429）会直接报错并提示次日重置，不再回退演示数据；短时限流则提示约一分钟恢复，不自动重试。网络不可用或超时（预算 12 秒）不再回退演示数据，直接提示「这次没有取到数据」并给「重新计算」入口——宁可没有结果，也不给一份假预报。装了 PWA 的话，断网时只能查看已缓存的结果，不能获取新预报。">所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度：日额度耗尽（429）会直接报错并提示次日重置，不再回退演示数据；短时限流则提示约一分钟恢复，不自动重试。网络不可用或超时（预算 12 秒）不再回退演示数据，直接提示「这次没有取到数据」并给「重新计算」入口——宁可没有结果，也不给一份假预报。装了 PWA 的话，断网时只能查看已缓存的结果，不能获取新预报。</p>
   </section>
 
   <section class="sec" id="u-terms">
@@ -358,7 +359,7 @@ html[data-theme="light"] .hero > .ph-band .ph-credit{
       <div><dt data-i18n="光学等效地表高度">光学等效地表高度</dt><dd data-i18n="气溶胶层「吃掉」光程的等效厚度，会降低有效云底。">气溶胶层「吃掉」光程的等效厚度，会降低有效云底。</dd></div>
       <div><dt data-i18n="光追">光追</dt><dd data-i18n="沿地球曲率的抛物线光路做逐波长消光积分，输出真实色彩。">沿地球曲率的抛物线光路做逐波长消光积分，输出真实色彩。</dd></div>
       <div><dt data-i18n="可信度">可信度</dt><dd data-i18n="三路模型综合指数的极差分档：&lt;18 高、&lt;35 中、≥35 低。">三路模型综合指数的极差分档：&lt;18 高、&lt;35 中、≥35 低。</dd></div>
-      <div><dt data-i18n="mock">mock</dt><dd data-i18n="网络不可用时的确定性演示数据，界面有 MOCK 标注。">网络不可用时的确定性演示数据，界面有 MOCK 标注。</dd></div>
+      <div><dt data-i18n="mock">mock</dt><dd data-i18n="开发用的本地假数据，只在显式开启时出现，界面有 MOCK 标注；取数失败不会自动回落。">开发用的本地假数据，只在显式开启时出现，界面有 MOCK 标注；取数失败不会自动回落。</dd></div>
     </div>
   </section>
 </section>
@@ -434,6 +435,7 @@ W_ENS = GFS 0.30 / ECMWF 0.34 / 光追 0.36（几何平均）
   <section class="sec" id="d-snap">
     <h2><span class="no">07</span><span data-i18n="快照与 URL 协议">快照与 URL 协议</span></h2>
     <p data-i18n="?snap= 后接 base64url 编码的结论快照（SNAP_VER=1），零气象请求还原整张结论卡；语言进 URL（?lang=zh/hant/en），主题不进——分享链接即对方能看懂的版本。">?snap= 后接 base64url 编码的结论快照（SNAP_VER=1），零气象请求还原整张结论卡；语言进 URL（?lang=zh/hant/en），主题不进——分享链接即对方能看懂的版本。</p>
+    <p data-i18n="全功能快照：链接同时打包结论、十日趋势、观测场与影响因素的缓存（放进 URL 的 #/?pack=，不发给服务器）；对方打开直接是完整主页、零请求零额度，各板块仍保留「缓存」标记。经典原版的精简 ?snap= 链接也照常可解。">全功能快照：链接同时打包结论、十日趋势、观测场与影响因素的缓存（放进 URL 的 #/?pack=，不发给服务器）；对方打开直接是完整主页、零请求零额度，各板块仍保留「缓存」标记。经典原版的精简 ?snap= 链接也照常可解。</p>
   </section>
 
   <section class="sec" id="d-probe">
@@ -477,7 +479,7 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
 
   <section class="sec" id="c-card">
     <h2><span class="no">02</span><span data-i18n="结论卡导出">结论卡导出</span></h2>
-    <p data-i18n="结论卡的「保存图片」一键导出 PNG：概率大字、天色带、三模型结论都在一张图上，纯 canvas 绘制、配色跟随当前主题。深色 Spectrum 卡适合直接发社交平台；浅色晨光卡适合打印或贴进拍摄计划表。">结论卡的「保存图片」一键导出 PNG：概率大字、天色带、三模型结论都在一张图上，纯 canvas 绘制、配色跟随当前主题。深色 Spectrum 卡适合直接发社交平台；浅色晨光卡适合打印或贴进拍摄计划表。</p>
+    <p data-i18n="结论卡的「保存图片」一键导出完整结论 PNG：概率与质量、可信度、四项指标、日落方位与云型云底、几何判定、霞色条、四路模型卡与算法说明都在同一张图上，纯 canvas 绘制、配色跟随当前主题。深色 Spectrum 卡适合直接发社交平台；浅色晨光卡适合打印或贴进拍摄计划表。">结论卡的「保存图片」一键导出完整结论 PNG：概率与质量、可信度、四项指标、日落方位与云型云底、几何判定、霞色条、四路模型卡与算法说明都在同一张图上，纯 canvas 绘制、配色跟随当前主题。深色 Spectrum 卡适合直接发社交平台；浅色晨光卡适合打印或贴进拍摄计划表。</p>
   </section>
 
   <section class="sec" id="c-snap">
@@ -567,7 +569,7 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
     "每个功能怎么用、每个数字怎么读。不需要任何气象背景。": "每個功能怎麼用、每個數字怎麼讀。不需要任何氣象背景。",
     "查一次预报": "查一次預報",
     "顶部搜索框输入城市名，或直接给「纬度,经度」；日期选择器可切到过去 2 天内的任意一天与未来 15 天；朝霞 / 晚霞在结论卡上方切换。": "頂部搜尋框輸入城市名，或直接給「緯度,經度」；日期選擇器可切到過去 2 天內的任意一天與未來 15 天；朝霞 / 晚霞在結論卡上方切換。",
-    "位置与日期不写进偏好——每次打开都是新的开始；想带走当前结果，用分享链接。": "位置與日期不寫進偏好——每次打開都是新的開始；想帶走當前結果，用分享連結。",
+    "已选城市与观测场日期会记住，缓存按日期 + 城市匹配、6 小时内有效；想带走当前结果，用分享链接。": "已選城市與觀測場日期會記住，快取按日期 + 城市匹配、6 小時內有效；想帶走目前結果，用分享連結。",
     "读懂结论卡": "讀懂結論卡",
     "出现概率＝今晚「有没有霞」；观赏质量＝「好不好看」（0–100 分，优 ≥80、良 ≥65、一般 ≥45）。两个维度独立：概率高可能质量平平（闷烧），概率低也可能一旦出现极惊艳。": "出現概率＝今晚「有沒有霞」；觀賞質量＝「好不好看」（0–100 分，優 ≥80、良 ≥65、一般 ≥45）。兩個維度獨立：概率高可能質量平平（悶燒），概率低也可能一旦出現極驚豔。",
     "卡内天色带标出日出 / 日落与民用 / 航海 / 天文昏影终四道线，「此刻」游标告诉你正处在哪个阶段；晚霞的黄金窗口通常在日落后 10–25 分钟，朝霞则要赶在天亮之前到位。": "卡內天色帶標出日出 / 日落與民用 / 航海 / 天文昏影終四道線，「此刻」游標告訴你正處在哪個階段；晚霞的黃金窗口通常在日落後 10–25 分鐘，朝霞則要趕在天亮之前到位。",
@@ -578,13 +580,14 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
     "取数纪律：只有显式点「加载地图」才发起请求（约 363 次加权调用）；这个日期已有缓存时会自动画出来。选点有两种方式——直接点格点，或搜城市名；任意点都能一键「加入对比」。": "取數紀律：只有顯式點「載入地圖」才發起請求（約 363 次加權呼叫）；這個日期已有快取時會自動畫出來。選點有兩種方式——直接點格點，或搜城市名；任意點都能一鍵「加入對比」。",
     "最多 4 个点。从地图格点加入的免额度（读已取数的场）；搜索加入的每个点约 51 次加权调用，缓存 6 小时。一次取数后按质量分横向排序——「今晚去哪儿拍」就此有答案。": "最多 4 個點。從地圖格點加入的免額度（讀已取數的場）；搜尋加入的每個點約 51 次加權呼叫，快取 6 小時。一次取數後按質量分橫向排序——「今晚去哪兒拍」就此有答案。",
     "保存图片与快照链接": "儲存圖片與快照連結",
+    "全功能快照：链接同时打包结论、十日趋势、观测场与影响因素的缓存（放进 URL 的 #/?pack=，不发给服务器）；对方打开直接是完整主页、零请求零额度，各板块仍保留「缓存」标记。经典原版的精简 ?snap= 链接也照常可解。": "全功能快照：連結同時打包結論、十日趨勢、觀測場與影響因素的快取（放進 URL 的 #/?pack=，不傳給伺服器）；對方開啟直接是完整首頁、零請求零額度，各區塊仍保留「快取」標記。經典原版的精簡 ?snap= 連結也照常可解。",
     "结论卡的「保存图片」导出 PNG 结论卡（纯 canvas 绘制，配色跟随当前主题）；「复制链接」把当前结果编码进 URL（base64url，SNAP_VER=1），对方打开即见快照，不消耗任何接口额度。格式与经典原版互通——经典原版生成的快照这里能解，反之亦然。": "結論卡的「儲存圖片」匯出 PNG 結論卡（純 canvas 繪製，配色跟隨當前主題）；「複製連結」把當前結果編碼進 URL（base64url，SNAP_VER=1），對方打開即見快照，不消耗任何介面額度。格式與經典原版互通——經典原版生成的快照這裡能解，反之亦然。",
     "实况校准": "實況校準",
     "看完霞回来标注「看到了 / 没看到 / 无法判断」。本机在你的区域加同档概率下累计样本，≥8 条且本档 ≥3 条时展示观测偏差。校准只在本机展示，绝不回改预报模型；关掉标注开关不会删除已有样本。": "看完霞回來標註「看到了 / 沒看到 / 無法判斷」。本機在你的區域加同檔概率下累積樣本，≥8 條且本檔 ≥3 條時展示觀測偏差。校準只在本機展示，絕不回改預報模型；關掉標註開關不會刪除已有樣本。",
     "偏好与外观": "偏好與外觀",
     "设置面板里：主题（大气光谱观测站·深色 / 晨光实验室·浅色 / 跟随系统）、语言（简体 / 繁體 / English）、单位（公制 km·m·℃ / 英制 mi·ft·℉）、时间格式（12 / 24 小时制）；开篇照片背景另有 关 / 天色带 / 全幅 / 窗口 四种模式，默认关闭。偏好写本机 localStorage，与本教程页共享同一份。": "設置面板裡：主題（大氣光譜觀測站·深色 / 晨光實驗室·淺色 / 跟隨系統）、語言（簡體 / 繁體 / English）、單位（公制 km·m·℃ / 英制 mi·ft·℉）、時間格式（12 / 24 小時制）；開篇照片背景另有 關 / 天色帶 / 全幅 / 視窗 四種模式，預設關閉。偏好寫本機 localStorage，與本教程頁共享同一份。",
     "缓存、额度与离线": "快取、額度與離線",
-    "所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度：日额度耗尽（429）会直接报错并提示次日重置，不再回退演示数据；短时限流则提示约一分钟恢复，不自动重试。网络不可用或超时（预算 12 秒）才回落到确定性 mock，界面左上角标注 MOCK——别把 mock 当预报。装了 PWA 的话，断网时只能查看已缓存的结果，不能获取新预报。": "所有結果按「日期 + 時段 + 座標」分鍵快取 6 小時，設置裡可看條數、一鍵清除。數據源 Open-Meteo 免費層按訪客 IP 計額度：日額度耗盡（429）會直接報錯並提示次日重置，不再回退演示數據；短時限流則提示約一分鐘恢復，不自動重試。網路不可用或超時（預算 12 秒）才回落到確定性 mock，介面左上角標註 MOCK——別把 mock 當預報。裝了 PWA 的話，斷網時只能查看已快取的結果，不能取得新預報。",
+    "所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度：日额度耗尽（429）会直接报错并提示次日重置，不再回退演示数据；短时限流则提示约一分钟恢复，不自动重试。网络不可用或超时（预算 12 秒）不再回退演示数据，直接提示「这次没有取到数据」并给「重新计算」入口——宁可没有结果，也不给一份假预报。装了 PWA 的话，断网时只能查看已缓存的结果，不能获取新预报。": "所有結果按「日期 + 時段 + 座標」分鍵快取 6 小時，設置裡可看條數、一鍵清除。數據源 Open-Meteo 免費層按訪客 IP 計額度：日額度耗盡（429）會直接報錯並提示次日重置，不再回退演示數據；短時限流則提示約一分鐘恢復，不自動重試。網路不可用或超時（預算 12 秒）不再回退演示數據，直接提示「這次沒有取到資料」並給「重新計算」入口——寧可沒有結果，也不給一份假預報。裝了 PWA 的話，斷網時只能查看已快取的結果，不能取得新預報。",
     "术语速查": "術語速查",
     "气溶胶光学厚度，衡量大气浑浊度（0.1 清澈 → 1+ 重霾）。": "氣溶膠光學厚度，衡量大氣渾濁度（0.1 清澈 → 1+ 重霾）。",
     "云底高度": "雲底高度",
@@ -595,7 +598,7 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
     "可信度": "可信度",
     "沿地球曲率的抛物线光路做逐波长消光积分，输出真实色彩。": "沿地球曲率的拋物線光路做逐波長消光積分，輸出真實色彩。",
     "三路模型综合指数的极差分档：<18 高、<35 中、≥35 低。": "三路模型綜合指數的極差分檔：&lt;18 高、&lt;35 中、≥35 低。",
-    "网络不可用时的确定性演示数据，界面有 MOCK 标注。": "網路不可用時的確定性演示數據，介面有 MOCK 標註。",
+    "开发用的本地假数据，只在显式开启时出现，界面有 MOCK 标注；取数失败不会自动回落。": "開發用的本地假數據，只在顯式開啟時出現，介面有 MOCK 標註；取數失敗不會自動回落。",
     "数据源 Open-Meteo（免费层，非商业用途）· 地图底图腾讯位置服务": "數據源 Open-Meteo（免費層，非商業用途）· 地圖底圖騰訊位置服務",
     "← 回主页": "← 回主頁",
     "构建、口径与质量门": "建構、口徑與質量門",
@@ -649,7 +652,7 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
     "观测场挑点位": "觀測場挑點位",
     "切到观赏质量维度找颜色最亮的格子，切模型分歧维度绕开不确定的——点位选对，等于提前一小时到位。": "切到觀賞質量維度找顏色最亮的格子，切模型分歧維度繞開不確定的——點位選對，等於提前一小時到位。",
     "结论卡导出": "結論卡匯出",
-    "结论卡的「保存图片」一键导出 PNG：概率大字、天色带、三模型结论都在一张图上，纯 canvas 绘制、配色跟随当前主题。深色 Spectrum 卡适合直接发社交平台；浅色晨光卡适合打印或贴进拍摄计划表。": "結論卡的「儲存圖片」一鍵匯出 PNG：概率大字、天色帶、三模型結論都在一張圖上，純 canvas 繪製、配色跟隨當前主題。深色 Spectrum 卡適合直接發社交平臺；淺色晨光卡適合列印或貼進拍攝計畫表。",
+    "结论卡的「保存图片」一键导出完整结论 PNG：概率与质量、可信度、四项指标、日落方位与云型云底、几何判定、霞色条、四路模型卡与算法说明都在同一张图上，纯 canvas 绘制、配色跟随当前主题。深色 Spectrum 卡适合直接发社交平台；浅色晨光卡适合打印或贴进拍摄计划表。": "結論卡的「儲存圖片」一鍵匯出完整結論 PNG：概率與質量、可信度、四項指標、日落方位與雲型雲底、幾何判定、霞色條、四路模型卡與演算法說明都在同一張圖上，純 canvas 繪製、配色跟隨當前主題。深色 Spectrum 卡適合直接發社交平臺；淺色晨光卡適合列印或貼進拍攝計畫表。",
     "快照链接做内容": "快照連結做內容",
     "「复制链接」得到的 URL 自带完整结论：对方打开零额度、零等待，语言跟着链接走。经典原版的用户也能解你的快照——跨版本内容可以互相引用，老读者不会丢。": "「複製連結」得到的 URL 自帶完整結論：對方打開零額度、零等待，語言跟著連結走。經典原版的用戶也能解你的快照——跨版本內容可以互相引用，老讀者不會丟。",
     "主题与截图": "主題與截圖",
@@ -707,7 +710,7 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
     "每个功能怎么用、每个数字怎么读。不需要任何气象背景。": "What each feature does, what each number means. No meteorology background needed.",
     "查一次预报": "Run a forecast",
     "顶部搜索框输入城市名，或直接给「纬度,经度」；日期选择器可切到过去 2 天内的任意一天与未来 15 天；朝霞 / 晚霞在结论卡上方切换。": "Type a city in the top search box, or give 'lat,lon' directly; the date picker covers any day from 2 back to 15 ahead; switch dawn / dusk above the verdict card.",
-    "位置与日期不写进偏好——每次打开都是新的开始；想带走当前结果，用分享链接。": "Place and date are never saved to preferences — every open is a fresh start. To take the current result with you, use a share link.",
+    "已选城市与观测场日期会记住，缓存按日期 + 城市匹配、6 小时内有效；想带走当前结果，用分享链接。": "The selected city and field-map date are remembered across reloads; cache entries are keyed by date + city and valid for 6 hours. To take the current result with you, use a share link.",
     "读懂结论卡": "Reading the verdict card",
     "出现概率＝今晚「有没有霞」；观赏质量＝「好不好看」（0–100 分，优 ≥80、良 ≥65、一般 ≥45）。两个维度独立：概率高可能质量平平（闷烧），概率低也可能一旦出现极惊艳。": "Probability = 'will there be glow tonight'; quality = 'will it be stunning' (0–100; great ≥80, good ≥65, fair ≥45). The two are independent: high probability can be flat (a smolder), low probability can still be spectacular if it shows.",
     "卡内天色带标出日出 / 日落与民用 / 航海 / 天文昏影终四道线，「此刻」游标告诉你正处在哪个阶段；晚霞的黄金窗口通常在日落后 10–25 分钟，朝霞则要赶在天亮之前到位。": "The sky band inside the card marks four lines — sunrise/sunset and the civil, nautical and astronomical twilight limits. The 'now' cursor tells you which stage you're in; the golden window for dusk glow is typically 10–25 minutes after sunset, while dawn glow means arriving before first light.",
@@ -718,13 +721,14 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
     "取数纪律：只有显式点「加载地图」才发起请求（约 363 次加权调用）；这个日期已有缓存时会自动画出来。选点有两种方式——直接点格点，或搜城市名；任意点都能一键「加入对比」。": "Fetch discipline: requests fire only when you explicitly click 'Load map' (~363 weighted calls); if this date is already cached, it draws automatically. Two ways to pick a spot — tap a grid point directly, or search a city name; any point can be added to compare in one tap.",
     "最多 4 个点。从地图格点加入的免额度（读已取数的场）；搜索加入的每个点约 51 次加权调用，缓存 6 小时。一次取数后按质量分横向排序——「今晚去哪儿拍」就此有答案。": "Up to 4 spots. Points added from the map grid cost no quota (they read the already-fetched field); each searched point costs ~51 weighted calls, cached for 6 hours. After one fetch they rank side by side by quality score — 'where to shoot tonight', answered.",
     "保存图片与快照链接": "Save image & snapshot link",
+    "全功能快照：链接同时打包结论、十日趋势、观测场与影响因素的缓存（放进 URL 的 #/?pack=，不发给服务器）；对方打开直接是完整主页、零请求零额度，各板块仍保留「缓存」标记。经典原版的精简 ?snap= 链接也照常可解。": "Full snapshot: the link also packs the cached verdict, 10-day trend, observation field and factors into the URL fragment (#/?pack=, never sent to the server). The recipient sees the complete home page with zero requests and zero quota, and each section keeps its 'Cached' badge. Compact ?snap= links from the Classic Edition still work.",
     "结论卡的「保存图片」导出 PNG 结论卡（纯 canvas 绘制，配色跟随当前主题）；「复制链接」把当前结果编码进 URL（base64url，SNAP_VER=1），对方打开即见快照，不消耗任何接口额度。格式与经典原版互通——经典原版生成的快照这里能解，反之亦然。": "'Save image' on the verdict card exports a PNG (pure canvas, colors follow your theme); 'Copy link' encodes the current result into the URL (base64url, SNAP_VER=1) — the recipient opens the snapshot directly, costing zero API quota. The format interoperates with Classic Edition: snapshots from either side decode on the other.",
     "实况校准": "Reality calibration",
     "看完霞回来标注「看到了 / 没看到 / 无法判断」。本机在你的区域加同档概率下累计样本，≥8 条且本档 ≥3 条时展示观测偏差。校准只在本机展示，绝不回改预报模型；关掉标注开关不会删除已有样本。": "After the show, tag 'saw it / didn't / can't tell'. Your device accumulates samples within your region and probability band, and shows the observed deviation once you have ≥8 entries and ≥3 in that band. Calibration is display-only on your device — it never rewrites the forecast model; turning the tagging switch off does not delete existing samples.",
     "偏好与外观": "Preferences & appearance",
     "设置面板里：主题（大气光谱观测站·深色 / 晨光实验室·浅色 / 跟随系统）、语言（简体 / 繁體 / English）、单位（公制 km·m·℃ / 英制 mi·ft·℉）、时间格式（12 / 24 小时制）；开篇照片背景另有 关 / 天色带 / 全幅 / 窗口 四种模式，默认关闭。偏好写本机 localStorage，与本教程页共享同一份。": "In the settings panel: theme (Spectrum Observatory dark / Dawn Lab light / system), language (简体 / 繁體 / English), units (metric km·m·℃ / imperial mi·ft·℉) and clock format (12 / 24-hour). The hero photo backdrop has four modes — off / sky band / full / window — off by default. Preferences live in this device's localStorage, shared with this tutorial page.",
     "缓存、额度与离线": "Cache, quota & offline",
-    "所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度：日额度耗尽（429）会直接报错并提示次日重置，不再回退演示数据；短时限流则提示约一分钟恢复，不自动重试。网络不可用或超时（预算 12 秒）才回落到确定性 mock，界面左上角标注 MOCK——别把 mock 当预报。装了 PWA 的话，断网时只能查看已缓存的结果，不能获取新预报。": "All results cache for 6 hours, keyed by date + period + coordinates; the settings panel shows the count and clears everything in one tap. Data comes from Open-Meteo's free tier, metered per visitor IP: an exhausted daily quota (429) errors out immediately and tells you it resets tomorrow — it no longer falls back to demo data; a short-term throttle asks you to retry in about a minute and never auto-retries. Only an unavailable network or a timeout (12-second budget) falls back to deterministic mock data, flagged MOCK in the top-left — don't mistake mock for a forecast. With the PWA installed you can still view cached results offline, but you cannot fetch a new forecast.",
+    "所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度：日额度耗尽（429）会直接报错并提示次日重置，不再回退演示数据；短时限流则提示约一分钟恢复，不自动重试。网络不可用或超时（预算 12 秒）不再回退演示数据，直接提示「这次没有取到数据」并给「重新计算」入口——宁可没有结果，也不给一份假预报。装了 PWA 的话，断网时只能查看已缓存的结果，不能获取新预报。": "All results cache for 6 hours, keyed by date + period + coordinates; the settings panel shows the count and clears everything in one tap. Data comes from Open-Meteo's free tier, metered per visitor IP: an exhausted daily quota (429) errors out immediately and tells you it resets tomorrow — it no longer falls back to demo data; a short-term throttle asks you to retry in about a minute and never auto-retries. Only an unavailable network or a timeout (12-second budget) also refuses to fall back to demo data: it says "no data this time" and offers Calculate again — a missing result beats a fabricated forecast. With the PWA installed you can still view cached results offline, but you cannot fetch a new forecast.",
     "术语速查": "Glossary",
     "气溶胶光学厚度，衡量大气浑浊度（0.1 清澈 → 1+ 重霾）。": "Aerosol optical depth — how murky the air is (0.1 clear → 1+ heavy haze).",
     "云底高度": "Cloud-base height",
@@ -735,7 +739,7 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
     "可信度": "Confidence",
     "沿地球曲率的抛物线光路做逐波长消光积分，输出真实色彩。": "Per-wavelength extinction integration along a parabolic light path following Earth's curvature, outputting true color.",
     "三路模型综合指数的极差分档：<18 高、<35 中、≥35 低。": "Bands by the spread of the three models' composite index: &lt;18 high, &lt;35 medium, ≥35 low.",
-    "网络不可用时的确定性演示数据，界面有 MOCK 标注。": "Deterministic demo data used when the network is down; flagged MOCK in the UI.",
+    "开发用的本地假数据，只在显式开启时出现，界面有 MOCK 标注；取数失败不会自动回落。": "Local fake data for development, only when explicitly enabled and flagged MOCK; a failed fetch never falls back to it.",
     "数据源 Open-Meteo（免费层，非商业用途）· 地图底图腾讯位置服务": "Data: Open-Meteo (free tier, non-commercial) · Map base: Tencent Location Services",
     "← 回主页": "← Home",
     "构建、口径与质量门": "Build, calibration & quality gates",
@@ -789,7 +793,7 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
     "观测场挑点位": "The field map picks the spot",
     "切到观赏质量维度找颜色最亮的格子，切模型分歧维度绕开不确定的——点位选对，等于提前一小时到位。": "Switch to quality mode for the brightest cells, then model-spread mode to dodge the uncertain ones — the right spot buys you an extra hour on site.",
     "结论卡导出": "Exporting the verdict card",
-    "结论卡的「保存图片」一键导出 PNG：概率大字、天色带、三模型结论都在一张图上，纯 canvas 绘制、配色跟随当前主题。深色 Spectrum 卡适合直接发社交平台；浅色晨光卡适合打印或贴进拍摄计划表。": "'Save image' exports a PNG in one tap: the big probability number, sky band and three-model verdicts on a single card, pure canvas, colors following your theme. The dark Spectrum card is ready to post; the light Dawn Lab card prints well for your shoot planner.",
+    "结论卡的「保存图片」一键导出完整结论 PNG：概率与质量、可信度、四项指标、日落方位与云型云底、几何判定、霞色条、四路模型卡与算法说明都在同一张图上，纯 canvas 绘制、配色跟随当前主题。深色 Spectrum 卡适合直接发社交平台；浅色晨光卡适合打印或贴进拍摄计划表。": "'Save image' exports a complete verdict PNG in one tap: probability and quality, confidence, the four metrics, sunset bearing with cloud type and base, the geometry verdict, the glow colour strip, all four model cards and the method notes on one card, pure canvas, colours following your theme. The dark Spectrum card is ready to post; the light Dawn Lab card prints well for your shoot planner.",
     "快照链接做内容": "Snapshot links as content",
     "「复制链接」得到的 URL 自带完整结论：对方打开零额度、零等待，语言跟着链接走。经典原版的用户也能解你的快照——跨版本内容可以互相引用，老读者不会丢。": "The URL from 'Copy link' carries the full verdict: the recipient opens it with zero quota and zero wait, in the link's language. Classic Edition users can decode your snapshots too — cross-version content can reference each other, so old readers aren't lost.",
     "主题与截图": "Themes & screenshots",

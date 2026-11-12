@@ -161,6 +161,17 @@ input, select {
   border-color: var(--stroke-2);
   box-shadow: none;
 }
+/* 禁用态必须有可见反馈：此前只有 disabled 属性，渐变主按钮依旧鲜艳、
+   鼠标仍是指手，用户点了没反应只会以为按钮坏了（2026-11-11）。 */
+.btn:disabled,
+.btn:disabled:hover,
+.btn:disabled:active {
+  opacity: 0.45;
+  filter: saturate(0.55);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
 
 /* ---- 徽标 / 标签 ---- */
 .pill {
@@ -519,8 +530,8 @@ input, select {
    tight 收紧导航（padding 13→9 / 字号 .78rem / 藏 SUNGLOW 副标 / 按钮 gap 6）+ 胶囊
    menu  汉堡接管导航 + 胶囊（抽屉 armed）
    mini  手机极简 —— **蕴含 menu**：连接紧后的导航都放不下，7 项导航必须继续藏。
-         徽标整块从顶栏撤走（340px 里放不下胶囊，折回第二行会留下一片空白），
-         教程按钮也撤走（抽屉「指南」组里本来就有入口），状态改由抽屉顶部一行承担。
+         徽标留在顶栏（占品牌与设置之间的剩余宽度，日期收成 MM-DD、城市名可省略），
+         教程按钮与版本入口撤走（抽屉里本来就有）。
    实测「自然需宽」（2026-10-26 加第 7 项、桌面用短标签后）：中文 1200 单行 / 1000 收紧 /
    990 及以下汉堡；英文 1280 已落到汉堡。数值随文案与语言变化，形态一律由 TopBar 的 refit() 实测决定。 */
 .topbar.mode-tight .nav-tabs a { padding: 6px 9px; font-size: 0.78rem; }
@@ -530,7 +541,50 @@ input, select {
 .topbar.mode-mini .nav-tabs { display: none; }
 .topbar.mode-menu .hamburger,
 .topbar.mode-mini .hamburger { display: inline-flex; }
-.topbar.mode-mini .meta-pill { display: none; }
+/* 手机极简档的徽标：内容多宽就多宽（不再 flex:1 拉满空隙），
+   用 margin-inline:auto 在品牌与设置之间的留白里居中。
+   拉满会让它变成「一条空白长条、文字飘在中间」—— 实测观感很糟。
+   品牌仍要钉死 flex:none，否则胶囊抢宽度会把「霞光档案」折成两行。 */
+.topbar.mode-mini .brand { flex: none; }
+.topbar.mode-mini .brand .name { white-space: nowrap; }
+.topbar.mode-mini .mp-mini {
+  /* 允许收缩：任何语言下都不许把顶栏顶出横向溢出（英文 390 实测 +18px）。
+     城市名仍 flex:0 0 auto 不缩，缩的是胶囊自身（内容超长时裁尾，极少见）。 */
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-inline: auto;
+  padding: 4px 8px;
+  font-size: 11px;
+  /* 手机上的胶囊要轻：边框与底都再淡一档，不与品牌名抢视觉重心 */
+  border-color: color-mix(in srgb, var(--stroke) 65%, transparent);
+  background: var(--bg-glass-2);
+  box-shadow: none;
+  overflow: hidden;
+}
+.topbar.mode-mini .mp-mini .mp-city {
+  /* flex:0 0 auto 是关键：一旦允许收缩，浏览器给的盒子会比字形窄半个像素
+     （实测 34.16 vs 36），「重庆市」三个字会被截成「重庆…」。
+     4em 上限＝4 个汉字：常见市名（3 字）完整显示，超长地名才出省略号 ——
+     上限再放宽就会把日期/朝晚霞挤掉，或把胶囊撑破盖住品牌名。 */
+  flex: 0 0 auto;
+  max-width: 4em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.topbar.mode-mini .mp-mini .mp-date-wrap { display: inline-flex; align-items: center; flex: none; }
+.topbar.mode-mini .mp-mini .mp-date,
+.topbar.mode-mini .mp-mini .mp-period { flex: none; white-space: nowrap; }
+
+/* 再窄就按重要性依次让路：先去掉日期（首屏下方本来就有完整日期），
+   再窄藏掉品牌文字只留标记 —— 保证「城市 · 晚霞」始终完整，绝不把页面顶出横向滚动。 */
+@media (max-width: 379px) {
+  .topbar.mode-mini .mp-mini .mp-date-wrap { display: none; }
+}
+@media (max-width: 340px) {
+  .topbar.mode-mini .brand .name { display: none; }
+}
+.topbar.mode-mini .mp-mini .dot { margin: 0 3px; }
 .topbar.mode-mini .tut-btn { display: none; }
 /* 版本入口：收紧档宽度预算放不下第五个按钮，极简档让位给抽屉 ——
    两档都隐藏整个 wrapper（连 gap 一起收掉，否则空壳仍占 6px）。 */
@@ -663,25 +717,8 @@ input, select {
   .md-group { border-top-color: color-mix(in srgb, var(--glass-hi) 55%, transparent); }
 }
 
-/* 手机顶栏不显示徽标（mode-mini），状态挪到抽屉顶部这一行 —— 打开目录就能看到
-   当前看的是哪个城市、哪一天、朝霞还是晚霞，不必滚回顶部。 */
-.md-status {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  margin: 14px 20px 0;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--stroke);
-  font-size: 12.5px;
-  letter-spacing: 0.2px;
-  color: var(--tx-2);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.md-status i { font-style: normal; opacity: 0.5; }
-.md-status + .md-label { padding-top: 8px; }
+/* 2026-11-10：手机徽标已搬回顶栏（.mp-mini），抽屉里那行状态行删除 ——
+   抽屉打开时顶栏仍然可见，同一句话不必显示两遍。 */
 
 .md-label {
   padding: 16px 20px 8px;
