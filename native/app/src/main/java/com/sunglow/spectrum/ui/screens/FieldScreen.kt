@@ -1,9 +1,6 @@
 package com.sunglow.spectrum.ui.screens
 
 import android.view.MotionEvent
-import android.webkit.WebSettings
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -26,7 +23,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,7 +41,13 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.delay
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.OnlineTileSourceBase
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.util.MapTileIndex
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
 import com.sunglow.spectrum.core.ForecastResult
 import com.sunglow.spectrum.core.Period
 import com.sunglow.spectrum.core.fmtDur
@@ -60,8 +62,7 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 /*
- * 观测场（当前版：光路剖面）
- * 完整地图版需要地图 SDK；这一版先用"沿太阳方位的样带剖面"把云盘位置与霞光深入距离讲清楚。
+ * 观测场：地图（osmdroid 原生底图，可拖拽缩放）+ 光路剖面。
  */
 
 @Composable
@@ -69,7 +70,6 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     val colors = SunglowTheme.colors
     val result = state.result
-    var mapFailed by remember(state.city.name) { mutableStateOf(false) }
     var showMap by remember(state.city.name) { mutableStateOf(true) }
 
     Column(
@@ -111,12 +111,8 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
             return@Column
         }
 
-        if (showMap && !mapFailed) {
-            TencentMap(
-                city = state.city,
-                modifier = Modifier.padding(horizontal = 18.dp),
-                onFail = { mapFailed = true }
-            )
+        if (showMap) {
+            OsmMap(city = state.city, modifier = Modifier.padding(horizontal = 18.dp))
         } else {
             RayProfile(result)
         }
@@ -127,19 +123,12 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
             horizontalArrangement = Arrangement.End
         ) {
             Text(
-                text = if (showMap && !mapFailed) "切到光路剖面" else "切到地图",
+                text = if (showMap) "切到光路剖面" else "切到地图",
                 style = MaterialTheme.typography.labelSmall,
                 color = colors.accentCool,
                 modifier = Modifier
                     .clip(RoundedCornerShape(999.dp))
-                    .clickable {
-                        if (showMap && !mapFailed) {
-                            showMap = false
-                        } else {
-                            showMap = true
-                            mapFailed = false
-                        }
-                    }
+                    .clickable { showMap = !showMap }
                     .padding(horizontal = 8.dp, vertical = 4.dp)
             )
         }
@@ -226,7 +215,7 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
             Panel {
                 Text(
                     text = "剖面沿日出/日落方位取 17 个等距采样点，逐点读取云量、云底与气溶胶。" +
-                        "当前版本先以剖面呈现；完整地图版（可拖拽、可选点对比）在后续版本接入。",
+                        "地图底图为 Esri / OpenStreetMap 公开瓦片，无需密钥，可拖拽与双指缩放。",
                     style = MaterialTheme.typography.labelSmall,
                     color = colors.faint,
                     lineHeight = 16.sp
@@ -440,19 +429,49 @@ private fun RayProfile(result: ForecastResult) {
     }
 }
 
-/* ---------- 腾讯地图（WebView 复用网页同一套 JS SDK） ---------- */
+/* ---------- 地图（osmdroid 原生 View，无需任何 key） ---------- */
+
+/** Esri 公开瓦片：路径是 z/y/x，与 osmdroid 默认的 z/x/y 不同，单独实现 */
+private class EsriTileSource(
+    name: String,
+    url: String,
+    maxZoom: Int
+) : OnlineTileSourceBase(
+    name, 0, maxZoom, 256, ".png", arrayOf(url), "© Esri"
+) {
+    override fun getTileURLString(pMapTileIndex: Long): String =
+        baseUrl +
+            MapTileIndex.getZoom(pMapTileIndex) + "/" +
+            MapTileIndex.getY(pMapTileIndex) + "/" +
+            MapTileIndex.getX(pMapTileIndex)
+}
+
+/** 地图实例上的非状态字段：避免在地图回调里写 Compose 状态引起重组 */
+private class MapHolder {
+    var marker: Marker? = null
+    var lastCity: String = ""
+}
 
 @Composable
-private fun TencentMap(
-    city: com.sunglow.spectrum.core.City,
-    modifier: Modifier = Modifier,
-    onFail: () -> Unit
-) {
+private fun OsmMap(city: com.sunglow.spectrum.core.City, modifier: Modifier = Modifier) {
     val colors = SunglowTheme.colors
-    var webRef by remember { mutableStateOf<WebView?>(null) }
-    var loading by remember(city.name) { mutableStateOf(true) }
-    var errMsg by remember(city.name) { mutableStateOf<String?>(null) }
-    var retry by remember(city.name) { mutableStateOf(0) }
+    val sources = remember {
+        listOf(
+            "暗色" to EsriTileSource(
+                "EsriDarkGray",
+                "https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/",
+                16
+            ),
+            "影像" to EsriTileSource(
+                "EsriImagery",
+                "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/",
+                19
+            ),
+            "路线" to TileSourceFactory.MAPNIK
+        )
+    }
+    var basemap by remember { mutableStateOf(0) }
+    val holder = remember { MapHolder() }
 
     Box(
         modifier = modifier
@@ -464,26 +483,32 @@ private fun TencentMap(
     ) {
         AndroidView(
             factory = { ctx ->
-                WebView(ctx).apply {
-                    settings.javaScriptEnabled = true
-                    settings.domStorageEnabled = true
-                    settings.cacheMode = WebSettings.LOAD_DEFAULT
-                    settings.loadsImagesAutomatically = true
+                runCatching {
+                    Configuration.getInstance().userAgentValue = ctx.packageName
+                }
+                MapView(ctx).apply {
                     setBackgroundColor(android.graphics.Color.parseColor("#070B14"))
-                    webViewClient = object : WebViewClient() {
-                        override fun onReceivedError(
-                            view: WebView?,
-                            request: android.webkit.WebResourceRequest?,
-                            error: android.webkit.WebResourceError?
-                        ) {
-                            if (request?.isForMainFrame == true) {
-                                loading = false
-                                errMsg = "页面加载失败，请检查网络"
-                            }
-                        }
+                    setTileSource(sources[basemap].second)
+                    setTilesScaledToDpi(true)
+                    setMultiTouchControls(true)
+                    setBuiltInZoomControls(false)
+                    setUseDataConnection(true)
+                    tag = basemap
+                    controller.setZoom(6.5)
+                    controller.setCenter(GeoPoint(city.lat, city.lon))
+
+                    val m = Marker(this).apply {
+                        position = GeoPoint(city.lat, city.lon)
+                        title = city.name
+                        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                     }
+                    overlays.add(m)
+                    holder.marker = m
+                    holder.lastCity = city.name
+
+                    /* 地图在竖向滚动页里：按下时先夺走父容器的滚动权，否则拖不动 */
                     setOnTouchListener { v, e ->
-                        when (e.action) {
+                        when (e.actionMasked) {
                             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE ->
                                 v.parent?.requestDisallowInterceptTouchEvent(true)
                             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
@@ -491,109 +516,62 @@ private fun TencentMap(
                         }
                         false
                     }
-                    tag = city.name
-                    loadUrl(mapUrl(city))
-                    webRef = this
                 }
             },
-            update = { wv ->
-                if (wv.tag != city.name) {
-                    wv.tag = city.name
-                    wv.loadUrl(mapUrl(city))
+            update = { mv ->
+                if (mv.tag != basemap) {
+                    mv.tag = basemap
+                    mv.setTileSource(sources[basemap].second)
+                }
+                if (holder.lastCity != city.name) {
+                    holder.lastCity = city.name
+                    val gp = GeoPoint(city.lat, city.lon)
+                    holder.marker?.let {
+                        it.position = gp
+                        it.title = city.name
+                    }
+                    mv.controller.setCenter(gp)
+                    mv.invalidate()
                 }
             },
             modifier = Modifier.fillMaxSize()
         )
 
-        if (loading) {
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(Color(0xCC070B14)),
-                contentAlignment = Alignment.Center
-            ) {
+        /* 底图切换：某一类瓦片在本地网络取不到图时还有退路 */
+        Row(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            sources.forEachIndexed { i, s ->
+                val on = i == basemap
                 Text(
-                    text = "地图加载中…",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colors.faint
+                    text = s.first,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                    color = if (on) colors.ink else colors.faint,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(if (on) colors.card.copy(alpha = 0.92f) else Color(0x66070B14))
+                        .border(1.dp, if (on) colors.ruleStrong else colors.rule, RoundedCornerShape(999.dp))
+                        .clickable { basemap = i }
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
                 )
             }
         }
 
-        if (errMsg != null) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xE6070B14)),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = errMsg ?: "",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colors.muted
-                )
-                Spacer(Modifier.height(10.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(
-                        text = "重试",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = colors.accentCool,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(999.dp))
-                            .border(1.dp, colors.accentCool.copy(alpha = 0.5f), RoundedCornerShape(999.dp))
-                            .clickable {
-                                errMsg = null
-                                loading = true
-                                retry += 1
-                                webRef?.loadUrl(mapUrl(city))
-                            }
-                            .padding(horizontal = 14.dp, vertical = 6.dp)
-                    )
-                    Text(
-                        text = "看光路剖面",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = colors.muted,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(999.dp))
-                            .border(1.dp, colors.ruleStrong, RoundedCornerShape(999.dp))
-                            .clickable { onFail() }
-                            .padding(horizontal = 14.dp, vertical = 6.dp)
-                    )
-                }
-            }
-        }
+        Text(
+            text = "© Esri · OpenStreetMap",
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+            color = colors.faint,
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(6.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(Color(0x99070B14))
+                .padding(horizontal = 4.dp, vertical = 1.dp)
+        )
     }
-
-    /* 每秒查一次 SDK 是否就绪，最多 15 秒 */
-    LaunchedEffect(city.name, retry) {
-        loading = true
-        repeat(15) {
-            delay(1000)
-            val ready = webRef?.queryReady() == true
-            if (ready) {
-                loading = false
-                errMsg = null
-                return@LaunchedEffect
-            }
-        }
-        loading = false
-        errMsg = "地图加载超时（可能是网络或地图服务限制）"
-    }
-}
-
-private suspend fun WebView.queryReady(): Boolean =
-    kotlin.coroutines.suspendCoroutine { cont ->
-        evaluateJavascript("window.__mapReady === true") { v ->
-            cont.resumeWith(Result.success(v == "true"))
-        }
-    }
-
-/** 站点同域的地图页：来源与网页版一致，避免 file:// 被 SDK 拒绝 */
-private fun mapUrl(city: com.sunglow.spectrum.core.City): String {
-    val name = java.net.URLEncoder.encode(city.name, "UTF-8")
-    return "https://sunglow.cloud/map-embed.html" +
-        "?lat=${city.lat}&lon=${city.lon}&zoom=7&name=$name"
 }
 
 /* ---------- 多点对比 ---------- */
