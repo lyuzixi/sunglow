@@ -84,23 +84,6 @@ jobs:
           mkdir -p native/app/src/main/res/drawable-nodpi
           cp v2/src/assets/logo-mark.png native/app/src/main/res/drawable-nodpi/logo_mark.png
 
-      # 完整版启动器图标（含 SUNGLOW 字标）：base64 文本入库，构建时还原为图片，
-      # 这样仓库不提交二进制，也不会被自适应图标遮罩裁掉字标。
-      - name: Restore launcher icon
-        working-directory: .
-        run: |
-          mkdir -p native/app/src/main/res/mipmap-xxxhdpi
-          B64=$(tr -d '\r\n' < native/tools/logo-icon.b64)
-          # 文本传输可能吃掉尾部 padding，这里补齐到 4 的倍数再解码
-          while [ $(( ${#B64} % 4 )) -ne 0 ]; do B64="${B64}="; done
-          printf '%s' "$B64" | base64 -d > native/app/src/main/res/mipmap-xxxhdpi/ic_launcher.jpg
-          SZ=$(stat -c%s native/app/src/main/res/mipmap-xxxhdpi/ic_launcher.jpg)
-          if [ "$SZ" -lt 10000 ]; then
-            echo "::error::launcher icon decode failed: only $SZ bytes"
-            exit 1
-          fi
-          echo "icon: $SZ bytes"
-
       - name: Generate algorithm baseline (golden)
         working-directory: .
         run: npx --yes tsx native/tools/gen-golden.mjs
