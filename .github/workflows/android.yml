@@ -90,7 +90,16 @@ jobs:
         working-directory: .
         run: |
           mkdir -p native/app/src/main/res/mipmap-xxxhdpi
-          base64 -d native/tools/logo-icon.b64 > native/app/src/main/res/mipmap-xxxhdpi/ic_launcher.jpg
+          B64=$(tr -d '\r\n' < native/tools/logo-icon.b64)
+          # 文本传输可能吃掉尾部 padding，这里补齐到 4 的倍数再解码
+          while [ $(( ${#B64} % 4 )) -ne 0 ]; do B64="${B64}="; done
+          printf '%s' "$B64" | base64 -d > native/app/src/main/res/mipmap-xxxhdpi/ic_launcher.jpg
+          SZ=$(stat -c%s native/app/src/main/res/mipmap-xxxhdpi/ic_launcher.jpg)
+          if [ "$SZ" -lt 10000 ]; then
+            echo "::error::launcher icon decode failed: only $SZ bytes"
+            exit 1
+          fi
+          echo "icon: $SZ bytes"
 
       - name: Generate algorithm baseline (golden)
         working-directory: .
