@@ -9,7 +9,6 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -33,13 +32,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.lazy.stickyHeader
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -99,7 +98,6 @@ import kotlin.math.roundToInt
  * 每个区块自带折叠与触达反馈，分享走系统面板。
  */
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(vm: HomeViewModel = viewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
@@ -141,8 +139,14 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 .statusBarsPadding()
                 .navigationBarsPadding()
         ) {
+            val listState = rememberLazyListState()
+            /* 手机上没有常驻顶栏：品牌滑出后，日期与时段条浮到顶部继续可点 */
+            val pinned by remember(listState) {
+                derivedStateOf { listState.firstVisibleItemIndex > 0 }
+            }
+            Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn(
-                state = rememberLazyListState(),
+                state = listState,
                 contentPadding = PaddingValues(bottom = spacing.xxl)
             ) {
                 item {
@@ -159,7 +163,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                     )
                 }
 
-                stickyHeader {
+                item {
                     StickyControls(
                         dates = state.dates,
                         selected = state.dateStr,
@@ -227,6 +231,19 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                         textAlign = TextAlign.Center
                     )
                 }
+            }
+
+            /* 吸顶副本：与列表里的控制条同参，滑出后浮在上面 */
+            if (pinned) {
+                StickyControls(
+                    dates = state.dates,
+                    selected = state.dateStr,
+                    today = today,
+                    period = state.period,
+                    onSelectDate = vm::selectDate,
+                    onSelectPeriod = vm::selectPeriod
+                )
+            }
             }
         }
     }
