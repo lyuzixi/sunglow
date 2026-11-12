@@ -451,7 +451,7 @@ private fun TencentMap(
     val colors = SunglowTheme.colors
     var webRef by remember { mutableStateOf<WebView?>(null) }
     var loading by remember(city.name) { mutableStateOf(true) }
-    var error by remember(city.name) { mutableStateOf<String?>(null) }
+    var errMsg by remember(city.name) { mutableStateOf<String?>(null) }
     var retry by remember(city.name) { mutableStateOf(0) }
 
     Box(
@@ -478,7 +478,7 @@ private fun TencentMap(
                         ) {
                             if (request?.isForMainFrame == true) {
                                 loading = false
-                                error = "页面加载失败，请检查网络"
+                                errMsg = "页面加载失败，请检查网络"
                             }
                         }
                     }
@@ -520,7 +520,7 @@ private fun TencentMap(
             }
         }
 
-        if (error != null) {
+        if (errMsg != null) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -529,7 +529,7 @@ private fun TencentMap(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = error ?: "",
+                    text = errMsg ?: "",
                     style = MaterialTheme.typography.bodySmall,
                     color = colors.muted
                 )
@@ -543,7 +543,7 @@ private fun TencentMap(
                             .clip(RoundedCornerShape(999.dp))
                             .border(1.dp, colors.accentCool.copy(alpha = 0.5f), RoundedCornerShape(999.dp))
                             .clickable {
-                                error = null
+                                errMsg = null
                                 loading = true
                                 retry += 1
                                 webRef?.loadUrl(mapUrl(city))
@@ -573,12 +573,12 @@ private fun TencentMap(
             val ready = webRef?.queryReady() == true
             if (ready) {
                 loading = false
-                error = null
+                errMsg = null
                 return@LaunchedEffect
             }
         }
         loading = false
-        error = "地图加载超时（可能是网络或地图服务限制）"
+        errMsg = "地图加载超时（可能是网络或地图服务限制）"
     }
 }
 
