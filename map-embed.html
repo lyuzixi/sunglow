@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SUNGLOW · 观测场</title>
+<style>
+  html,body{height:100%;margin:0;background:#070b14;overflow:hidden}
+  #map{position:absolute;inset:0}
+  #fail{
+    position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+    color:#7f8fb0;font:13px -apple-system,"PingFang SC",sans-serif;text-align:center;padding:24px;
+  }
+  #hud{
+    position:absolute;left:12px;bottom:12px;padding:5px 10px;border-radius:999px;
+    background:rgba(7,11,20,.72);border:1px solid rgba(148,178,232,.2);
+    color:#a0b1cd;font:11px -apple-system,"PingFang SC",sans-serif;
+    backdrop-filter:blur(8px);pointer-events:none;
+  }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="fail">地图底图暂不可用</div>
+<div id="hud">腾讯地图 · 可拖动缩放</div>
+
+<script>
+  function qs(k, d) {
+    var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search);
+    return m ? decodeURIComponent(m[1]) : d;
+  }
+  var LAT = parseFloat(qs('lat', '39.9042'));
+  var LON = parseFloat(qs('lon', '116.4074'));
+  var ZOOM = parseInt(qs('zoom', '7'), 10);
+  var NAME = qs('name', '');
+  if (!isFinite(LAT)) LAT = 39.9042;
+  if (!isFinite(LON)) LON = 116.4074;
+  if (!isFinite(ZOOM)) ZOOM = 7;
+
+  function fail() {
+    document.getElementById('fail').style.display = 'flex';
+    window.__mapFail = true;
+  }
+
+  function initMap() {
+    try {
+      var map = new TMap.Map(document.getElementById('map'), {
+        center: new TMap.LatLng(LAT, LON),
+        zoom: ZOOM,
+        viewMode: '2D',
+        pitch: 0,
+        rotation: 0
+      });
+      window.__map = map;
+      window.__mapReady = true;
+      if (NAME) {
+        document.getElementById('hud').textContent = NAME + ' · 腾讯地图';
+      }
+    } catch (e) {
+      fail();
+    }
+  }
+
+  var s = document.createElement('script');
+  s.src = 'https://map.qq.com/api/gljs?v=1.exp&libraries=visualization';
+  s.onload = initMap;
+  s.onerror = fail;
+  document.head.appendChild(s);
+
+  setTimeout(function () {
+    if (!window.__mapReady) fail();
+  }, 9000);
+</script>
+</body>
+</html>

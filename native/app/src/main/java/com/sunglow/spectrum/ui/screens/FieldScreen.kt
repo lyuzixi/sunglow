@@ -465,12 +465,9 @@ private fun TencentMap(
                     settings.javaScriptEnabled = true
                     settings.domStorageEnabled = true
                     settings.cacheMode = WebSettings.LOAD_DEFAULT
+                    settings.loadsImagesAutomatically = true
                     setBackgroundColor(android.graphics.Color.parseColor("#070B14"))
                     webViewClient = object : WebViewClient() {
-                        override fun onPageFinished(view: WebView?, url: String?) {
-                            pushCity(view, city)
-                        }
-
                         override fun onReceivedError(
                             view: WebView?,
                             request: android.webkit.WebResourceRequest?,
@@ -489,11 +486,17 @@ private fun TencentMap(
                         }
                         false
                     }
-                    loadUrl("file:///android_asset/map.html")
+                    tag = city.name
+                    loadUrl(mapUrl(city))
                     webRef = this
                 }
             },
-            update = { wv -> pushCity(wv, city) },
+            update = { wv ->
+                if (wv.tag != city.name) {
+                    wv.tag = city.name
+                    wv.loadUrl(mapUrl(city))
+                }
+            },
             modifier = Modifier.fillMaxSize()
         )
     }
@@ -501,17 +504,17 @@ private fun TencentMap(
     /* 9.5 秒仍未就绪 → 判定失败，外层自动切回剖面 */
     LaunchedEffect(city.name) {
         delay(9500)
-        webRef?.evaluateJavascript("window.__mapFail === true") { v ->
-            if (v == "true") onFail()
+        webRef?.evaluateJavascript("window.__mapReady === true") { v ->
+            if (v != "true") onFail()
         }
     }
 }
 
-private fun pushCity(wv: WebView?, city: com.sunglow.spectrum.core.City) {
-    if (wv == null) return
-    val name = city.name.replace("'", "").replace("\\", "")
-    val js = "window.setData({lat:${city.lat},lon:${city.lon},zoom:7,name:'$name'});"
-    wv.evaluateJavascript(js, null)
+/** 站点同域的地图页：来源与网页版一致，避免 file:// 被 SDK 拒绝 */
+private fun mapUrl(city: com.sunglow.spectrum.core.City): String {
+    val name = java.net.URLEncoder.encode(city.name, "UTF-8")
+    return "https://sunglow.cloud/map-embed.html" +
+        "?lat=${city.lat}&lon=${city.lon}&zoom=7&name=$name"
 }
 
 /* ---------- 多点对比 ---------- */
