@@ -82,6 +82,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.okhttp)
     implementation("org.osmdroid:osmdroid-android:6.1.20")
+    implementation("com.google.zxing:core:3.5.3")
 
     testImplementation(libs.junit)
 }

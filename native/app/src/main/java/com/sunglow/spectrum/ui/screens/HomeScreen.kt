@@ -62,6 +62,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.layout.ContentScale
@@ -95,6 +96,7 @@ import com.sunglow.spectrum.core.glowWindow
 import com.sunglow.spectrum.core.gradeOf
 import com.sunglow.spectrum.core.isNum
 import com.sunglow.spectrum.core.shareBodyOf
+import com.sunglow.spectrum.core.shareUrlOf
 import com.sunglow.spectrum.core.skyBandOf
 import com.sunglow.spectrum.core.todayInTz
 import com.sunglow.spectrum.core.uAlt
@@ -111,6 +113,7 @@ import com.sunglow.spectrum.ui.motion.open
 import com.sunglow.spectrum.ui.motion.pressScale
 import com.sunglow.spectrum.ui.motion.rememberMotionEnabled
 import com.sunglow.spectrum.ui.motion.tap
+import com.sunglow.spectrum.ui.share.ShareCard
 import com.sunglow.spectrum.ui.theme.DuskAstro
 import com.sunglow.spectrum.ui.theme.DuskCivil
 import com.sunglow.spectrum.ui.theme.DuskDay
@@ -182,13 +185,8 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 onCycleModel = cycleModel,
                 onShare = {
                     if (result != null) {
-                        haptics.confirm()
-                        val view = verdictViewOf(result, modelSel)
-                        val send = Intent(Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, shareBodyOf(result, view))
-                        }
-                        context.startActivity(Intent.createChooser(send, "分享霞光预报"))
+                        haptics.open()
+                        sheet = "share"
                     }
                 }
             )
@@ -1025,47 +1023,82 @@ private fun FactorsSheet(result: ForecastResult) {
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            text = "13 项判据 · 到达率由云场与光路共同决定",
+            text = "13 项判据 · 按云场 / 光路 / 大气 / 动力 / 一致性分组",
             style = MaterialTheme.typography.labelSmall,
             color = colors.faint
         )
-        Spacer(Modifier.height(12.dp))
-        rows.forEachIndexed { i, row ->
-            if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(colors.rule))
-            Column(modifier = Modifier.padding(vertical = 9.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = row.name,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = colors.ink,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Text(
-                        text = row.value,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = colors.muted
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(999.dp))
-                            .background(judgeColor(row.judgeCls, colors).copy(alpha = 0.12f))
-                            .padding(horizontal = 6.dp, vertical = 1.dp)
-                    ) {
-                        Text(
-                            text = row.judge,
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                            color = judgeColor(row.judgeCls, colors)
-                        )
-                    }
-                }
-                Spacer(Modifier.height(3.dp))
+        Spacer(Modifier.height(10.dp))
+        val byKey = remember(rows) { rows.associateBy { it.key } }
+        val groups = listOf(
+            Triple("云场", "云量、云底与低层遮挡", listOf("cover", "base", "block")),
+            Triple("光路", "云边界与霞光深入", listOf("heq", "heff", "dedge")),
+            Triple("大气", "气溶胶、能见度与湿度", listOf("aod", "vis", "rh")),
+            Triple("动力", "气压、风与对流", listOf("stab", "wind", "cape")),
+            Triple("一致性", "三路算法的分歧", listOf("consist"))
+        )
+        groups.forEach { (title, note, keys) ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 14.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = row.desc,
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
-                    color = colors.faint,
-                    lineHeight = 14.sp
+                    text = title,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                    color = colors.accentCool,
+                    fontWeight = FontWeight.SemiBold
                 )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = note,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                    color = colors.faint
+                )
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = keys.count { byKey.containsKey(it) }.toString() + " 项",
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                    color = colors.faint
+                )
+            }
+            keys.mapNotNull { byKey[it] }.forEach { row ->
+                Box(Modifier.fillMaxWidth().height(1.dp).background(colors.rule))
+                Column(modifier = Modifier.padding(vertical = 9.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = row.name,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = colors.ink,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            text = row.value,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.muted
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(judgeColor(row.judgeCls, colors).copy(alpha = 0.12f))
+                                .padding(horizontal = 6.dp, vertical = 1.dp)
+                        ) {
+                            Text(
+                                text = row.judge,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                color = judgeColor(row.judgeCls, colors)
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        text = row.desc,
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                        color = colors.faint,
+                        lineHeight = 14.sp
+                    )
+                }
             }
         }
     }
@@ -1075,17 +1108,18 @@ private fun FactorsSheet(result: ForecastResult) {
 private fun RaySheet(result: ForecastResult) {
     val colors = SunglowTheme.colors
     val r = result.sRT
-    val rows = listOf(
-        "主云层" to (r.primary.nameZh + " · " + r.primary.type),
-        "云量" to (r.primary.cover.roundToInt().toString() + "%"),
-        "云底高度" to uAlt(r.primary.base * 1000),
-        "云边界距离" to uDist(r.d),
-        "霞光深入上限" to uDist(r.geom.xMax),
-        "持续时间" to fmtDur(r.geom.dur),
-        "气溶胶标高" to uAlt(r.hs * 1000),
-        "等效地面高度" to uAlt(r.heq * 1000),
-        "峰值透射" to fmtSci(r.peak.color.t550),
-        "亮度" to r.bright.txt
+    val g = r.geom
+    val samples = r.samples
+    val keyRows = listOf(
+        "几何窗口" to if (g.ok) fmtDur(g.dur) else "不成立",
+        "亮度等级" to r.bright.txt,
+        "峰值透射率 T550" to fmtSci(r.peak.color.t550),
+        "峰值光学厚度 τ" to String.format(Locale.US, "%.2f", r.peak.color.tau550),
+        "峰值颜色" to r.peak.color.nameZh,
+        "色相跨距" to String.format(Locale.US, "%.1f", r.hueSpread) + "°",
+        "气溶胶标高 Hs" to String.format(Locale.US, "%.2f", r.hs) + " km",
+        "近边界角" to if (g.thNearDeg.isFinite()) String.format(Locale.US, "%.1f", g.thNearDeg) + "°" else "—",
+        "远边界角" to if (g.thFarDeg.isFinite()) String.format(Locale.US, "%.1f", g.thFarDeg) + "°" else "—"
     )
     Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 28.dp)) {
         Text(
@@ -1095,28 +1129,202 @@ private fun RaySheet(result: ForecastResult) {
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            text = "沿日出/日落方位量出的云幕几何与消光",
+            text = "同一份取数：多波长光路积分 + CIE 色度",
             style = MaterialTheme.typography.labelSmall,
             color = colors.faint
         )
-        Spacer(Modifier.height(12.dp))
-        rows.forEach { (k, v) ->
-            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
-                Text(
-                    text = k,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colors.faint,
-                    modifier = Modifier.width(96.dp)
-                )
-                Text(
-                    text = v,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colors.ink,
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.End
+
+        Spacer(Modifier.height(14.dp))
+        keyRows.chunked(2).forEach { pair ->
+            Row(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
+                pair.forEach { (k, v) ->
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            text = k,
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                            color = colors.faint
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = v,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.ink
+                        )
+                    }
+                }
+                if (pair.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+
+        /* 光谱色样：刚被照亮 → 掠地最红 */
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = "光谱色样",
+            style = MaterialTheme.typography.titleSmall,
+            color = colors.ink
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(
+            text = "左＝刚被照亮，右＝掠地最红",
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.faint
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            samples.forEach { s ->
+                Column(Modifier.weight(1f)) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(42.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(android.graphics.Color.parseColor(s.color.hex)))
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = s.color.nameZh,
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp),
+                        color = colors.faint,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+
+        /* 照亮时间轴：云底被低角度阳光照亮的时段 */
+        Spacer(Modifier.height(16.dp))
+        TimeLine(result, colors)
+
+        /* 亮度·彩度曲线 */
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = "亮度 · 彩度曲线",
+            style = MaterialTheme.typography.titleSmall,
+            color = colors.ink
+        )
+        Spacer(Modifier.height(8.dp))
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(96.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(colors.glass)
+                .padding(8.dp)
+        ) {
+            val w = size.width
+            val h = size.height
+            for (i in 0..4) {
+                val y = h * i / 4f
+                drawLine(colors.rule, Offset(0f, y), Offset(w, y), 1.dp.toPx())
+            }
+            if (samples.isEmpty()) return@Canvas
+            val lumMax = samples.maxOf { it.color.lumRel }.coerceAtLeast(1e-9)
+            val chrMax = samples.maxOf { it.color.chroma }.coerceAtLeast(1e-9)
+            fun px(t: Float): Float = t.coerceIn(0f, 1f) * w
+            fun py(v: Double): Float = h - (v.coerceIn(0.0, 1.0) * h).toFloat()
+
+            fun poly(values: List<Double>, color: Color) {
+                for (i in 1 until samples.size) {
+                    drawLine(
+                        color = color,
+                        start = Offset(px(samples[i - 1].t.toFloat()), py(values[i - 1])),
+                        end = Offset(px(samples[i].t.toFloat()), py(values[i])),
+                        strokeWidth = 2.dp.toPx()
+                    )
+                }
+            }
+            poly(samples.map { it.color.lumRel / lumMax }, colors.accentAlt)
+            poly(samples.map { it.color.chroma / chrMax }, colors.accentCool)
+
+            samples.forEach { s ->
+                val x = px(s.t.toFloat())
+                drawCircle(
+                    color = Color(android.graphics.Color.parseColor(s.color.hex)),
+                    radius = 3.2.dp.toPx(),
+                    center = Offset(x, h - 5.dp.toPx())
                 )
             }
         }
+        Spacer(Modifier.height(6.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.width(14.dp).height(2.dp).background(colors.accentAlt))
+            Spacer(Modifier.width(4.dp))
+            Text("亮度", style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp), color = colors.faint)
+            Spacer(Modifier.width(12.dp))
+            Box(Modifier.width(14.dp).height(2.dp).background(colors.accentCool))
+            Spacer(Modifier.width(4.dp))
+            Text("彩度", style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp), color = colors.faint)
+            Spacer(Modifier.weight(1f))
+            Text("刚被照亮 → 掠地最红", style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp), color = colors.faint)
+        }
+    }
+}
+
+/** 云底被照亮的时段条：位置取自天色带同一条时间轴 */
+@Composable
+private fun TimeLine(result: ForecastResult, colors: SunglowColors) {
+    val win = glowWindow(
+        evMs = result.evMs,
+        isAM = result.period == Period.AM,
+        lat = result.city.lat,
+        lon = result.city.lon,
+        thNearDeg = result.sRT.geom.thNearDeg,
+        thFarDeg = result.sRT.geom.thFarDeg
+    )
+    Text(
+        text = "照亮时间轴",
+        style = MaterialTheme.typography.titleSmall,
+        color = colors.ink
+    )
+    Spacer(Modifier.height(2.dp))
+    Text(
+        text = "本地云底被低角度阳光照亮的时段",
+        style = MaterialTheme.typography.labelSmall,
+        color = colors.faint
+    )
+    Spacer(Modifier.height(8.dp))
+    if (win == null) {
+        Text(
+            text = "本次没有可行的观赏窗口",
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.mid
+        )
+        return
+    }
+    val sky = skyBandOf(result, System.currentTimeMillis(), result.dateStr)
+    val span = if (sky != null) sky.endMs - sky.startMs else 0.0
+    val left = if (span > 0) ((win.first - sky!!.startMs) / span).toFloat().coerceIn(0f, 1f) else 0f
+    val right = if (span > 0) ((win.second - sky!!.startMs) / span).toFloat().coerceIn(0f, 1f) else 1f
+    Canvas(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(10.dp)
+            .clip(RoundedCornerShape(999.dp))
+            .background(colors.glassStrong)
+    ) {
+        drawRect(
+            color = colors.accent,
+            topLeft = Offset(left * size.width, 0f),
+            size = Size((right - left).coerceAtLeast(0.02f) * size.width, size.height)
+        )
+    }
+    Spacer(Modifier.height(6.dp))
+    Row(Modifier.fillMaxWidth()) {
+        Text(
+            text = "开始 " + fmtClock(win.first, result.tz),
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.faint
+        )
+        Spacer(Modifier.weight(1f))
+        Text(
+            text = "结束 " + fmtClock(win.second, result.tz),
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.faint
+        )
     }
 }
 
@@ -1126,6 +1334,8 @@ private fun ShareSheet(result: ForecastResult, view: VerdictView) {
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
     val caption = remember(result, view) { captionOf(result, view) }
+    val link = remember(result) { shareUrlOf(result) }
+    val qr = remember(result) { ShareCard.qr(link, 512) }
     Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 28.dp)) {
         Text(
             text = "分享",
@@ -1139,14 +1349,37 @@ private fun ShareSheet(result: ForecastResult, view: VerdictView) {
             color = colors.muted
         )
         Spacer(Modifier.height(14.dp))
+
+        /* 主操作：生成 1080×1440 竖版图卡并调起系统分享 */
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(999.dp))
+                .background(Brush.horizontalGradient(colors.spectrum))
+                .clickable {
+                    haptics.confirm()
+                    runCatching { ShareCard.shareImage(context, result, view, colors.isDark) }
+                }
+                .padding(vertical = 12.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "生成分享图卡",
+                style = MaterialTheme.typography.titleSmall,
+                color = Color(0xFF06101C)
+            )
+        }
+
+        Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(999.dp))
-                    .background(Brush.horizontalGradient(colors.spectrum))
+                    .background(colors.glass)
+                    .border(1.dp, colors.ruleStrong, RoundedCornerShape(999.dp))
                     .clickable {
-                        haptics.confirm()
+                        haptics.tap()
                         val send = Intent(Intent.ACTION_SEND).apply {
                             type = "text/plain"
                             putExtra(Intent.EXTRA_TEXT, shareBodyOf(result, view))
@@ -1159,7 +1392,7 @@ private fun ShareSheet(result: ForecastResult, view: VerdictView) {
                 Text(
                     text = "系统分享",
                     style = MaterialTheme.typography.titleSmall,
-                    color = Color(0xFF06101C)
+                    color = colors.ink
                 )
             }
             Box(
@@ -1169,7 +1402,7 @@ private fun ShareSheet(result: ForecastResult, view: VerdictView) {
                     .background(colors.glass)
                     .border(1.dp, colors.ruleStrong, RoundedCornerShape(999.dp))
                     .clickable {
-                        haptics.confirm()
+                        haptics.tap()
                         val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                         cm.setPrimaryClip(ClipData.newPlainText("霞光预报", caption))
                         Toast.makeText(context, "文案已复制", Toast.LENGTH_SHORT).show()
@@ -1181,6 +1414,66 @@ private fun ShareSheet(result: ForecastResult, view: VerdictView) {
                     text = "复制文案",
                     style = MaterialTheme.typography.titleSmall,
                     color = colors.ink
+                )
+            }
+        }
+
+        /* 二维码：扫码回到同一城市、同一天、同一时段 */
+        Spacer(Modifier.height(18.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(colors.glass)
+                .border(1.dp, colors.rule, RoundedCornerShape(14.dp))
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(104.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color.White)
+                    .padding(8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                if (qr != null) {
+                    Image(
+                        bitmap = qr.asImageBitmap(),
+                        contentDescription = "分享链接二维码",
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = "扫码打开网页版",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.ink
+                )
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    text = result.city.shortName + " · " + result.dateStr + " · " +
+                        (if (result.period == Period.AM) "朝霞" else "晚霞"),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.faint
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "复制链接",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.accentCool,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(999.dp))
+                        .border(1.dp, colors.ruleStrong, RoundedCornerShape(999.dp))
+                        .clickable {
+                            haptics.tap()
+                            val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            cm.setPrimaryClip(ClipData.newPlainText("霞光档案链接", link))
+                            Toast.makeText(context, "链接已复制", Toast.LENGTH_SHORT).show()
+                        }
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
                 )
             }
         }

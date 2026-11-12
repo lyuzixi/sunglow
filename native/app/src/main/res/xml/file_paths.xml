@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 分享图卡只落在缓存目录，用完可被系统回收 -->
+<paths>
+    <cache-path name="share" path="share/" />
+</paths>
