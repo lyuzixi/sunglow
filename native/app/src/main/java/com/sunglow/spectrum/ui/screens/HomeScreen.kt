@@ -1182,8 +1182,9 @@ private fun SettingsSheet(themeMode: Int, onSetTheme: (Int) -> Unit) {
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(999.dp))
-                        .background(
-                            if (on) Brush.horizontalGradient(colors.spectrum) else colors.glass
+                        .then(
+                            if (on) Modifier.background(Brush.horizontalGradient(colors.spectrum))
+                            else Modifier.background(colors.glass)
                         )
                         .border(
                             1.dp,
