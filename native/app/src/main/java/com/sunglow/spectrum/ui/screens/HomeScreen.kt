@@ -48,7 +48,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -584,12 +583,6 @@ private fun GlassCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(
-                elevation = if (colors.isDark) 0.dp else 10.dp,
-                shape = RoundedCornerShape(radius.lg),
-                ambientColor = Color(0x33142850),
-                spotColor = Color(0x33142850)
-            )
             .clip(RoundedCornerShape(radius.lg))
             .background(colors.card)
             .border(1.dp, colors.rule, RoundedCornerShape(radius.lg))
@@ -633,8 +626,6 @@ private fun VerdictCard(
             )
         } else null
     }
-    /* 太阳与几何默认收起：结论卡首屏只留 P/Q/等级/ΔI 四个数，细节按需展开 */
-    var sunOpen by remember(result) { mutableStateOf(false) }
 
     GlassCard(modifier = Modifier.padding(horizontal = SunglowTheme.spacing.page), topSpectrum = true) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -698,42 +689,33 @@ private fun VerdictCard(
 
         Spacer(Modifier.height(18.dp))
 
-        /* 2×2 指标网格：四个主数字等宽对齐，每格自带背板 */
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MetricCell("$p%", "出现概率", colors.accent, Modifier.weight(1f))
-                MetricCell("$q", "观赏质量", colors.accentAlt, Modifier.weight(1f))
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MetricCell(
-                    QUALITY_LABEL[view.grade] ?: view.grade,
-                    "等级",
-                    gradeCol,
-                    Modifier.weight(1f),
-                    size = 22
-                )
-                MetricCell(
-                    if (isNum(result.dvI)) String.format(Locale.US, "%.1f", result.dvI!!) else "—",
-                    "模型分歧 ΔI",
-                    colors.ink,
-                    Modifier.weight(1f),
-                    size = 22
-                )
-            }
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Metric("$p%", "出现概率", colors.accent, Modifier.weight(1f))
+            Metric("$q", "观赏质量", colors.accentAlt, Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(14.dp))
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Metric(
+                QUALITY_LABEL[view.grade] ?: view.grade,
+                "等级",
+                gradeCol,
+                Modifier.weight(1f),
+                size = 22
+            )
+            Metric(
+                if (isNum(result.dvI)) String.format(Locale.US, "%.1f", result.dvI!!) else "—",
+                "模型分歧 ΔI",
+                colors.ink,
+                Modifier.weight(1f),
+                size = 22
+            )
         }
 
+        Spacer(Modifier.height(16.dp))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(colors.rule))
         Spacer(Modifier.height(14.dp))
 
-        /* 太阳与几何收进折叠区，摘要行直接给出日落/日出时刻与方位角 */
-        FoldSection(
-            title = "太阳与几何",
-            summary = result.evName + " " + fmtClock(result.evMs, result.tz) +
-                " · " + String.format(Locale.US, "%.1f", result.evAz) + "°",
-            open = sunOpen,
-            onToggle = { sunOpen = !sunOpen }
-        ) {
-            SunRows(result = result, win = win)
-        }
+        SunRows(result = result, win = win)
 
         Spacer(Modifier.height(16.dp))
         ColorStrip(result)
@@ -763,21 +745,15 @@ private fun VerdictCard(
 }
 
 @Composable
-private fun MetricCell(
+private fun Metric(
     value: String,
     label: String,
     color: Color,
     modifier: Modifier = Modifier,
-    size: Int = 26
+    size: Int = 28
 ) {
     val colors = SunglowTheme.colors
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(colors.glass)
-            .border(1.dp, colors.rule, RoundedCornerShape(12.dp))
-            .padding(horizontal = 12.dp, vertical = 10.dp)
-    ) {
+    Column(modifier = modifier) {
         Text(
             text = value,
             style = MaterialTheme.typography.headlineLarge.copy(
@@ -794,52 +770,6 @@ private fun MetricCell(
             style = MaterialTheme.typography.labelSmall,
             color = colors.muted
         )
-    }
-}
-
-/* 卡内折叠区：标题行常驻（带摘要），点开展开内容 */
-@Composable
-private fun FoldSection(
-    title: String,
-    summary: String,
-    open: Boolean,
-    onToggle: () -> Unit,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    val colors = SunglowTheme.colors
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(colors.glass)
-                .border(1.dp, colors.rule, RoundedCornerShape(12.dp))
-                .clickable(onClick = onToggle)
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                color = colors.ink
-            )
-            Spacer(Modifier.weight(1f))
-            Text(
-                text = summary,
-                style = MaterialTheme.typography.labelSmall,
-                color = colors.faint
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = if (open) "收起" else "展开",
-                style = MaterialTheme.typography.labelSmall,
-                color = colors.accentCool
-            )
-        }
-        if (open) {
-            Spacer(Modifier.height(10.dp))
-            content()
-        }
     }
 }
 
@@ -1064,14 +994,11 @@ private fun FactorList(result: ForecastResult) {
 @Composable
 private fun FactorRow(row: FacDisplayRow, open: Boolean, onClick: () -> Unit) {
     val colors = SunglowTheme.colors
-    val score = row.score
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
-            .background(if (open) colors.glass else Color.Transparent)
-            .padding(vertical = 10.dp, horizontal = 4.dp)
+            .padding(vertical = 10.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -1080,30 +1007,17 @@ private fun FactorRow(row: FacDisplayRow, open: Boolean, onClick: () -> Unit) {
                 color = colors.ink,
                 modifier = Modifier.weight(1f)
             )
-            JudgeChip(row.judge, row.judgeCls)
-        }
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = row.value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = colors.muted
-        )
-        Spacer(Modifier.height(6.dp))
-        // 评分条：与网页 fac-card .bar 同款，分数按 0-100 映射
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(3.dp)
-                .clip(RoundedCornerShape(999.dp))
-                .background(colors.rule)
-        ) {
-            val pct = ((score ?: 0.0) * 100).roundToInt().coerceIn(0, 100)
-            Box(
-                Modifier
-                    .fillMaxWidth(pct / 100f)
-                    .fillMaxHeight()
-                    .background(Brush.horizontalGradient(colors.spectrum))
+            Spacer(Modifier.width(10.dp))
+            /* 数值与名称平分宽度：长数值换行而不是把名称挤成竖排 */
+            Text(
+                text = row.value,
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.muted,
+                textAlign = TextAlign.End,
+                modifier = Modifier.weight(1f)
             )
+            Spacer(Modifier.width(8.dp))
+            JudgeChip(row.judge, row.judgeCls)
         }
         if (open) {
             Spacer(Modifier.height(8.dp))
