@@ -7,7 +7,7 @@
 #   · Android SDK 直接用 runner 镜像自带的那一份（/usr/local/lib/android/sdk），
 #     不再依赖 setup-android 在线下载，少一个网络失败点
 #   · 单测与基准测试（GoldenTest）先跑，失败即停，不产出"看着像成功"的包
-#   · debug APK 作为构建产物挂出，同时发到 Releases 供免登录下载
+#   · debug APK 作为构建产物挂出，供真机安装验证
 
 name: android
 
@@ -79,12 +79,17 @@ jobs:
         run: npx --yes tsx native/tools/gen-cities.mjs
 
       - name: Unit tests (含算法基准对拍)
-        run: gradle :app:testDebugUnitTest --no-daemon --stacktrace
+        shell: bash
+        run: set -o pipefail; gradle :app:testDebugUnitTest --no-daemon --stacktrace 2>&1 | tee build.log
 
-      # 失败时把单测 XML 摘要挂到运行页，免登录即可看到断言消息
-      - name: Show test failures
+      # 失败时把编译错误与单测 XML 摘要挂到运行页，免登录即可定位
+      - name: Show build failures
         if: failure()
         run: |
+          echo "## 构建诊断" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f build.log ]; then
+            grep -E "(^e: |^w: .*error|FAILURE:|error:)" build.log | head -40 >> "$GITHUB_STEP_SUMMARY" || true
+          fi
           DIR=app/build/test-results/testDebugUnitTest
           if [ -d "$DIR" ]; then
             for f in "$DIR"/*.xml; do
@@ -92,8 +97,6 @@ jobs:
               head -c 3000 "$f" >> "$GITHUB_STEP_SUMMARY"
               echo "" >> "$GITHUB_STEP_SUMMARY"
             done
-          else
-            echo "没有测试报告目录（可能是编译失败）" >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Upload test report
@@ -105,7 +108,8 @@ jobs:
           if-no-files-found: ignore
 
       - name: Assemble debug APK
-        run: gradle :app:assembleDebug --no-daemon --stacktrace
+        shell: bash
+        run: set -o pipefail; gradle :app:assembleDebug --no-daemon --stacktrace 2>&1 | tee -a build.log
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
