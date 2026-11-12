@@ -45,8 +45,9 @@ jobs:
         shell: bash
         run: |
           mkdir -p "$HOME/.android"
-          if [ -f native/keystore/debug.keystore ]; then
-            cp native/keystore/debug.keystore "$HOME/.android/debug.keystore"
+          mkdir -p keystore
+          if [ -f keystore/debug.keystore ]; then
+            cp keystore/debug.keystore "$HOME/.android/debug.keystore"
             echo "using repo keystore"
           else
             rm -f "$HOME/.android/debug.keystore"
@@ -149,14 +150,24 @@ jobs:
           path: native/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
-      # 把本次使用的签名证书也挂出来：首次运行下载后放进 native/keystore/，
+      # 把本次使用的签名证书落回工作区并挂出：下载后放进 native/keystore/，
       # 之后每次构建都复用同一把，覆盖安装就不会再报“签名不一致”。
+      - name: Stash debug keystore
+        if: always()
+        shell: bash
+        run: |
+          if [ -f "$HOME/.android/debug.keystore" ]; then
+            mkdir -p keystore
+            cp "$HOME/.android/debug.keystore" keystore/debug.keystore
+            echo "keystore stashed"
+          fi
+
       - name: Upload debug keystore
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: debug-keystore
-          path: ${{ env.HOME }}/.android/debug.keystore
+          path: native/keystore/debug.keystore
           if-no-files-found: warn
 
       # 产物挂到 Releases：免登录就能下载，装到手机上也方便
