@@ -54,6 +54,8 @@ native/.gradle/
 native/build/
 native/app/build/
 native/app/src/test/resources/golden/
+# 城市表由 CI 从 v2 的 TS 源码生成，不入库（缺失时 App 回落到内置省会清单）
+native/app/src/main/assets/cities.tsv
 native/local.properties
 native/.idea/
 native/*.iml
