@@ -583,6 +583,21 @@ must(/!out\.some\(\(o\) => o\.v === state\.mapDateS\)/.test(mapSrc),
 must(/if \(!u\.date && !hasSavedMapDate\(\)\)/.test(homeSrc),
   "onMounted 仍会无条件把日期覆盖成今天（会冲掉偏好恢复的上次日期）");
 
+/* ---------- 1.19 独立静态页内联脚本语法（2026-11-12） ----------
+   教程页 EN 词典里一句未转义的英文双引号让整段 <script> 语法失败，三语 / 分档
+   全部静默失效，而上面所有文本正则都看不出来。这里用 new Function 解析纯
+   <script>（不带 type=module；构建产物 index.html 里的 import.meta 不在内），
+   把这类「页面看起来在、JS 其实没跑」的错误挡在构建前。 */
+for (const rel of ["tutorial.html", "404.html", "download.src.html"]) {
+  const html = read(rel);
+  const blocks = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+  blocks.forEach((m, i) => {
+    let err = "";
+    try { new Function(m[1]); } catch (e) { err = String((e && e.message) || e); }
+    must(!err, `${rel} 第 ${i + 1} 段内联脚本语法错误：${err}`);
+  });
+}
+
 if (issues.length) {
   console.error(`check-ui: ${issues.length} 处 UI 断言失败`);
   for (const s of issues) console.error("  ✗ " + s);

@@ -67,15 +67,36 @@ body{
 .back:hover{color:var(--tx-1); border-color:var(--stroke-2); text-decoration:none}
 .brand{font-size:13px; color:var(--tx-3); white-space:nowrap}
 .brand b{color:var(--tx-1); font-weight:500; letter-spacing:.04em}
-.segs{display:flex; align-items:center; gap:8px; margin-left:auto; flex-wrap:wrap}
-.cap{font-size:11px; color:var(--tx-3); letter-spacing:.06em}
-.seg{display:inline-flex; border:1px solid var(--stroke); border-radius:var(--r-full); overflow:hidden}
-.seg button{
-  min-height:32px; padding:0 11px; border:0; background:transparent; color:var(--tx-2);
-  font-family:var(--font); font-size:12px; cursor:pointer;
+/* 语言 / 主题：与 404.html 同一套（按钮显示当前值 + 带 ✓ 的下拉小卡片） */
+.actions{display:flex; align-items:center; gap:8px; margin-left:auto}
+.pop-holder{position:relative}
+.icon-btn{
+  width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center;
+  border-radius:8px; border:1px solid transparent; background:transparent;
+  color:var(--tx-2); font-family:var(--font); font-size:.85rem; font-weight:600; line-height:1;
+  cursor:pointer; transition:color .16s ease, border-color .16s ease, background .16s ease;
 }
-.seg button:hover{color:var(--tx-1)}
-.seg button.on{background:var(--chip); color:var(--tx-1)}
+.icon-btn:hover{color:var(--tx-1); border-color:var(--stroke-2); background:var(--chip)}
+.icon-btn[aria-expanded="true"]{color:var(--tx-1); border-color:var(--stroke-2); background:var(--chip)}
+.menu{
+  position:absolute; right:0; top:calc(100% + 6px); min-width:168px; padding:6px;
+  border-radius:14px; border:1px solid var(--stroke-2);
+  background:var(--solid); box-shadow:0 12px 32px rgba(0,0,0,.22); z-index:300;
+}
+.menu[hidden]{display:none}
+.menu .cap{font-size:11px; color:var(--tx-3); letter-spacing:.06em; padding:4px 10px 6px}
+.menu button{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  width:100%; padding:8px 12px; border-radius:8px; border:0; background:transparent;
+  font-family:var(--font); font-size:13px; color:var(--tx-2); text-align:left; cursor:pointer;
+}
+.menu button:hover{background:var(--chip); color:var(--tx-1)}
+.menu button[aria-pressed="true"]{color:var(--tx-1); background:var(--chip)}
+.menu .tick{font-size:11px; visibility:hidden}
+.menu button[aria-pressed="true"] .tick{visibility:visible}
+.icon-btn:focus-visible,.menu button:focus-visible,.back:focus-visible,.btn-dl:focus-visible{
+  outline:2px solid var(--spectrum-1); outline-offset:2px;
+}
 .hero{position:relative; padding:38px 0 24px; border-bottom:1px solid var(--stroke); margin-bottom:20px}
 .hero::after{content:""; position:absolute; left:0; bottom:-1px; width:96px; height:2px; background:var(--spectrum)}
 .pill{
@@ -127,7 +148,7 @@ code{font-family:var(--mono); font-size:12px; color:var(--tx-1)}
 .foot a{color:var(--tx-2); text-decoration:none; margin-left:14px}
 .foot a:hover{color:var(--tx-1); text-decoration:none}
 @media (max-width:560px){
-  .segs{margin-left:0; width:100%}
+  .actions{gap:6px}
   .card{padding:18px}
   .dl-row{gap:16px}
   .qr-box{width:132px; height:132px}
@@ -140,18 +161,27 @@ code{font-family:var(--mono); font-size:12px; color:var(--tx-1)}
   <div class="wrap top-in">
     <a class="back" href="./index.html"><span aria-hidden="true">←</span><span data-i18n="返回首页">返回首页</span></a>
     <span class="brand"><b>SUNGLOW</b> · <span data-i18n="下载 Android 版">下载 Android 版</span></span>
-    <div class="segs">
-      <span class="cap" data-i18n="语言">语言</span>
-      <div class="seg" id="langSeg" role="group" data-i18n-aria="语言">
-        <button type="button" data-k="zh">简体中文</button>
-        <button type="button" data-k="hant">繁體中文</button>
-        <button type="button" data-k="en">English</button>
+    <!-- 语言 / 主题：与 404.html 同款 —— 按钮显示当前值，点开是带 ✓ 的三选一小卡片 -->
+    <div class="actions">
+      <div class="pop-holder">
+        <button type="button" class="icon-btn" id="langBtn" aria-haspopup="true" aria-expanded="false"
+                aria-controls="langMenu" data-i18n-aria="语言">简</button>
+        <div class="menu" id="langMenu" hidden role="menu">
+          <div class="cap" data-i18n="语言">语言</div>
+          <button type="button" role="menuitemradio" data-lang="zh"><span>简体中文</span><span class="tick" aria-hidden="true">✓</span></button>
+          <button type="button" role="menuitemradio" data-lang="hant"><span>繁體中文</span><span class="tick" aria-hidden="true">✓</span></button>
+          <button type="button" role="menuitemradio" data-lang="en"><span>English</span><span class="tick" aria-hidden="true">✓</span></button>
+        </div>
       </div>
-      <span class="cap" data-i18n="主题">主题</span>
-      <div class="seg" id="themeSeg" role="group" data-i18n-aria="主题">
-        <button type="button" data-k="auto" data-i18n="自动">自动</button>
-        <button type="button" data-k="light" data-i18n="浅色">浅色</button>
-        <button type="button" data-k="dark" data-i18n="深色">深色</button>
+      <div class="pop-holder">
+        <button type="button" class="icon-btn" id="themeBtn" aria-haspopup="true" aria-expanded="false"
+                aria-controls="themeMenu" data-i18n-aria="主题">◐</button>
+        <div class="menu" id="themeMenu" hidden role="menu">
+          <div class="cap" data-i18n="主题">主题</div>
+          <button type="button" role="menuitemradio" data-theme-mode="dark"><span data-i18n="深色">深色</span><span class="tick" aria-hidden="true">✓</span></button>
+          <button type="button" role="menuitemradio" data-theme-mode="light"><span data-i18n="浅色">浅色</span><span class="tick" aria-hidden="true">✓</span></button>
+          <button type="button" role="menuitemradio" data-theme-mode="auto"><span data-i18n="跟随系统">跟随系统</span><span class="tick" aria-hidden="true">✓</span></button>
+        </div>
       </div>
     </div>
   </div>
@@ -213,7 +243,7 @@ code{font-family:var(--mono); font-size:12px; color:var(--tx-1)}
   var cur = P.lang;
   var DICT = {
     hant: {
-      "返回首页": "返回首頁", "语言": "語言", "主题": "主題", "自动": "自動", "浅色": "淺色", "深色": "深色",
+      "返回首页": "返回首頁", "语言": "語言", "主题": "主題", "跟随系统": "跟隨系統", "浅色": "淺色", "深色": "深色",
       "下载 Android 版": "下載 Android 版", "原生 App 内测版": "原生 App 內測版",
       "让每一次追霞，都有迹可循": "讓每一次追霞，都有跡可循",
       "内测 · debug 包": "內測 · debug 包", "下载 APK": "下載 APK",
@@ -237,7 +267,7 @@ code{font-family:var(--mono); font-size:12px; color:var(--tx-1)}
       "数据源": "資料來源", "非商业用途": "非商業用途", "使用教程": "使用教學"
     },
     en: {
-      "返回首页": "Back to home", "语言": "Language", "主题": "Theme", "自动": "Auto", "浅色": "Light", "深色": "Dark",
+      "返回首页": "Back to home", "语言": "Language", "主题": "Theme", "跟随系统": "System", "浅色": "Light", "深色": "Dark",
       "下载 Android 版": "Get the Android app", "原生 App 内测版": "Native app · beta",
       "让每一次追霞，都有迹可循": "Every glow chase, with a trail to follow",
       "内测 · debug 包": "Beta · debug build", "下载 APK": "Download APK",
@@ -288,18 +318,45 @@ code{font-family:var(--mono); font-size:12px; color:var(--tx-1)}
     var dl = tr("已下载") + " " + Number(a.download_count || 0).toLocaleString() + (tr("次") ? " " + tr("次") : "");
     el.textContent = tr("文件大小") + " " + fmtSize(a.size) + " · " + tr("更新于") + " " + fmtDate(a.updated_at) + " · " + dl;
   }
+  /* 与 404.html 同款：两个按钮显示当前值，菜单项用 aria-pressed 打勾。 */
+  var LANG_SHORT = { zh: "简", hant: "繁", en: "EN" };
+  var THEME_ICON = { dark: "☾", light: "☀", auto: "◐" };
+  function syncMenus() {
+    each("#langMenu [data-lang]", function (b) {
+      var on = b.getAttribute("data-lang") === cur;
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+      b.setAttribute("aria-checked", on ? "true" : "false");
+    });
+    each("#themeMenu [data-theme-mode]", function (b) {
+      var on = b.getAttribute("data-theme-mode") === P.theme;
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+      b.setAttribute("aria-checked", on ? "true" : "false");
+    });
+  }
+  function closeMenus() {
+    ["langMenu", "themeMenu"].forEach(function (id) {
+      var el = document.getElementById(id); if (el) el.hidden = true;
+    });
+    ["langBtn", "themeBtn"].forEach(function (id) {
+      var b = document.getElementById(id); if (b) b.setAttribute("aria-expanded", "false");
+    });
+  }
+  function toggleMenu(btnId, menuId) {
+    var btn = document.getElementById(btnId), menu = document.getElementById(menuId);
+    if (!btn || !menu) return;
+    var willOpen = menu.hidden;
+    closeMenus();
+    if (willOpen) { menu.hidden = false; btn.setAttribute("aria-expanded", "true"); }
+  }
   function apply() {
     each("[data-i18n]", function (el) { el.textContent = tr(el.getAttribute("data-i18n")); });
     each("[data-i18n-aria]", function (el) { el.setAttribute("aria-label", tr(el.getAttribute("data-i18n-aria"))); });
     document.title = tr("下载 Android 版") + " · SUNGLOW";
-    each("#langSeg [data-k]", function (b) {
-      var on = b.getAttribute("data-k") === cur;
-      b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false");
-    });
-    each("#themeSeg [data-k]", function (b) {
-      var on = b.getAttribute("data-k") === P.theme;
-      b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false");
-    });
+    var lb = document.getElementById("langBtn");
+    if (lb) lb.textContent = LANG_SHORT[cur] || "简";
+    var tb = document.getElementById("themeBtn");
+    if (tb) tb.textContent = THEME_ICON[P.theme] || "◐";
+    syncMenus();
     renderVer();
   }
   function writePref(k, v) {
@@ -325,8 +382,36 @@ code{font-family:var(--mono); font-size:12px; color:var(--tx-1)}
     writePref("theme", k);
     apply();
   }
-  each("#langSeg [data-k]", function (b) { b.addEventListener("click", function () { setLang(b.getAttribute("data-k")); }); });
-  each("#themeSeg [data-k]", function (b) { b.addEventListener("click", function () { setTheme(b.getAttribute("data-k")); }); });
+  document.getElementById("langBtn").addEventListener("click", function (e) {
+    e.stopPropagation(); toggleMenu("langBtn", "langMenu");
+  });
+  document.getElementById("themeBtn").addEventListener("click", function (e) {
+    e.stopPropagation(); toggleMenu("themeBtn", "themeMenu");
+  });
+  document.getElementById("langMenu").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-lang]");
+    if (!b) return;
+    setLang(b.getAttribute("data-lang")); closeMenus();
+  });
+  document.getElementById("themeMenu").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-theme-mode]");
+    if (!b) return;
+    setTheme(b.getAttribute("data-theme-mode")); closeMenus();
+  });
+  document.addEventListener("click", function (e) {
+    if (!e.target.closest(".pop-holder")) closeMenus();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeMenus();
+  });
+  /* 跟随系统时，系统主题变化要即时反映到按钮与页面 */
+  if (window.matchMedia) {
+    try {
+      matchMedia("(prefers-color-scheme: light)").addEventListener("change", function () {
+        if (P.theme === "auto") setTheme("auto");
+      });
+    } catch (e) { /* 老浏览器 */ }
+  }
   apply();
 
   /* 版本信息只影响这一小块：3 秒超时、失败给兜底文案、结果不缓存。

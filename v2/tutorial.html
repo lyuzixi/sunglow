@@ -70,22 +70,29 @@ a:hover{text-decoration:underline}
   box-shadow:0 0 0 3px var(--glass)}
 .brand{font-size:13px;font-weight:600;letter-spacing:.4px;color:var(--tx2);white-space:nowrap}
 .spacer{flex:1}
-.dwrap{position:relative}
-.tbtn{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:30px;
-  padding:0 9px;border:1px solid var(--line);border-radius:var(--r-full);background:transparent;
-  color:var(--tx2);font-family:var(--font);font-size:12.5px;cursor:pointer}
-.tbtn:hover{color:var(--tx);border-color:var(--tx3)}
-.tbtn .ico{font-size:13px;line-height:1}
-.tmenu{position:absolute;right:0;top:36px;min-width:132px;background:var(--elev);
-  border:1px solid var(--line);border-radius:var(--r-md);padding:6px;
+/* 语言 / 主题：与 404.html 同一套（按钮显示当前值 + 带 ✓ 的下拉小卡片） */
+.pop-holder{position:relative}
+.icon-btn{
+  width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;
+  border-radius:8px;border:1px solid transparent;background:transparent;
+  color:var(--tx2);font-family:var(--font);font-size:13px;font-weight:600;line-height:1;cursor:pointer;
+  transition:color .16s ease,border-color .16s ease,background .16s ease}
+.icon-btn:hover{color:var(--tx);border-color:var(--line);background:var(--glass)}
+.icon-btn[aria-expanded="true"]{color:var(--tx);border-color:var(--line);background:var(--accbg)}
+.menu{
+  position:absolute;right:0;top:calc(100% + 6px);min-width:168px;padding:6px;
+  border-radius:14px;border:1px solid var(--line);background:var(--elev);
   box-shadow:0 14px 40px rgba(0,0,0,.28);z-index:60}
-.tmenu[hidden]{display:none}
-.tmenu .cap{font-size:10.5px;color:var(--tx3);letter-spacing:.5px;padding:4px 10px 6px}
-.tmenu button{display:flex;width:100%;align-items:center;gap:8px;border:0;background:transparent;
-  color:var(--tx2);font-family:var(--font);font-size:13px;padding:7px 10px;border-radius:var(--r-sm);
-  cursor:pointer;text-align:left}
-.tmenu button:hover{background:var(--glass);color:var(--tx)}
-.tmenu button[aria-pressed="true"]{color:var(--tx);font-weight:600}
+.menu[hidden]{display:none}
+.menu .cap{font-size:10.5px;color:var(--tx3);letter-spacing:.5px;padding:4px 10px 6px}
+.menu button{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
+  padding:8px 12px;border-radius:var(--r-sm);border:0;background:transparent;
+  color:var(--tx2);font-family:var(--font);font-size:13px;cursor:pointer;text-align:left}
+.menu button:hover{background:var(--glass);color:var(--tx)}
+.menu button[aria-pressed="true"]{color:var(--tx);background:var(--glass)}
+.menu .tick{font-size:11px;visibility:hidden}
+.menu button[aria-pressed="true"] .tick{visibility:visible}
 .tabs{max-width:var(--maxw);margin:0 auto;padding:0 20px 10px}
 .tabs-in{display:flex;gap:4px;overflow-x:auto;min-width:0;scrollbar-width:none}
 .tabs-in::-webkit-scrollbar{display:none}
@@ -154,11 +161,11 @@ footer{border-top:1px solid var(--line2);margin-top:44px}
   gap:8px 18px;align-items:center;font-size:12.5px;color:var(--tx3)}
 .foot .spacer{flex:1}
 /* ---- 可达性：键盘焦点与触屏热区 ---- */
-.back:focus-visible,.tab:focus-visible,.tbtn:focus-visible,
-.tmenu button:focus-visible,.panel:focus-visible{
+.back:focus-visible,.tab:focus-visible,.icon-btn:focus-visible,
+.menu button:focus-visible,.panel:focus-visible{
   outline:2px solid var(--acc2);outline-offset:2px;border-radius:var(--r-sm)}
 @media (pointer:coarse){
-  .back,.tbtn,.tab,.tmenu button{min-height:44px}
+  .back,.icon-btn,.tab,.menu button{min-height:44px}
   .tab{display:inline-flex;align-items:center;justify-content:center}
 }
 @media (max-width:720px){
@@ -208,18 +215,24 @@ html[data-theme="light"] .hero > .ph-band .ph-credit{
     <div class="logo" aria-hidden="true"></div>
     <span class="brand">SUNGLOW · <span data-i18n="使用教程">使用教程</span></span>
     <div class="spacer"></div>
-    <div class="dwrap">
-      <button type="button" id="langBtn" class="tbtn" aria-haspopup="true" aria-expanded="false" title="语言">中</button>
-      <div class="tmenu" id="langMenu" hidden>
+    <div class="pop-holder">
+      <button type="button" id="langBtn" class="icon-btn" aria-haspopup="true" aria-expanded="false"
+              aria-controls="langMenu" aria-label="语言" title="语言">简</button>
+      <div class="menu" id="langMenu" hidden role="menu">
         <div class="cap" data-i18n="语言">语言</div>
-        <div id="langSeg" role="group" aria-label="语言" data-i18n-aria="语言"></div>
+        <button type="button" role="menuitemradio" data-lang="zh"><span>简体中文</span><span class="tick" aria-hidden="true">✓</span></button>
+        <button type="button" role="menuitemradio" data-lang="hant"><span>繁體中文</span><span class="tick" aria-hidden="true">✓</span></button>
+        <button type="button" role="menuitemradio" data-lang="en"><span>English</span><span class="tick" aria-hidden="true">✓</span></button>
       </div>
     </div>
-    <div class="dwrap">
-      <button type="button" id="themeBtn" class="tbtn" aria-haspopup="true" aria-expanded="false" title="主题"><span class="ico" aria-hidden="true">◐</span></button>
-      <div class="tmenu" id="themeMenu" hidden>
+    <div class="pop-holder">
+      <button type="button" id="themeBtn" class="icon-btn" aria-haspopup="true" aria-expanded="false"
+              aria-controls="themeMenu" aria-label="主题" title="主题">◐</button>
+      <div class="menu" id="themeMenu" hidden role="menu">
         <div class="cap" data-i18n="主题">主题</div>
-        <div id="themeSeg" role="group" aria-label="主题" data-i18n-aria="主题"></div>
+        <button type="button" role="menuitemradio" data-theme-mode="dark"><span data-i18n="深色">深色</span><span class="tick" aria-hidden="true">✓</span></button>
+        <button type="button" role="menuitemradio" data-theme-mode="light"><span data-i18n="浅色">浅色</span><span class="tick" aria-hidden="true">✓</span></button>
+        <button type="button" role="menuitemradio" data-theme-mode="auto"><span data-i18n="跟随系统">跟随系统</span><span class="tick" aria-hidden="true">✓</span></button>
       </div>
     </div>
   </div>
@@ -517,8 +530,8 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
   "use strict";
   var PREF_KEY = "SUNGLOW.v2.pref";
   var LANGS = [
-    { k: "zh", name: "中文", short: "中", tag: "zh-CN" },
-    { k: "hant", name: "繁體", short: "繁", tag: "zh-Hant-TW" },
+    { k: "zh", name: "简体中文", short: "简", tag: "zh-CN" },
+    { k: "hant", name: "繁體中文", short: "繁", tag: "zh-Hant-TW" },
     { k: "en", name: "English", short: "EN", tag: "en" }
   ];
   var HANT = {
@@ -728,7 +741,7 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
     "偏好与外观": "Preferences & appearance",
     "设置面板里：主题（大气光谱观测站·深色 / 晨光实验室·浅色 / 跟随系统）、语言（简体 / 繁體 / English）、单位（公制 km·m·℃ / 英制 mi·ft·℉）、时间格式（12 / 24 小时制）；开篇照片背景另有 关 / 天色带 / 全幅 / 窗口 四种模式，默认关闭。偏好写本机 localStorage，与本教程页共享同一份。": "In the settings panel: theme (Spectrum Observatory dark / Dawn Lab light / system), language (简体 / 繁體 / English), units (metric km·m·℃ / imperial mi·ft·℉) and clock format (12 / 24-hour). The hero photo backdrop has four modes — off / sky band / full / window — off by default. Preferences live in this device's localStorage, shared with this tutorial page.",
     "缓存、额度与离线": "Cache, quota & offline",
-    "所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度：日额度耗尽（429）会直接报错并提示次日重置，不再回退演示数据；短时限流则提示约一分钟恢复，不自动重试。网络不可用或超时（预算 12 秒）不再回退演示数据，直接提示「这次没有取到数据」并给「重新计算」入口——宁可没有结果，也不给一份假预报。装了 PWA 的话，断网时只能查看已缓存的结果，不能获取新预报。": "All results cache for 6 hours, keyed by date + period + coordinates; the settings panel shows the count and clears everything in one tap. Data comes from Open-Meteo's free tier, metered per visitor IP: an exhausted daily quota (429) errors out immediately and tells you it resets tomorrow — it no longer falls back to demo data; a short-term throttle asks you to retry in about a minute and never auto-retries. Only an unavailable network or a timeout (12-second budget) also refuses to fall back to demo data: it says "no data this time" and offers Calculate again — a missing result beats a fabricated forecast. With the PWA installed you can still view cached results offline, but you cannot fetch a new forecast.",
+    "所有结果按「日期 + 时段 + 坐标」分键缓存 6 小时，设置里可看条数、一键清除。数据源 Open-Meteo 免费层按访客 IP 计额度：日额度耗尽（429）会直接报错并提示次日重置，不再回退演示数据；短时限流则提示约一分钟恢复，不自动重试。网络不可用或超时（预算 12 秒）不再回退演示数据，直接提示「这次没有取到数据」并给「重新计算」入口——宁可没有结果，也不给一份假预报。装了 PWA 的话，断网时只能查看已缓存的结果，不能获取新预报。": "All results cache for 6 hours, keyed by date + period + coordinates; the settings panel shows the count and clears everything in one tap. Data comes from Open-Meteo's free tier, metered per visitor IP: an exhausted daily quota (429) errors out immediately and tells you it resets tomorrow — it no longer falls back to demo data; a short-term throttle asks you to retry in about a minute and never auto-retries. Only an unavailable network or a timeout (12-second budget) also refuses to fall back to demo data: it says 'no data this time' and offers Calculate again — a missing result beats a fabricated forecast. With the PWA installed you can still view cached results offline, but you cannot fetch a new forecast.",
     "术语速查": "Glossary",
     "气溶胶光学厚度，衡量大气浑浊度（0.1 清澈 → 1+ 重霾）。": "Aerosol optical depth — how murky the air is (0.1 clear → 1+ heavy haze).",
     "云底高度": "Cloud-base height",
@@ -806,7 +819,6 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
   var DICT = { hant: HANT, en: EN };
   var THEMES = ["auto", "light", "dark"];
   var THEME_ICON = { auto: "◐", light: "☀", dark: "☾" };
-  var THEME_KEY = { auto: "跟随系统", light: "浅色", dark: "深色" };
   var VIEWS = ["overview", "users", "dev", "creator"];
   var LANG = "zh";
 
@@ -859,7 +871,7 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
   function setTheme(pref) {
     applyTheme(pref);
     prefPatch({ theme: document.documentElement.getAttribute("data-theme-pref") });
-    refreshThemeSeg();
+    syncMenus();
   }
 
   /* ---------- 文案节点 ---------- */
@@ -896,8 +908,7 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
     var d = $('meta[name="description"]');
     if (d && LANG !== "zh" && DICT[LANG]["doc.desc"]) d.setAttribute("content", DICT[LANG]["doc.desc"]);
     refreshTopButtons();
-    refreshLangSeg();
-    refreshThemeSeg();
+    syncMenus();
   }
   function setLang(k, write) {
     if (k !== "zh" && !DICT[k]) return;
@@ -921,52 +932,40 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
     return "en";
   }
 
-  /* ---------- 顶栏按钮 + 下拉 ---------- */
+  /* ---------- 顶栏按钮 + 下拉（与 404.html 同款） ---------- */
   function refreshTopButtons() {
     var lb = $("#langBtn");
     if (lb) {
       var cur = LANGS.filter(function (l) { return l.k === LANG; })[0] || LANGS[0];
       lb.textContent = cur.short;
       lb.setAttribute("title", tr("语言"));
+      lb.setAttribute("aria-label", tr("语言"));
     }
     var tb = $("#themeBtn");
     if (tb) {
-      var ico = tb.querySelector(".ico");
-      var ch = THEME_ICON[themePref()] || "◐";
-      if (ico) ico.textContent = ch; else tb.textContent = ch;
+      /* 读本次 applyTheme 已写进 DOM 的值，不要读 localStorage：
+         setTheme 是先渲染后写偏好，读存储会拿到上一档、图标不跟着变。 */
+      tb.textContent = THEME_ICON[document.documentElement.getAttribute("data-theme-pref")] || "◐";
       tb.setAttribute("title", tr("主题"));
+      tb.setAttribute("aria-label", tr("主题"));
     }
   }
-  function segHTML(items) {
-    return items.map(function (it) {
-      return '<button type="button" data-k="' + it.k + '" aria-pressed="' + (it.on ? "true" : "false") + '">' +
-        '<span aria-hidden="true" style="width:14px;display:inline-block">' + (it.icon || "") + '</span>' +
-        tr(it.label) + '</button>';
-    }).join("");
-  }
-  function refreshLangSeg() {
-    var box = $("#langSeg");
-    if (!box) return;
-    box.innerHTML = segHTML(LANGS.map(function (l) {
-      return { k: l.k, label: l.name, on: l.k === LANG };
-    }));
-    $$("button", box).forEach(function (b) {
-      b.addEventListener("click", function () { setLang(b.getAttribute("data-k"), true); closeMenus(); });
+  /* 菜单项改为静态 DOM（不再由 JS 拼 innerHTML）：只同步选中态与右侧 ✓ */
+  function syncMenus() {
+    $$("#langMenu [data-lang]").forEach(function (b) {
+      var on = b.getAttribute("data-lang") === LANG;
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+      b.setAttribute("aria-checked", on ? "true" : "false");
     });
-  }
-  function refreshThemeSeg() {
-    var box = $("#themeSeg");
-    if (!box) return;
-    box.innerHTML = segHTML(THEMES.map(function (k) {
-      return { k: k, label: THEME_KEY[k], icon: THEME_ICON[k], on: k === themePref() };
-    }));
-    $$("button", box).forEach(function (b) {
-      b.addEventListener("click", function () { setTheme(b.getAttribute("data-k")); closeMenus(); });
+    $$("#themeMenu [data-theme-mode]").forEach(function (b) {
+      var on = b.getAttribute("data-theme-mode") === themePref();
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+      b.setAttribute("aria-checked", on ? "true" : "false");
     });
   }
   function closeMenus() {
-    $$(".tmenu").forEach(function (m) { m.hidden = true; });
-    $$(".tbtn").forEach(function (b) { b.setAttribute("aria-expanded", "false"); });
+    $$(".menu").forEach(function (m) { m.hidden = true; });
+    $$(".icon-btn").forEach(function (b) { b.setAttribute("aria-expanded", "false"); });
   }
   function wireMenu(btnId, menuId) {
     var btn = document.getElementById(btnId), menu = document.getElementById(menuId);
@@ -1034,6 +1033,17 @@ npm run probe:consist  # 经典原版 ↔ 光谱观测版 口径对拍 16 采样
     });
     wireMenu("langBtn", "langMenu");
     wireMenu("themeBtn", "themeMenu");
+    /* 静态菜单项：选中后写偏好、刷新全页文案与按钮、收起下拉 */
+    $("#langMenu").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-lang]");
+      if (!b) return;
+      setLang(b.getAttribute("data-lang"), true); closeMenus();
+    });
+    $("#themeMenu").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-theme-mode]");
+      if (!b) return;
+      setTheme(b.getAttribute("data-theme-mode")); closeMenus();
+    });
     document.addEventListener("click", closeMenus);
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") closeMenus();
