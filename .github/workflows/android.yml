@@ -156,10 +156,18 @@ jobs:
         if: always()
         shell: bash
         run: |
-          if [ -f "$HOME/.android/debug.keystore" ]; then
-            mkdir -p keystore
-            cp "$HOME/.android/debug.keystore" keystore/debug.keystore
-            echo "keystore stashed"
+          mkdir -p keystore
+          KS=$(find "$HOME" -maxdepth 5 -name "debug.keystore" 2>/dev/null | head -1)
+          if [ -z "$KS" ]; then
+            KS=$(find /home/runner -maxdepth 6 -name "debug.keystore" 2>/dev/null | head -1)
+          fi
+          if [ -n "$KS" ]; then
+            cp "$KS" keystore/debug.keystore
+            echo "keystore stashed from $KS"
+          else
+            echo "keystore not found; listing HOME"
+            ls -la "$HOME" || true
+            ls -la "$HOME/.android" 2>/dev/null || true
           fi
 
       - name: Upload debug keystore
