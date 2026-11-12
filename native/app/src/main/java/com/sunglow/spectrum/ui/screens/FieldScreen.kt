@@ -46,7 +46,6 @@ import org.osmdroid.tileprovider.tilesource.OnlineTileSourceBase
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.util.MapTileIndex
 import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.Marker
 import com.sunglow.spectrum.core.ForecastResult
 import com.sunglow.spectrum.core.Period
 import com.sunglow.spectrum.core.fmtDur
@@ -58,6 +57,7 @@ import com.sunglow.spectrum.ui.HomeViewModel
 import com.sunglow.spectrum.ui.theme.SunglowColors
 import com.sunglow.spectrum.ui.theme.SunglowTheme
 import java.util.Locale
+import kotlin.math.log2
 import kotlin.math.roundToInt
 
 /*
@@ -477,7 +477,6 @@ private fun wgsToGcj(lat: Double, lon: Double): Pair<Double, Double> {
 
 /** 地图实例上的非状态字段：避免在地图回调里写 Compose 状态引起重组 */
 private class MapHolder {
-    var marker: Marker? = null
     var lastKey: String = ""
 }
 
@@ -517,22 +516,17 @@ private fun OsmMap(city: com.sunglow.spectrum.core.City, modifier: Modifier = Mo
                 MapView(ctx).apply {
                     setBackgroundColor(android.graphics.Color.parseColor("#070B14"))
                     setTileSource(sources[basemap].second)
-                    setTilesScaledToDpi(true)
+                    /* 不把 256px 瓦片按屏幕密度放大，否则整图发糊；
+                       按 log2(density) 抬高级别，视野范围与放大时一致但更清晰 */
+                    setTilesScaledToDpi(false)
                     setMultiTouchControls(true)
                     setBuiltInZoomControls(false)
                     setUseDataConnection(true)
                     tag = basemap
-                    controller.setZoom(6.5)
+                    val density = ctx.resources.displayMetrics.density
+                    controller.setZoom(6.5 + log2(density.toDouble()))
                     val p = wgsToGcj(city.lat, city.lon)
                     controller.setCenter(GeoPoint(p.first, p.second))
-
-                    val m = Marker(this).apply {
-                        position = GeoPoint(p.first, p.second)
-                        title = city.name
-                        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                    }
-                    overlays.add(m)
-                    holder.marker = m
                     holder.lastKey = basemap.toString() + "|" + city.name
 
                     /* 地图在竖向滚动页里：按下时先夺走父容器的滚动权，否则拖不动 */
@@ -556,12 +550,7 @@ private fun OsmMap(city: com.sunglow.spectrum.core.City, modifier: Modifier = Mo
                 if (holder.lastKey != key) {
                     holder.lastKey = key
                     val p = wgsToGcj(city.lat, city.lon)
-                    val gp = GeoPoint(p.first, p.second)
-                    holder.marker?.let {
-                        it.position = gp
-                        it.title = city.name
-                    }
-                    mv.controller.setCenter(gp)
+                    mv.controller.setCenter(GeoPoint(p.first, p.second))
                     mv.invalidate()
                 }
             },
