@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 浅色主题（晨光实验室）：窗口底色，Compose 挂载前可见 -->
+    <color name="window_background">#f5f7fb</color>
+    <color name="brand_base">#070b14</color>
+    <color name="icon_background">#070b14</color>
+</resources>

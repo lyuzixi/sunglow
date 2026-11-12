@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">霞光档案</string>
+    <string name="app_name_full">霞光档案 · 光谱观测版</string>
+    <string name="brand_mark">SUNGLOW</string>
+    <string name="shell_badge">原生版 · 建设中</string>
+    <string name="shell_title">算法内核已就位</string>
+    <string name="shell_body">这一版把朝霞与晚霞的物理模型搬进了原生代码：太阳位置、光路消光、云幕判据与评分全部用 Kotlin 重写，并用基准数据逐项核对。界面、取数与观测场将按阶段接入。</string>
+    <string name="shell_section_core">已完成</string>
+    <string name="shell_section_next">下一步</string>
+    <string name="core_math">数学与球面几何</string>
+    <string name="core_astro">太阳位置与曙光时刻</string>
+    <string name="core_physics">光路消光与云幕模型</string>
+    <string name="core_scoring">统计评分与光追评分</string>
+    <string name="next_api">气象取数（Open-Meteo）</string>
+    <string name="next_city">城市库与定位</string>
+    <string name="next_ui">结论卡与日期条</string>
+</resources>

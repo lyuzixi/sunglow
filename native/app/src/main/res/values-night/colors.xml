@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 深色主题（大气光谱观测站）：窗口底色与品牌基底一致，避免启动白闪 -->
+    <color name="window_background">#070b14</color>
+</resources>
