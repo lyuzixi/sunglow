@@ -90,6 +90,16 @@ class CityRepository(context: Context) {
         return best?.let { it to bd }
     }
 
+    /** 周边点位：按直线距离排序，排除自身 */
+    fun nearby(lat: Double, lon: Double, limit: Int = 8): List<Pair<City, Double>> =
+        cities
+            .asSequence()
+            .map { it to haversineKm(lat, lon, it.lat, it.lon) }
+            .filter { it.second > 0.5 }
+            .sortedBy { it.second }
+            .take(limit)
+            .toList()
+
     fun recent(): List<City> {
         val raw = prefs.getString(KEY_RECENT, "").orEmpty()
         if (raw.isBlank()) return emptyList()

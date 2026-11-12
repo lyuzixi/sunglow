@@ -3,6 +3,7 @@ package com.sunglow.spectrum.ui.screens
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -40,7 +42,9 @@ import com.sunglow.spectrum.core.fmtDur
 import com.sunglow.spectrum.core.isNum
 import com.sunglow.spectrum.core.uAlt
 import com.sunglow.spectrum.core.uDist
+import com.sunglow.spectrum.ui.HomeUiState
 import com.sunglow.spectrum.ui.HomeViewModel
+import com.sunglow.spectrum.ui.theme.SunglowColors
 import com.sunglow.spectrum.ui.theme.SunglowTheme
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -135,6 +139,39 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
                     lineHeight = 18.sp
                 )
             }
+
+            Spacer(Modifier.height(12.dp))
+            Text(
+                text = "多点对比",
+                style = MaterialTheme.typography.titleSmall,
+                color = colors.ink
+            )
+            Spacer(Modifier.height(8.dp))
+            ComparePanel(state, onClear = vm::clearCompare)
+
+            Spacer(Modifier.height(12.dp))
+            Text(
+                text = "周边点位",
+                style = MaterialTheme.typography.titleSmall,
+                color = colors.ink
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = "点选城市加入对比，最多 4 个",
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.faint
+            )
+            Spacer(Modifier.height(8.dp))
+            NearbyPanel(state, onToggle = vm::toggleCompare, nearby = vm.nearby(8))
+
+            Spacer(Modifier.height(12.dp))
+            Text(
+                text = "实况校准",
+                style = MaterialTheme.typography.titleSmall,
+                color = colors.ink
+            )
+            Spacer(Modifier.height(8.dp))
+            CalibPanel(state, onRecord = vm::recordSighting)
 
             Spacer(Modifier.height(12.dp))
             Text(
@@ -358,6 +395,235 @@ private fun RayProfile(result: ForecastResult) {
             )
         }
     }
+}
+
+/* ---------- 多点对比 ---------- */
+
+@Composable
+private fun ComparePanel(state: HomeUiState, onClear: () -> Unit) {
+    val colors = SunglowTheme.colors
+    Panel {
+        if (state.compareCities.isEmpty()) {
+            Text(
+                text = "还没有选点。下方「周边点位」里点城市即可加入对比。",
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.faint,
+                lineHeight = 16.sp
+            )
+            return@Panel
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = "已选 ${state.compareCities.size}/4",
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.faint
+            )
+            Spacer(Modifier.weight(1f))
+            Text(
+                text = if (state.compareLoading) "计算中…" else "清空",
+                style = MaterialTheme.typography.labelSmall,
+                color = if (state.compareLoading) colors.faint else colors.accentCool,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .clickable(enabled = !state.compareLoading, onClick = onClear)
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+            )
+        }
+        Spacer(Modifier.height(6.dp))
+        state.compareRows.forEach { row ->
+            Column(Modifier.padding(vertical = 4.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = row.city.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.ink,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = row.p.roundToInt().toString() + "%",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.accent,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Q " + row.q.roundToInt(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = colors.accentAlt
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = gradeLabel(row.grade),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = bandColor(row.grade, colors)
+                    )
+                }
+                Spacer(Modifier.height(3.dp))
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(3.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(colors.rule)
+                ) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth((row.p / 100.0).toFloat().coerceIn(0f, 1f))
+                            .height(3.dp)
+                            .background(Brush.horizontalGradient(colors.spectrum))
+                    )
+                }
+            }
+        }
+        if (state.compareError != null) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = state.compareError,
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.bad
+            )
+        }
+        if (state.compareRows.size < state.compareCities.size && !state.compareLoading) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "部分点位没有取到数据（可能超出预报范围）",
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.faint
+            )
+        }
+    }
+}
+
+/* ---------- 周边点位 ---------- */
+
+@Composable
+private fun NearbyPanel(
+    state: HomeUiState,
+    onToggle: (com.sunglow.spectrum.core.City) -> Unit,
+    nearby: List<Pair<com.sunglow.spectrum.core.City, Double>>
+) {
+    val colors = SunglowTheme.colors
+    val selected = state.compareCities.map { it.name }.toSet()
+    Panel {
+        nearby.forEachIndexed { i, (city, km) ->
+            if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(colors.rule))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onToggle(city) }
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = city.name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (selected.contains(city.name)) colors.accentCool else colors.ink,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = km.roundToInt().toString() + " km",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.faint
+                )
+                Spacer(Modifier.width(10.dp))
+                Box(
+                    modifier = Modifier
+                        .size(16.dp)
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(
+                            if (selected.contains(city.name)) colors.accentCool.copy(alpha = 0.22f)
+                            else Color.Transparent
+                        )
+                        .border(
+                            1.dp,
+                            if (selected.contains(city.name)) colors.accentCool else colors.ruleStrong,
+                            RoundedCornerShape(5.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (selected.contains(city.name)) {
+                        Text(
+                            text = "✓",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            color = colors.accentCool
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/* ---------- 实况校准 ---------- */
+
+@Composable
+private fun CalibPanel(state: HomeUiState, onRecord: (Boolean) -> Unit) {
+    val colors = SunglowTheme.colors
+    val rec = state.sightings[state.city.name] ?: (0 to 0)
+    Panel {
+        Text(
+            text = state.city.name + " · 已记录 " + rec.second + " 次，看到 " + rec.first + " 次",
+            style = MaterialTheme.typography.bodySmall,
+            color = colors.muted
+        )
+        if (rec.second > 0) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "本地命中率 " + (rec.first * 100 / rec.second) + "%（只统计你自己的记录）",
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.faint
+            )
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(colors.good.copy(alpha = 0.14f))
+                    .border(1.dp, colors.good.copy(alpha = 0.45f), RoundedCornerShape(999.dp))
+                    .clickable { onRecord(true) }
+                    .padding(vertical = 9.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "这次看到了",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.good
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(colors.glass)
+                    .border(1.dp, colors.ruleStrong, RoundedCornerShape(999.dp))
+                    .clickable { onRecord(false) }
+                    .padding(vertical = 9.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "没看到",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.muted
+                )
+            }
+        }
+    }
+}
+
+private fun gradeLabel(grade: String): String = when (grade) {
+    "优" -> "优秀"
+    "良" -> "良好"
+    "一般" -> "一般"
+    else -> "较差"
+}
+
+private fun bandColor(grade: String, colors: SunglowColors): Color = when (grade) {
+    "优" -> Color(0xFF9FE6BD)
+    "良" -> Color(0xFF9AC765)
+    "一般" -> colors.mid
+    else -> colors.bad
 }
 
 /* ---------- 小组件 ---------- */

@@ -34,6 +34,14 @@ data class TrendCell(val p: Double, val q: Double, val grade: String)
 /** 趋势里的一天：朝 + 晚 */
 data class TrendRow(val date: String, val am: TrendCell?, val pm: TrendCell?)
 
+/** 多点对比的一行 */
+data class CompareCell(
+    val city: City,
+    val p: Double,
+    val q: Double,
+    val grade: String
+)
+
 data class HomeUiState(
     val city: City = DEFAULT_CITY,
     val dates: List<String> = emptyList(),
@@ -49,6 +57,13 @@ data class HomeUiState(
     val trendDone: Int = 0,
     val trendTotal: Int = 0,
     val trendError: String? = null,
+    /** 多点对比 */
+    val compareCities: List<City> = emptyList(),
+    val compareRows: List<CompareCell> = emptyList(),
+    val compareLoading: Boolean = false,
+    val compareError: String? = null,
+    /** 实况校准：城市名 → (看到次数, 记录次数) */
+    val sightings: Map<String, Pair<Int, Int>> = emptyMap(),
     /** 0 跟随系统 / 1 深色 / 2 浅色 */
     val themeMode: Int = 0
 )
@@ -69,10 +84,13 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     private val _state = MutableStateFlow(
         HomeUiState(
             city = startCity,
-            themeMode = prefs.getInt("theme_mode", 0)
+            themeMode = prefs.getInt("theme_mode", 0),
+            sightings = parseSightings(prefs.getString("sightings", "").orEmpty())
         )
     )
     val state: StateFlow<HomeUiState> = _state.asStateFlow()
+
+    private var compareJob: Job? = null
 
     private var job: Job? = null
     private var trendJob: Job? = null
@@ -166,6 +184,85 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         prefs.edit().putInt("theme_mode", mode).apply()
         _state.update { it.copy(themeMode = mode) }
     }
+
+    /* ---------- 多点对比 ---------- */
+
+    fun nearby(limit: Int = 8): List<Pair<City, Double>> {
+        val c = _state.value.city
+        return repo.nearby(c.lat, c.lon, limit)
+    }
+
+    fun toggleCompare(city: City) {
+        val list = _state.value.compareCities.toMutableList()
+        if (list.any { it.name == city.name }) {
+            list.removeAll { it.name == city.name }
+        } else if (list.size < 4) {
+            list.add(city)
+        }
+        _state.update { it.copy(compareCities = list) }
+        if (list.isEmpty()) {
+            _state.update { it.copy(compareRows = emptyList(), compareError = null) }
+        } else {
+            loadCompare()
+        }
+    }
+
+    fun loadCompare() {        val s = _state.value
+        if (s.compareCities.isEmpty()) return
+        compareJob?.cancel()
+        compareJob = viewModelScope.launch {
+            _state.update { it.copy(compareLoading = true, compareError = null) }
+            val rows = mutableListOf<CompareCell>()
+            try {
+                for (c in s.compareCities) {
+                    val out = engine.run(c, s.dateStr, s.period, false)
+                    if (out is ForecastOutcome.Success) {
+                        val r = out.result
+                        rows += CompareCell(c, r.p, r.q, r.grade)
+                    }
+                }
+                _state.update { it.copy(compareRows = rows.toList(), compareLoading = false) }
+            } catch (e: Exception) {
+                _state.update {
+                    it.copy(compareLoading = false, compareError = "对比取数失败，请重试")
+                }
+            }
+        }
+    }
+
+    fun clearCompare() {
+        compareJob?.cancel()
+        _state.update {
+            it.copy(compareCities = emptyList(), compareRows = emptyList(), compareError = null)
+        }
+    }
+
+    /* ---------- 实况校准 ---------- */
+
+    fun recordSighting(hit: Boolean) {
+        val name = _state.value.city.name
+        val cur = _state.value.sightings[name] ?: (0 to 0)
+        val next = (cur.first + if (hit) 1 else 0) to (cur.second + 1)
+        val map = _state.value.sightings.toMutableMap()
+        map[name] = next
+        prefs.edit().putString("sightings", encodeSightings(map)).apply()
+        _state.update { it.copy(sightings = map) }
+    }
+
+    private fun parseSightings(raw: String): Map<String, Pair<Int, Int>> {
+        if (raw.isBlank()) return emptyMap()
+        return raw.split(';').mapNotNull { seg ->
+            val p = seg.split('|')
+            if (p.size == 3) {
+                val h = p[1].toIntOrNull()
+                val t = p[2].toIntOrNull()
+                if (h != null && t != null) p[0] to (h to t) else null
+            } else null
+        }.toMap()
+    }
+
+    private fun encodeSightings(map: Map<String, Pair<Int, Int>>): String =
+        map.entries.joinToString(";") { "${it.key}|${it.value.first}|${it.value.second}" }
 
     /* ---------- 城市检索 / 定位 ---------- */
 
