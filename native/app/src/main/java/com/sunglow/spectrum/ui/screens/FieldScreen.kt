@@ -43,7 +43,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.OnlineTileSourceBase
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.util.MapTileIndex
 import org.osmdroid.views.MapView
@@ -215,7 +214,7 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
             Panel {
                 Text(
                     text = "剖面沿日出/日落方位取 17 个等距采样点，逐点读取云量、云底与气溶胶。" +
-                        "地图底图为 Esri / OpenStreetMap 公开瓦片，无需密钥，可拖拽与双指缩放。",
+                        "地图底图为高德公开瓦片，无需密钥，可拖拽与双指缩放；中心点已做 GCJ-02 纠偏。",
                     style = MaterialTheme.typography.labelSmall,
                     color = colors.faint,
                     lineHeight = 16.sp
@@ -431,25 +430,55 @@ private fun RayProfile(result: ForecastResult) {
 
 /* ---------- 地图（osmdroid 原生 View，无需任何 key） ---------- */
 
-/** Esri 公开瓦片：路径是 z/y/x，与 osmdroid 默认的 z/x/y 不同，单独实现 */
-private class EsriTileSource(
+/**
+ * 高德公开栅格瓦片。瓦片本身是 GCJ-02 网格，中心点与标记要做 WGS-84 → GCJ-02 纠偏，
+ * 否则放大后会有几百米偏移。无需 key，国内网络可直连。
+ */
+private class AmapTileSource(
     name: String,
-    url: String,
+    base: String,
     maxZoom: Int
-) : OnlineTileSourceBase(
-    name, 0, maxZoom, 256, ".png", arrayOf(url), "© Esri"
-) {
+) : OnlineTileSourceBase(name, 3, maxZoom, 256, "", arrayOf(base), "© 高德地图") {
     override fun getTileURLString(pMapTileIndex: Long): String =
         baseUrl +
-            MapTileIndex.getZoom(pMapTileIndex) + "/" +
-            MapTileIndex.getY(pMapTileIndex) + "/" +
-            MapTileIndex.getX(pMapTileIndex)
+            "x=" + MapTileIndex.getX(pMapTileIndex) +
+            "&y=" + MapTileIndex.getY(pMapTileIndex) +
+            "&z=" + MapTileIndex.getZoom(pMapTileIndex)
+}
+
+/** WGS-84 → GCJ-02，仅用于高德底图上的定位显示 */
+private fun wgsToGcj(lat: Double, lon: Double): Pair<Double, Double> {
+    if (lon < 72.0 || lon > 138.0 || lat < 0.0 || lat > 56.0) return lat to lon
+    val a = 6378245.0
+    val ee = 0.00669342162296594323
+    fun tLat(x: Double, y: Double): Double {
+        var r = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x))
+        r += (20.0 * Math.sin(6.0 * x * Math.PI) + 20.0 * Math.sin(2.0 * x * Math.PI)) * 2.0 / 3.0
+        r += (20.0 * Math.sin(y * Math.PI) + 40.0 * Math.sin(y / 3.0 * Math.PI)) * 2.0 / 3.0
+        r += (160.0 * Math.sin(y / 12.0 * Math.PI) + 320.0 * Math.sin(y * Math.PI / 30.0)) * 2.0 / 3.0
+        return r
+    }
+    fun tLon(x: Double, y: Double): Double {
+        var r = 300.0 + x + 2.0 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x))
+        r += (20.0 * Math.sin(6.0 * x * Math.PI) + 20.0 * Math.sin(2.0 * x * Math.PI)) * 2.0 / 3.0
+        r += (20.0 * Math.sin(x * Math.PI) + 40.0 * Math.sin(x / 3.0 * Math.PI)) * 2.0 / 3.0
+        r += (150.0 * Math.sin(x / 12.0 * Math.PI) + 300.0 * Math.sin(x / 30.0 * Math.PI)) * 2.0 / 3.0
+        return r
+    }
+    val dLat = tLat(lon - 105.0, lat - 35.0)
+    val dLon = tLon(lon - 105.0, lat - 35.0)
+    val radLat = lat / 180.0 * Math.PI
+    val magic = 1 - ee * Math.sin(radLat) * Math.sin(radLat)
+    val sqrtMagic = Math.sqrt(magic)
+    val la = lat + (dLat * 180.0) / ((a * (1 - ee)) / (magic * sqrtMagic) * Math.PI)
+    val lo = lon + (dLon * 180.0) / (a / sqrtMagic * Math.cos(radLat) * Math.PI)
+    return la to lo
 }
 
 /** 地图实例上的非状态字段：避免在地图回调里写 Compose 状态引起重组 */
 private class MapHolder {
     var marker: Marker? = null
-    var lastCity: String = ""
+    var lastKey: String = ""
 }
 
 @Composable
@@ -457,17 +486,16 @@ private fun OsmMap(city: com.sunglow.spectrum.core.City, modifier: Modifier = Mo
     val colors = SunglowTheme.colors
     val sources = remember {
         listOf(
-            "暗色" to EsriTileSource(
-                "EsriDarkGray",
-                "https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/",
-                16
+            "街道" to AmapTileSource(
+                "AmapStreet",
+                "https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&",
+                18
             ),
-            "影像" to EsriTileSource(
-                "EsriImagery",
-                "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/",
-                19
-            ),
-            "路线" to TileSourceFactory.MAPNIK
+            "卫星" to AmapTileSource(
+                "AmapSat",
+                "https://webst01.is.autonavi.com/appmaptile?style=6&",
+                18
+            )
         )
     }
     var basemap by remember { mutableStateOf(0) }
@@ -495,16 +523,17 @@ private fun OsmMap(city: com.sunglow.spectrum.core.City, modifier: Modifier = Mo
                     setUseDataConnection(true)
                     tag = basemap
                     controller.setZoom(6.5)
-                    controller.setCenter(GeoPoint(city.lat, city.lon))
+                    val p = wgsToGcj(city.lat, city.lon)
+                    controller.setCenter(GeoPoint(p.first, p.second))
 
                     val m = Marker(this).apply {
-                        position = GeoPoint(city.lat, city.lon)
+                        position = GeoPoint(p.first, p.second)
                         title = city.name
                         setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                     }
                     overlays.add(m)
                     holder.marker = m
-                    holder.lastCity = city.name
+                    holder.lastKey = basemap.toString() + "|" + city.name
 
                     /* 地图在竖向滚动页里：按下时先夺走父容器的滚动权，否则拖不动 */
                     setOnTouchListener { v, e ->
@@ -523,9 +552,11 @@ private fun OsmMap(city: com.sunglow.spectrum.core.City, modifier: Modifier = Mo
                     mv.tag = basemap
                     mv.setTileSource(sources[basemap].second)
                 }
-                if (holder.lastCity != city.name) {
-                    holder.lastCity = city.name
-                    val gp = GeoPoint(city.lat, city.lon)
+                val key = basemap.toString() + "|" + city.name
+                if (holder.lastKey != key) {
+                    holder.lastKey = key
+                    val p = wgsToGcj(city.lat, city.lon)
+                    val gp = GeoPoint(p.first, p.second)
                     holder.marker?.let {
                         it.position = gp
                         it.title = city.name
@@ -537,7 +568,7 @@ private fun OsmMap(city: com.sunglow.spectrum.core.City, modifier: Modifier = Mo
             modifier = Modifier.fillMaxSize()
         )
 
-        /* 底图切换：某一类瓦片在本地网络取不到图时还有退路 */
+        /* 底图切换：街道取不到图时可以换卫星 */
         Row(
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -561,7 +592,7 @@ private fun OsmMap(city: com.sunglow.spectrum.core.City, modifier: Modifier = Mo
         }
 
         Text(
-            text = "© Esri · OpenStreetMap",
+            text = "© 高德地图",
             style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
             color = colors.faint,
             modifier = Modifier
