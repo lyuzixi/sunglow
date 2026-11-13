@@ -14,6 +14,19 @@ import java.util.Locale
 const val SHARE_SITE = "https://sunglow.cloud/"
 
 fun shareUrlOf(r: ForecastResult): String {
+    /* 优先带 pack：网页打开即还原这份结论，不烧额度；超长/编码失败回退精简链接 */
+    packShareUrlOf(r)?.let { return it }
+    return legacyShareUrlOf(r)
+}
+
+/** 二维码专用：pack 超过二维码容量时退回精简链接，避免生成失败 */
+fun qrShareUrlOf(r: ForecastResult): String {
+    val pack = packShareUrlOf(r)
+    if (pack != null && pack.length <= 2600) return pack
+    return legacyShareUrlOf(r)
+}
+
+private fun legacyShareUrlOf(r: ForecastResult): String {
     val name = URLEncoder.encode(r.city.name, "UTF-8")
     val lat = String.format(Locale.US, "%.4f", r.city.lat)
     val lon = String.format(Locale.US, "%.4f", r.city.lon)

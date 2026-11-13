@@ -559,7 +559,7 @@ object ShareCard {
         val qx = w - 72f - qrSize
         val qy = 1660f
         fillRound(qx - 12f, qy - 12f, qrSize + 24f, qrSize + 24f, 18f, Color.WHITE)
-        val qr2 = qr(com.sunglow.spectrum.core.shareUrlOf(r), qrSize, Color.parseColor("#070B14"), Color.WHITE)
+        val qr2 = qr(com.sunglow.spectrum.core.qrShareUrlOf(r), qrSize, Color.parseColor("#070B14"), Color.WHITE)
         if (qr2 != null) {
             cv.drawBitmap(qr2, qx, qy, null)
             qr2.recycle()
