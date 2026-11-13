@@ -1967,7 +1967,10 @@ private fun SettingsSheet(
         SettingsAction(stringResource(R.string.guide_title), onOpenGuide)
         SettingsAction(stringResource(R.string.settings_about), onOpenAbout)
         SettingsAction(stringResource(R.string.settings_feedback), onFeedback)
-        SettingsAction(stringResource(R.string.settings_clear_cache), onClearCache)
+        SettingsAction(stringResource(R.string.settings_clear_cache)) {
+            onClearCache()
+            stats = cacheStats()
+        }
 
         Spacer(Modifier.height(14.dp))
         Text(
