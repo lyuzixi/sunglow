@@ -442,7 +442,7 @@ class HomeViewModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     /** 城市搜索：复用 CityRepository 的拼音 / 繁简 / 英文别名索引 */
-    fun searchCities(q: String, limit: Int = 8): List<City> = repo.search(q, limit)
+    fun searchCities(q: String): List<City> = repo.search(q, 8)
 
     /** 经纬度自定义点：名称用坐标串，避免引入未本地化的“自定义”字样 */
     fun addCustomPoint(lat: Double, lon: Double): Boolean {
