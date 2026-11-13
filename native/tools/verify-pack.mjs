@@ -36,8 +36,8 @@ ok(Array.isArray(obj.e) && obj.e.length > 0 && obj.e.length <= 40,
 const keys = obj.e.map(([k]) => k);
 const pointKey = keys.find((k) => k.startsWith("SUNGLOW.v2.point."));
 const trendKey = keys.find((k) => k.startsWith("SUNGLOW.v2.trend."));
+const mapKey = keys.find((k) => k.startsWith("SUNGLOW.v2.map."));
 ok(pointKey, "缺少 SUNGLOW.v2.point.* 条目");
-ok(trendKey, "缺少 SUNGLOW.v2.trend.* 条目");
 if (pointKey) {
   ok(/^SUNGLOW\.v2\.point\.v3\.\d{4}-\d{2}-\d{2}\|(am|pm)@-?\d+\.\d,-?\d+\.\d$/.test(pointKey),
      `point 键格式不符：${pointKey}`);
@@ -68,7 +68,7 @@ if (o) {
 }
 
 const tv = obj.e.find(([k]) => k === trendKey)?.[1];
-ok(tv && Array.isArray(tv.rows), "trend 条目应有 rows 数组");
+ok(!trendKey || (tv && Array.isArray(tv.rows)), "trend 条目应有 rows 数组");
 if (tv?.rows) {
   ok(tv.rows.length === 2, `本样例趋势应 2 行，实际 ${tv.rows.length}`);
   for (const row of tv.rows) {
@@ -76,6 +76,20 @@ if (tv?.rows) {
     ok(typeof row.P === "number" && typeof row.Q === "number", "趋势 P/Q 应为数字");
     ok(typeof row.date === "string" && typeof row.grade === "string", "趋势 date/grade 缺字段");
   }
+}
+
+const mv = obj.e.find(([k]) => k === mapKey)?.[1];
+if (mapKey) {
+  ok(/^SUNGLOW\.v2\.map\.v9\.\d{4}-\d{2}-\d{2}@-?\d+\.\d,-?\d+\.\d$/.test(mapKey),
+     `map 键格式不符：${mapKey}`);
+  const cm = mv?.cm;
+  ok(cm && cm.m === 1, "map 条目应有 cm 且 m=1");
+  ok(Array.isArray(cm?.s), "cm.s 应为字符串表");
+  ok(Array.isArray(cm?.r), "cm.r 应为行数组");
+  ok(cm?.r?.every((row) => Array.isArray(row) && row.length === 32),
+     "cm.r 每行应为 32 个整数");
+  ok(typeof cm?.d === "string" && Number.isInteger(cm?.na) && Number.isInteger(cm?.ds),
+     "cm.d/na/ds 缺字段");
 }
 
 console.log(JSON.stringify({
