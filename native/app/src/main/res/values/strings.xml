@@ -79,6 +79,8 @@
     <string name="compose_mod_ray_curve">亮度·彩度曲线</string>
     <string name="compose_mod_qr">二维码</string>
     <string name="compose_unavailable">无数据</string>
+    <string name="compose_load">加载</string>
+    <string name="compose_loading">加载中</string>
     <string name="compose_preview">结构预览</string>
     <string name="compose_preview_hint">示意版式，非最终像素</string>
     <string name="compose_note">像素级渲染与导出在 R3-2 接入；本批的选择与顺序仅保留在本次会话。</string>

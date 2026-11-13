@@ -75,6 +75,8 @@
     <string name="compose_mod_ray_curve">亮度·彩度曲線</string>
     <string name="compose_mod_qr">二維碼</string>
     <string name="compose_unavailable">無資料</string>
+    <string name="compose_load">載入</string>
+    <string name="compose_loading">載入中</string>
     <string name="compose_preview">結構預覽</string>
     <string name="compose_preview_hint">示意版式，非最終像素</string>
     <string name="compose_note">像素級算圖與匯出在 R3-2 接入；本批選擇與順序僅保留於本次工作階段。</string>

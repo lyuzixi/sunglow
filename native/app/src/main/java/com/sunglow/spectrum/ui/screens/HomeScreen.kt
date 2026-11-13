@@ -1500,7 +1500,7 @@ private fun ShareSheet(
         Spacer(Modifier.height(12.dp))
 
         if (composeMode) {
-            ComposePanel(result = result, caption = caption, state = state)
+            ComposePanel(result = result, caption = caption, state = state, onLoadHeat = onLoadHeat)
         } else {
         Spacer(Modifier.height(14.dp))
 
@@ -1715,7 +1715,8 @@ private val COMPOSE_DEFAULT_ON = setOf("sky", "qr")
 private fun ComposePanel(
     result: ForecastResult,
     caption: String,
-    state: com.sunglow.spectrum.ui.HomeUiState
+    state: com.sunglow.spectrum.ui.HomeUiState,
+    onLoadHeat: () -> Unit
 ) {
     val colors = SunglowTheme.colors
     var on by remember(result) { mutableStateOf(COMPOSE_DEFAULT_ON) }
@@ -1823,11 +1824,26 @@ private fun ComposePanel(
                     modifier = Modifier.weight(1f)
                 )
                 if (!avail) {
-                    Text(
-                        text = stringResource(R.string.compose_unavailable),
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
-                        color = colors.faint
-                    )
+                    if (mod.id == "map" && !state.heatLoading) {
+                        Text(
+                            text = stringResource(R.string.compose_load),
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                            color = colors.accentCool,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .clickable { onLoadHeat() }
+                                .padding(horizontal = 6.dp, vertical = 3.dp)
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(
+                                if (mod.id == "map" && state.heatLoading) R.string.compose_loading
+                                else R.string.compose_unavailable
+                            ),
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                            color = colors.faint
+                        )
+                    }
                 } else if (pos >= 0) {
                     Text(
                         text = (pos + 1).toString(),

@@ -75,6 +75,8 @@
     <string name="compose_mod_ray_curve">Brightness·chroma</string>
     <string name="compose_mod_qr">QR code</string>
     <string name="compose_unavailable">No data</string>
+    <string name="compose_load">Load</string>
+    <string name="compose_loading">Loading</string>
     <string name="compose_preview">Structure preview</string>
     <string name="compose_preview_hint">Schematic layout, not final pixels</string>
     <string name="compose_note">Pixel rendering and export land in R3-2; choices and order last for this session only.</string>
