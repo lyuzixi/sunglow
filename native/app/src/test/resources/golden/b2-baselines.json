@@ -1,6 +1,6 @@
 {
- "version": 1,
- "generatedAt": "2026-11-13T07:00:21.255Z",
+ "version": 2,
+ "generatedAt": "2026-11-13T07:19:45.855Z",
  "source": "v2/src/core (TypeScript)",
  "note": "B2 基准：常量与纯函数样本。Kotlin 断言随各功能包接入，见 docs/android-b2-workcards.md。",
  "hashes": {
@@ -104,9 +104,9 @@
  "samples": {
   "snap": [
    {
-    "raw": "MXx0b2ZpNGx8MjAyNi0xMS0xM3xwbXwzOS45MDQyfDExNi40MDc0fOWMl-S6rOW4gnzljJfkuqzluIJ8NzJ8Njh8MXwxLjB8MHw2fDQ4MHwxfDF8MS4zMHwxMjAuMHwyNXx2aXN-MjR-ODIhYmFzZX4xLjN-NzAhYW9kfjAuMzF-NjAhY292ZXJ-NjB-NTV8NDgw",
+    "raw": "MXx0b2ZqMHl8MjAyNi0xMS0xM3xwbXwzOS45MDQyfDExNi40MDc0fOWMl-S6rOW4gnzljJfkuqzluIJ8NzJ8Njh8MXwxLjB8MHw2fDQ4MHwxfDF8MS4zMHwxMjAuMHwyNXx2aXN-MjR-ODIhYmFzZX4xLjN-NzAhYW9kfjAuMzF-NjAhY292ZXJ-NjB-NTV8NDgw",
     "decoded": {
-     "gen": 1794553221000,
+     "gen": 1794554386000,
      "date": "2026-11-13",
      "period": "pm",
      "lat": 39.9042,
@@ -273,6 +273,144 @@
     "lon": 113.2644,
     "key": "SUNGLOW.v2.map.v9.2026-11-14@23.1,113.3"
    }
+  ],
+  "field": [
+   {
+    "lat": 30,
+    "lon": 110,
+    "v": 20,
+    "probe": {
+     "v": 20,
+     "occ": 0,
+     "gap": 0,
+     "near": 0,
+     "conf": 1
+    }
+   },
+   {
+    "lat": 30.3,
+    "lon": 110.3,
+    "v": 47.976452070509886,
+    "probe": {
+     "v": 47.976452070509886,
+     "occ": 10.521002387828954,
+     "gap": 8.403479788349179,
+     "near": 43.77666765144672,
+     "conf": 0.6697249274099256
+    }
+   },
+   {
+    "lat": 31.2,
+    "lon": 111.2,
+    "v": 57,
+    "probe": {
+     "v": 57,
+     "occ": 40,
+     "gap": 32,
+     "near": 0,
+     "conf": 0.7257142857142858
+    }
+   },
+   {
+    "lat": 30.9,
+    "lon": 110.6,
+    "v": 56.99223600106577,
+    "probe": {
+     "v": 56.99223600106577,
+     "occ": 26.49443929806023,
+     "gap": 21.495488487105472,
+     "near": 33.172199999999684,
+     "conf": 0.6408285272533841
+    }
+   },
+   {
+    "lat": 31.8,
+    "lon": 112,
+    "v": 41.90511353208842,
+    "probe": {
+     "v": 41.90511353208842,
+     "occ": 60.93210011676173,
+     "gap": 9.143543189830783,
+     "near": 19.0438298882138,
+     "conf": 0.7716267726585933
+    }
+   },
+   {
+    "lat": 29.4,
+    "lon": 109.2,
+    "v": 32.432170311319,
+    "probe": {
+     "v": 32.432170311319,
+     "occ": 4.7242052141136766,
+     "gap": 3.754462677529909,
+     "near": 101.01613099074531,
+     "conf": 0.2678188913354579
+    }
+   },
+   {
+    "lat": 33,
+    "lon": 113.4,
+    "v": 79.5551836618805,
+    "probe": {
+     "v": 79.5551836618805,
+     "occ": 74.45560156725301,
+     "gap": 19.828011449336778,
+     "near": 116.05285792103693,
+     "conf": 0.2
+    }
+   },
+   {
+    "lat": 30.15,
+    "lon": 110.15,
+    "v": 27.96179218282624,
+    "probe": {
+     "v": 27.96179218282624,
+     "occ": 3.0020005964740655,
+     "gap": 2.3756209530417975,
+     "near": 21.88833382572364,
+     "conf": 0.8296375346882131
+    }
+   }
+  ],
+  "ramp": [
+   {
+    "v": 0,
+    "hex": "#101a33"
+   },
+   {
+    "v": 7,
+    "hex": "#1d1e42"
+   },
+   {
+    "v": 22,
+    "hex": "#562860"
+   },
+   {
+    "v": 50,
+    "hex": "#e8545e"
+   },
+   {
+    "v": 72,
+    "hex": "#ff9e41"
+   },
+   {
+    "v": 90,
+    "hex": "#f9e297"
+   },
+   {
+    "v": 100,
+    "hex": "#eafcff"
+   }
+  ],
+  "rampAnchors": [
+   "#101a33",
+   "#2b2352",
+   "#7a2d6b",
+   "#d13d6e",
+   "#ff6a4d",
+   "#ff9c3f",
+   "#ffd76a",
+   "#eafcff"
   ]
  },
  "unavailable": []

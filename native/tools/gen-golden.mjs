@@ -312,10 +312,10 @@ const golden = deepRound({
     bands: bandCases,
     models: modelCases
   },
-  /* B2 各功能包实现时接入断言，接入后从数组移除对应名字。
-     N1 已接入：snapshot（SnapshotCodecTest）、calib（CalibGoldenTest）。
-     N2 已接入：trend（TrendGoldenTest：常量 / 缓存键 / 最佳窗口排序）。 */
-  pendingGroups: ["field"],
+  /* 所有分组均已接入 Kotlin 断言，数组清空即「B2 口径门禁全部立起来了」：
+     N1 snapshot / calib，N2 trend，N3 field（FieldGoldenTest）。
+     后续新分组从这里重新登记，避免「有基准没断言」的假通过。 */
+  pendingGroups: [],
   astro: astroCases,
   sunEvents: eventCases,
   eventAzimuth: azimuthCases,

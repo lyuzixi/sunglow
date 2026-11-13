@@ -69,7 +69,7 @@ const constants = {
   )
 }
 
-const samples = { snap: [], calib: [], trend: [], map: [] }
+const samples = { snap: [], calib: [], trend: [], map: [], field: [], ramp: [] }
 const unavailable = []
 
 try {
@@ -116,8 +116,74 @@ try {
   }
 } catch (e) { unavailable.push("mapdata.ts: " + e.message) }
 
+/* ---------- 5. 观测场：自适应核 Shepard 插值 + 全光谱色阶（N3） ---------- */
+/* 用网页真实导出的 trendValueAt / fieldProbeAt / rampColor 生成基准， */
+/* 而不是在生成器里另写一套公式；下面的 jsShepard 只用于自检 Kotlin 侧的全量近邻实现。 */
+try {
+  const mr = await import(mod("maprender.ts"))
+  const ramp = await import(mod("ramp.ts"))
+  const fieldPts = []
+  for (let i = 0; i < 5; i++) {
+    for (let j = 0; j < 5; j++) {
+      fieldPts.push({
+        lat: 30 + i * 0.6,
+        lon: 110 + j * 0.6,
+        v: 20 + ((i * 37 + j * 19) % 75),
+        occ: (i * 13 + j * 7) % 90,
+        gap: (i * 11 + j * 5) % 40
+      })
+    }
+  }
+  const queries = [
+    [30.0, 110.0], [30.3, 110.3], [31.2, 111.2], [30.9, 110.6],
+    [31.8, 112.0], [29.4, 109.2], [33.0, 113.4], [30.15, 110.15]
+  ]
+  for (const [lat, lon] of queries) {
+    samples.field.push({
+      lat, lon,
+      v: mr.trendValueAt(lat, lon, fieldPts),
+      probe: mr.fieldProbeAt(lat, lon, fieldPts)
+    })
+  }
+  for (const v of [0, 7, 22, 50, 72, 90, 100]) {
+    samples.ramp.push({ v, hex: ramp.rampColor(v) })
+  }
+
+  /* 自检：全量排序取 9 近邻（Kotlin 实现）是否与网页空间索引 knearest 等价 */
+  function jsShepard(pts, lat, lon) {
+    const good = pts.filter((p) => p.v != null && Number.isFinite(p.v))
+    const lat0 = good.reduce((s, p) => s + p.lat, 0) / good.length
+    const lon0 = good.reduce((s, p) => s + p.lon, 0) / good.length
+    const cosLat = Math.max(0.2, Math.cos((lat0 * Math.PI) / 180))
+    const X = (lon - lon0) * 111.32 * cosLat
+    const Y = (lat - lat0) * 110.574
+    const ds = good.map((p) => ({
+      d: Math.hypot((p.lon - lon0) * 111.32 * cosLat - X, (p.lat - lat0) * 110.574 - Y),
+      v: Math.min(100, Math.max(0, p.v))
+    })).sort((a, b) => a.d - b.d).slice(0, 9)
+    if (!ds.length) return null
+    if (ds[0].d < 1e-6) return ds[0].v
+    const R = ds[ds.length - 1].d * 1.06 || 1
+    let sw = 0, sv = 0
+    for (const q of ds) {
+      const t = R - q.d
+      const w = t > 0 ? (t * t) / (R * R * q.d * q.d) : 0
+      sw += w; sv += w * q.v
+    }
+    return sw > 0 ? sv / sw : ds[0].v
+  }
+  let maxDelta = 0
+  for (const c of samples.field) {
+    const mine = jsShepard(fieldPts, c.lat, c.lon)
+    if (mine != null && c.v != null) maxDelta = Math.max(maxDelta, Math.abs(mine - c.v))
+  }
+  console.log("  field self-check: full-sort Shepard vs trendValueAt max delta =", maxDelta.toExponential(3))
+  if (maxDelta > 1e-6) unavailable.push("field: 全量近邻与网页 knearest 不等价，Kotlin 需改用空间索引")
+  if (ramp.SPECTRUM_RAMP) samples.rampAnchors = ramp.SPECTRUM_RAMP
+} catch (e) { unavailable.push("maprender.ts/ramp.ts: " + e.message) }
+
 const out = {
-  version: 1,
+  version: 2,
   generatedAt: new Date().toISOString(),
   source: "v2/src/core (TypeScript)",
   note: "B2 基准：常量与纯函数样本。Kotlin 断言随各功能包接入，见 docs/android-b2-workcards.md。",

@@ -37,7 +37,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -55,7 +54,11 @@ import com.sunglow.spectrum.core.City
 import com.sunglow.spectrum.core.DEG
 import com.sunglow.spectrum.core.ForecastResult
 import com.sunglow.spectrum.core.HeatCell
+import com.sunglow.spectrum.core.FieldPt
+import com.sunglow.spectrum.core.FieldSampler
 import com.sunglow.spectrum.core.HeatGrid
+import com.sunglow.spectrum.core.fadeOf
+import com.sunglow.spectrum.core.fieldRampColor
 import com.sunglow.spectrum.core.Period
 import com.sunglow.spectrum.core.RAD
 import com.sunglow.spectrum.core.TransectPt
@@ -595,23 +598,40 @@ private class TransectOverlay(
     }
 }
 
-/** 云量 → 光谱热力色（青 → 琥珀 → 品红） */
+/** 0–100 → 8 锚点全光谱色（与网页 ramp.ts 同尺，低值不归零） */
 private fun rampColor(t: Float, colors: SunglowColors): Color {
-    val v = t.coerceIn(0f, 1f)
-    return if (v <= 0.5f) lerp(colors.accentCool, colors.accentAlt, v / 0.5f)
-    else lerp(colors.accentAlt, colors.accent, (v - 0.5f) / 0.5f)
+    val hex = fieldRampColor(t.coerceIn(0f, 1f).toDouble() * 100.0)
+    return Color(android.graphics.Color.parseColor(hex))
 }
 
-/** 把 15×15 热力面做成位图：每个像素一个格点，绘制时再放大 */
+/**
+ * N3：把网格点用自适应核 Shepard 升采样成 48×48 色面，再按 fadeOf 淡出。
+ * 不再是「一个格点一个色块」；没有凸包/可达距离硬裁切，边界落在 alpha=0 处。
+ * 48×48 是手机端的性能折中（约 2300 次插值，remember 内只算一次）。
+ */
 private fun heatBitmap(grid: HeatGrid, colors: SunglowColors): android.graphics.Bitmap {
-    val n = grid.n
-    val bmp = android.graphics.Bitmap.createBitmap(n, n, android.graphics.Bitmap.Config.ARGB_8888)
-    val px = IntArray(n * n)
-    for (c in grid.cells) {
-        val argb = rampColor((c.idx / 100.0).toFloat(), colors).toArgb()
-        px[c.i * n + c.j] = (argb and 0x00FFFFFF) or (200 shl 24)
+    val res = 48
+    val bmp = android.graphics.Bitmap.createBitmap(res, res, android.graphics.Bitmap.Config.ARGB_8888)
+    val sampler = FieldSampler(grid.cells.map { FieldPt(it.lat, it.lon, it.idx) })
+    val px = IntArray(res * res)
+    val latTop = grid.latOf(0)
+    val latBottom = grid.latOf(grid.n - 1)
+    val lonLeft = grid.lonOf(0)
+    val lonRight = grid.lonOf(grid.n - 1)
+    for (r in 0 until res) {
+        val lat = latTop + (latBottom - latTop) * r / (res - 1)
+        for (c in 0 until res) {
+            val lon = lonLeft + (lonRight - lonLeft) * c / (res - 1)
+            val s = sampler.at(lat, lon)
+            val v = s.v ?: continue
+            val fade = fadeOf(s.near)
+            if (fade <= 0.0) continue
+            val rgb = android.graphics.Color.parseColor(fieldRampColor(v))
+            val a = (fade * 200.0).toInt().coerceIn(0, 255)
+            px[r * res + c] = (a shl 24) or (rgb and 0x00FFFFFF)
+        }
     }
-    bmp.setPixels(px, 0, n, 0, 0, n, n)
+    bmp.setPixels(px, 0, res, 0, 0, res, res)
     return bmp
 }
 

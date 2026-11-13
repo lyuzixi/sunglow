@@ -1886,6 +1886,24 @@ private fun AboutSheet() {
             color = colors.muted,
             lineHeight = 18.sp
         )
+        /* N3 增补 C：关于页挂出独立隐私政策 URL（商店与合规材料都要求可访问） */
+        val context = LocalContext.current
+        val privacyUrl = stringResource(R.string.privacy_url)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = privacyUrl,
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.accentCool,
+            modifier = Modifier
+                .clickable {
+                    runCatching {
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, android.net.Uri.parse(privacyUrl))
+                        )
+                    }
+                }
+                .padding(vertical = 8.dp)
+        )
         Spacer(Modifier.height(16.dp))
         Text(
             text = stringResource(R.string.about_licenses),
