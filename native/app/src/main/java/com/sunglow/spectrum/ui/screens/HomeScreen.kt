@@ -96,6 +96,7 @@ import com.sunglow.spectrum.core.QUALITY_BANDS
 import com.sunglow.spectrum.core.QUALITY_LABEL
 import com.sunglow.spectrum.core.TzCache
 import com.sunglow.spectrum.core.captionOf
+import com.sunglow.spectrum.core.refScore
 import com.sunglow.spectrum.core.conclWord
 import com.sunglow.spectrum.core.facDisplayRows
 import com.sunglow.spectrum.core.fmtClock
@@ -808,6 +809,15 @@ private fun ModelSection(
                 listOf(
                     "持续" to fmtDur(sRT.geom.dur),
                     "AOD" to (if (isNum(result.envM.aod)) String.format(Locale.US, "%.2f", result.envM.aod) else "—")
+                ),
+                /* N3b 独立旁证：五因子参考分，不参与加权，只作交叉验证 */
+                listOf(
+                    "参考旁证" to (
+                        refScore(result.envM).v.roundToInt().toString() + " · 不参与加权" +
+                            if (refScore(result.envM).missing.isNotEmpty())
+                                "（缺 " + refScore(result.envM).missing.joinToString("/") + "）"
+                            else ""
+                        )
                 )
             ),
             motion = motion,

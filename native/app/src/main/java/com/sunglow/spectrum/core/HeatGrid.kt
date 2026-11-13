@@ -34,7 +34,13 @@ data class HeatCell(
     val grade: String,
     val type: String,
     val cover: Double,
-    val d: Double?
+    val d: Double?,
+    /** 光路遮挡 0–100（与评分 block 因子同源；四档见 occBandOf） */
+    val occ: Double = 0.0,
+    /** 五因子参考分 0–100（独立旁证，不参与加权） */
+    val ref: Double = 0.0,
+    /** 空间形态分歧 0–100（ref 与综合指数各自标准化后取差 ×33） */
+    val refGap: Double = 0.0
 )
 
 class HeatGrid(
@@ -250,11 +256,21 @@ suspend fun buildHeatGrid(
             } else null
 
             val ctx = ScoreCtx(v = 1.5, omega = m.omega, dP = null, aod = aodUse)
-            val sRT = scoreRay(
-                envM,
-                summaryOf(analyseTransect(trM, primaryDeckOf(envM).primary.key)),
-                ctx
+            val pdM = primaryDeckOf(envM)
+            val trMA = analyseTransect(trM, pdM.primary.key)
+            val sRT = scoreRay(envM, summaryOf(trMA), ctx)
+            /* 遮挡层：与网页 mapdata 同源同表（blockFactor），缺样带上游值时退回本地该层云量 */
+            val occ = clamp(
+                100.0 * (1.0 - blockFactor(
+                    pdM.primary.level,
+                    if (isNum(trMA.upstreamLowMax)) trMA.upstreamLowMax else envM.cLow,
+                    if (isNum(trMA.upstreamMidMax)) trMA.upstreamMidMax else envM.cMid
+                )),
+                0.0,
+                100.0
             )
+            /* 独立旁证：五因子参考分（不参与加权，见 RefModel.kt 文件头） */
+            val ref = refScore(envM).v
             val sGv = scoreStat(
                 envG,
                 summaryOf(analyseTransect(trG, primaryDeckOf(envG).primary.key)),
@@ -291,7 +307,9 @@ suspend fun buildHeatGrid(
                     grade = gradeOf(q),
                     type = sRT.primary.type,
                     cover = sRT.primary.cover,
-                    d = sRT.d
+                    d = sRT.d,
+                    occ = occ,
+                    ref = ref
                 )
             )
         }
@@ -299,6 +317,9 @@ suspend fun buildHeatGrid(
     }
 
     if (cells.isEmpty()) return null
+    /* 空间形态分歧：两套模型各自在全图标准化后再取差（网页 finalizeRefGap 同构） */
+    val gaps = finalizeRefGap(cells.map { it.ref }, cells.map { it.idx })
+    val withGap = cells.mapIndexed { i, c -> if (i < gaps.size) c.copy(refGap = gaps[i]) else c }
     return HeatGrid(
         dateStr = dateStr,
         period = period,
@@ -307,6 +328,6 @@ suspend fun buildHeatGrid(
         lon0 = layout.lon0,
         dLat = layout.dLat,
         dLon = layout.dLon,
-        cells = cells
+        cells = withGap
     )
 }

@@ -68,8 +68,12 @@ function aliasOf(c) {
   return [joined, squashed].filter(Boolean).join(" ")
 }
 
+/* N3b：英/繁地名随表一起生成（简体底图自带，英文/繁体界面自绘，不在原生端再维护一份） */
+const enOf = (c) => (cityname.EN_CITY && cityname.EN_CITY[c.name]) || ""
+const twOf = (c) => (cityname.TW_CITY && cityname.TW_CITY[c.name]) || ""
+
 const lines = all.map((c) =>
-  [c.name, c.lon.toFixed(4), c.lat.toFixed(4), c.region, aliasOf(c)].join("\t")
+  [c.name, c.lon.toFixed(4), c.lat.toFixed(4), c.region, aliasOf(c), enOf(c), twOf(c)].join("\t")
 )
 
 const outPath = resolve(here, "../app/src/main/assets/cities.tsv")

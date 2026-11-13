@@ -1,6 +1,6 @@
 {
- "version": 3,
- "generatedAt": "2026-11-13T08:07:01.146Z",
+ "version": 4,
+ "generatedAt": "2026-11-13T08:23:23.895Z",
  "source": "v2/src/core (TypeScript)",
  "note": "B2 基准：常量与纯函数样本。Kotlin 断言随各功能包接入，见 docs/android-b2-workcards.md。",
  "hashes": {
@@ -105,9 +105,9 @@
  "samples": {
   "snap": [
    {
-    "raw": "MXx0b2ZsN298MjAyNi0xMS0xM3xwbXwzOS45MDQyfDExNi40MDc0fOWMl-S6rOW4gnzljJfkuqzluIJ8NzJ8Njh8MXwxLjB8MHw2fDQ4MHwxfDF8MS4zMHwxMjAuMHwyNXx2aXN-MjR-ODIhYmFzZX4xLjN-NzAhYW9kfjAuMzF-NjAhY292ZXJ-NjB-NTV8NDgw",
+    "raw": "MXx0b2ZseXp8MjAyNi0xMS0xM3xwbXwzOS45MDQyfDExNi40MDc0fOWMl-S6rOW4gnzljJfkuqzluIJ8NzJ8Njh8MXwxLjB8MHw2fDQ4MHwxfDF8MS4zMHwxMjAuMHwyNXx2aXN-MjR-ODIhYmFzZX4xLjN-NzAhYW9kfjAuMzF-NjAhY292ZXJ-NjB-NTV8NDgw",
     "decoded": {
-     "gen": 1794557220000,
+     "gen": 1794558203000,
      "date": "2026-11-13",
      "period": "pm",
      "lat": 39.9042,
@@ -417,6 +417,224 @@
     "alarmText": "16:45–17:15 · 霞光档案 · 北京市晚霞 72%",
     "fileName": "霞光档案_北京市_2026-11-13_晚霞.ics",
     "text": "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//SUNGLOW//Glow Forecast//CN\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nBEGIN:VEVENT\r\nUID:sunglow-2026-11-13-pm-39.904-116.407-29909325@sunglow.local\r\nDTSTAMP:20261113T080000Z\r\nDTSTART:20261113T084517Z\r\nDTEND:20261113T091517Z\r\nSUMMARY:霞光档案 · 北京市晚霞 72%\r\nDESCRIPTION:参考时段 16:45–17:15（无几何窗口），出现概\r\n 率 72%，观赏质量 68 分（良）。\\n查看快照：https://sunglo\r\n w.cloud/?s=ABCdef1234567890\r\nLOCATION:北京市 39.904\\,116.407\r\nGEO:39.9042;116.4074\r\nBEGIN:VALARM\r\nTRIGGER:-PT30M\r\nACTION:DISPLAY\r\nDESCRIPTION:16:45–17:15 · 霞光档案 · 北京市晚霞 72%\r\nEND:VALARM\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+   }
+  ],
+  "ref": [
+   {
+    "name": "全项齐全",
+    "env": {
+     "RH": 52,
+     "cTot": 30,
+     "cLow": 20,
+     "cMid": 40,
+     "cHigh": 55,
+     "vis": 24000,
+     "pp": 10,
+     "aod": 0.12
+    },
+    "v": 78.56073576819384,
+    "s": 0.7856073576819383,
+    "factors": {
+     "cloudType": 0.42695652173913046,
+     "transparency": 0.95,
+     "humidity": 0.9911505004882849,
+     "precip": 1,
+     "cloudCover": 1
+    },
+    "missing": []
+   },
+   {
+    "name": "高云主导",
+    "env": {
+     "RH": 88,
+     "cTot": 75,
+     "cLow": 5,
+     "cMid": 10,
+     "cHigh": 90,
+     "vis": 8000,
+     "pp": 60,
+     "aod": 0.55
+    },
+    "v": 38.46249999999999,
+    "s": 0.38462499999999994,
+    "factors": {
+     "cloudType": 0.6542857142857142,
+     "transparency": 0.4124999999999999,
+     "humidity": 0.1,
+     "precip": 0,
+     "cloudCover": 0.25
+    },
+    "missing": []
+   },
+   {
+    "name": "缺多项",
+    "env": {
+     "RH": null,
+     "cTot": null,
+     "cLow": 30,
+     "cMid": null,
+     "cHigh": null,
+     "vis": null,
+     "pp": null,
+     "aod": null
+    },
+    "v": 0,
+    "s": 0,
+    "factors": {
+     "cloudType": null,
+     "transparency": null,
+     "humidity": null,
+     "precip": null,
+     "cloudCover": null
+    },
+    "missing": [
+     "cHigh/cMid/cLow",
+     "visibility/aod",
+     "relative_humidity_2m",
+     "precipitation_probability",
+     "cloud_cover"
+    ]
+   },
+   {
+    "name": "只有总云量",
+    "env": {
+     "RH": 40,
+     "cTot": 20,
+     "cLow": null,
+     "cMid": null,
+     "cHigh": null,
+     "vis": 15000,
+     "pp": 0,
+     "aod": null
+    },
+    "v": 87.70932468269557,
+    "s": 0.8770932468269557,
+    "factors": {
+     "cloudType": null,
+     "transparency": 0.8,
+     "humidity": 0.8007374029168081,
+     "precip": 1,
+     "cloudCover": 1
+    },
+    "missing": [
+     "cHigh/cMid/cLow"
+    ]
+   },
+   {
+    "name": "边界值",
+    "env": {
+     "RH": 85,
+     "cTot": 80,
+     "cLow": 100,
+     "cMid": 100,
+     "cHigh": 100,
+     "vis": 0,
+     "pp": 30,
+     "aod": 0
+    },
+    "v": 30.9,
+    "s": 0.309,
+    "factors": {
+     "cloudType": 0.33999999999999997,
+     "transparency": 0.5,
+     "humidity": 0.1,
+     "precip": 0.5,
+     "cloudCover": 0
+    },
+    "missing": []
+   },
+   {
+    "name": "低云薄",
+    "env": {
+     "RH": 45,
+     "cTot": 12,
+     "cLow": 8,
+     "cMid": 4,
+     "cHigh": 2,
+     "vis": 40000,
+     "pp": 0,
+     "aod": 0.03
+    },
+    "v": 58.18939203360147,
+    "s": 0.5818939203360147,
+    "factors": {
+     "cloudType": 0.0857142857142857,
+     "transparency": 1,
+     "humidity": 0.9459594689067654,
+     "precip": 1,
+     "cloudCover": 0.4
+    },
+    "missing": []
+   }
+  ],
+  "occ": [
+   {
+    "v": 0,
+    "band": 0,
+    "name": "通透"
+   },
+   {
+    "v": 10,
+    "band": 0,
+    "name": "通透"
+   },
+   {
+    "v": 24.9,
+    "band": 0,
+    "name": "通透"
+   },
+   {
+    "v": 25,
+    "band": 1,
+    "name": "轻度遮挡"
+   },
+   {
+    "v": 50,
+    "band": 2,
+    "name": "明显遮挡"
+   },
+   {
+    "v": 74.9,
+    "band": 2,
+    "name": "明显遮挡"
+   },
+   {
+    "v": 75,
+    "band": 3,
+    "name": "严重遮挡"
+   },
+   {
+    "v": 100,
+    "band": 3,
+    "name": "严重遮挡"
+   }
+  ],
+  "refGap": [
+   {
+    "refs": [
+     40,
+     55,
+     62,
+     48,
+     71,
+     39
+    ],
+    "mixes": [
+     50,
+     52,
+     60,
+     55,
+     66,
+     44
+    ],
+    "gaps": [
+     14.760902914252837,
+     18.83289620109584,
+     1.5030248954350445,
+     15.216018316978072,
+     0.7605294493490755,
+     10.401529584049095
+    ]
    }
   ],
   "rampAnchors": [

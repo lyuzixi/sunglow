@@ -63,7 +63,10 @@ class CityRepository(context: Context) {
         val lon = p[1].toDoubleOrNull() ?: return null
         val lat = p[2].toDoubleOrNull() ?: return null
         if (p.size >= 5 && p[4].isNotBlank()) aliases[p[0]] = p[4]
-        return City(name = p[0], lon = lon, lat = lat, region = p[3])
+        /* N3b：第 6/7 列是英文名与繁体名（gen-cities.mjs 从网页 cityname.ts 带入） */
+        val en = if (p.size >= 6) p[5] else ""
+        val tw = if (p.size >= 7) p[6] else ""
+        return City(name = p[0], lon = lon, lat = lat, region = p[3], enName = en, twName = tw)
     }
 
     private fun parseLine(line: String): City? {

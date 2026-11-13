@@ -83,7 +83,7 @@ const constants = {
   )
 }
 
-const samples = { snap: [], calib: [], trend: [], map: [], field: [], ramp: [], ics: [] }
+const samples = { snap: [], calib: [], trend: [], map: [], field: [], ramp: [], ics: [], ref: [], occ: [], refGap: [] }
 const unavailable = []
 
 try {
@@ -266,8 +266,58 @@ try {
     "crlf =", built.text.includes("\r\n"))
 } catch (e) { (samples.ics = samples.ics || []), unavailable.push("shareextras.ts: " + e.message) }
 
+
+/* ---------- 7. 参考模型旁证与遮挡分档（N3b） ---------- */
+/* refScore 是纯函数（只读 env），直接用网页实现采样本；遮挡四档同样取网页口径。 */
+try {
+  const ref = await import(mod("refmodel.ts"))
+  const mr = await import(mod("maprender.ts"))
+  const envs = [
+    { name: "全项齐全", env: { RH: 52, cTot: 30, cLow: 20, cMid: 40, cHigh: 55, vis: 24000, pp: 10, aod: 0.12 } },
+    { name: "高云主导", env: { RH: 88, cTot: 75, cLow: 5, cMid: 10, cHigh: 90, vis: 8000, pp: 60, aod: 0.55 } },
+    { name: "缺多项", env: { RH: null, cTot: null, cLow: 30, cMid: null, cHigh: null, vis: null, pp: null, aod: null } },
+    { name: "只有总云量", env: { RH: 40, cTot: 20, cLow: null, cMid: null, cHigh: null, vis: 15000, pp: 0, aod: null } },
+    { name: "边界值", env: { RH: 85, cTot: 80, cLow: 100, cMid: 100, cHigh: 100, vis: 0, pp: 30, aod: 0 } },
+    { name: "低云薄", env: { RH: 45, cTot: 12, cLow: 8, cMid: 4, cHigh: 2, vis: 40000, pp: 0, aod: 0.03 } }
+  ]
+  for (const it of envs) {
+    const r = ref.refScore(it.env)
+    samples.ref.push({
+      name: it.name,
+      env: it.env,
+      v: r.v,
+      s: r.S,
+      factors: r.factors,
+      missing: r.missing
+    })
+  }
+  for (const v of [0, 10, 24.9, 25, 50, 74.9, 75, 100]) {
+    const band = mr.occBandOf(v)
+    samples.occ.push({ v, band, name: mr.OCC_BAND_NAMES[band] })
+  }
+  /* 参考分与综合指数的空间形态分歧：z 标准化后 |Δz|×33 */
+  const refs = [40.0, 55.0, 62.0, 48.0, 71.0, 39.0]
+  const mixes = [50.0, 52.0, 60.0, 55.0, 66.0, 44.0]
+  samples.refGap = [{
+    refs, mixes,
+    gaps: (() => {
+      const stat = (xs) => {
+        const mean = xs.reduce((a, b) => a + b, 0) / xs.length
+        const sd = Math.sqrt(xs.reduce((a, b) => a + (b - mean) * (b - mean), 0) / xs.length) || 1
+        return { mean, sd }
+      }
+      const a = stat(refs), b = stat(mixes)
+      return refs.map((r, i) => {
+        const zr = (r - a.mean) / a.sd
+        const zm = (mixes[i] - b.mean) / b.sd
+        return Math.min(100, Math.max(0, Math.abs(zr - zm) * 33))
+      })
+    })()
+  }]
+} catch (e) { unavailable.push("refmodel.ts: " + e.message) }
+
 const out = {
-  version: 3,
+  version: 4,
   generatedAt: new Date().toISOString(),
   source: "v2/src/core (TypeScript)",
   note: "B2 基准：常量与纯函数样本。Kotlin 断言随各功能包接入，见 docs/android-b2-workcards.md。",
@@ -279,7 +329,7 @@ const out = {
 
 /* 每组样本的期望条数：云端没有 v2 依赖时曾静默变成 0 条，断言看着绿其实空跑。
    这里硬校验，少一条就让 CI 红，避免门禁失效却没人发现。 */
-const expected = { snap: 1, calib: 17, trend: 2, map: 2, field: 8, ramp: 7, ics: 1 }
+const expected = { snap: 1, calib: 17, trend: 2, map: 2, field: 8, ramp: 7, ics: 1, ref: 6, occ: 8, refGap: 1 }
 const shortGroups = Object.entries(expected)
   .filter(([k, n]) => (samples[k] || []).length < n)
   .map(([k, n]) => k + " " + (samples[k] || []).length + "/" + n)

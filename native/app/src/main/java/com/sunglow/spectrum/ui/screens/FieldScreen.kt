@@ -56,6 +56,11 @@ import com.sunglow.spectrum.core.ForecastResult
 import com.sunglow.spectrum.core.HeatCell
 import com.sunglow.spectrum.core.FieldPt
 import com.sunglow.spectrum.core.FieldSampler
+import com.sunglow.spectrum.core.OCC_BAND_A
+import com.sunglow.spectrum.core.OCC_RGB
+import com.sunglow.spectrum.core.OCC_BAND_NAMES
+import com.sunglow.spectrum.core.occBandOf
+import com.sunglow.spectrum.core.fieldConfOf
 import com.sunglow.spectrum.core.HeatGrid
 import com.sunglow.spectrum.core.fadeOf
 import com.sunglow.spectrum.core.fieldRampColor
@@ -88,6 +93,12 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
     val colors = SunglowTheme.colors
     val result = state.result
     var showMap by remember(state.city.name) { mutableStateOf(true) }
+    /* 遮挡层默认关闭（与网页一致）：它是背景信息，要查细节再自己打开 */
+    var showOcclusion by remember(state.city.name) { mutableStateOf(false) }
+    /* 城市名命中：点自绘地名弹城市卡，换城市要用户显式点，不自动取数 */
+    var pickedCity by remember(state.city.name) { mutableStateOf<City?>(null) }
+    /* 地图上要标注的邻近城市：按当前城市取最近 12 个（486 城排序一次即可） */
+    val labelCities = remember(state.city.name) { vm.nearby(12).map { it.first } }
 
     /* 进入观测场才生成热力面：9 个请求 + 225 点计算，结果缓存在 ViewModel 里 */
     LaunchedEffect(state.city.name, state.dateStr, state.period, result) {
@@ -134,7 +145,15 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
         }
 
         if (showMap) {
-            OsmMap(state, result, modifier = Modifier.padding(horizontal = 18.dp))
+            OsmMap(
+                state,
+                result,
+                showOcclusion = showOcclusion,
+                lang = state.lang,
+                nearbyCities = labelCities,
+                onPickCity = { pickedCity = it },
+                modifier = Modifier.padding(horizontal = 18.dp)
+            )
         } else {
             RayProfile(result)
         }
@@ -153,6 +172,60 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
                     .clickable { showMap = !showMap }
                     .padding(horizontal = 8.dp, vertical = 4.dp)
             )
+            Spacer(Modifier.width(10.dp))
+            Text(
+                text = if (showOcclusion) "遮挡层 开" else "遮挡层 关",
+                style = MaterialTheme.typography.labelSmall,
+                color = if (showOcclusion) colors.accent else colors.faint,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .border(1.dp, colors.ruleStrong, RoundedCornerShape(999.dp))
+                    .clickable { showOcclusion = !showOcclusion }
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            )
+        }
+
+        /* 城市名命中卡片：只显示与提供显式动作，绝不因为点一下就取数 */
+        pickedCity?.let { c ->
+            val km = haversineKm(state.city.lat, state.city.lon, c.lat, c.lon)
+            Column(Modifier.padding(horizontal = 18.dp, vertical = 8.dp)) {
+                Panel {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = c.labelOf(state.lang),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = colors.ink
+                        )
+                        Spacer(Modifier.weight(1f))
+                        Text(
+                            text = "关闭",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = colors.accentCool,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(999.dp))
+                                .clickable { pickedCity = null }
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    InfoRow("距当前城市", uDist(km))
+                    InfoRow("所属区域", if (c.region.isBlank()) "—" else c.region)
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "查看该城市",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = colors.accentCool,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .border(1.dp, colors.ruleStrong, RoundedCornerShape(999.dp))
+                            .clickable {
+                                pickedCity = null
+                                vm.selectCity(c)
+                            }
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    )
+                }
+            }
         }
 
         Column(Modifier.padding(horizontal = 18.dp, vertical = 12.dp)) {
@@ -504,6 +577,76 @@ private class MapHolder {
     var lastKey: String = ""
     var overlay: TransectOverlay? = null
     var heatOverlay: HeatOverlay? = null
+    var labelOverlay: CityLabelOverlay? = null
+}
+
+/**
+ * N3b · 自绘地名层
+ * ---------------------------------------------------------------------------
+ * 简体底图自带中文地名，所以简体界面不画（避免与底图叠字）；
+ * 英文 / 繁体界面底图没有对应字，才由这里自绘。
+ * 标签只做视觉与命中：点中只弹城市卡，**绝不自动取数**——换城市必须由用户显式点。
+ */
+private class CityLabelOverlay(
+    private val lang: String,
+    private val onPickCity: (City) -> Unit
+) : org.osmdroid.views.overlay.Overlay() {
+    var cities: List<City> = emptyList()
+
+    private val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+    private val pt = android.graphics.Point()
+
+    private data class Label(val city: City, val x: Float, val y: Float, val w: Float)
+
+    private var labels: List<Label> = emptyList()
+
+    override fun draw(c: android.graphics.Canvas, mapView: MapView, shadow: Boolean) {
+        if (shadow) return
+        if (lang == "zh" || cities.isEmpty()) {
+            labels = emptyList()
+            return
+        }
+        val proj = mapView.projection
+        val out = ArrayList<Label>()
+        for (city in cities) {
+            val g = wgsToGcj(city.lat, city.lon)
+            proj.toPixels(GeoPoint(g.first, g.second), pt)
+            val text = city.labelOf(lang)
+            p.reset()
+            p.isAntiAlias = true
+            p.textSize = 30f
+            p.typeface = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.BOLD)
+            val w = p.measureText(text)
+            /* 简单避让：与已放下的标签太近就跳过这一条，宁可少画也不要叠字 */
+            val clash = out.any { l ->
+                kotlin.math.abs(l.x - pt.x) < (l.w + w) / 2f + 16f && kotlin.math.abs(l.y - pt.y) < 40f
+            }
+            if (clash) continue
+            out.add(Label(city, pt.x.toFloat(), pt.y.toFloat(), w))
+            val x = pt.x - w / 2f
+            val y = pt.y - 12f
+            p.style = android.graphics.Paint.Style.STROKE
+            p.strokeWidth = 4f
+            p.color = 0xB3000000.toInt()
+            c.drawText(text, x, y, p)
+            p.style = android.graphics.Paint.Style.FILL
+            p.color = 0xFFFFFFFF.toInt()
+            c.drawText(text, x, y, p)
+        }
+        labels = out
+    }
+
+    override fun onSingleTapConfirmed(e: MotionEvent, mapView: MapView): Boolean {
+        for (l in labels) {
+            val dx = e.x - l.x
+            val dy = e.y - (l.y - 12f)
+            if (kotlin.math.abs(dx) <= l.w / 2f + 12f && kotlin.math.abs(dy) <= 22f) {
+                onPickCity(l.city)
+                return true
+            }
+        }
+        return false
+    }
 }
 
 /** 样带上的一个采样点（坐标已转 GCJ-02） */
@@ -604,15 +747,45 @@ private fun rampColor(t: Float, colors: SunglowColors): Color {
     return Color(android.graphics.Color.parseColor(hex))
 }
 
+/** 降饱和：按可信度把颜色往灰里拉（不改变色相与明度层级） */
+private fun desat(rgb: Int, conf: Double): Int {
+    val k = (1.0 - conf).coerceIn(0.0, 1.0)
+    if (k <= 0.001) return rgb
+    val r = android.graphics.Color.red(rgb)
+    val g = android.graphics.Color.green(rgb)
+    val b = android.graphics.Color.blue(rgb)
+    val lum = 0.2126 * r + 0.7152 * g + 0.0722 * b
+    fun mix(c: Int): Int = Math.round(c + (lum - c) * k).toInt().coerceIn(0, 255)
+    return android.graphics.Color.rgb(mix(r), mix(g), mix(b))
+}
+
+/** 把颜色按比例混到目标 RGB（遮挡层用） */
+private fun blendTo(rgb: Int, target: List<Int>, k: Double): Int {
+    val f = k.coerceIn(0.0, 1.0)
+    fun mix(c: Int, t: Int): Int = Math.round(c + (t - c) * f).toInt().coerceIn(0, 255)
+    return android.graphics.Color.rgb(
+        mix(android.graphics.Color.red(rgb), target[0]),
+        mix(android.graphics.Color.green(rgb), target[1]),
+        mix(android.graphics.Color.blue(rgb), target[2])
+    )
+}
+
 /**
  * N3：把网格点用自适应核 Shepard 升采样成 48×48 色面，再按 fadeOf 淡出。
  * 不再是「一个格点一个色块」；没有凸包/可达距离硬裁切，边界落在 alpha=0 处。
  * 48×48 是手机端的性能折中（约 2300 次插值，remember 内只算一次）。
  */
-private fun heatBitmap(grid: HeatGrid, colors: SunglowColors): android.graphics.Bitmap {
+private fun heatBitmap(
+    grid: HeatGrid,
+    colors: SunglowColors,
+    showOcclusion: Boolean = false
+): android.graphics.Bitmap {
     val res = 48
     val bmp = android.graphics.Bitmap.createBitmap(res, res, android.graphics.Bitmap.Config.ARGB_8888)
-    val sampler = FieldSampler(grid.cells.map { FieldPt(it.lat, it.lon, it.idx) })
+    /* 采样点带上遮挡 occ 与形态分歧 refGap：前者画遮挡层，后者驱动降饱和 */
+    val sampler = FieldSampler(
+        grid.cells.map { FieldPt(it.lat, it.lon, it.idx, it.occ, it.refGap) }
+    )
     val px = IntArray(res * res)
     val latTop = grid.latOf(0)
     val latBottom = grid.latOf(grid.n - 1)
@@ -626,7 +799,17 @@ private fun heatBitmap(grid: HeatGrid, colors: SunglowColors): android.graphics.
             val v = s.v ?: continue
             val fade = fadeOf(s.near)
             if (fade <= 0.0) continue
-            val rgb = android.graphics.Color.parseColor(fieldRampColor(v))
+            var rgb = android.graphics.Color.parseColor(fieldRampColor(v))
+            /* 可信度只降饱和：分歧越大越虚，色相与明度保留（网页同口径） */
+            rgb = desat(rgb, fieldConfOf(s.gap))
+            /* 遮挡层默认关闭；打开后按四档 alpha 叠一层暗色 */
+            if (showOcclusion) {
+                val oc = s.occ
+                if (oc != null && v >= OCC_MIN_V) {
+                    val bandA = OCC_BAND_A[occBandOf(oc)]
+                    if (bandA > 0) rgb = blendTo(rgb, OCC_RGB, bandA * minOf(1.0, fade * 1.4) * 0.85)
+                }
+            }
             val a = (fade * 200.0).toInt().coerceIn(0, 255)
             px[r * res + c] = (a shl 24) or (rgb and 0x00FFFFFF)
         }
@@ -705,6 +888,10 @@ private class HeatOverlay(
 private fun OsmMap(
     state: HomeUiState,
     result: ForecastResult,
+    showOcclusion: Boolean = false,
+    lang: String = "zh",
+    nearbyCities: List<City> = emptyList(),
+    onPickCity: (City) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val colors = SunglowTheme.colors
@@ -734,7 +921,9 @@ private fun OsmMap(
     val showSamples = state.showSamples
 
     /* 热力面位图：15×15 像素，绘制时双线性放大到整幅 */
-    val heatBmp = remember(heat, colors.isDark) { heat?.let { heatBitmap(it, colors) } }
+    val heatBmp = remember(heat, colors.isDark, showOcclusion) {
+        heat?.let { heatBitmap(it, colors, showOcclusion) }
+    }
     /* 覆盖层在 factory 里只创建一次，用可变引用读最新的热力面 */
     val heatNow = remember { mutableStateOf<HeatGrid?>(null) }
     SideEffect { heatNow.value = heat }
@@ -809,6 +998,11 @@ private fun OsmMap(
                         overlays.add(ov)
                         holder.overlay = ov
 
+                        /* 地名层放在最后：osmdroid 倒序派发，标签优先接管自己的点击 */
+                        val lo = CityLabelOverlay(lang) { c -> onPickCity(c) }
+                        overlays.add(lo)
+                        holder.labelOverlay = lo
+
                         /* 地图在竖向滚动页里：按下时先夺走父容器的滚动权，否则拖不动 */
                         setOnTouchListener { v, e ->
                             when (e.actionMasked) {
@@ -840,6 +1034,9 @@ private fun OsmMap(
                     holder.overlay?.let {
                         it.dots = dots
                         it.selected = picked
+                    }
+                    holder.labelOverlay?.let {
+                        it.cities = nearbyCities
                     }
                     mv.invalidate()
                 },
@@ -1057,6 +1254,10 @@ private fun HeatCard(cell: HeatCell, city: City, onClose: () -> Unit) {
         )
         InfoRow("主云层", cell.type + " · " + cell.cover.roundToInt().toString() + "%")
         InfoRow("云边界距离", uDist(cell.d))
+        /* N3b：遮挡分档 + 参考旁证 + 形态分歧 */
+        InfoRow("光路遮挡", OCC_BAND_NAMES[occBandOf(cell.occ)] + " · " + cell.occ.roundToInt())
+        InfoRow("参考旁证", cell.ref.roundToInt().toString() + " · 不参与加权")
+        InfoRow("形态分歧", cell.refGap.roundToInt().toString() + " · " + fieldConfOf(cell.refGap).let { String.format(java.util.Locale.US, "%.2f", it) })
         InfoRow("覆盖范围", "整幅约 660 km 见方 · 15×15 格")
     }
 }
