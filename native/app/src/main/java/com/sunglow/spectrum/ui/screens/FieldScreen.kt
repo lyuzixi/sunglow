@@ -1613,7 +1613,7 @@ private fun CompareAddPanel(
     var lon by rememberSaveable { mutableStateOf("") }
     val results = remember(q, search) {
         val s = q.trim()
-        if (s.isEmpty()) emptyList() else search(s)
+        if (s.isEmpty()) emptyList() else search(s).take(8)
     }
     val latV = lat.trim().toDoubleOrNull()
     val lonV = lon.trim().toDoubleOrNull()
