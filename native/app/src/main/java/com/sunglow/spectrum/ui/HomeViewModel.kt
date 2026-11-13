@@ -106,7 +106,7 @@ val DEFAULT_CITY = City("北京市", 116.4074, 39.9042, "北京市")
 
 const val DATE_COUNT = 10
 
-class HomeViewModel(app: Application) : AndroidViewModel(app) {
+class HomeViewModel(private val app: Application) : AndroidViewModel(app) {
 
     private val repo = CityRepository(app)
     private val location = LocationProvider(app)

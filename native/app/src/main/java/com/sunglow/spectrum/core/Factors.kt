@@ -262,7 +262,7 @@ fun facDisplayRows(r: ForecastResult): List<FacDisplayRow> {
                 "沿日出/日落方位以 25 km 间隔采样得到的云盘外缘距离。必须小于霞光深入距离 " +
                     "2√(2Rh)，阳光才能从云底下方照进来；距离越远，颜色越红、开始越晚。",
                 "factor_value_dedge_none")
-        }
+        },
         row("block", "光路上游低层云遮挡", pct(valMap["block"]),
             "低云位于霞光光路下方，是最常见的“翻车”原因：低云量高会把阳光彻底挡住。"),
         row("aod", "气溶胶光学厚度 AOD",
