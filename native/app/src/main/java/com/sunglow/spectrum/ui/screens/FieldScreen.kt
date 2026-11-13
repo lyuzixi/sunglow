@@ -57,6 +57,7 @@ import com.sunglow.spectrum.core.HeatCell
 import com.sunglow.spectrum.core.FieldPt
 import com.sunglow.spectrum.core.FieldSampler
 import com.sunglow.spectrum.core.OCC_BAND_A
+import com.sunglow.spectrum.core.OCC_MIN_V
 import com.sunglow.spectrum.core.OCC_RGB
 import com.sunglow.spectrum.core.OCC_BAND_NAMES
 import com.sunglow.spectrum.core.occBandOf
