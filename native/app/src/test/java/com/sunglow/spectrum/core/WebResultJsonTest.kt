@@ -212,5 +212,6 @@ class WebResultJsonTest {
         assertTrue("抽稀后应为 121/61/41 点，实际 $n", n in listOf(121, 61, 41))
         assertEquals(32, cm["r"]!!.jsonArray[0].jsonArray.size)
         println("FULL_MAP_PACK_LEN=${pack?.length ?: 0} ROWS=$n STRIDE=${cm["ds"]}")
+        println("MAP_PACK_SAMPLE=$pack")
     }
 }
