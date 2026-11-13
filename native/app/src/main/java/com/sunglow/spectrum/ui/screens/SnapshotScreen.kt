@@ -49,6 +49,7 @@ fun SnapshotScreen(snap: PackSnapshot, onExit: () -> Unit) {
         SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(snap.gen))
     } else "—"
 
+    @Composable
     fun partLabel(key: String): String = when (key) {
         "point" -> stringResource(R.string.snapshot_part_point)
         "trend" -> stringResource(R.string.snapshot_part_trend)
@@ -116,7 +117,7 @@ fun SnapshotScreen(snap: PackSnapshot, onExit: () -> Unit) {
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            snap.parts.forEach { p ->
+            for (p in snap.parts) {
                 Text(
                     partLabel(p),
                     color = colors.muted,

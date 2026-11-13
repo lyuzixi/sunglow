@@ -306,25 +306,27 @@ private fun deflate(src: ByteArray): ByteArray? = try {
     null
 }
 
-private fun inflate(src: ByteArray): ByteArray? = try {
-    val inf = Inflater()
-    inf.setInput(src)
-    val out = ByteArrayOutputStream()
-    val buf = ByteArray(8192)
-    var guard = 0
-    while (!inf.finished() && guard < 256) {
-        val n = inf.inflate(buf)
-        if (n > 0) {
-            if (out.size() + n > 1_048_576) {
-                inf.end()
-                return null
-            }
-            out.write(buf, 0, n)
-        } else if (inf.needsInput()) break
-        guard++
+private fun inflate(src: ByteArray): ByteArray? {
+    return try {
+        val inf = Inflater()
+        inf.setInput(src)
+        val out = ByteArrayOutputStream()
+        val buf = ByteArray(8192)
+        var guard = 0
+        while (!inf.finished() && guard < 256) {
+            val n = inf.inflate(buf)
+            if (n > 0) {
+                if (out.size() + n > 1_048_576) {
+                    inf.end()
+                    return null
+                }
+                out.write(buf, 0, n)
+            } else if (inf.needsInput()) break
+            guard++
+        }
+        inf.end()
+        if (out.size() == 0) null else out.toByteArray()
+    } catch (e: Exception) {
+        null
     }
-    inf.end()
-    if (out.size() == 0) null else out.toByteArray()
-} catch (e: Exception) {
-    null
 }
