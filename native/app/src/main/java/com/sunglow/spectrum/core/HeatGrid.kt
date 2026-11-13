@@ -9,13 +9,15 @@ import kotlin.math.roundToLong
 /*
  * SUNGLOW · 观测场热力面
  * 口径来源：v2/src/core/mapdata.ts 的 buildLocalGrid + scoreGridPoint。
- * 15×15 = 225 点铺满城市周边（半跨 3.0°≈330 km，整幅约 660 km 见方）。
+ * 13×13 包围盒（±6 格）× 80 km 格距，按 500 km 半径过滤掉四角 → 121 点，
+ * 与网页逐点同构（经纬度、格距、半径全部取自 buildLocalGrid）。
  * 每个网格点只取一条 Series；样带不是额外取数，而是用 IDW 从邻近网格点的
- * 云量插值出来（与网页同构），因此一次热力面只需 3 批 × 3 个接口 = 9 个请求。
+ * 云量插值出来（与网页同构），因此一次热力面只需 2 批 × 3 个接口 = 6 个请求。
  */
 
-const val HEAT_N = 15
-const val HEAT_HALF_DEG = 3.0
+const val HEAT_N = 13
+const val HEAT_STEP_KM = 80.0
+const val HEAT_RADIUS_KM = 500.0
 
 private const val HEAT_BATCH = 75
 
@@ -63,37 +65,69 @@ class HeatGrid(
         return index[i * n + j]
     }
 
-    /** 整幅覆盖的南北/东西边长（km），用于界面与分享图标注 */
-    fun spanKm(): Double = haversineKm(lat0, lon0, lat0 - (n - 1) * dLat, lon0 + (n - 1) * dLon)
+    /** 整幅包围盒边长（km）：13 格 × 80 km = 960 km，实际着色范围是 500 km 半径圆 */
+    fun spanKm(): Double = HEAT_STEP_KM * (n - 1)
 }
+
+/** 一个格点在 13×13 包围盒里的行列号与经纬度；四角被半径过滤掉的点不会出现 */
+data class HeatNode(
+    val i: Int,
+    val j: Int,
+    val lat: Double,
+    val lon: Double
+)
 
 private data class HeatLayout(
     val n: Int,
     val lat0: Double,
     val lon0: Double,
     val dLat: Double,
-    val dLon: Double
+    val dLon: Double,
+    val nodes: List<HeatNode>
 ) {
     fun latOf(i: Int): Double = lat0 - i * dLat
     fun lonOf(j: Int): Double = lon0 + j * dLon
-
-    fun points(): List<LatLon> = buildList {
-        for (i in 0 until n) for (j in 0 until n) add(LatLon(latOf(i), lonOf(j)))
-    }
 }
 
 private data class HeatMeta(val evMs: Double, val az: Double, val omega: Double)
 
 private class IdwPlan(val exact: Int, val idx: IntArray, val w: DoubleArray)
 
-private fun layoutOf(city: City): HeatLayout {
-    val n = HEAT_N
-    val dLat = 2 * HEAT_HALF_DEG / (n - 1)
-    /* 东西向按纬度收缩，保证整幅大致是正方形（公里尺度） */
-    val lonHalf = HEAT_HALF_DEG / max(0.2, cos(city.lat * DEG))
-    val dLon = 2 * lonHalf / (n - 1)
-    return HeatLayout(n, city.lat + HEAT_HALF_DEG, city.lon - lonHalf, dLat, dLon)
+/**
+ * 与网页 buildLocalGrid 同构：
+ *   dLa = 80 / 110.574；dLo = 80 / (111.32 × max(0.15, cos(lat)))；
+ *   nSide = floor(500 / 80) = 6；i、j ∈ [-6, 6]；
+ *   kx = j × 80、ky = i × 80，kx² + ky² > 500² 的点丢弃（正好剩 121 点）；
+ *   纬度 clamp(-85, 85)，经度 ((lon + j × dLo + 540) % 360) - 180。
+ */
+private fun layoutOf(lat: Double, lon: Double): HeatLayout {
+    val dLa = HEAT_STEP_KM / 110.574
+    val dLo = HEAT_STEP_KM / (111.32 * max(0.15, cos(lat * DEG)))
+    val nSide = (HEAT_RADIUS_KM / HEAT_STEP_KM).toInt()
+    val n = 2 * nSide + 1
+    val nodes = buildList {
+        for (i in 0 until n) {
+            for (j in 0 until n) {
+                val ky = (i - nSide) * HEAT_STEP_KM
+                val kx = (j - nSide) * HEAT_STEP_KM
+                if (kx * kx + ky * ky > HEAT_RADIUS_KM * HEAT_RADIUS_KM + 1e-6) continue
+                val la = clamp(lat + (i - nSide) * dLa, -85.0, 85.0)
+                val lo = ((lon + (j - nSide) * dLo + 540.0) % 360.0) - 180.0
+                add(HeatNode(i, j, la, lo))
+            }
+        }
+    }
+    val lat0 = clamp(lat + nSide * dLa, -85.0, 85.0)
+    val lon0 = lon - nSide * dLo
+    return HeatLayout(n, lat0, lon0, dLa, dLo, nodes)
 }
+
+/** 单测入口：给定城市中心，返回与网页同口径的 121 个格点 */
+internal fun heatNodesOf(lat: Double, lon: Double): List<HeatNode> = layoutOf(lat, lon).nodes
+
+/** 单测入口：返回 (包围盒边长 n, 北界 lat0, 西界 lon0, 纬向格距, 经向格距) */
+internal fun heatFrameOf(lat: Double, lon: Double): List<Double> =
+    layoutOf(lat, lon).let { listOf(it.n.toDouble(), it.lat0, it.lon0, it.dLat, it.dLon) }
 
 private fun idwPlan(lat: Double, lon: Double, pts: List<LatLon>): IdwPlan? {
     var near = Double.MAX_VALUE
@@ -126,7 +160,7 @@ private fun idwOf(plan: IdwPlan?, vals: List<Double?>): Double? {
 
 /**
  * 生成热力面。任意一批取数失败只影响那一块区域（留空透明），不推翻全局结果。
- * onProgress(done, total)：取数 9 步 + 逐行计算 15 步。
+ * onProgress(done, total)：取数 6 步 + 汇总 1 步。
  */
 suspend fun buildHeatGrid(
     client: OpenMeteoClient,
@@ -143,15 +177,16 @@ suspend fun buildHeatGrid(
     val tz = TzCache.cityTz(city.lat, city.lon)
     val dayAnchor = utcMillis(y, mo, da) - tz.offsetSec * 1000L
 
-    val layout = layoutOf(city)
-    val pts = layout.points()
+    val layout = layoutOf(city.lat, city.lon)
+    val nodes = layout.nodes
+    val pts = nodes.map { LatLon(it.lat, it.lon) }
     val count = pts.size
     val sG = arrayOfNulls<Series>(count)
     val sE = arrayOfNulls<Series>(count)
     val sA = arrayOfNulls<Series>(count)
 
     val batches = pts.chunked(HEAT_BATCH)
-    val totalSteps = batches.size * 3 + layout.n
+    val totalSteps = batches.size * 3 + 1
     var step = 0
     fun bump() {
         step++
@@ -179,14 +214,14 @@ suspend fun buildHeatGrid(
     if (sG.all { it == null }) return null
 
     /* 逐点事件时刻 / 方位 / 高度角变化率 —— 与 buildPointMeta 同构 */
-    val meta = pts.map { p ->
-        val ev = sunEvents(dayAnchor, p.lat, p.lon)
+    val meta = nodes.map { n ->
+        val ev = sunEvents(dayAnchor, n.lat, n.lon)
         val raw = if (period == Period.AM) ev.riseMs else ev.setMs
         val evMs = raw ?: (ev.noonMs + 12 * 3600000.0)
         HeatMeta(
             evMs = evMs,
-            az = solarPosition(evMs, p.lat, p.lon).azimuth,
-            omega = sunAltRate(evMs, p.lat, p.lon)
+            az = solarPosition(evMs, n.lat, n.lon).azimuth,
+            omega = sunAltRate(evMs, n.lat, n.lon)
         )
     }
 
@@ -194,18 +229,16 @@ suspend fun buildHeatGrid(
     val sM = Array(count) { k -> mergeSeries(sG[k], sE[k]) }
 
     val cells = ArrayList<HeatCell>(count)
-    for (i in 0 until layout.n) {
-        for (j in 0 until layout.n) {
-            val k = i * layout.n + j
-            if (sG[k] == null) continue
-            val m = meta[k]
-            val evT = m.evMs.roundToLong()
-            val aodRaw = sA[k]?.at("aerosol_optical_depth", evT)
-            val aodUse = if (isNum(aodRaw)) clamp(aodRaw!!, 0.005, 5.0) else 0.25
+    for ((k, node) in nodes.withIndex()) {
+        if (sG[k] == null) continue
+        val m = meta[k]
+        val evT = m.evMs.roundToLong()
+        val aodRaw = sA[k]?.at("aerosol_optical_depth", evT)
+        val aodUse = if (isNum(aodRaw)) clamp(aodRaw!!, 0.005, 5.0) else 0.25
 
-            fun transectOf(sers: Array<Series?>): List<TransectPt>? {
-                val own = sers[k] ?: return null
-                val base = pts[k]
+        fun transectOf(sers: Array<Series?>): List<TransectPt>? {
+            val own = sers[k] ?: return null
+            val base = pts[k]
                 val lowVals = sers.map { it?.at("cloud_cover_low", evT) }
                 val midVals = sers.map { it?.at("cloud_cover_mid", evT) }
                 val highVals = sers.map { it?.at("cloud_cover_high", evT) }
@@ -297,10 +330,10 @@ suspend fun buildHeatGrid(
             val q = wgeo(qParts)
             cells.add(
                 HeatCell(
-                    i = i,
-                    j = j,
-                    lat = pts[k].lat,
-                    lon = pts[k].lon,
+                    i = node.i,
+                    j = node.j,
+                    lat = node.lat,
+                    lon = node.lon,
                     p = p,
                     q = q,
                     idx = mixedIndex(p, q),
@@ -312,9 +345,8 @@ suspend fun buildHeatGrid(
                     ref = ref
                 )
             )
-        }
-        bump()
     }
+    bump()
 
     if (cells.isEmpty()) return null
     /* 空间形态分歧：两套模型各自在全图标准化后再取差（网页 finalizeRefGap 同构） */
