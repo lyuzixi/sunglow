@@ -115,6 +115,6 @@ class WebResultJsonTest {
 
         /* CI 日志里捞这一行，交给网页 installSharePack 再验一次 */
         println("PACK_SAMPLE=$pack")
-        println("PACK_LEN=${pack.length}")
+        println("PACK_LEN=${pack?.length ?: 0}")
     }
 }
