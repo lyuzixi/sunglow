@@ -441,9 +441,6 @@ class HomeViewModel(private val app: Application) : AndroidViewModel(app) {
         return repo.nearby(c.lat, c.lon, limit)
     }
 
-    /** 城市搜索：复用 CityRepository 的拼音 / 繁简 / 英文别名索引 */
-    fun searchCities(q: String): List<City> = repo.search(q, 8)
-
     /** 经纬度自定义点：名称用坐标串，避免引入未本地化的“自定义”字样 */
     fun addCustomPoint(lat: Double, lon: Double): Boolean {
         if (lat !in -90.0..90.0 || lon !in -180.0..180.0) return false
