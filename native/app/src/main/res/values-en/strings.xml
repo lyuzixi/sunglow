@@ -426,7 +426,8 @@
     <string name="snapshot_parts">Includes %1$s</string>
     <string name="snapshot_exit">Exit snapshot · fetch live</string>
     <string name="snapshot_empty">No point result in this pack</string>
-    <string name="snapshot_map_info">Field %1$d points · stride %2$d</string>
+    <string name="snapshot_map_info">Field · %1$d AM / %2$d PM points · stride %3$d</string>
+    <string name="snapshot_trend_title">Trend in pack</string>
     <string name="snapshot_part_point">Result</string>
     <string name="snapshot_part_trend">Trend</string>
     <string name="snapshot_part_map">Field</string>

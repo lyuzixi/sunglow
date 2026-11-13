@@ -250,6 +250,31 @@ fun expandPackMap(entry: PackEntry?): PackMapBox? {
     )
 }
 
+/** 趋势行摘要：直接从 pack 的 trend 条目读，不依赖界面模型 */
+data class PackTrendRow(
+    val date: String,
+    val period: String,
+    val p: Double,
+    val q: Double,
+    val grade: String
+)
+
+/** 读包内十日趋势；旧包没有 trend 时返回空表 */
+fun packTrendRows(snap: PackSnapshot): List<PackTrendRow> {
+    val entry = snap.entries.firstOrNull { it.key.startsWith("SUNGLOW.v2.trend.") } ?: return emptyList()
+    val rows = entry.value["rows"] as? JsonArray ?: return emptyList()
+    return rows.mapNotNull { item ->
+        val o = item as? JsonObject ?: return@mapNotNull null
+        PackTrendRow(
+            date = o.str("date"),
+            period = o.str("period"),
+            p = o.num("P") ?: 0.0,
+            q = o.num("Q") ?: 0.0,
+            grade = o.str("grade")
+        )
+    }
+}
+
 /** 从包里取出单点结论的摘要字段，供快照横幅与结果卡使用 */
 fun packPointSummary(snap: PackSnapshot): PackPointSummary? {
     val entry = snap.entries.firstOrNull { it.key.startsWith("SUNGLOW.v2.point.") } ?: return null

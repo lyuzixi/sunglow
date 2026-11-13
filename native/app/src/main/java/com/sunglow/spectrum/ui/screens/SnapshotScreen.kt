@@ -28,6 +28,7 @@ import com.sunglow.spectrum.R
 import com.sunglow.spectrum.core.PackSnapshot
 import com.sunglow.spectrum.core.expandPackMap
 import com.sunglow.spectrum.core.packPointSummary
+import com.sunglow.spectrum.core.packTrendRows
 import com.sunglow.spectrum.ui.theme.SunglowTheme
 import com.sunglow.spectrum.ui.i18n.gradeText
 import java.text.SimpleDateFormat
@@ -45,6 +46,7 @@ fun SnapshotScreen(snap: PackSnapshot, onExit: () -> Unit) {
     val ctx = LocalContext.current
     val point = packPointSummary(snap)
     val map = expandPackMap(snap.mapEntry)
+    val trend = packTrendRows(snap)
     val genText = if (snap.gen > 0) {
         SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(snap.gen))
     } else "—"
@@ -128,9 +130,58 @@ fun SnapshotScreen(snap: PackSnapshot, onExit: () -> Unit) {
                 )
             }
         }
+        if (trend.isNotEmpty()) {
+            Text(
+                stringResource(R.string.snapshot_trend_title),
+                color = colors.ink,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(colors.bg2, RoundedCornerShape(14.dp))
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(7.dp)
+            ) {
+                trend.forEach { row ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            row.date,
+                            color = colors.muted,
+                            fontSize = 12.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            if (row.period == "am") stringResource(R.string.widget_am)
+                            else stringResource(R.string.widget_pm),
+                            color = colors.faint,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(end = 10.dp)
+                        )
+                        Text(
+                            "P ${row.p.toInt()}% · Q ${row.q.toInt()}",
+                            color = colors.ink,
+                            fontSize = 13.sp
+                        )
+                        Text(
+                            gradeText(ctx, row.grade),
+                            color = colors.accent,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(start = 10.dp)
+                        )
+                    }
+                }
+            }
+        }
         if (map != null) {
             Text(
-                stringResource(R.string.snapshot_map_info, map.am.pts.size, snap.mapStride),
+                stringResource(
+                    R.string.snapshot_map_info,
+                    map.am.pts.size,
+                    map.pm.pts.size,
+                    snap.mapStride
+                ),
                 color = colors.faint,
                 fontSize = 12.sp
             )

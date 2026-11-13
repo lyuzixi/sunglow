@@ -433,7 +433,8 @@
     <string name="snapshot_parts">包含 %1$s</string>
     <string name="snapshot_exit">退出快照，获取最新预报</string>
     <string name="snapshot_empty">这个包里没有单点结论</string>
-    <string name="snapshot_map_info">观测场 %1$d 点 · 抽稀步长 %2$d</string>
+    <string name="snapshot_map_info">观测场 · 朝 %1$d 点 / 晚 %2$d 点 · 步长 %3$d</string>
+    <string name="snapshot_trend_title">包内趋势</string>
     <string name="snapshot_part_point">结论</string>
     <string name="snapshot_part_trend">趋势</string>
     <string name="snapshot_part_map">观测场</string>

@@ -49,6 +49,23 @@ class PackCodecTest {
     }
 
     @Test
+    fun readsTrendRows() {
+        val snap = decodePack(fixture("app-point-trend.txt"))!!
+        val rows = packTrendRows(snap)
+        assertEquals(2, rows.size)
+        assertTrue(rows.all { it.period == "am" || it.period == "pm" })
+        assertTrue(rows.all { it.date.matches(Regex("\\d{4}-\\d{2}-\\d{2}")) })
+    }
+
+    @Test
+    fun readsSinglePeriodMapCounts() {
+        val snap = decodePack(fixture("app-map-pack.txt"))!!
+        val box = expandPackMap(snap.mapEntry)!!
+        assertEquals(0, box.am.pts.size)
+        assertEquals(121, box.pm.pts.size)
+    }
+
+    @Test
     fun rejectsBadPack() {
         assertNull(decodePack(null))
         assertNull(decodePack(""))
