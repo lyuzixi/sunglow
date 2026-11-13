@@ -1410,7 +1410,15 @@ private fun ShareSheet(
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
     val caption = remember(result, view) { captionOf(result, view) }
-    val link = remember(result, state.trend) { shareUrlOf(result, state.trend) }
+    val webTrend = remember(state.trend) {
+        state.trend.flatMap { row ->
+            listOfNotNull(
+                row.am?.let { com.sunglow.spectrum.core.WebTrendRow(row.date, "am", it.p, it.q, it.grade) },
+                row.pm?.let { com.sunglow.spectrum.core.WebTrendRow(row.date, "pm", it.p, it.q, it.grade) }
+            )
+        }
+    }
+    val link = remember(result, webTrend) { shareUrlOf(result, webTrend) }
     val qr = remember(result) { ShareCard.qr(link, 512) }
     val heat = state.heat
     var qrOpen by remember(result) { mutableStateOf(false) }

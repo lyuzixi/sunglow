@@ -13,14 +13,14 @@ import java.util.Locale
 
 const val SHARE_SITE = "https://sunglow.cloud/"
 
-fun shareUrlOf(r: ForecastResult, trend: List<TrendRow> = emptyList()): String {
+fun shareUrlOf(r: ForecastResult, trend: List<WebTrendRow> = emptyList()): String {
     /* 优先带 pack：网页打开即还原结论与十日趋势，不烧额度；超长/编码失败回退精简链接 */
     packShareUrlOf(r, trend)?.let { return it }
     return legacyShareUrlOf(r)
 }
 
 /** 二维码专用：pack 超过二维码容量时退回精简链接，避免生成失败 */
-fun qrShareUrlOf(r: ForecastResult, trend: List<TrendRow> = emptyList()): String {
+fun qrShareUrlOf(r: ForecastResult, trend: List<WebTrendRow> = emptyList()): String {
     val pack = packShareUrlOf(r, trend)
     if (pack != null && pack.length <= 2600) return pack
     return legacyShareUrlOf(r)

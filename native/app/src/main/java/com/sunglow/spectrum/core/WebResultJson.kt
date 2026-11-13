@@ -93,35 +93,30 @@ fun packMetaOf(r: ForecastResult): PackMeta = PackMeta(
     lon = r.city.lon
 )
 
+/** 趋势扁平行：与网页 TrendRow 同构，避免 core 依赖 ui 模型 */
+data class WebTrendRow(
+    val date: String,
+    val period: String,
+    val p: Double,
+    val q: Double,
+    val grade: String
+)
+
 /** 十日趋势条目：网页 trendCacheGet 读 {ts, rows:[{date,period,P,Q,grade}]} */
 private fun webTrendEntry(
     r: ForecastResult,
-    rows: List<TrendRow>
+    rows: List<WebTrendRow>
 ): PackEntry? {
     if (rows.isEmpty()) return null
-    val arr = rows.flatMap { row ->
-        listOfNotNull(
-            row.am?.let { c ->
-                buildJsonObject {
-                    put("date", row.date)
-                    put("period", "am")
-                    put("P", c.p)
-                    put("Q", c.q)
-                    put("grade", c.grade)
-                }
-            },
-            row.pm?.let { c ->
-                buildJsonObject {
-                    put("date", row.date)
-                    put("period", "pm")
-                    put("P", c.p)
-                    put("Q", c.q)
-                    put("grade", c.grade)
-                }
-            }
-        )
+    val arr = rows.map { row ->
+        buildJsonObject {
+            put("date", row.date)
+            put("period", row.period)
+            put("P", row.p)
+            put("Q", row.q)
+            put("grade", row.grade)
+        }
     }
-    if (arr.isEmpty()) return null
     val key = "SUNGLOW.v2.trend." + r.dateStr + "@" +
         String.format(Locale.US, "%.1f", r.city.lat) + "," +
         String.format(Locale.US, "%.1f", r.city.lon)
@@ -137,7 +132,7 @@ private fun webTrendEntry(
 /** 单点 + 趋势 pack：网页打开即还原结论与十日趋势，不再请求 */
 fun buildSnapshotPack(
     r: ForecastResult,
-    trend: List<TrendRow> = emptyList(),
+    trend: List<WebTrendRow> = emptyList(),
     gen: Long = System.currentTimeMillis()
 ): String? {
     val value = buildJsonObject {
@@ -151,7 +146,7 @@ fun buildSnapshotPack(
 
 fun packShareUrlOf(
     r: ForecastResult,
-    trend: List<TrendRow> = emptyList(),
+    trend: List<WebTrendRow> = emptyList(),
     gen: Long = System.currentTimeMillis()
 ): String? = buildSnapshotPack(r, trend, gen)?.let { SHARE_SITE + "#/?pack=" + it }
 
