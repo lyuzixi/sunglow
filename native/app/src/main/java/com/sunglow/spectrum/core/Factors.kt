@@ -145,7 +145,9 @@ data class FacDisplayRow(
     val judge: String,
     val judgeCls: String,
     val nameKey: String,
-    val descKey: String
+    val descKey: String,
+    val valueKey: String? = null,
+    val valueArgs: List<String> = emptyList()
 )
 
 /* ---------- 显示单位（与网页 v2/src/core/units.ts 同口径；imperial 默认关闭） ---------- */
@@ -210,13 +212,22 @@ fun facDisplayRows(r: ForecastResult): List<FacDisplayRow> {
     val geom = r.sRT.geom
     val decks = r.sRT.decks
 
-    fun row(key: String, name: String, value: String, desc: String): FacDisplayRow {
+    fun row(
+        key: String,
+        name: String,
+        value: String,
+        desc: String,
+        valueKey: String? = null,
+        valueArgs: List<String> = emptyList()
+    ): FacDisplayRow {
         val s = scoreMap[key]
         val j = judgmentOf(s)
         return FacDisplayRow(
             key, name, value, s, desc, j.text, j.cls,
             nameKey = "factor_name_$key",
-            descKey = "factor_desc_$key"
+            descKey = "factor_desc_$key",
+            valueKey = valueKey,
+            valueArgs = valueArgs
         )
     }
 
@@ -232,7 +243,8 @@ fun facDisplayRows(r: ForecastResult): List<FacDisplayRow> {
     val dEdge = valMap["dedge"]
 
     return listOf(
-        row("cover", "云量类型与覆盖度", coverVal, coverDesc),
+        row("cover", "云量类型与覆盖度", coverVal, coverDesc,
+            "factor_value_cover", decks.map { pct(it.cover) }),
         row("base", "云底高度", uAlt(p.base * 1000),
             "云底越高，霞光可出现的范围与色相变化越丰富；云底越低，霞光越局限于橘红且持续时间短。"),
         row("heq", "光学等效地表高度", if (isNum(heq)) uDist(heq, 2) else "—",
@@ -240,10 +252,17 @@ fun facDisplayRows(r: ForecastResult): List<FacDisplayRow> {
                 " km 计算（z=Hs·ln(AOD/(Hs·k₀))）。该值越大，等效云底越低，霞光越难形成。"),
         row("heff", "等效云底高度", n2(r.sRT.hEff),
             "云底高度减去光学等效地表高度后的有效高度，是几何判定的真正输入。"),
-        row("dedge", "云边界距离",
-            if (isNum(dEdge)) uDist(dEdge) + "（上限 " + uDist(geom.xMax) + "）" else "无明显云边界",
-            "沿日出/日落方位以 25 km 间隔采样得到的云盘外缘距离。必须小于霞光深入距离 " +
-                "2√(2Rh)，阳光才能从云底下方照进来；距离越远，颜色越红、开始越晚。"),
+        if (isNum(dEdge)) {
+            row("dedge", "云边界距离", uDist(dEdge),
+                "沿日出/日落方位以 25 km 间隔采样得到的云盘外缘距离。必须小于霞光深入距离 " +
+                    "2√(2Rh)，阳光才能从云底下方照进来；距离越远，颜色越红、开始越晚。",
+                "factor_value_dedge", listOf(uDist(dEdge), uDist(geom.xMax)))
+        } else {
+            row("dedge", "云边界距离", "—",
+                "沿日出/日落方位以 25 km 间隔采样得到的云盘外缘距离。必须小于霞光深入距离 " +
+                    "2√(2Rh)，阳光才能从云底下方照进来；距离越远，颜色越红、开始越晚。",
+                "factor_value_dedge_none")
+        }
         row("block", "光路上游低层云遮挡", pct(valMap["block"]),
             "低云位于霞光光路下方，是最常见的“翻车”原因：低云量高会把阳光彻底挡住。"),
         row("aod", "气溶胶光学厚度 AOD",
@@ -272,7 +291,17 @@ fun facDisplayRows(r: ForecastResult): List<FacDisplayRow> {
                 (if (isNum(r.envM.precip)) " · 降水 " + String.format(
                     java.util.Locale.US, "%.1f", r.envM.precip
                 ) + " mm" else ""),
-            "对流强时局地积云/积雨云发展，会随机遮挡光路；但积雨云云砧本身也可能形成漂亮的云砧晚霞。"),
+            "对流强时局地积云/积雨云发展，会随机遮挡光路；但积雨云云砧本身也可能形成漂亮的云砧晚霞。",
+            if (isNum(valMap["cape"]) && isNum(r.envM.precip)) "factor_value_cape"
+            else if (isNum(valMap["cape"])) "factor_value_cape_only" else null,
+            when {
+                isNum(valMap["cape"]) && isNum(r.envM.precip) -> listOf(
+                    valMap["cape"]!!.roundToLong().toString(),
+                    String.format(java.util.Locale.US, "%.1f", r.envM.precip)
+                )
+                isNum(valMap["cape"]) -> listOf(valMap["cape"]!!.roundToLong().toString())
+                else -> emptyList()
+            }),
         row("consist", "模式一致性",
             if (isNum(r.dvI))
                 r.conf.level + " · ΔI " + r.dvI!!.roundToLong() +
@@ -281,6 +310,12 @@ fun facDisplayRows(r: ForecastResult): List<FacDisplayRow> {
             else "数据不足",
             if (isNum(r.dvI))
                 r.conf.txt + "，" + ensConfDetail(r.spread, r.spreadQ) + "。" + r.conf.hint
-            else "不足两套算法给出结果，无法评估模型一致性。")
+            else "不足两套算法给出结果，无法评估模型一致性。",
+            if (isNum(r.dvI)) "factor_value_consist" else "factor_value_consist_none",
+            if (isNum(r.dvI)) listOf(
+                r.dvI!!.roundToLong().toString(),
+                nz(r.spread, 0.0).roundToLong().toString(),
+                nz(r.spreadQ, 0.0).roundToLong().toString()
+            ) else emptyList())
     )
 }

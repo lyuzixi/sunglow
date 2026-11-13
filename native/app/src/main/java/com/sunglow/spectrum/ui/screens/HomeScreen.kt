@@ -1144,7 +1144,7 @@ private fun FactorsSheet(result: ForecastResult) {
                             modifier = Modifier.weight(1f)
                         )
                         Text(
-                            text = row.value,
+                            text = factorValue(row),
                             style = MaterialTheme.typography.bodySmall,
                             color = colors.muted
                         )
@@ -2371,6 +2371,21 @@ private fun judgeLabel(cls: String): String = stringResource(
         else -> R.string.judge_miss
     }
 )
+
+@Composable
+private fun factorValue(row: com.sunglow.spectrum.core.FacDisplayRow): String {
+    val id = when (row.valueKey) {
+        "factor_value_cover" -> R.string.factor_value_cover
+        "factor_value_dedge" -> R.string.factor_value_dedge
+        "factor_value_dedge_none" -> R.string.factor_value_dedge_none
+        "factor_value_consist" -> R.string.factor_value_consist
+        "factor_value_consist_none" -> R.string.factor_value_consist_none
+        "factor_value_cape" -> R.string.factor_value_cape
+        "factor_value_cape_only" -> R.string.factor_value_cape_only
+        else -> null
+    } ?: return row.value
+    return stringResource(id, *row.valueArgs.toTypedArray())
+}
 
 private fun gradeColor(grade: String, colors: SunglowColors): Color {
     val band = QUALITY_BANDS.firstOrNull { it.key == grade } ?: return colors.muted

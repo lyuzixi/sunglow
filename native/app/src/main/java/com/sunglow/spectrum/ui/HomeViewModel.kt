@@ -3,6 +3,7 @@ package com.sunglow.spectrum.ui
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.sunglow.spectrum.R
 import com.sunglow.spectrum.core.City
 import com.sunglow.spectrum.core.ForecastCache
 import com.sunglow.spectrum.core.ForecastEngine
@@ -230,7 +231,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                     )
                 }
             } catch (e: Exception) {
-                _state.update { it.copy(trendLoading = false, trendError = "趋势取数中断，请点重试") }
+                _state.update { it.copy(trendLoading = false, trendError = app.getString(R.string.err_trend_failed)) }
             }
         }
     }
@@ -270,7 +271,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                 it.copy(
                     heatLoading = false,
                     heat = grid,
-                    heatError = if (grid == null) "热力面没有取到数据，请稍后重试" else null
+                    heatError = if (grid == null) app.getString(R.string.err_heat_failed) else null
                 )
             }
         }
@@ -423,7 +424,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                 _state.update { it.copy(compareRows = rows.toList(), compareLoading = false) }
             } catch (e: Exception) {
                 _state.update {
-                    it.copy(compareLoading = false, compareError = "对比取数失败，请重试")
+                    it.copy(compareLoading = false, compareError = app.getString(R.string.err_compare_failed))
                 }
             }
         }

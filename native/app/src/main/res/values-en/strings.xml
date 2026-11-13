@@ -391,4 +391,33 @@
     <string name="judge_ok">Favourable</string>
     <string name="judge_mid">Neutral</string>
     <string name="judge_bad">Unfavourable</string>
+    <string name="factor_value_cover">Low %1$s / Mid %2$s / High %3$s</string>
+    <string name="factor_value_dedge">%1$s (max %2$s)</string>
+    <string name="factor_value_dedge_none">No clear cloud edge</string>
+    <string name="factor_value_consist">ΔI %1$s (ΔP %2$s · ΔQ %3$s)</string>
+    <string name="factor_value_consist_none">Not enough data</string>
+    <string name="factor_value_cape">CAPE %1$s J/kg · rain %2$s mm</string>
+    <string name="factor_value_cape_only">CAPE %1$s J/kg</string>
+    <string name="share_photo_caption">Live · Pearl River, Guangzhou</string>
+    <string name="share_prob_p">Probability P</string>
+    <string name="share_view_q">Viewing quality %1$s</string>
+    <string name="share_heat_title">Field heat · composite index</string>
+    <string name="share_heat_span">About %1$s km across · %2$s</string>
+    <string name="share_heat_hint">Higher index, better chance of a glow</string>
+    <string name="share_divergence">Model spread ΔI</string>
+    <string name="share_confidence">Model confidence</string>
+    <string name="share_best_window">Best window</string>
+    <string name="share_best_window_long">Best viewing window</string>
+    <string name="share_sky_band">Sky band</string>
+    <string name="share_sky_none">No sky band available now</string>
+    <string name="share_edge_max">%1$s / max %2$s</string>
+    <string name="share_scan_same_city">Scan for the same city</string>
+    <string name="share_chooser_image">Share SUNGLOW card</string>
+    <string name="share_trend_best">Best outing · %1$s %2$s</string>
+    <string name="share_trend_legend">Bar height = probability, colour = quality</string>
+    <string name="share_add_calendar">Add to calendar</string>
+    <string name="err_trend_failed">Trend fetch interrupted — tap Retry</string>
+    <string name="err_heat_failed">No heatmap data — try again later</string>
+    <string name="err_compare_failed">Comparison failed — try again</string>
+    <string name="share_data_only">Data Open-Meteo</string>
 </resources>

@@ -151,9 +151,9 @@ object ShareCard {
         cv.drawRect(0f, 0f, W, 7f, paint)
         paint.shader = null
 
-        txt("霞光档案 · SUNGLOW", 64f, 62f, 30f, if (dark) Color.parseColor("#E9EEFB") else Color.parseColor("#111A2C"), display)
+        txt(ctx.getString(R.string.app_name) + " · " + ctx.getString(R.string.brand_mark), 64f, 62f, 30f, if (dark) Color.parseColor("#E9EEFB") else Color.parseColor("#111A2C"), display)
         txt(
-            "广州 · 珠江 · 实拍", W - 64f, 62f, 24f,
+            ctx.getString(R.string.share_photo_caption), W - 64f, 62f, 24f,
             if (dark) Color.parseColor("#B8C4DC") else Color.parseColor("#46556F"),
             sans, Paint.Align.RIGHT
         )
@@ -161,7 +161,7 @@ object ShareCard {
         /* 城市与日期 */
         val cityTop = 424f
         txt(r.city.name, 64f, cityTop, 58f, ink, sansBold)
-        val periodWord = if (r.period == com.sunglow.spectrum.core.Period.AM) "朝霞" else "晚霞"
+        val periodWord = if (r.period == com.sunglow.spectrum.core.Period.AM) ctx.getString(R.string.widget_am) else ctx.getString(R.string.widget_pm)
         val dateLine = r.dateStr + " · " + periodWord + " · " + r.evName + " " + fmtClock(r.evMs, r.tz)
         txt(dateLine, 64f, cityTop + 40f, 30f, muted)
 
@@ -179,7 +179,7 @@ object ShareCard {
         }
 
         /* 概率大字 */
-        txt("出现概率 P", 64f, 566f, 26f, faint)
+        txt(ctx.getString(R.string.share_prob_p), 64f, 566f, 26f, faint)
         val pTxt = view.p.roundToInt().toString()
         val numSize = 190f
         paint.reset()
@@ -193,7 +193,7 @@ object ShareCard {
         /* 等级胶囊：与技术读数同一行右侧 */
         val band = QUALITY_BANDS.firstOrNull { it.key == view.grade } ?: QUALITY_BANDS.last()
         val gColor = Color.parseColor(if (dark) band.dark else band.color)
-        val gLabel = QUALITY_LABEL[view.grade] ?: view.grade
+        val gLabel = com.sunglow.spectrum.ui.i18n.gradeText(ctx, view.grade)
         paint.reset()
         paint.isAntiAlias = true
         paint.textSize = 34f
@@ -201,7 +201,7 @@ object ShareCard {
         val gw = paint.measureText(gLabel) + 64f
         fillRound(W - 64f - gw, 640f, gw, 72f, 36f, withAlpha(gColor, if (dark) 0x33 else 0x22))
         txt(gLabel, W - 64f - gw / 2f, 691f, 34f, gColor, sansBold, Paint.Align.CENTER)
-        txt("观赏质量 " + view.q.roundToInt().toString(), W - 64f, 748f, 26f, faint, sans, Paint.Align.RIGHT)
+        txt(ctx.getString(R.string.share_view_q, view.q.roundToInt().toString()), W - 64f, 748f, 26f, faint, sans, Paint.Align.RIGHT)
 
         /* 结论句 */
         txt(conclWord(view.p), 64f, 812f, 42f, ink, sansBold)
@@ -223,15 +223,18 @@ object ShareCard {
             val my = 862f
             val mw = 560f
             val mh = mw * 9f / 16f
-            txt("观测场热力 · 综合指数", mx, my - 16f, 24f, faint)
+            txt(ctx.getString(R.string.share_heat_title), mx, my - 16f, 24f, faint)
             drawHeat(cv, h, RectF(mx, my, mx + mw, my + mh), dark)
             txt(
-                "覆盖约 " + h.spanKm().roundToInt() + " km 见方 · " +
-                    (if (r.period == com.sunglow.spectrum.core.Period.AM) "朝霞" else "晚霞") +
-                    " " + fmtClock(r.evMs, r.tz),
+                ctx.getString(
+                    R.string.share_heat_span,
+                    h.spanKm().roundToInt().toString(),
+                    (if (r.period == com.sunglow.spectrum.core.Period.AM) ctx.getString(R.string.widget_am) else ctx.getString(R.string.widget_pm)) +
+                        " " + fmtClock(r.evMs, r.tz)
+                ),
                 mx, my + mh + 26f, 20f, faint
             )
-            txt("综合指数越高，出霞机会越大", mx, my + mh + 52f, 19f, faint)
+            txt(ctx.getString(R.string.share_heat_hint), mx, my + mh + 52f, 19f, faint)
 
             var ry = my + 16f
             fun right(label: String, value: String) {
@@ -239,11 +242,11 @@ object ShareCard {
                 txt(value, 660f, ry + 36f, 30f, ink, sansBold)
                 ry += 82f
             }
-            right("模型分歧 ΔI", if (isNum(r.dvI)) r.dvI!!.roundToInt().toString() else "—")
-            right("模型可信度", r.conf.level)
-            right("云边界距离", uDist(r.sRT.d))
+            right(ctx.getString(R.string.share_divergence), if (isNum(r.dvI)) r.dvI!!.roundToInt().toString() else "—")
+            right(ctx.getString(R.string.share_confidence), confText(ctx, r.conf.key))
+            right(ctx.getString(R.string.factor_name_dedge), uDist(r.sRT.d))
             right(
-                "最佳窗口",
+                ctx.getString(R.string.share_best_window),
                 if (win != null) fmtClock(win.first, r.tz) + "–" + fmtClock(win.second, r.tz) else "—"
             )
         } else {
@@ -251,7 +254,7 @@ object ShareCard {
             val bandY = 890f
             val bandH = 92f
             val bandW = W - 128f
-            txt("天色带", 64f, bandY - 18f, 26f, faint)
+            txt(ctx.getString(R.string.share_sky_band), 64f, bandY - 18f, 26f, faint)
             val sky = skyBandOf(r, System.currentTimeMillis().toDouble(), r.dateStr)
             if (sky != null) {
                 val total = sky.segments.sumOf { it.weight.toDouble() }.takeIf { it > 0 } ?: 1.0
@@ -294,7 +297,7 @@ object ShareCard {
                 }
             } else {
                 fillRound(64f, bandY, bandW, bandH, 12f, withAlpha(faint, 0x18))
-                txt("此刻没有可用的天色带", 84f, bandY + 56f, 26f, faint)
+                txt(ctx.getString(R.string.share_sky_none), 84f, bandY + 56f, 26f, faint)
             }
 
             /* 事实行 */
@@ -309,15 +312,15 @@ object ShareCard {
                 fy += 44f
             }
 
-            fact("云边界距离", uDist(r.sRT.d) + " / 上限 " + uDist(r.sRT.geom.xMax))
+            fact(ctx.getString(R.string.factor_name_dedge), ctx.getString(R.string.share_edge_max, uDist(r.sRT.d), uDist(r.sRT.geom.xMax)))
             fact(
-                "最佳观赏窗口",
+                ctx.getString(R.string.share_best_window_long),
                 if (win != null) fmtClock(win.first, r.tz) + " – " + fmtClock(win.second, r.tz) else "—"
             )
-            fact("峰值透射率 T550", fmtSci(r.sRT.peak.color.t550))
+            fact(ctx.getString(R.string.ray_peak_t550), fmtSci(r.sRT.peak.color.t550))
             fact(
-                "模型可信度",
-                if (isNum(r.dvI)) r.conf.level + " · ΔI " + r.dvI!!.roundToInt() else r.conf.level
+                ctx.getString(R.string.share_confidence),
+                if (isNum(r.dvI)) confText(ctx, r.conf.key) + " · ΔI " + r.dvI!!.roundToInt() else confText(ctx, r.conf.key)
             )
         }
 
@@ -325,8 +328,8 @@ object ShareCard {
         paint.reset()
         paint.color = rule
         cv.drawRect(64f, 1252f, W - 64f, 1253.5f, paint)
-        txt("霞光档案 · SUNGLOW", 64f, 1300f, 26f, ink, display)
-        txt("数据 Open-Meteo · 概率预报仅供参考", 64f, 1338f, 21f, faint)
+        txt(ctx.getString(R.string.app_name) + " · " + ctx.getString(R.string.brand_mark), 64f, 1300f, 26f, ink, display)
+        txt(ctx.getString(R.string.home_data_credit), 64f, 1338f, 21f, faint)
 
         /* 二维码：扫码回到同一城市、同一天、同一时段 */
         val qrSize = 168
@@ -343,7 +346,7 @@ object ShareCard {
             cv.drawBitmap(qr, qx, qy, null)
             qr.recycle()
         }
-        txt("扫码查看同一城市", qx + qrSize / 2f, qy + qrSize + 40f, 20f, faint, sans, Paint.Align.CENTER)
+        txt(ctx.getString(R.string.share_scan_same_city), qx + qrSize / 2f, qy + qrSize + 40f, 20f, faint, sans, Paint.Align.CENTER)
 
         return bmp
     }
@@ -389,7 +392,7 @@ object ShareCard {
             putExtra(Intent.EXTRA_TEXT, captionOf(r, view))
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        ctx.startActivity(Intent.createChooser(send, "分享霞光图卡"))
+        ctx.startActivity(Intent.createChooser(send, ctx.getString(R.string.share_chooser_image)))
     }
 
     /* =====================================================================
@@ -487,12 +490,12 @@ object ShareCard {
         cv.drawRect(0f, 0f, w, 8f, paint)
         paint.shader = null
 
-        txt("霞光档案 · SUNGLOW", 72f, 76f, 34f, if (dark) Color.parseColor("#E9EEFB") else Color.parseColor("#111A2C"), display)
+        txt(ctx.getString(R.string.app_name) + " · " + ctx.getString(R.string.brand_mark), 72f, 76f, 34f, if (dark) Color.parseColor("#E9EEFB") else Color.parseColor("#111A2C"), display)
 
         /* 城市 / 日期 / 时段 */
         val pTxt = view.p.roundToInt().toString()
         txt(r.city.name, 72f, 916f, 76f, ink, sansBold)
-        val periodWord = if (r.period == com.sunglow.spectrum.core.Period.AM) "朝霞" else "晚霞"
+        val periodWord = if (r.period == com.sunglow.spectrum.core.Period.AM) ctx.getString(R.string.widget_am) else ctx.getString(R.string.widget_pm)
         txt(
             r.dateStr + " · " + periodWord + " · " + r.evName + " " + fmtClock(r.evMs, r.tz),
             72f, 972f, 34f, muted
@@ -510,7 +513,7 @@ object ShareCard {
         /* 等级（右上） */
         val band = QUALITY_BANDS.firstOrNull { it.key == view.grade } ?: QUALITY_BANDS.last()
         val gColor = Color.parseColor(if (dark) band.dark else band.color)
-        val gLabel = QUALITY_LABEL[view.grade] ?: view.grade
+        val gLabel = com.sunglow.spectrum.ui.i18n.gradeText(ctx, view.grade)
         paint.reset()
         paint.isAntiAlias = true
         paint.textSize = 42f
@@ -518,7 +521,7 @@ object ShareCard {
         val gw = paint.measureText(gLabel) + 84f
         fillRound(w - 72f - gw, 1150f, gw, 88f, 44f, withAlpha(gColor, if (dark) 0x33 else 0x22))
         txt(gLabel, w - 72f - gw / 2f, 1212f, 42f, gColor, sansBold, Paint.Align.CENTER)
-        txt("观赏质量 " + view.q.roundToInt(), w - 72f, 1290f, 30f, faint, sans, Paint.Align.RIGHT)
+        txt(ctx.getString(R.string.share_view_q, view.q.roundToInt()), w - 72f, 1290f, 30f, faint, sans, Paint.Align.RIGHT)
 
         /* 结论句 */
         txt(conclWord(view.p), 72f, 1330f, 50f, ink, sansBold)
@@ -542,15 +545,15 @@ object ShareCard {
             txt(v, w - 72f, fy, 32f, ink, sans, Paint.Align.RIGHT)
             fy += 62f
         }
-        fact("云边界距离", uDist(r.sRT.d))
-        fact("最佳观赏窗口", if (win != null) fmtClock(win.first, r.tz) + " – " + fmtClock(win.second, r.tz) else "—")
+        fact(ctx.getString(R.string.factor_name_dedge), uDist(r.sRT.d))
+        fact(ctx.getString(R.string.share_best_window_long), if (win != null) fmtClock(win.first, r.tz) + " – " + fmtClock(win.second, r.tz) else "—")
 
         /* 页脚 + 二维码 */
         paint.reset()
         paint.color = rule
         cv.drawRect(72f, 1624f, w - 72f, 1625.5f, paint)
-        txt("霞光档案 · SUNGLOW", 72f, 1700f, 30f, ink, display)
-        txt("数据 Open-Meteo · 概率预报仅供参考", 72f, 1746f, 24f, faint)
+        txt(ctx.getString(R.string.app_name) + " · " + ctx.getString(R.string.brand_mark), 72f, 1700f, 30f, ink, display)
+        txt(ctx.getString(R.string.home_data_credit), 72f, 1746f, 24f, faint)
 
         val qrSize = 210
         val qx = w - 72f - qrSize
@@ -621,7 +624,7 @@ object ShareCard {
         cv.drawRect(0f, 0f, w, 7f, paint)
         paint.shader = null
 
-        txt("十日趋势", 64f, 108f, 52f, ink, sansBold)
+        txt(ctx.getString(R.string.trend_title), 64f, 108f, 52f, ink, sansBold)
         txt(cityName, 64f, 156f, 30f, muted)
 
         /* 最值得出门的一个窗口 */
@@ -634,8 +637,12 @@ object ShareCard {
         }
         if (bestCell != null && bestRow != null) {
             txt(
-                "最值得出门 · " + bestRow!!.date.substring(5) + " " + (if (bestAm) "朝霞" else "晚霞") +
-                    " " + bestCell!!.p.roundToInt() + "%",
+                ctx.getString(
+                    R.string.share_trend_best,
+                    bestRow!!.date.substring(5),
+                    (if (bestAm) ctx.getString(R.string.widget_am) else ctx.getString(R.string.widget_pm)) +
+                        " " + bestCell!!.p.roundToInt() + "%"
+                ),
                 w - 64f, 108f, 30f, accent, sansBold, Paint.Align.RIGHT
             )
         }
@@ -689,18 +696,18 @@ object ShareCard {
         paint.isAntiAlias = true
         paint.color = accent
         cv.drawRoundRect(RectF(64f, legendY - 20f, 84f, legendY - 2f), 6f, 6f, paint)
-        txt("晚霞", 96f, legendY, 24f, muted)
+        txt(ctx.getString(R.string.widget_pm), 96f, legendY, 24f, muted)
         paint.reset()
         paint.color = withAlpha(accent, 0x80)
         cv.drawRoundRect(RectF(176f, legendY - 20f, 196f, legendY - 2f), 6f, 6f, paint)
-        txt("朝霞", 208f, legendY, 24f, muted)
-        txt("柱高＝出现概率，颜色＝观赏质量", w - 64f, legendY, 22f, faint, sans, Paint.Align.RIGHT)
+        txt(ctx.getString(R.string.widget_am), 208f, legendY, 24f, muted)
+        txt(ctx.getString(R.string.share_trend_legend), w - 64f, legendY, 22f, faint, sans, Paint.Align.RIGHT)
 
         paint.reset()
         paint.color = rule
         cv.drawRect(64f, 1010f, w - 64f, 1011.5f, paint)
-        txt("霞光档案 · SUNGLOW", 64f, 1054f, 26f, ink, display)
-        txt("数据 Open-Meteo", w - 64f, 1054f, 22f, faint, sans, Paint.Align.RIGHT)
+        txt(ctx.getString(R.string.app_name) + " · " + ctx.getString(R.string.brand_mark), 64f, 1054f, 26f, ink, display)
+        txt(ctx.getString(R.string.share_data_only), w - 64f, 1054f, 22f, faint, sans, Paint.Align.RIGHT)
 
         return bmp
     }
@@ -725,7 +732,7 @@ object ShareCard {
             putExtra(Intent.EXTRA_TEXT, caption)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        ctx.startActivity(Intent.createChooser(send, "分享霞光图卡"))
+        ctx.startActivity(Intent.createChooser(send, ctx.getString(R.string.share_chooser_image)))
     }
 
     /** 加入日历：写 .ics 到缓存目录，交给系统日历导入（不需要日历读写权限） */
@@ -742,7 +749,7 @@ object ShareCard {
             putExtra(Intent.EXTRA_SUBJECT, built.fileName)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        ctx.startActivity(Intent.createChooser(send, "加入日历"))
+        ctx.startActivity(Intent.createChooser(send, ctx.getString(R.string.share_add_calendar)))
     }
 
     /* ---------- 内部 ---------- */
@@ -803,4 +810,10 @@ object ShareCard {
 
     private fun fmtSci(v: Double): String =
         if (!v.isFinite()) "—" else String.format(Locale.US, "%.3f", v)
+}
+
+private fun confText(ctx: Context, key: String): String = when (key) {
+    "hi" -> ctx.getString(R.string.conf_high)
+    "lo" -> ctx.getString(R.string.conf_low)
+    else -> ctx.getString(R.string.conf_mid)
 }
