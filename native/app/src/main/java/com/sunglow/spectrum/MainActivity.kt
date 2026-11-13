@@ -50,11 +50,13 @@ class MainActivity : ComponentActivity() {
     private fun handleIntent(intent: Intent?) {
         if (intent == null) return
         val data = intent.data
+        val pack = com.sunglow.spectrum.core.packFromUrl(data?.toString())
         /* 网页 URL 明确给 date / period 时优先于 Intent extra（与网页 urlstate 口径一致） */
         LaunchBus.emit(
             cityName = intent.getStringExtra(EXTRA_CITY) ?: data?.getQueryParameter("name"),
             dateStr = data?.getQueryParameter("date") ?: intent.getStringExtra(EXTRA_DATE),
-            period = data?.getQueryParameter("period") ?: intent.getStringExtra(EXTRA_PERIOD)
+            period = data?.getQueryParameter("period") ?: intent.getStringExtra(EXTRA_PERIOD),
+            pack = pack
         )
     }
 

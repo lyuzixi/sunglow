@@ -420,4 +420,15 @@
     <string name="err_heat_failed">No heatmap data — try again later</string>
     <string name="err_compare_failed">Comparison failed — try again</string>
     <string name="share_data_only">Data Open-Meteo</string>
+    <string name="snapshot_title">Shared snapshot</string>
+    <string name="snapshot_badge">Snapshot · shared from web</string>
+    <string name="snapshot_generated">Generated %1$s</string>
+    <string name="snapshot_parts">Includes %1$s</string>
+    <string name="snapshot_exit">Exit snapshot · fetch live</string>
+    <string name="snapshot_empty">No point result in this pack</string>
+    <string name="snapshot_map_info">Field %1$d points · stride %2$d</string>
+    <string name="snapshot_part_point">Result</string>
+    <string name="snapshot_part_trend">Trend</string>
+    <string name="snapshot_part_map">Field</string>
+    <string name="snapshot_part_compare">Compare</string>
 </resources>

@@ -12,15 +12,17 @@ import kotlinx.coroutines.flow.StateFlow
 data class LaunchTarget(
     val cityName: String? = null,
     val dateStr: String? = null,
-    val period: Period? = null
+    val period: Period? = null,
+    /** 网页完整快照包；非空时进入快照态，不发任何请求 */
+    val pack: String? = null
 )
 
 object LaunchBus {
     private val _target = MutableStateFlow<LaunchTarget?>(null)
     val target: StateFlow<LaunchTarget?> = _target
 
-    fun emit(cityName: String?, dateStr: String?, period: String?) {
-        if (cityName.isNullOrBlank() && dateStr.isNullOrBlank() && period.isNullOrBlank()) return
+    fun emit(cityName: String?, dateStr: String?, period: String?, pack: String? = null) {
+        if (cityName.isNullOrBlank() && dateStr.isNullOrBlank() && period.isNullOrBlank() && pack.isNullOrBlank()) return
         _target.value = LaunchTarget(
             cityName = cityName,
             dateStr = dateStr,
@@ -28,7 +30,8 @@ object LaunchBus {
                 "am" -> Period.AM
                 "pm" -> Period.PM
                 else -> null
-            }
+            },
+            pack = pack
         )
     }
 

@@ -1,5 +1,6 @@
 package com.sunglow.spectrum.core
 
+import java.net.URLDecoder
 import java.net.URLEncoder
 import java.util.Locale
 
@@ -19,6 +20,25 @@ fun shareUrlOf(r: ForecastResult): String {
     val period = if (r.period == Period.AM) "am" else "pm"
     return SHARE_SITE + "?name=" + name + "&lat=" + lat + "&lon=" + lon +
         "&date=" + r.dateStr + "&period=" + period
+}
+
+/**
+ * 从网页分享链接里取 pack 参数。
+ * 网页是 hash 路由，真实形态是 `https://sunglow.cloud/#/?pack=z...`，
+ * 所以先看 `#` 之后，再退回普通查询串。
+ */
+fun packFromUrl(url: String?): String? {
+    if (url.isNullOrBlank()) return null
+    val tail = if (url.contains('#')) url.substringAfter('#') else url
+    val query = tail.substringAfter('?', tail)
+    val hit = query.split('&').firstOrNull { it.startsWith("pack=") } ?: return null
+    val raw = hit.substringAfter('=').trim()
+    if (raw.isEmpty() || raw.length > PACK_HARD_MAX) return null
+    return try {
+        URLDecoder.decode(raw, "UTF-8")
+    } catch (e: Exception) {
+        raw
+    }
 }
 
 /** 分享图卡文件名：霞光档案_广州_2026-11-12_晚霞.png */

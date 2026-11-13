@@ -420,4 +420,15 @@
     <string name="err_heat_failed">熱力面沒有取到資料，請稍後重試</string>
     <string name="err_compare_failed">對比取數失敗，請重試</string>
     <string name="share_data_only">資料 Open-Meteo</string>
+    <string name="snapshot_title">分享快照</string>
+    <string name="snapshot_badge">快照 · 由網頁分享</string>
+    <string name="snapshot_generated">生成於 %1$s</string>
+    <string name="snapshot_parts">包含 %1$s</string>
+    <string name="snapshot_exit">退出快照，取得最新預報</string>
+    <string name="snapshot_empty">這個包裡沒有單點結論</string>
+    <string name="snapshot_map_info">觀測場 %1$d 點 · 抽稀步長 %2$d</string>
+    <string name="snapshot_part_point">結論</string>
+    <string name="snapshot_part_trend">趨勢</string>
+    <string name="snapshot_part_map">觀測場</string>
+    <string name="snapshot_part_compare">對比</string>
 </resources>

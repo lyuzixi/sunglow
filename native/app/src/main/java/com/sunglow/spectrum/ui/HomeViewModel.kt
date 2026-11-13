@@ -99,7 +99,9 @@ data class HomeUiState(
     val heatLoading: Boolean = false,
     val heatDone: Int = 0,
     val heatTotal: Int = 0,
-    val heatError: String? = null
+    val heatError: String? = null,
+    /** 非空 = 正在看网页分享来的快照，不取数 */
+    val packSnapshot: com.sunglow.spectrum.core.PackSnapshot? = null
 )
 
 val DEFAULT_CITY = City("北京市", 116.4074, 39.9042, "北京市")
@@ -142,16 +144,62 @@ class HomeViewModel(private val app: Application) : AndroidViewModel(app) {
     init {
         val dates = buildDates(startCity)
         _state.update { it.copy(dates = dates, dateStr = dates.firstOrNull().orEmpty()) }
-        load(LoadMode.AUTO)
+        val first = LaunchBus.target.value
+        if (first?.pack != null) {
+            applyPack(first.pack)
+            LaunchBus.clear()
+        } else {
+            load(LoadMode.AUTO)
+        }
         /* 小组件 / 通知点进来：城市、日期、时段一次性应用 */
         viewModelScope.launch {
             LaunchBus.target.collect { t ->
                 if (t != null) {
-                    applyLaunch(t)
+                    if (t.pack != null) applyPack(t.pack) else applyLaunch(t)
                     LaunchBus.clear()
                 }
             }
         }
+    }
+
+    /**
+     * 网页完整快照：直接进快照态，覆盖任何取数（requestCount 不变）。
+     * 解码失败退回普通首页，不弹空白页。
+     */
+    private fun applyPack(raw: String) {
+        val snap = com.sunglow.spectrum.core.decodePack(raw)
+        if (snap == null) {
+            load(LoadMode.AUTO)
+            return
+        }
+        val q = snap.q
+        val city = repo.cities.firstOrNull {
+            it.name == q.name || it.shortName == q.name
+        }
+        _state.update { s ->
+            s.copy(
+                city = city ?: s.city,
+                dateStr = q.date.takeIf { it.isNotBlank() } ?: s.dateStr,
+                period = when (q.period) {
+                    "am" -> Period.AM
+                    "pm" -> Period.PM
+                    else -> s.period
+                },
+                tab = 0,
+                result = null,
+                trend = emptyList(),
+                compareRows = emptyList(),
+                error = null,
+                errorKind = null,
+                packSnapshot = snap
+            )
+        }
+    }
+
+    /** 退出快照，回到实时预报 */
+    fun exitPack() {
+        _state.update { it.copy(packSnapshot = null) }
+        load(LoadMode.AUTO)
     }
 
     private fun applyLaunch(t: LaunchTarget) {

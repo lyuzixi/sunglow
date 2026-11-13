@@ -44,6 +44,7 @@ import com.sunglow.spectrum.R
 import com.sunglow.spectrum.ui.motion.rememberMotionEnabled
 import com.sunglow.spectrum.ui.screens.FieldScreen
 import com.sunglow.spectrum.ui.screens.HomeScreen
+import com.sunglow.spectrum.ui.screens.SnapshotScreen
 import com.sunglow.spectrum.ui.screens.TrendScreen
 import com.sunglow.spectrum.ui.theme.SunglowTheme
 
@@ -60,6 +61,11 @@ fun SunglowApp(vm: HomeViewModel = viewModel()) {
     val motionEnabled = rememberMotionEnabled()
 
     Column(modifier = Modifier.fillMaxSize().background(colors.bg)) {
+        val pack = state.packSnapshot
+        if (pack != null) {
+            SnapshotScreen(pack, onExit = { vm.exitPack() })
+            return@Column
+        }
         Box(modifier = Modifier.weight(1f)) {
             AnimatedContent(
                 targetState = tab,

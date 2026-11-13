@@ -427,4 +427,15 @@
     <string name="err_heat_failed">热力面没有取到数据，请稍后重试</string>
     <string name="err_compare_failed">对比取数失败，请重试</string>
     <string name="share_data_only">数据 Open-Meteo</string>
+    <string name="snapshot_title">分享快照</string>
+    <string name="snapshot_badge">快照 · 由网页分享</string>
+    <string name="snapshot_generated">生成于 %1$s</string>
+    <string name="snapshot_parts">包含 %1$s</string>
+    <string name="snapshot_exit">退出快照，获取最新预报</string>
+    <string name="snapshot_empty">这个包里没有单点结论</string>
+    <string name="snapshot_map_info">观测场 %1$d 点 · 抽稀步长 %2$d</string>
+    <string name="snapshot_part_point">结论</string>
+    <string name="snapshot_part_trend">趋势</string>
+    <string name="snapshot_part_map">观测场</string>
+    <string name="snapshot_part_compare">对比</string>
 </resources>
