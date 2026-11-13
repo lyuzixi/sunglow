@@ -34,8 +34,6 @@ fun glowSpanOf(r: ForecastResult, nowMs: Double = System.currentTimeMillis().toD
     return GlowSpan(r.evMs - half, r.evMs + half, false)
 }
 
-private fun pad2(n: Int): String = if (n < 10) "0" + n else n.toString()
-
 /** ICS 时间必须是 UTC：YYYYMMDDTHHMMSSZ */
 fun icsTime(ms: Double): String {
     val cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
