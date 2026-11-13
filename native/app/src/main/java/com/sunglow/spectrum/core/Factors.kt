@@ -146,18 +146,24 @@ data class FacDisplayRow(
     val judgeCls: String
 )
 
-/* ---------- 显示单位（公制；P2 只做简体中文 + 公制） ---------- */
+/* ---------- 显示单位（与网页 v2/src/core/units.ts 同口径；imperial 默认关闭） ---------- */
 
 /** 距离：输入 km */
-fun uDist(km: Double?, digits: Int = 0): String {
+fun uDist(km: Double?, digits: Int = 0, imperial: Boolean = false): String {
     if (km == null || !km.isFinite()) return "—"
+    if (imperial) {
+        val mi = km * 0.621371
+        val d = if (mi < 10) 1 else digits
+        return String.format(java.util.Locale.US, "%.${d}f", mi) + " mi"
+    }
     val d = if (km < 10) 1 else digits
     return String.format(java.util.Locale.US, "%.${d}f", km) + " km"
 }
 
 /** 高度/厚度：输入米 */
-fun uAlt(m: Double?): String {
+fun uAlt(m: Double?, imperial: Boolean = false): String {
     if (m == null || !m.isFinite()) return "—"
+    if (imperial) return Math.round(m * 3.28084).toString() + " ft"
     return if (m >= 1000) {
         val digits = if (m >= 10000) 0 else 2
         String.format(java.util.Locale.US, "%.${digits}f", m / 1000) + " km"
@@ -167,9 +173,13 @@ fun uAlt(m: Double?): String {
 }
 
 /** 风速：输入 m/s */
-fun uSpeed(ms: Double?): String {
+fun uSpeed(ms: Double?, imperial: Boolean = false): String {
     if (ms == null || !ms.isFinite()) return "—"
-    return String.format(java.util.Locale.US, "%.1f", ms * 3.6) + " km/h"
+    return if (imperial) {
+        String.format(java.util.Locale.US, "%.1f", ms * 2.23694) + " mph"
+    } else {
+        String.format(java.util.Locale.US, "%.1f", ms * 3.6) + " km/h"
+    }
 }
 
 private fun n1(v: Double?): String =

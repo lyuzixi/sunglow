@@ -1,6 +1,6 @@
 {
  "version": 1,
- "generatedAt": "2026-11-13T05:07:27.785Z",
+ "generatedAt": "2026-11-13T06:22:17.404Z",
  "source": "v2/src/core (TypeScript)",
  "note": "B2 基准：常量与纯函数样本。Kotlin 断言随各功能包接入，见 docs/android-b2-workcards.md。",
  "hashes": {
@@ -104,9 +104,9 @@
  "samples": {
   "snap": [
    {
-    "raw": "MXx0b2Zjd2Z8MjAyNi0xMS0xM3xwbXwzOS45MDQyfDExNi40MDc0fOWMl-S6rOW4gnzljJfkuqzluIJ8NzJ8Njh8MXwxLjB8MHw2fDQ4MHwxfDF8MS4zMHwxMjAuMHwyNXx2aXN-MjR-ODIhYmFzZX4xLjN-NzAhYW9kfjAuMzF-NjAhY292ZXJ-NjB-NTV8NDgw",
+    "raw": "MXx0b2ZnZDV8MjAyNi0xMS0xM3xwbXwzOS45MDQyfDExNi40MDc0fOWMl-S6rOW4gnzljJfkuqzluIJ8NzJ8Njh8MXwxLjB8MHw2fDQ4MHwxfDF8MS4zMHwxMjAuMHwyNXx2aXN-MjR-ODIhYmFzZX4xLjN-NzAhYW9kfjAuMzF-NjAhY292ZXJ-NjB-NTV8NDgw",
     "decoded": {
-     "gen": 1794546447000,
+     "gen": 1794550937000,
      "date": "2026-11-13",
      "period": "pm",
      "lat": 39.9042,

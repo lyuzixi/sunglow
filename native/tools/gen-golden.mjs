@@ -312,8 +312,9 @@ const golden = deepRound({
     bands: bandCases,
     models: modelCases
   },
-  /* B2 各功能包实现时接入断言，接入后从数组移除对应名字 */
-  pendingGroups: ["trend", "field", "calib", "snapshot"],
+  /* B2 各功能包实现时接入断言，接入后从数组移除对应名字。
+     N1 已接入：snapshot（SnapshotCodecTest）、calib（CalibGoldenTest）。 */
+  pendingGroups: ["trend", "field"],
   astro: astroCases,
   sunEvents: eventCases,
   eventAzimuth: azimuthCases,

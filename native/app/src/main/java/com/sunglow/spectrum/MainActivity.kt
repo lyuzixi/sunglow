@@ -46,13 +46,15 @@ class MainActivity : ComponentActivity() {
         handleIntent(intent)
     }
 
-    /** 小组件 / 通知点击：城市、日期、时段随 Intent 带进来 */
+    /** 小组件 / 通知点击，或网页分享链接（?name=&date=&period=）带进来的目标 */
     private fun handleIntent(intent: Intent?) {
         if (intent == null) return
+        val data = intent.data
+        /* 网页 URL 明确给 date / period 时优先于 Intent extra（与网页 urlstate 口径一致） */
         LaunchBus.emit(
-            cityName = intent.getStringExtra(EXTRA_CITY),
-            dateStr = intent.getStringExtra(EXTRA_DATE),
-            period = intent.getStringExtra(EXTRA_PERIOD)
+            cityName = intent.getStringExtra(EXTRA_CITY) ?: data?.getQueryParameter("name"),
+            dateStr = data?.getQueryParameter("date") ?: intent.getStringExtra(EXTRA_DATE),
+            period = data?.getQueryParameter("period") ?: intent.getStringExtra(EXTRA_PERIOD)
         )
     }
 

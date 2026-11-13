@@ -141,13 +141,21 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun applyLaunch(t: LaunchTarget) {
+        val s = _state.value
+        /* 允许「只带日期/时段」的深链：没有城市名时沿用当前城市，不再直接 return */
         val city = t.cityName?.let { n ->
             repo.cities.firstOrNull { it.name == n || it.shortName == n }
-        } ?: return
-        repo.remember(city)
-        val dates = buildDates(city)
-        val date = t.dateStr?.takeIf { it.matches(Regex("\\d{4}-\\d{2}-\\d{2}")) }
-            ?: dates.firstOrNull().orEmpty()
+        } ?: s.city
+        if (t.cityName != null) repo.remember(city)
+        val baseDates = buildDates(city)
+        val wanted = t.dateStr?.takeIf { it.matches(Regex("\\d{4}-\\d{2}-\\d{2}")) }
+        /* 窗口外日期（历史分享链接 / 深链）补进首项，避免日期控件显示空白；换日期不自动取数 */
+        val dates = if (wanted != null && !baseDates.contains(wanted)) {
+            listOf(wanted) + baseDates
+        } else {
+            baseDates
+        }
+        val date = wanted ?: if (dates.contains(s.dateStr)) s.dateStr else dates.firstOrNull().orEmpty()
         _state.update {
             it.copy(
                 city = city,
