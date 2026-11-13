@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
@@ -30,6 +31,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -37,18 +40,26 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sunglow.spectrum.core.QUALITY_LABEL
+import com.sunglow.spectrum.core.TrendWindow
 import com.sunglow.spectrum.core.gradeOf
+import com.sunglow.spectrum.core.rankWindows
 import com.sunglow.spectrum.ui.HomeViewModel
 import com.sunglow.spectrum.ui.TrendCell
 import com.sunglow.spectrum.ui.TrendRow
 import com.sunglow.spectrum.ui.theme.SunglowColors
 import com.sunglow.spectrum.ui.theme.SunglowTheme
+import com.sunglow.spectrum.ui.trendRampColor
 import java.time.LocalDate
 import kotlin.math.roundToInt
 
 /*
- * 十日趋势
- * 逐日串行取数（朝/晚各一次），带进度；缓存命中后再次进入会很快。
+ * 十日趋势（N2 · 对齐网页 v2/src/components/TrendSection.vue 当前形态）
+ *   · 取数：区间取数（朝/晚各 3 请求），缓存命中后再次进入很快。
+ *   · 最佳窗口：跨朝/晚按质量分 Q 降序、Q 相同按概率 P 降序，取前三（core/TrendRank.kt）。
+ *   · 明细：概率条 + 完整等级/质量分徽章；概率数字用冷青蓝两端插值（ui/TrendRamp.kt）。
+ *   · 点任意一天：载入该日期并切回结论 Tab。
+ * 注：网页「10×2 热力格」目前只用于合成分享卡（composecard.ts TREND_RAMP），
+ *     广场页是概率条版；热力格形态留到 N4 的分享卡趋势块对齐。
  */
 
 @Composable
@@ -120,7 +131,7 @@ fun TrendScreen(vm: HomeViewModel = viewModel()) {
             item {
                 Column(Modifier.padding(horizontal = 18.dp)) {
                     Text(
-                        text = "最佳窗口",
+                        text = "最值得出门",
                         style = MaterialTheme.typography.titleSmall,
                         color = colors.ink
                     )
@@ -132,7 +143,11 @@ fun TrendScreen(vm: HomeViewModel = viewModel()) {
                                 date = w.first,
                                 periodAm = w.second == 0,
                                 cell = w.third,
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                onClick = {
+                                    vm.selectDate(w.first)
+                                    vm.selectTab(0)
+                                }
                             )
                         }
                     }
@@ -152,6 +167,7 @@ fun TrendScreen(vm: HomeViewModel = viewModel()) {
                 row = row,
                 onClick = {
                     vm.selectDate(row.date)
+                    vm.selectTab(0)
                 }
             )
         }
@@ -188,31 +204,51 @@ fun TrendScreen(vm: HomeViewModel = viewModel()) {
     }
 }
 
-/** 三天最佳：按质量 Q 排序，朝/晚分开竞争 */
+/** 三天最佳：跨朝/晚按 Q 降序、Q 相同按 P 降序（口径在 core/TrendRank.kt，供单测断言） */
 private fun bestWindows(rows: List<TrendRow>): List<Triple<String, Int, TrendCell>> {
-    val all = mutableListOf<Triple<String, Int, TrendCell>>()
+    val all = mutableListOf<TrendWindow>()
     rows.forEach { r ->
-        r.am?.let { all += Triple(r.date, 0, it) }
-        r.pm?.let { all += Triple(r.date, 1, it) }
+        r.am?.let { all += TrendWindow(r.date, true, it.p, it.q, it.grade) }
+        r.pm?.let { all += TrendWindow(r.date, false, it.p, it.q, it.grade) }
     }
-    return all.sortedByDescending { it.third.q }.take(3)
+    return rankWindows(all).map {
+        Triple(it.date, if (it.periodAm) 0 else 1, TrendCell(it.p, it.q, it.grade))
+    }
 }
 
 @Composable
-private fun BestCard(rank: Int, date: String, periodAm: Boolean, cell: TrendCell, modifier: Modifier = Modifier) {
+private fun BestCard(
+    rank: Int,
+    date: String,
+    periodAm: Boolean,
+    cell: TrendCell,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
     val colors = SunglowTheme.colors
     val gradeCol = bandColor(cell.grade, colors)
+    val summary = date + " " + (if (periodAm) "朝霞" else "晚霞") +
+        " 质量 " + cell.q.roundToInt() + " 分 出现概率 " + cell.p.roundToInt() + "%"
     Column(
         modifier = modifier
+            .heightIn(min = 44.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(colors.card)
-            .border(1.dp, colors.rule, RoundedCornerShape(12.dp))
+            .border(
+                width = if (rank == 1) 1.5.dp else 1.dp,
+                color = if (rank == 1) colors.accent else colors.rule,
+                shape = RoundedCornerShape(12.dp)
+            )
+            .clickable(onClick = onClick)
+            .semantics(mergeDescendants = true) {
+                contentDescription = "第 " + rank + " 名 " + summary
+            }
             .padding(10.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = "#$rank",
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                text = when (rank) { 1 -> "①"; 2 -> "②"; else -> "③" },
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
                 color = if (rank == 1) colors.accent else colors.faint
             )
             Spacer(Modifier.weight(1f))
@@ -258,14 +294,21 @@ private fun BestCard(rank: Int, date: String, periodAm: Boolean, cell: TrendCell
 @Composable
 private fun TrendDayRow(row: TrendRow, onClick: () -> Unit) {
     val colors = SunglowTheme.colors
+    fun descOf(c: TrendCell?): String =
+        if (c == null) "无数据" else c.p.roundToInt().toString() + "% 质量 " + c.q.roundToInt() + " 分"
+    val desc = row.date + " 朝霞 " + descOf(row.am) + " 晚霞 " + descOf(row.pm)
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = 44.dp)
             .padding(horizontal = 18.dp, vertical = 4.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(colors.card)
             .border(1.dp, colors.rule, RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
+            .semantics(mergeDescendants = true) {
+                contentDescription = desc + "，点击查看当日结论"
+            }
             .padding(horizontal = 12.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -311,7 +354,8 @@ private fun ProbRow(label: String, cell: TrendCell?) {
                     Modifier
                         .fillMaxWidth((cell.p / 100.0).toFloat().coerceIn(0f, 1f))
                         .fillMaxHeight()
-                        .background(Brush.horizontalGradient(colors.spectrum))
+                        /* 冷青蓝两端插值：不用「单色 + alpha」，低值也不会压成脏紫 */
+                        .background(trendRampColor(cell.p, colors.isDark))
                 )
             }
         }
@@ -325,20 +369,22 @@ private fun ProbRow(label: String, cell: TrendCell?) {
         if (cell != null) {
             Box(
                 modifier = Modifier
-                    .width(30.dp)
+                    .width(46.dp)
                     .clip(RoundedCornerShape(999.dp))
                     .background(bandColor(cell.grade, colors).copy(alpha = 0.12f))
                     .padding(vertical = 1.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = QUALITY_LABEL[cell.grade]?.take(1) ?: cell.grade,
+                    /* 网页 qb 徽章：等级 + 质量分；数字可读色不用浅色阶 */
+                    text = (QUALITY_LABEL[cell.grade]?.take(1) ?: cell.grade) +
+                        cell.q.roundToInt().toString(),
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
                     color = bandColor(cell.grade, colors)
                 )
             }
         } else {
-            Spacer(Modifier.width(30.dp))
+            Spacer(Modifier.width(46.dp))
         }
     }
 }

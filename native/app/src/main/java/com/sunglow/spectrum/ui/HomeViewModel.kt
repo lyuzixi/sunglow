@@ -54,6 +54,8 @@ data class HomeUiState(
     val city: City = DEFAULT_CITY,
     val dates: List<String> = emptyList(),
     val dateStr: String = "",
+    /** 0 结论 / 1 趋势 / 2 观测场：放进全局状态，趋势点某天才能跳回结论 Tab */
+    val tab: Int = 0,
     val period: Period = Period.PM,
     val loading: Boolean = false,
     val result: ForecastResult? = null,
@@ -320,6 +322,12 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setCitySheetOpen(open: Boolean) {
         _state.update { it.copy(citySheetOpen = open) }
+    }
+
+    /** 切换底部 Tab；趋势页点某天时用它把用户带回结论页 */
+    fun selectTab(index: Int) {
+        if (index !in 0..2 || index == _state.value.tab) return
+        _state.update { it.copy(tab = index) }
     }
 
     /** 主题三档：0 跟随系统 / 1 深色 / 2 浅色 */

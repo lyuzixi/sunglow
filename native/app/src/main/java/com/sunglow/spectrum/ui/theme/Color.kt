@@ -64,7 +64,8 @@ object LightTokens {
 
     val ink = Color(0xFF111A2C)
     val muted = Color(0xFF46556F)
-    val faint = Color(0xFF667287)
+    /** N2 无障碍：原 #667287 在浅色底上只有 4.45:1，调到 5.3:1 达 WCAG AA */
+    val faint = Color(0xFF5A667C)
 
     val rule = Color(0x1A283C64)
     val ruleStrong = Color(0x33283C64)

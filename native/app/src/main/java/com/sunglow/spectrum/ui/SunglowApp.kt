@@ -25,9 +25,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -38,9 +35,13 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sunglow.spectrum.R
+import com.sunglow.spectrum.ui.motion.rememberMotionEnabled
 import com.sunglow.spectrum.ui.screens.FieldScreen
 import com.sunglow.spectrum.ui.screens.HomeScreen
 import com.sunglow.spectrum.ui.screens.TrendScreen
@@ -53,15 +54,22 @@ import com.sunglow.spectrum.ui.theme.SunglowTheme
 @Composable
 fun SunglowApp(vm: HomeViewModel = viewModel()) {
     val colors = SunglowTheme.colors
-    var tab by rememberSaveable { mutableIntStateOf(0) }
+    val state by vm.state.collectAsStateWithLifecycle()
+    val tab = state.tab
+    /* 系统「移除动画」开启时，Tab 转场直接落位（无障碍 + 低端机兜底） */
+    val motionEnabled = rememberMotionEnabled()
 
     Column(modifier = Modifier.fillMaxSize().background(colors.bg)) {
         Box(modifier = Modifier.weight(1f)) {
             AnimatedContent(
                 targetState = tab,
                 transitionSpec = {
-                    (fadeIn(tween(220)) + slideInVertically(tween(220)) { it / 40 }) togetherWith
-                        fadeOut(tween(120))
+                    if (motionEnabled) {
+                        (fadeIn(tween(220)) + slideInVertically(tween(220)) { it / 40 }) togetherWith
+                            fadeOut(tween(120))
+                    } else {
+                        fadeIn(tween(0)) togetherWith fadeOut(tween(0))
+                    }
                 },
                 label = "tabSwitch"
             ) { current ->
@@ -72,7 +80,7 @@ fun SunglowApp(vm: HomeViewModel = viewModel()) {
                 }
             }
         }
-        SunglowTabBar(selected = tab, onSelect = { tab = it })
+        SunglowTabBar(selected = tab, onSelect = { vm.selectTab(it) })
     }
 }
 
@@ -112,7 +120,8 @@ private fun TabItem(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .semantics(mergeDescendants = true) { contentDescription = label },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(Modifier.height(9.dp))
