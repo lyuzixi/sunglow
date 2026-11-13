@@ -8,6 +8,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.util.Locale
+import kotlin.math.roundToInt
 
 /*
  * SUNGLOW · App → 网页快照序列化（R2-3）
@@ -129,26 +130,123 @@ private fun webTrendEntry(
     )
 }
 
-/** 单点 + 趋势 pack：网页打开即还原结论与十日趋势，不再请求 */
+/** 观测场紧凑行（网页 PACK_ROW_LEN=32 协议，字段顺序不可改） */
+private class StrTable {
+    val list = ArrayList<String>()
+    private val index = HashMap<String, Int>()
+    fun of(v: String): Int {
+        index[v]?.let { return it }
+        index[v] = list.size
+        list.add(v)
+        return list.size - 1
+    }
+}
+
+private fun qv(v: Double?, scale: Double = 1.0, nullable: Boolean = false): Int {
+    if (v == null || !v.isFinite()) return if (nullable) 255 else 0
+    val x = (v * scale).roundToInt()
+    val hi = if (nullable) 254 else 255
+    return x.coerceIn(0, hi)
+}
+
+private fun mapRow(c: HeatCell, st: StrTable): JsonArray {
+    val row = IntArray(32)
+    row[0] = st.of("")
+    row[1] = st.of("")
+    row[2] = (c.lat * 100).roundToInt()
+    row[3] = (c.lon * 100).roundToInt()
+    row[4] = qv(c.p)
+    row[5] = qv(c.q)
+    row[6] = qv(c.ensP)
+    row[7] = qv(c.gfsP, nullable = true)
+    row[8] = qv(c.ecP, nullable = true)
+    row[9] = qv(c.rtP)
+    row[10] = qv(c.refP, nullable = true)
+    row[11] = qv(c.ensQ)
+    row[12] = qv(c.gfsQ, nullable = true)
+    row[13] = qv(c.ecQ, nullable = true)
+    row[14] = qv(c.rtQ)
+    row[15] = qv(c.refQ, nullable = true)
+    row[16] = qv(c.cover)
+    row[17] = qv(c.covers.getOrElse(0) { 0.0 })
+    row[18] = qv(c.covers.getOrElse(1) { 0.0 })
+    row[19] = qv(c.covers.getOrElse(2) { 0.0 })
+    row[20] = qv(c.baseKm, 10.0)
+    row[21] = qv(c.d, 0.5, nullable = true)
+    row[22] = qv(c.dur)
+    row[23] = qv(c.aod, 100.0)
+    row[24] = qv(c.cld)
+    row[25] = qv(c.t550)
+    row[26] = qv(c.occ)
+    row[27] = qv(c.ref)
+    row[28] = qv(c.refGap)
+    row[29] = st.of(c.grade)
+    row[30] = st.of(c.type)
+    row[31] = st.of(c.color)
+    return JsonArray(row.map { JsonPrimitive(it) })
+}
+
+/**
+ * 观测场条目：直接写 compactMap 结果，网页 installSharePack 会展开成 MapDateBox。
+ * 只打包当前时段；另一时段留空（不伪造颜色）。
+ */
+fun buildMapPackEntry(grid: HeatGrid, center: City, stride: Int = 1): PackEntry {
+    val st = StrTable()
+    val cells = if (stride <= 1) grid.cells else grid.cells.filterIndexed { i, _ -> i % stride == 0 }
+    val rows = cells.map { mapRow(it, st) }
+    val amRows = if (grid.period == Period.AM) rows else emptyList()
+    val pmRows = if (grid.period == Period.PM) rows else emptyList()
+    val cm = buildJsonObject {
+        put("m", 1)
+        put("s", JsonArray(st.list.map { JsonPrimitive(it) }))
+        put("r", JsonArray(amRows + pmRows))
+        put("n", JsonArray(listOf(JsonPrimitive(""), JsonPrimitive(""))))
+        put("d", grid.dateStr)
+        put("na", amRows.size)
+        put("ds", stride)
+    }
+    val key = "SUNGLOW.v2.map.v9." + grid.dateStr + "@" +
+        String.format(Locale.US, "%.1f", center.lat) + "," +
+        String.format(Locale.US, "%.1f", center.lon)
+    return PackEntry(
+        key,
+        buildJsonObject {
+            put("ts", System.currentTimeMillis())
+            put("cm", cm)
+        }
+    )
+}
+
+/** 单点 + 趋势 + 观测场 pack；超长时按 1 → 2 → 3 → 丢弃观测场逐级退。 */
 fun buildSnapshotPack(
     r: ForecastResult,
     trend: List<WebTrendRow> = emptyList(),
+    heat: HeatGrid? = null,
     gen: Long = System.currentTimeMillis()
 ): String? {
     val value = buildJsonObject {
         put("ts", System.currentTimeMillis())
         put("obj", webForecastJson(r))
     }
-    val entries = mutableListOf(PackEntry(webPointKey(r), value))
-    webTrendEntry(r, trend)?.let { entries.add(it) }
-    return encodePack(gen = gen, q = packMetaOf(r), entries = entries)
+    val base = mutableListOf(PackEntry(webPointKey(r), value))
+    webTrendEntry(r, trend)?.let { base.add(it) }
+
+    val strides = if (heat == null) listOf(0) else listOf(1, 2, 3, 0)
+    for (stride in strides) {
+        val entries = base.toMutableList()
+        if (heat != null && stride > 0) entries.add(buildMapPackEntry(heat, r.city, stride))
+        val pack = encodePack(gen = gen, q = packMetaOf(r), entries = entries)
+        if (pack != null) return pack
+    }
+    return null
 }
 
 fun packShareUrlOf(
     r: ForecastResult,
     trend: List<WebTrendRow> = emptyList(),
+    heat: HeatGrid? = null,
     gen: Long = System.currentTimeMillis()
-): String? = buildSnapshotPack(r, trend, gen)?.let { SHARE_SITE + "#/?pack=" + it }
+): String? = buildSnapshotPack(r, trend, heat, gen)?.let { SHARE_SITE + "#/?pack=" + it }
 
 /* ------------------------------------------------------------------ 子结构 */
 

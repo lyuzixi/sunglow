@@ -117,4 +117,99 @@ class WebResultJsonTest {
         println("PACK_SAMPLE=$pack")
         println("PACK_LEN=${pack?.length ?: 0}")
     }
+
+    @Test
+    fun mapPackMatchesWebRowProtocol() {
+        val r = sampleResult()
+        val base = listOf(
+            HeatCell(i = 0, j = 0, lat = 40.0, lon = 116.0, p = 55.0, q = 62.0, idx = 58.0,
+                grade = "良好", type = "高层云", cover = 62.0, d = 120.0, occ = 30.0, ref = 40.0),
+            HeatCell(i = 0, j = 1, lat = 40.0, lon = 116.1, p = 31.0, q = 44.0, idx = 37.0,
+                grade = "一般", type = "高积云", cover = 35.0, d = 80.0, occ = 12.0, ref = 20.0),
+            HeatCell(i = 1, j = 0, lat = 39.9, lon = 116.0, p = 12.0, q = 25.0, idx = 18.0,
+                grade = "较差", type = "卷云", cover = 18.0, d = null, occ = 5.0, ref = 8.0)
+        )
+        val grid = HeatGrid(
+            dateStr = "2026-11-12", period = Period.PM, n = 2,
+            lat0 = 40.0, lon0 = 116.0, dLat = 0.1, dLon = 0.1,
+            cells = base.mapIndexed { i, c ->
+                c.copy(
+                    covers = listOf(c.cover, c.cover * 0.8, c.cover * 0.6),
+                    baseKm = 6.2,
+                    aod = 0.15,
+                    cld = c.cover,
+                    t550 = 0.08,
+                    color = "#ff8844",
+                    dur = 22.0,
+                    ensP = c.p,
+                    gfsP = c.p - 3,
+                    ecP = c.p + 2,
+                    rtP = c.p - 1,
+                    refP = c.p,
+                    ensQ = c.q,
+                    gfsQ = c.q - 4,
+                    ecQ = c.q + 3,
+                    rtQ = c.q,
+                    refQ = c.q - 2,
+                    refGap = i * 10.0
+                )
+            }
+        )
+        val pack = buildSnapshotPack(r, emptyList(), grid, gen = 1L)
+        assertNotNull("含观测场的 pack 不应为空", pack)
+        val snap = decodePack(pack)
+        assertNotNull(snap)
+        assertEquals(3, snap!!.entries.size)
+        val mapKey = snap.entries[2].key ?: ""
+        assertTrue("观测场键格式：$mapKey",
+            mapKey == "SUNGLOW.v2.map.v9.2026-11-12@39.9,116.4")
+
+        val cm = snap.entries[2].value["cm"]!!.jsonObject
+        assertEquals(1, cm["m"]!!.jsonPrimitive.int)
+        assertEquals("2026-11-12", cm["d"]!!.jsonPrimitive.content)
+        assertEquals(0, cm["na"]!!.jsonPrimitive.int)
+        assertEquals(1, cm["ds"]!!.jsonPrimitive.int)
+        val rows = cm["r"]!!.jsonArray
+        assertEquals(3, rows.size)
+        assertEquals(32, rows[0].jsonArray.size)
+        assertEquals(40, rows[0].jsonArray[2].jsonPrimitive.int / 100)
+        assertEquals(62, rows[0].jsonArray[20].jsonPrimitive.int)
+        assertEquals(15, rows[0].jsonArray[23].jsonPrimitive.int)
+        assertEquals(0, rows[0].jsonArray[25].jsonPrimitive.int)
+        assertEquals(255, rows[2].jsonArray[21].jsonPrimitive.int)
+        val s = cm["s"]!!.jsonArray
+        assertEquals("高层云", s[rows[0].jsonArray[30].jsonPrimitive.int].jsonPrimitive.content)
+        assertEquals("#ff8844", s[rows[0].jsonArray[31].jsonPrimitive.int].jsonPrimitive.content)
+    }
+
+    @Test
+    fun fullGridStaysUnderPackLimit() {
+        val r = sampleResult()
+        val cells = (0 until 121).map { k ->
+            HeatCell(
+                i = k / 11, j = k % 11,
+                lat = 40.0 - (k / 11) * 0.1, lon = 116.0 + (k % 11) * 0.1,
+                p = 20.0 + (k % 60), q = 15.0 + (k % 70), idx = 30.0,
+                grade = "一般", type = "高层云", cover = 40.0, d = 100.0,
+                covers = listOf(40.0, 30.0, 20.0), baseKm = 6.0, aod = 0.2,
+                cld = 40.0, t550 = 0.1, color = "#ff8844", dur = 20.0,
+                ensP = 50.0, gfsP = 48.0, ecP = 52.0, rtP = 49.0, refP = 50.0,
+                ensQ = 55.0, gfsQ = 52.0, ecQ = 58.0, rtQ = 54.0, refQ = 53.0
+            )
+        }
+        val grid = HeatGrid(
+            dateStr = "2026-11-12", period = Period.PM, n = 11,
+            lat0 = 40.0, lon0 = 116.0, dLat = 0.1, dLon = 0.1, cells = cells
+        )
+        val pack = buildSnapshotPack(r, emptyList(), grid, gen = 1L)
+        assertNotNull("121 点观测场应能在 7,600 字符内打包", pack)
+        assertTrue("pack 长度 ${pack?.length} 应 ≤ 7600", (pack?.length ?: Int.MAX_VALUE) <= 7600)
+        val snap = decodePack(pack)
+        assertEquals(3, snap!!.entries.size)
+        val cm = snap.entries[2].value["cm"]!!.jsonObject
+        val n = cm["r"]!!.jsonArray.size
+        assertTrue("抽稀后应为 121/61/41 点，实际 $n", n in listOf(121, 61, 41))
+        assertEquals(32, cm["r"]!!.jsonArray[0].jsonArray.size)
+        println("FULL_MAP_PACK_LEN=${pack?.length ?: 0} ROWS=$n STRIDE=${cm["ds"]}")
+    }
 }

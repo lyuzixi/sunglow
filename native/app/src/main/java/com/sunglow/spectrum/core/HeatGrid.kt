@@ -42,7 +42,25 @@ data class HeatCell(
     /** 五因子参考分 0–100（独立旁证，不参与加权） */
     val ref: Double = 0.0,
     /** 空间形态分歧 0–100（ref 与综合指数各自标准化后取差 ×33） */
-    val refGap: Double = 0.0
+    val refGap: Double = 0.0,
+    /* 以下为快照打包需要的原始分量（R2-6），不参与界面计算 */
+    val covers: List<Double> = listOf(0.0, 0.0, 0.0),
+    val baseKm: Double = 0.0,
+    val aod: Double = 0.0,
+    val cld: Double = 0.0,
+    val t550: Double = 0.0,
+    val color: String = "",
+    val dur: Double = 0.0,
+    val ensP: Double = 0.0,
+    val gfsP: Double? = null,
+    val ecP: Double? = null,
+    val rtP: Double = 0.0,
+    val refP: Double? = null,
+    val ensQ: Double = 0.0,
+    val gfsQ: Double? = null,
+    val ecQ: Double? = null,
+    val rtQ: Double = 0.0,
+    val refQ: Double? = null
 )
 
 class HeatGrid(
@@ -342,7 +360,28 @@ suspend fun buildHeatGrid(
                     cover = sRT.primary.cover,
                     d = sRT.d,
                     occ = occ,
-                    ref = ref
+                    ref = ref,
+                    covers = listOf(
+                        envM.cLow ?: 0.0,
+                        envM.cMid ?: 0.0,
+                        envM.cHigh ?: 0.0
+                    ),
+                    baseKm = sRT.primary.base,
+                    aod = aodUse,
+                    cld = sRT.primary.cover,
+                    t550 = sRT.peak.color.t550,
+                    color = sRT.peak.color.hex,
+                    dur = sRT.geom.dur,
+                    ensP = p,
+                    gfsP = sGv.p,
+                    ecP = sEv?.p,
+                    rtP = sRT.p,
+                    refP = ref,
+                    ensQ = q,
+                    gfsQ = sGv.q,
+                    ecQ = sEv?.q,
+                    rtQ = sRT.q,
+                    refQ = ref
                 )
             )
     }

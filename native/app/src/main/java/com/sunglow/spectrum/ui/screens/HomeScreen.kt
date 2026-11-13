@@ -1418,8 +1418,15 @@ private fun ShareSheet(
             )
         }
     }
-    val link = remember(result, webTrend) { shareUrlOf(result, webTrend) }
-    val qr = remember(result) { ShareCard.qr(link, 512) }
+    val link = remember(result, webTrend, state.heat) {
+        shareUrlOf(result, webTrend, state.heat)
+    }
+    val qr = remember(result, webTrend, state.heat) {
+        ShareCard.qr(
+            com.sunglow.spectrum.core.qrShareUrlOf(result, webTrend, state.heat),
+            512
+        )
+    }
     val heat = state.heat
     var qrOpen by remember(result) { mutableStateOf(false) }
 
