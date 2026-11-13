@@ -50,6 +50,31 @@
     <string name="share_link_copied">链接已复制</string>
     <string name="share_qr_title">扫码打开网页版</string>
     <string name="share_failed">图卡生成失败，请重试</string>
+    <string name="share_tile_card">结论卡</string>
+    <string name="share_tile_story">竖版故事卡</string>
+    <string name="share_tile_trend">十日趋势图</string>
+    <string name="share_tile_map">观测场图</string>
+    <string name="share_tile_qr">二维码</string>
+    <string name="share_tile_ics">加入日历</string>
+    <string name="share_tile_link_sub">快照链接，对方零取数</string>
+    <string name="share_tile_caption_sub">一句话转发</string>
+    <string name="share_sub_card">1080×1440 · 完整读数</string>
+    <string name="share_sub_story">1080×1920 · 9:16</string>
+    <string name="share_sub_trend">含最值得出门</string>
+    <string name="share_sub_map">热力面缩略</string>
+    <string name="share_sub_qr">扫码看同一份结论</string>
+    <string name="share_sub_ics">覆盖观赏窗口，提前 30 分钟</string>
+    <string name="share_hint_trend">先在趋势页加载十日数据</string>
+    <string name="share_hint_map">点一下开始生成热力面</string>
+    <string name="share_map_loading">正在生成热力面…</string>
+    <string name="share_ics_done">日历文件已生成</string>
+    <string name="guide_title">使用教程</string>
+    <string name="guide_intro">三步读懂今晚的霞</string>
+    <string name="guide_step1">选地点与日期：城市可搜索，日期可回看 2 天、前瞻 15 天，朝霞与晚霞分开计算。</string>
+    <string name="guide_step2">读结论：概率 P 是「会不会出霞」，观赏质量 Q 是「出得好不好」，可信度看多模型分歧。</string>
+    <string name="guide_step3">看趋势与观测场：趋势挑日子，观测场挑机位；两者都要联网取数，缓存 6 小时。</string>
+    <string name="guide_open_web">打开完整教程（网页版，四档三语）</string>
+    <string name="guide_note">App 只保留这一页快速上手；完整教程在浏览器中打开，不内嵌网页。</string>
 
     <!-- M5 · 下钻入口 -->
     <string name="fold_factors">影响因素</string>

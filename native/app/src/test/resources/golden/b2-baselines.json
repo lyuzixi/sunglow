@@ -1,6 +1,6 @@
 {
- "version": 2,
- "generatedAt": "2026-11-13T07:19:45.855Z",
+ "version": 3,
+ "generatedAt": "2026-11-13T07:54:45.736Z",
  "source": "v2/src/core (TypeScript)",
  "note": "B2 基准：常量与纯函数样本。Kotlin 断言随各功能包接入，见 docs/android-b2-workcards.md。",
  "hashes": {
@@ -9,7 +9,8 @@
   "trend.ts": "a2b41fcdd2756841",
   "mapdata.ts": "1aff7b0730e87714",
   "verdict.ts": "d011fe8401b8f094",
-  "units.ts": "5dc338f25adb6350"
+  "units.ts": "5dc338f25adb6350",
+  "shareextras.ts": "32d1bf8ebed79825"
  },
  "constants": {
   "map": {
@@ -104,9 +105,9 @@
  "samples": {
   "snap": [
    {
-    "raw": "MXx0b2ZqMHl8MjAyNi0xMS0xM3xwbXwzOS45MDQyfDExNi40MDc0fOWMl-S6rOW4gnzljJfkuqzluIJ8NzJ8Njh8MXwxLjB8MHw2fDQ4MHwxfDF8MS4zMHwxMjAuMHwyNXx2aXN-MjR-ODIhYmFzZX4xLjN-NzAhYW9kfjAuMzF-NjAhY292ZXJ-NjB-NTV8NDgw",
+    "raw": "MXx0b2Zrbjl8MjAyNi0xMS0xM3xwbXwzOS45MDQyfDExNi40MDc0fOWMl-S6rOW4gnzljJfkuqzluIJ8NzJ8Njh8MXwxLjB8MHw2fDQ4MHwxfDF8MS4zMHwxMjAuMHwyNXx2aXN-MjR-ODIhYmFzZX4xLjN-NzAhYW9kfjAuMzF-NjAhY292ZXJ-NjB-NTV8NDgw",
     "decoded": {
-     "gen": 1794554386000,
+     "gen": 1794556485000,
      "date": "2026-11-13",
      "period": "pm",
      "lat": 39.9042,
@@ -400,6 +401,22 @@
    {
     "v": 100,
     "hex": "#eafcff"
+   }
+  ],
+  "ics": [
+   {
+    "startMs": 1794559517000,
+    "endMs": 1794561317000,
+    "summary": "霞光档案 · 北京市晚霞 72%",
+    "description": "参考时段 16:45–17:15（无几何窗口），出现概率 72%，观赏质量 68 分（良）。\n查看快照：https://sunglow.cloud/?s=ABCdef1234567890",
+    "location": "北京市 39.904,116.407",
+    "geoLat": 39.9042,
+    "geoLon": 116.4074,
+    "uid": "sunglow-2026-11-13-pm-39.904-116.407-29909325@sunglow.local",
+    "stampMs": 1794556800000,
+    "alarmText": "16:45–17:15 · 霞光档案 · 北京市晚霞 72%",
+    "fileName": "霞光档案_北京市_2026-11-13_晚霞.ics",
+    "text": "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//SUNGLOW//Glow Forecast//CN\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nBEGIN:VEVENT\r\nUID:sunglow-2026-11-13-pm-39.904-116.407-29909325@sunglow.local\r\nDTSTAMP:20261113T080000Z\r\nDTSTART:20261113T084517Z\r\nDTEND:20261113T091517Z\r\nSUMMARY:霞光档案 · 北京市晚霞 72%\r\nDESCRIPTION:参考时段 16:45–17:15（无几何窗口），出现概\r\n 率 72%，观赏质量 68 分（良）。\\n查看快照：https://sunglo\r\n w.cloud/?s=ABCdef1234567890\r\nLOCATION:北京市 39.904\\,116.407\r\nGEO:39.9042;116.4074\r\nBEGIN:VALARM\r\nTRIGGER:-PT30M\r\nACTION:DISPLAY\r\nDESCRIPTION:16:45–17:15 · 霞光档案 · 北京市晚霞 72%\r\nEND:VALARM\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
    }
   ],
   "rampAnchors": [

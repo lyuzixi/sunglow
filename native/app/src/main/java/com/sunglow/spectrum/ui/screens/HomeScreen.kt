@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -326,6 +327,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                     onSetThreshold = vm::setReminderThreshold,
                     onSetSamples = vm::setShowSamples,
                     onOpenAbout = { sheet = "about" },
+                    onOpenGuide = { sheet = "guide" },
                     onFeedback = {
                         runCatching {
                             context.startActivity(
@@ -339,6 +341,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                     }
                 )
                 "about" -> AboutSheet()
+                "guide" -> GuideSheet()
             }
         }
     }
@@ -1385,16 +1388,28 @@ private fun ShareSheet(
     val caption = remember(result, view) { captionOf(result, view) }
     val link = remember(result) { shareUrlOf(result) }
     val qr = remember(result) { ShareCard.qr(link, 512) }
-    /* 模板 0＝结论版（天色带）；1＝地图版（热力缩略 + 分歧/可信度） */
-    var template by remember(result) { mutableStateOf(0) }
     val heat = state.heat
+    var qrOpen by remember(result) { mutableStateOf(false) }
+
+    fun copyText(text: String, tip: Int) {
+        val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        cm.setPrimaryClip(ClipData.newPlainText("Sunglow", text))
+        Toast.makeText(context, context.getString(tip), Toast.LENGTH_SHORT).show()
+    }
+
+    fun safeShare(block: () -> Unit) {
+        runCatching(block).onFailure {
+            Toast.makeText(context, context.getString(R.string.share_failed), Toast.LENGTH_SHORT).show()
+        }
+    }
+
     Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 28.dp)) {
         Text(
             text = stringResource(R.string.share_title),
             style = MaterialTheme.typography.titleMedium,
             color = colors.ink
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(6.dp))
         Text(
             text = caption,
             style = MaterialTheme.typography.bodyMedium,
@@ -1402,192 +1417,221 @@ private fun ShareSheet(
         )
         Spacer(Modifier.height(14.dp))
 
+        /* 八磁贴：四张图片产物 + 四个链接/提醒动作，与网页分享中心同一个口径 */
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("结论版" to 0, "地图版" to 1).forEach { (label, t) ->
-                val on = template == t
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                    color = if (on) Color(0xFF06101C) else colors.muted,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(999.dp))
-                        .then(
-                            if (on) Modifier.background(Brush.horizontalGradient(colors.spectrum))
-                            else Modifier.background(colors.glass)
-                        )
-                        .border(
-                            1.dp,
-                            if (on) Color.Transparent else colors.ruleStrong,
-                            RoundedCornerShape(999.dp)
-                        )
-                        .clickable {
-                            template = t
-                            if (t == 1 && heat == null) onLoadHeat()
-                        }
-                        .padding(horizontal = 14.dp, vertical = 7.dp)
-                )
-            }
-        }
-        if (template == 1) {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = when {
-                    heat != null -> "热力缩略 " + heat.n + "×" + heat.n +
-                        " · 覆盖约 " + heat.spanKm().roundToInt() + " km 见方"
-                    state.heatLoading -> "正在生成热力面 " + state.heatDone + "/" + state.heatTotal + "…"
-                    state.heatError != null -> state.heatError
-                    else -> "点「地图版」开始生成观测场缩略图"
-                },
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                color = colors.faint
-            )
-        }
-        Spacer(Modifier.height(12.dp))
-
-        /* 主操作：生成 1080×1440 竖版图卡并调起系统分享 */
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(999.dp))
-                .background(Brush.horizontalGradient(colors.spectrum))
-                .clickable(enabled = template == 0 || heat != null) {
-                    haptics.confirm()
-                    runCatching {
-                        ShareCard.shareImage(context, result, view, colors.isDark, template, heat)
-                    }
-                        .onFailure {
-                            Toast.makeText(
-                                context,
-                                context.getString(R.string.share_failed),
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
+            ShareTile(
+                name = stringResource(R.string.share_tile_card),
+                sub = stringResource(R.string.share_sub_card),
+                enabled = true,
+                main = true,
+                modifier = Modifier.weight(1f)
+            ) {
+                haptics.confirm()
+                safeShare {
+                    ShareCard.shareImage(context, result, view, colors.isDark, 0, null)
                 }
-                .padding(vertical = 12.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = stringResource(R.string.share_make_card),
-                style = MaterialTheme.typography.titleSmall,
-                color = Color(0xFF06101C)
-            )
-        }
-
-        Spacer(Modifier.height(10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(colors.glass)
-                    .border(1.dp, colors.ruleStrong, RoundedCornerShape(999.dp))
-                    .clickable {
-                        haptics.tap()
-                        val send = Intent(Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, shareBodyOf(result, view))
-                        }
-                        context.startActivity(Intent.createChooser(send, "分享霞光预报"))
-                    }
-                    .padding(vertical = 11.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = stringResource(R.string.share_system),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = colors.ink
-                )
             }
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(colors.glass)
-                    .border(1.dp, colors.ruleStrong, RoundedCornerShape(999.dp))
-                    .clickable {
-                        haptics.tap()
-                        val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        cm.setPrimaryClip(ClipData.newPlainText("Sunglow", caption))
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.share_text_copied),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                    .padding(vertical = 11.dp),
-                contentAlignment = Alignment.Center
+            ShareTile(
+                name = stringResource(R.string.share_tile_story),
+                sub = stringResource(R.string.share_sub_story),
+                enabled = true,
+                modifier = Modifier.weight(1f)
             ) {
-                Text(
-                    text = stringResource(R.string.share_copy_text),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = colors.ink
-                )
+                haptics.confirm()
+                safeShare {
+                    ShareCard.shareBitmap(
+                        context,
+                        ShareCard.renderStory(context, result, view, colors.isDark),
+                        "sunglow-story-" + result.dateStr + "-" + result.period.name.lowercase() + ".png",
+                        shareBodyOf(result, view)
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ShareTile(
+                name = stringResource(R.string.share_tile_trend),
+                sub = if (state.trend.isEmpty()) stringResource(R.string.share_hint_trend)
+                else stringResource(R.string.share_sub_trend),
+                enabled = state.trend.isNotEmpty(),
+                modifier = Modifier.weight(1f)
+            ) {
+                haptics.confirm()
+                safeShare {
+                    ShareCard.shareBitmap(
+                        context,
+                        ShareCard.renderTrend(context, state.trend, result.city.name, colors.isDark),
+                        "sunglow-trend-" + result.dateStr + ".png",
+                        shareBodyOf(result, view)
+                    )
+                }
+            }
+            ShareTile(
+                name = stringResource(R.string.share_tile_map),
+                sub = when {
+                    heat != null -> stringResource(R.string.share_sub_map)
+                    state.heatLoading -> stringResource(R.string.share_map_loading)
+                    else -> stringResource(R.string.share_hint_map)
+                },
+                enabled = !state.heatLoading,
+                modifier = Modifier.weight(1f)
+            ) {
+                haptics.tap()
+                if (heat == null) {
+                    onLoadHeat()
+                } else {
+                    safeShare {
+                        ShareCard.shareImage(context, result, view, colors.isDark, 1, heat)
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ShareTile(
+                name = stringResource(R.string.share_copy_link),
+                sub = stringResource(R.string.share_tile_link_sub),
+                enabled = true,
+                modifier = Modifier.weight(1f)
+            ) {
+                haptics.tap()
+                copyText(link, R.string.share_link_copied)
+            }
+            ShareTile(
+                name = stringResource(R.string.share_tile_qr),
+                sub = stringResource(R.string.share_sub_qr),
+                enabled = true,
+                modifier = Modifier.weight(1f)
+            ) {
+                haptics.tap()
+                qrOpen = !qrOpen
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ShareTile(
+                name = stringResource(R.string.share_copy_text),
+                sub = stringResource(R.string.share_tile_caption_sub),
+                enabled = true,
+                modifier = Modifier.weight(1f)
+            ) {
+                haptics.tap()
+                copyText(caption, R.string.share_text_copied)
+            }
+            ShareTile(
+                name = stringResource(R.string.share_tile_ics),
+                sub = stringResource(R.string.share_sub_ics),
+                enabled = true,
+                modifier = Modifier.weight(1f)
+            ) {
+                haptics.confirm()
+                safeShare {
+                    ShareCard.shareIcs(context, result, view)
+                }
+                Toast.makeText(context, context.getString(R.string.share_ics_done), Toast.LENGTH_SHORT).show()
             }
         }
 
         /* 二维码：扫码回到同一城市、同一天、同一时段 */
-        Spacer(Modifier.height(18.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(colors.glass)
-                .border(1.dp, colors.rule, RoundedCornerShape(14.dp))
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
+        if (qrOpen) {
+            Spacer(Modifier.height(14.dp))
+            Row(
                 modifier = Modifier
-                    .size(104.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Color.White)
-                    .padding(8.dp),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(colors.glass)
+                    .border(1.dp, colors.rule, RoundedCornerShape(14.dp))
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                if (qr != null) {
-                    Image(
-                        bitmap = qr.asImageBitmap(),
-                        contentDescription = "分享链接二维码",
-                        modifier = Modifier.fillMaxSize()
+                Box(
+                    modifier = Modifier
+                        .size(128.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color.White)
+                        .padding(8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (qr != null) {
+                        Image(
+                            bitmap = qr.asImageBitmap(),
+                            contentDescription = stringResource(R.string.share_tile_qr),
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.share_qr_title),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.ink
+                    )
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        text = result.city.shortName + " · " + result.dateStr + " · " +
+                            (if (result.period == Period.AM) "朝霞" else "晚霞"),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = colors.faint
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = stringResource(R.string.share_copy_link),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = colors.accentCool,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .border(1.dp, colors.ruleStrong, RoundedCornerShape(999.dp))
+                            .clickable {
+                                haptics.tap()
+                                copyText(link, R.string.share_link_copied)
+                            }
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
                     )
                 }
             }
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.share_qr_title),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = colors.ink
-                )
-                Spacer(Modifier.height(3.dp))
-                Text(
-                    text = result.city.shortName + " · " + result.dateStr + " · " +
-                        (if (result.period == Period.AM) "朝霞" else "晚霞"),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = colors.faint
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = stringResource(R.string.share_copy_link),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = colors.accentCool,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(999.dp))
-                        .border(1.dp, colors.ruleStrong, RoundedCornerShape(999.dp))
-                        .clickable {
-                            haptics.tap()
-                            val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            cm.setPrimaryClip(ClipData.newPlainText("Sunglow", link))
-                            Toast.makeText(
-                                context,
-                                context.getString(R.string.share_link_copied),
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
-                )
-            }
         }
+    }
+}
+
+/** 分享磁贴：名称 + 一句副文案；禁用时给原因，不留「点了没反应」 */
+@Composable
+private fun ShareTile(
+    name: String,
+    sub: String,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    main: Boolean = false,
+    onClick: () -> Unit
+) {
+    val colors = SunglowTheme.colors
+    Column(
+        modifier = modifier
+            .heightIn(min = 58.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(if (main) colors.glassStrong else colors.glass)
+            .border(
+                1.dp,
+                if (main) colors.accent else colors.rule,
+                RoundedCornerShape(14.dp)
+            )
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+    ) {
+        Text(
+            text = name,
+            style = MaterialTheme.typography.labelLarge.copy(fontSize = 13.sp),
+            color = if (enabled) colors.ink else colors.faint
+        )
+        Spacer(Modifier.height(3.dp))
+        Text(
+            text = sub,
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+            color = colors.faint,
+            lineHeight = 13.sp,
+            maxLines = 2
+        )
     }
 }
 
@@ -1606,6 +1650,7 @@ private fun SettingsSheet(
     onSetThreshold: (Int) -> Unit,
     onSetSamples: (Boolean) -> Unit,
     onOpenAbout: () -> Unit,
+    onOpenGuide: () -> Unit,
     onFeedback: () -> Unit,
     onClearCache: () -> Unit
 ) {
@@ -1811,6 +1856,7 @@ private fun SettingsSheet(
 
         Spacer(Modifier.height(18.dp))
         Box(Modifier.fillMaxWidth().height(1.dp).background(colors.rule))
+        SettingsAction(stringResource(R.string.guide_title), onOpenGuide)
         SettingsAction(stringResource(R.string.settings_about), onOpenAbout)
         SettingsAction(stringResource(R.string.settings_feedback), onFeedback)
         SettingsAction(stringResource(R.string.settings_clear_cache), onClearCache)
@@ -1848,6 +1894,101 @@ private fun SettingsAction(title: String, onClick: () -> Unit) {
             modifier = Modifier.weight(1f)
         )
         ChevronRight(colors.faint, 14.dp)
+    }
+}
+
+/* ---------- 使用教程（N4） ----------
+ * 原生只放一页快速上手；完整四档三语教程走系统浏览器打开，
+ * 与「不内嵌 WebView」的既有约束一致（下载页与外壳都不带浏览器内核）。
+ */
+@Composable
+private fun GuideSheet() {
+    val colors = SunglowTheme.colors
+    val context = LocalContext.current
+    val steps = listOf(
+        stringResource(R.string.guide_step1),
+        stringResource(R.string.guide_step2),
+        stringResource(R.string.guide_step3)
+    )
+    Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 28.dp)) {
+        Text(
+            text = stringResource(R.string.guide_title),
+            style = MaterialTheme.typography.titleMedium,
+            color = colors.ink
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = stringResource(R.string.guide_intro),
+            style = MaterialTheme.typography.bodySmall,
+            color = colors.muted
+        )
+        Spacer(Modifier.height(16.dp))
+        steps.forEachIndexed { i, line ->
+            Row(verticalAlignment = Alignment.Top) {
+                Box(
+                    modifier = Modifier
+                        .size(22.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(colors.glassStrong)
+                        .border(1.dp, colors.ruleStrong, RoundedCornerShape(999.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = (i + 1).toString(),
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                        color = colors.accent
+                    )
+                }
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    text = line,
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.5.sp),
+                    color = colors.ink,
+                    lineHeight = 19.sp,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+        }
+
+        Spacer(Modifier.height(6.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(999.dp))
+                .background(Brush.horizontalGradient(colors.spectrum))
+                .clickable {
+                    runCatching {
+                        context.startActivity(
+                            Intent(
+                                Intent.ACTION_VIEW,
+                                android.net.Uri.parse(com.sunglow.spectrum.core.SHARE_SITE + "tutorial.html")
+                            )
+                        )
+                    }.onFailure {
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.share_failed),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+                .padding(vertical = 12.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = stringResource(R.string.guide_open_web),
+                style = MaterialTheme.typography.titleSmall,
+                color = Color(0xFF06101C)
+            )
+        }
+        Spacer(Modifier.height(10.dp))
+        Text(
+            text = stringResource(R.string.guide_note),
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+            color = colors.faint,
+            lineHeight = 14.sp
+        )
     }
 }
 

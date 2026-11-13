@@ -33,7 +33,21 @@ globalThis.localStorage = {
 }
 globalThis.sessionStorage = globalThis.localStorage
 
-const files = ["snap.ts", "calib.ts", "trend.ts", "mapdata.ts", "verdict.ts", "units.ts"]
+/* shareextras / i18n 会碰 DOM：给最小替身，够 import 与纯函数调用即可（不触发 saveIcs 的下载分支） */
+globalThis.document = {
+  documentElement: { lang: "zh", setAttribute() {}, getAttribute: () => "zh" },
+  body: { appendChild() {}, removeChild() {} },
+  createElement: () => ({ style: {}, setAttribute() {}, appendChild() {}, click() {}, remove() {} }),
+  querySelector: () => null,
+  querySelectorAll: () => [],
+  addEventListener() {},
+  removeEventListener() {}
+}
+if (!globalThis.navigator) {
+  try { globalThis.navigator = { language: "zh-CN" } } catch { /* Node 自带 navigator 时忽略 */ }
+}
+
+const files = ["snap.ts", "calib.ts", "trend.ts", "mapdata.ts", "verdict.ts", "units.ts", "shareextras.ts"]
 const hashes = Object.fromEntries(
   files.map((f) => [f, createHash("sha256").update(read(f)).digest("hex").slice(0, 16)])
 )
@@ -69,7 +83,7 @@ const constants = {
   )
 }
 
-const samples = { snap: [], calib: [], trend: [], map: [], field: [], ramp: [] }
+const samples = { snap: [], calib: [], trend: [], map: [], field: [], ramp: [], ics: [] }
 const unavailable = []
 
 try {
@@ -182,8 +196,66 @@ try {
   if (ramp.SPECTRUM_RAMP) samples.rampAnchors = ramp.SPECTRUM_RAMP
 } catch (e) { unavailable.push("maprender.ts/ramp.ts: " + e.message) }
 
+/* ---------- 6. 日历事件 .ics（N4）：网页 buildIcs 的真实产物 ---------- */
+/* 冻结 Date.now 让 DTSTAMP 可复现；再从产物里解析回字段，供 Kotlin 侧逐字节对拍。 */
+try {
+  const extras = await import(mod("shareextras.ts"))
+  const astro = await import(mod("astro.ts"))
+  const events = astro.sunEvents(Date.UTC(2026, 10, 13), 39.9042, 116.4074)
+  const evMs = events.setMs
+  const fakeR = {
+    dateStr: "2026-11-13", period: "pm", evMs,
+    city: { name: "北京市", lat: 39.9042, lon: 116.4074 },
+    sRT: { geom: { ok: true, thNearDeg: 0.6, thFarDeg: 3.4 } },
+    tz: { iana: "Asia/Shanghai", offsetSec: 28800, est: false }
+  }
+  const fakeView = { P: 72, Q: 68, grade: "良" }
+  const stampMs = Date.UTC(2026, 10, 13, 8, 0, 0)
+  const realNow = Date.now
+  Date.now = () => stampMs
+  let built
+  try {
+    built = extras.buildIcs(
+      fakeR, fakeView,
+      "https://sunglow.cloud/?s=ABCdef1234567890"
+    )
+  } finally { Date.now = realNow }
+
+  /* 展开折行后解析字段 */
+  const unfolded = []
+  for (const line of built.text.split("\r\n")) {
+    if (line.startsWith(" ") && unfolded.length) unfolded[unfolded.length - 1] += line.slice(1)
+    else unfolded.push(line)
+  }
+  const grab = (key) => {
+    const hit = unfolded.find((l) => l.startsWith(key + ":"))
+    return hit ? hit.slice(key.length + 1) : null
+  }
+  const unesc = (s) => s
+    .replace(/\\n/g, "\n").replace(/\\,/g, ",").replace(/\\;/g, ";").replace(/\\\\/g, "\\")
+  const geo = grab("GEO").split(";")
+  samples.ics = [{
+    startMs: new Date(grab("DTSTART").replace(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/, "$1-$2-$3T$4:$5:$6Z")).getTime(),
+    endMs: new Date(grab("DTEND").replace(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/, "$1-$2-$3T$4:$5:$6Z")).getTime(),
+    summary: unesc(grab("SUMMARY")),
+    description: unesc(grab("DESCRIPTION")),
+    location: unesc(grab("LOCATION")),
+    geoLat: Number(geo[0]),
+    geoLon: Number(geo[1]),
+    uid: grab("UID"),
+    stampMs,
+    /* VALARM 里那条 DESCRIPTION */
+    alarmText: unesc(unfolded.filter((l) => l.startsWith("DESCRIPTION:")).pop().slice(12)),
+    fileName: built.fileName,
+    text: built.text
+  }]
+  const maxLen = Math.max(...unfolded.map((l) => Buffer.byteLength(l, "utf8")))
+  console.log("  ics sample: lines =", unfolded.length, "max octets =", maxLen,
+    "crlf =", built.text.includes("\r\n"))
+} catch (e) { (samples.ics = samples.ics || []), unavailable.push("shareextras.ts: " + e.message) }
+
 const out = {
-  version: 2,
+  version: 3,
   generatedAt: new Date().toISOString(),
   source: "v2/src/core (TypeScript)",
   note: "B2 基准：常量与纯函数样本。Kotlin 断言随各功能包接入，见 docs/android-b2-workcards.md。",
