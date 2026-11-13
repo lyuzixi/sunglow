@@ -783,11 +783,11 @@ private fun blendTo(rgb: Int, target: List<Int>, k: Double): Int {
 }
 
 /** 观测场四维口径：与网页 MapDim（mix/p/q/dv）一致 */
-private enum class FieldDim(val labelRes: Int, val hintRes: Int) {
-    MIX(R.string.field_dim_mix, R.string.field_dim_mix_hint),
-    P(R.string.field_dim_p, R.string.field_dim_p_hint),
-    Q(R.string.field_dim_q, R.string.field_dim_q_hint),
-    DV(R.string.field_dim_dv, R.string.field_dim_dv_hint)
+private enum class FieldDim(val labelRes: Int, val hintRes: Int, val shortRes: Int) {
+    MIX(R.string.field_dim_mix, R.string.field_dim_mix_hint, R.string.field_dim_mix_short),
+    P(R.string.field_dim_p, R.string.field_dim_p_hint, R.string.field_dim_p_short),
+    Q(R.string.field_dim_q, R.string.field_dim_q_hint, R.string.field_dim_q_short),
+    DV(R.string.field_dim_dv, R.string.field_dim_dv_hint, R.string.field_dim_dv_short)
 }
 
 private fun HeatCell.dimValue(dim: FieldDim): Double = when (dim) {
@@ -1232,7 +1232,7 @@ private fun OsmMap(
                 FieldDim.values().forEach { d ->
                     val on = d == dim
                     Text(
-                        text = d.labelRes.let { stringResource(it) },
+                        text = d.shortRes.let { stringResource(it) },
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
                         color = if (on) colors.ink else colors.faint,
                         modifier = Modifier

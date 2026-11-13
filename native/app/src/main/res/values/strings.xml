@@ -243,4 +243,8 @@
     <string name="city_search_note">输入城市名、拼音或省份，例如「杭州」「hangzhou」「广东」。</string>
     <string name="city_no_match">没有匹配的城市，换个关键词试试。</string>
     <string name="city_pick">选择</string>
+    <string name="field_dim_mix_short">综合</string>
+    <string name="field_dim_p_short">概率</string>
+    <string name="field_dim_q_short">质量</string>
+    <string name="field_dim_dv_short">分歧</string>
 </resources>

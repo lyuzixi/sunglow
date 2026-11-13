@@ -236,4 +236,8 @@
     <string name="city_search_note">Type a city, pinyin or province, e.g. Hangzhou, hangzhou or Guangdong.</string>
     <string name="city_no_match">No matching city — try another keyword.</string>
     <string name="city_pick">Pick</string>
+    <string name="field_dim_mix_short">Mix</string>
+    <string name="field_dim_p_short">P</string>
+    <string name="field_dim_q_short">Q</string>
+    <string name="field_dim_dv_short">Div</string>
 </resources>
