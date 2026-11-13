@@ -64,6 +64,11 @@ android {
     }
 }
 
+/* CI 需要拿到测试打印的 pack 原文，做一次网页侧反解校验 */
+tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
+    testLogging { showStandardStreams = true }
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
