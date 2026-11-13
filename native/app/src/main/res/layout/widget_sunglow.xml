@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:background="@drawable/widget_bg"
     android:orientation="vertical"
     android:padding="16dp">
@@ -22,7 +22,8 @@
             android:textSize="10sp"
             android:letterSpacing="0.14" />
 
-        <View
+        <!-- RemoteViews 只允许注解过的控件，不能用裸 View 做占位/分割线 -->
+        <FrameLayout
             android:layout_width="0dp"
             android:layout_height="1dp"
             android:layout_weight="1" />
@@ -82,7 +83,7 @@
             </LinearLayout>
         </LinearLayout>
 
-        <View
+        <FrameLayout
             android:layout_width="1dp"
             android:layout_height="46dp"
             android:background="#2494B2E8" />
