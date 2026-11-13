@@ -153,10 +153,10 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
     ) { grants ->
         if (grants.values.any { it }) {
             if (!vm.useCurrentLocation()) {
-                Toast.makeText(context, "没有取到定位，请手动搜索城市", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.home_loc_fail), Toast.LENGTH_SHORT).show()
             }
         } else {
-            Toast.makeText(context, "未获得定位权限，可手动搜索城市", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.home_loc_denied), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -206,16 +206,16 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
         if (result != null) {
             val time = state.offlineAt?.let { offlineTime(it) }
             /* N5：缓存结果（6 小时内）不是「离线」，如实写成缓存；断网时 error 同时在，提示更清楚 */
-            val notice = when {
-                state.offlineAt != null && state.error != null ->
-                    "缓存数据 · 更新于 " + time + " · " + errorLabel(state.errorKind)
-                state.offlineAt != null -> "缓存数据 · 更新于 " + time
-                state.error != null -> errorLabel(state.errorKind) + " · 点右侧重试"
-                else -> null
-            }
-            if (notice != null) {
+            val hasNotice = state.offlineAt != null || state.error != null
+            if (hasNotice) {
                 item {
-                    NoticeStrip(notice, "重试", vm::refresh)
+                    val notice = when {
+                        state.offlineAt != null && state.error != null ->
+                            stringResource(R.string.home_cache_time_kind, time, errorLabel(state.errorKind))
+                        state.offlineAt != null -> stringResource(R.string.home_cache_time, time)
+                        else -> stringResource(R.string.home_error_retry, errorLabel(state.errorKind))
+                    }
+                    NoticeStrip(notice, stringResource(R.string.home_retry), vm::refresh)
                 }
             }
             val view = verdictViewOf(result, modelSel)
@@ -266,7 +266,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
             }
             item {
                 Text(
-                    text = "数据 Open-Meteo · 概率预报仅供参考",
+                    text = stringResource(R.string.home_data_credit),
                     style = MaterialTheme.typography.labelSmall,
                     color = colors.faint,
                     modifier = Modifier
@@ -292,7 +292,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
             onLocate = {
                 if (vm.hasLocationPermission()) {
                     if (!vm.useCurrentLocation()) {
-                        Toast.makeText(context, "没有取到定位，请手动搜索城市", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.home_loc_fail), Toast.LENGTH_SHORT).show()
                     }
                 } else {
                     permissionLauncher.launch(
@@ -451,7 +451,7 @@ private fun HeroBlock(
                 )
                 Text(
                     text = " · " + state.dateStr.takeLast(5).replace('-', '/') +
-                        " · " + (if (state.period == Period.AM) "朝霞" else "晚霞"),
+                        " · " + (if (state.period == Period.AM) stringResource(R.string.widget_am) else stringResource(R.string.widget_pm)),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White.copy(alpha = 0.72f),
                     maxLines = 1
@@ -498,7 +498,7 @@ private fun HeroBlock(
                     }
                 } else {
                     Text(
-                        text = state.error ?: "点我开始观测",
+                        text = state.error ?: stringResource(R.string.home_start),
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.White.copy(alpha = 0.8f)
                     )
@@ -525,7 +525,7 @@ private fun HeroBlock(
                             enabled = motion
                         )
                         Text(
-                            text = if (state.period == Period.AM) "朝霞概率" else "晚霞概率",
+                            text = if (state.period == Period.AM) stringResource(R.string.home_am_prob) else stringResource(R.string.home_pm_prob),
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontSize = 9.sp,
                                 letterSpacing = 1.4.sp
@@ -554,7 +554,7 @@ private fun HeroBlock(
                             enabled = motion
                         )
                         Text(
-                            text = "观赏质量",
+                            text = stringResource(R.string.home_quality),
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontSize = 9.sp,
                                 letterSpacing = 1.4.sp
@@ -564,7 +564,7 @@ private fun HeroBlock(
                     }
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text = "分",
+                        text = stringResource(R.string.home_score_unit),
                         style = MaterialTheme.typography.titleSmall.copy(fontSize = 13.sp),
                         color = Color(0xFFFFD08A).copy(alpha = 0.85f),
                         modifier = Modifier.padding(bottom = 18.dp)
@@ -574,18 +574,18 @@ private fun HeroBlock(
                 Spacer(Modifier.height(8.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    SubStat("等级", QUALITY_LABEL[view.grade] ?: view.grade, gradeColor(view.grade, colors))
+                    SubStat(stringResource(R.string.home_grade), gradeLabel(view.grade), gradeColor(view.grade, colors))
                     SubDivider()
                     if (view.single) {
-                        SubStat("时效", "实况/历史", Color.White)
+                        SubStat(stringResource(R.string.home_recency), stringResource(R.string.home_live), Color.White)
                     } else {
                         SubStat(
-                            "分歧",
+                            stringResource(R.string.home_divergence),
                             if (isNum(result.dvI)) result.dvI!!.roundToInt().toString() else "—",
                             Color.White
                         )
                         SubDivider()
-                        SubStat("可信度", result.conf.level, Color.White)
+                        SubStat(stringResource(R.string.home_confidence), confLabel(result.conf.key), Color.White)
                     }
                 }
             }
@@ -723,7 +723,7 @@ private fun SkyBand(result: ForecastResult, motion: Boolean) {
                 }
                 if (current.nowPct != null) {
                     Text(
-                        text = "此刻 " + current.nowText,
+                        text = stringResource(R.string.home_now, current.nowText),
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontSize = 8.5.sp,
                             fontWeight = FontWeight.SemiBold
@@ -732,9 +732,13 @@ private fun SkyBand(result: ForecastResult, motion: Boolean) {
                     )
                 }
             } else {
-                listOf("白昼", "民用", "航海", "天文", "夜间").forEachIndexed { i, nm ->
+                val names = listOf(
+                    R.string.sky_day, R.string.sky_civil, R.string.sky_naut,
+                    R.string.sky_astro, R.string.sky_night
+                )
+                names.forEachIndexed { i, res ->
                     Text(
-                        text = nm,
+                        text = stringResource(res),
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp),
                         color = colors.faint,
                         modifier = Modifier.weight(
@@ -759,12 +763,13 @@ private fun skyColor(key: String): Color = when (key) {
 }
 
 /** 轴标短名：段宽按真实时长，名字要压到两个字 */
+@Composable
 private fun skyShortName(key: String): String = when (key) {
-    "day" -> "白昼"
-    "civil" -> "民用"
-    "naut" -> "航海"
-    "astro" -> "天文"
-    else -> "夜间"
+    "day" -> stringResource(R.string.sky_day)
+    "civil" -> stringResource(R.string.sky_civil)
+    "naut" -> stringResource(R.string.sky_naut)
+    "astro" -> stringResource(R.string.sky_astro)
+    else -> stringResource(R.string.sky_night)
 }
 
 @Composable
@@ -780,13 +785,13 @@ private fun ModelSection(
     Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp)) {
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
-                text = "各模型独立结果",
+                text = stringResource(R.string.model_title),
                 style = MaterialTheme.typography.titleMedium.copy(fontSize = 13.sp),
                 color = colors.ink
             )
             Spacer(Modifier.weight(1f))
             Text(
-                text = "点卡片，上方数据随之切换",
+                text = stringResource(R.string.model_hint),
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                 color = colors.faint
             )
@@ -801,29 +806,29 @@ private fun ModelSection(
             accent = colors.accentCool,
             dotColor = colors.accentCool,
             barBrush = Brush.horizontalGradient(colors.spectrum),
-            title = "多模型综合",
-            desc = "GFS 30% + EC 34% + 光追 36%",
+            title = stringResource(R.string.model_ens),
+            desc = stringResource(R.string.model_ens_desc),
             p = ensView.p,
             q = ensView.q,
             grade = ensView.grade,
             lines = listOf(
                 listOf(
-                    "可信度" to result.conf.level,
+                    stringResource(R.string.label_conf) to confLabel(result.conf.key),
                     "ΔI" to (if (isNum(result.dvI)) result.dvI!!.roundToInt().toString() else "—"),
                     "ΔP" to (if (isNum(result.spread)) "${result.spread!!.roundToInt()}" else "—"),
                     "ΔQ" to (if (isNum(result.spreadQ)) "${result.spreadQ!!.roundToInt()}" else "—")
                 ),
                 cloudLine(result),
                 listOf(
-                    "持续" to fmtDur(sRT.geom.dur),
+                    stringResource(R.string.label_duration) to fmtDur(sRT.geom.dur),
                     "AOD" to (if (isNum(result.envM.aod)) String.format(Locale.US, "%.2f", result.envM.aod) else "—")
                 ),
                 /* N3b 独立旁证：五因子参考分，不参与加权，只作交叉验证 */
                 listOf(
-                    "参考旁证" to (
-                        refScore(result.envM).v.roundToInt().toString() + " · 不参与加权" +
+                    stringResource(R.string.label_ref) to (
+                        stringResource(R.string.home_ref_suffix, refScore(result.envM).v.roundToInt().toString()) +
                             if (refScore(result.envM).missing.isNotEmpty())
-                                "（缺 " + refScore(result.envM).missing.joinToString("/") + "）"
+                                stringResource(R.string.home_ref_missing, refScore(result.envM).missing.joinToString("/"))
                             else ""
                         )
                 )
@@ -834,9 +839,9 @@ private fun ModelSection(
 
         result.models.forEachIndexed { idx, m ->
             val ms = when (m.id) {
-                "gfs" -> Triple(ModelSel.GFS, "GFS 模式", "NOAA 全球模式 · 1 小时分辨率")
-                "ec" -> Triple(ModelSel.EC, "ECMWF-IFS 模式", "欧洲中心全球模式")
-                "rt" -> Triple(ModelSel.RT, "光追算法", "纯物理：多波长光路积分 + CIE 色度")
+                "gfs" -> Triple(ModelSel.GFS, stringResource(R.string.model_gfs), stringResource(R.string.model_gfs_desc))
+                "ec" -> Triple(ModelSel.EC, stringResource(R.string.model_ec), stringResource(R.string.model_ec_desc))
+                "rt" -> Triple(ModelSel.RT, stringResource(R.string.model_rt), stringResource(R.string.model_rt_desc))
                 else -> return@forEachIndexed
             }
             val accent = when (m.id) {
@@ -848,21 +853,21 @@ private fun ModelSection(
             val lines = if (isRt) {
                 listOf(
                     listOf(
-                        "主云型" to sRT.primary.type,
-                        "等效地表" to uAlt(sRT.heq * 1000),
-                        "峰值透射" to fmtSci(sRT.peak.color.t550)
+                        stringResource(R.string.field_main_deck) to cloudTypeLabel(sRT.primary.type),
+                        stringResource(R.string.label_heq) to uAlt(sRT.heq * 1000),
+                        stringResource(R.string.label_peak_t) to fmtSci(sRT.peak.color.t550)
                     ),
                     listOf(
-                        "亮度" to sRT.bright.txt.substringBefore("（"),
-                        "颜色" to sRT.peak.color.nameZh,
-                        "饱和" to (sRT.peak.color.sat * 100).roundToInt().toString() + "%"
+                        stringResource(R.string.label_bright) to brightLabel(sRT.bright.score),
+                        stringResource(R.string.label_color) to colorLabel(sRT.peak.color.nameKey),
+                        stringResource(R.string.label_sat) to (sRT.peak.color.sat * 100).roundToInt().toString() + "%"
                     )
                 )
             } else {
                 listOf(
                     cloudLine(result),
                     listOf(
-                        "持续" to fmtDur(sRT.geom.dur),
+                        stringResource(R.string.label_duration) to fmtDur(sRT.geom.dur),
                         "AOD" to (if (isNum(result.envM.aod)) String.format(Locale.US, "%.2f", result.envM.aod) else "—")
                     )
                 )
@@ -886,11 +891,12 @@ private fun ModelSection(
     }
 }
 
+@Composable
 private fun cloudLine(r: ForecastResult): List<Pair<String, String>> = listOf(
-    "云型" to r.sRT.primary.type,
-    "云量" to (r.sRT.primary.cover.roundToInt().toString() + "%"),
-    "云底" to uAlt(r.sRT.primary.base * 1000),
-    "边界" to uDist(r.sRT.d)
+    stringResource(R.string.label_cloud_type) to cloudTypeLabel(r.sRT.primary.type),
+    stringResource(R.string.field_cover) to (r.sRT.primary.cover.roundToInt().toString() + "%"),
+    stringResource(R.string.label_cloud_base) to uAlt(r.sRT.primary.base * 1000),
+    stringResource(R.string.label_edge) to uDist(r.sRT.d)
 )
 
 @Composable
@@ -950,7 +956,7 @@ private fun ModelCard(
             .clickable(
                 interactionSource = interaction,
                 indication = null,
-                onClickLabel = "切换到$title",
+                onClickLabel = stringResource(R.string.home_switch_model, title),
                 onClick = onClick
             )
             .padding(horizontal = 11.dp, vertical = 9.dp)
@@ -1001,7 +1007,7 @@ private fun ModelCard(
                     .padding(horizontal = 6.dp, vertical = 1.dp)
             ) {
                 Text(
-                    text = "质量 ${q.roundToInt()} · " + (QUALITY_LABEL[grade] ?: grade),
+                    text = stringResource(R.string.home_badge, q.roundToInt(), gradeLabel(grade)),
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
                     color = colors.good
                 )
@@ -2080,7 +2086,7 @@ private fun AboutSheet(requestCount: Int = 0) {
         /* N5：额度纪律可观测——真机验收「不取数」就看这个计数有没有涨 */
         Spacer(Modifier.height(10.dp))
         Text(
-            text = "本次会话已发出 " + requestCount + " 次取数请求（切日期不会自动增加）",
+            text = stringResource(R.string.home_requests, requestCount),
             style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
             color = colors.faint,
             lineHeight = 14.sp
@@ -2191,12 +2197,13 @@ private fun offlineTime(ms: Long): String =
     java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
         .format(java.util.Date(ms))
 
+@Composable
 private fun errorLabel(kind: String?): String = when (kind) {
-    "NETWORK" -> "网络不可用"
-    "TIMEOUT" -> "请求超时"
-    "RATE_LIMIT" -> "接口限流"
-    "NO_DATA" -> "暂无数据"
-    else -> "更新失败"
+    "NETWORK" -> stringResource(R.string.err_network)
+    "TIMEOUT" -> stringResource(R.string.err_timeout)
+    "RATE_LIMIT" -> stringResource(R.string.err_rate)
+    "NO_DATA" -> stringResource(R.string.err_nodata)
+    else -> stringResource(R.string.err_update)
 }
 
 /* ---------- 状态卡 ---------- */
@@ -2205,19 +2212,19 @@ private fun errorLabel(kind: String?): String = when (kind) {
 private fun StatusCard(error: String?, kind: String?, onRetry: () -> Unit, needsFetch: Boolean = false) {
     val colors = SunglowTheme.colors
     /* N5：切日期后没有新鲜缓存时按纪律不自动取数，这里明确告诉用户可以点更新 */
-    val title = if (needsFetch) "这一天还没有数据" else when (kind) {
-        "NETWORK" -> "连不上网络"
-        "TIMEOUT" -> "请求超时"
-        "RATE_LIMIT" -> "接口限流"
-        "NO_DATA" -> "暂无可用数据"
-        else -> if (error != null) "取数失败" else "暂无数据"
+    val title = if (needsFetch) stringResource(R.string.err_title_day_none) else when (kind) {
+        "NETWORK" -> stringResource(R.string.err_network)
+        "TIMEOUT" -> stringResource(R.string.err_timeout)
+        "RATE_LIMIT" -> stringResource(R.string.err_rate)
+        "NO_DATA" -> stringResource(R.string.err_title_nodata)
+        else -> if (error != null) stringResource(R.string.err_title_fail) else stringResource(R.string.err_nodata)
     }
-    val action = if (needsFetch) "点此更新" else when (kind) {
-        "NETWORK" -> "检查网络后重新计算"
-        "TIMEOUT" -> "稍后重试"
-        "RATE_LIMIT" -> "约一分钟后重试"
-        "NO_DATA" -> "换个日期或城市"
-        else -> "重新计算"
+    val action = if (needsFetch) stringResource(R.string.err_action_update) else when (kind) {
+        "NETWORK" -> stringResource(R.string.err_action_network)
+        "TIMEOUT" -> stringResource(R.string.err_action_timeout)
+        "RATE_LIMIT" -> stringResource(R.string.err_action_rate)
+        "NO_DATA" -> stringResource(R.string.err_action_nodata)
+        else -> stringResource(R.string.err_action_recalc)
     }
     Column(
         modifier = Modifier
@@ -2256,11 +2263,65 @@ private fun StatusCard(error: String?, kind: String?, onRetry: () -> Unit, needs
 
 /* ---------- 工具 ---------- */
 
+@Composable
 private fun verdictSentence(view: VerdictView): String = when {
-    view.p >= 60 -> "云幕与光路配合得不错，值得往高处走一趟"
-    view.p >= 35 -> "有一定机会，值得碰碰运气"
-    view.p >= 15 -> "机会不大，路过时顺便看看"
-    else -> "这一场希望不大，安心做别的事"
+    view.p >= 60 -> stringResource(R.string.verdict_1)
+    view.p >= 35 -> stringResource(R.string.verdict_2)
+    view.p >= 15 -> stringResource(R.string.verdict_3)
+    else -> stringResource(R.string.verdict_4)
+}
+
+@Composable
+private fun gradeLabel(grade: String): String = when (grade) {
+    com.sunglow.spectrum.core.GRADE_YOU -> stringResource(R.string.grade_you)
+    com.sunglow.spectrum.core.GRADE_LIANG -> stringResource(R.string.grade_liang)
+    com.sunglow.spectrum.core.GRADE_YIBAN -> stringResource(R.string.grade_yiban)
+    com.sunglow.spectrum.core.GRADE_CHA -> stringResource(R.string.grade_cha)
+    else -> grade
+}
+
+@Composable
+private fun confLabel(key: String): String = when (key) {
+    "hi" -> stringResource(R.string.conf_high)
+    "lo" -> stringResource(R.string.conf_low)
+    else -> stringResource(R.string.conf_mid)
+}
+
+@Composable
+private fun cloudTypeLabel(type: String): String = when (type) {
+    com.sunglow.spectrum.core.DECK_ST_FOG -> stringResource(R.string.cloud_st_fog)
+    com.sunglow.spectrum.core.DECK_SC -> stringResource(R.string.cloud_sc)
+    com.sunglow.spectrum.core.DECK_CU -> stringResource(R.string.cloud_cu)
+    com.sunglow.spectrum.core.DECK_AC -> stringResource(R.string.cloud_ac)
+    com.sunglow.spectrum.core.DECK_AS -> stringResource(R.string.cloud_as)
+    com.sunglow.spectrum.core.DECK_CS -> stringResource(R.string.cloud_cs)
+    com.sunglow.spectrum.core.DECK_CI -> stringResource(R.string.cloud_ci)
+    else -> type
+}
+
+@Composable
+private fun brightLabel(score: Double): String = when {
+    score >= 100.0 -> stringResource(R.string.bright_2)
+    score >= 90.0 -> stringResource(R.string.bright_3)
+    score >= 72.0 -> stringResource(R.string.bright_1)
+    score >= 58.0 -> stringResource(R.string.bright_4)
+    score >= 28.0 -> stringResource(R.string.bright_5)
+    score >= 8.0 -> stringResource(R.string.bright_6)
+    else -> stringResource(R.string.bright_7)
+}
+
+@Composable
+private fun colorLabel(key: String): String = when (key) {
+    "hazy" -> stringResource(R.string.color_hazy)
+    "dull" -> stringResource(R.string.color_dull)
+    "deepRed" -> stringResource(R.string.color_deepRed)
+    "red" -> stringResource(R.string.color_red)
+    "orangeRed" -> stringResource(R.string.color_orangeRed)
+    "orange" -> stringResource(R.string.color_orange)
+    "golden" -> stringResource(R.string.color_golden)
+    "paleYellow" -> stringResource(R.string.color_paleYellow)
+    "pinkPurple" -> stringResource(R.string.color_pinkPurple)
+    else -> stringResource(R.string.color_yellowGreen)
 }
 
 private fun gradeColor(grade: String, colors: SunglowColors): Color {
