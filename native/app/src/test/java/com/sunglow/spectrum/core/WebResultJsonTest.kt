@@ -85,10 +85,10 @@ class WebResultJsonTest {
         snap!!
 
         assertEquals(2, snap.entries.size)
-        val pointKey = snap.entries[0].key
+        val pointKey = snap.entries[0].key ?: ""
         assertTrue("单点键要能命中网页 point cache：$pointKey",
             pointKey.startsWith("SUNGLOW.v2.point.v3.2026-11-12|pm@39.9,116.4"))
-        val trendKey = snap.entries[1].key
+        val trendKey = snap.entries[1].key ?: ""
         assertTrue("趋势键要能命中网页 trend cache：$trendKey",
             trendKey == "SUNGLOW.v2.trend.2026-11-12@39.9,116.4")
 
