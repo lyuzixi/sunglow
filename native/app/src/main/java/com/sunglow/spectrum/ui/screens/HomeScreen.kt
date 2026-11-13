@@ -45,7 +45,9 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -341,7 +343,10 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                     onClearCache = {
                         vm.clearLocalCache()
                         Toast.makeText(context, context.getString(R.string.cache_cleared), Toast.LENGTH_SHORT).show()
-                    }
+                    },
+                    cacheStats = vm::cacheStats,
+                    onClearResults = vm::clearResultCache,
+                    onClearMemory = vm::clearPointCache
                 )
                 "about" -> AboutSheet(state.requestCount)
                 "guide" -> GuideSheet()
@@ -1691,10 +1696,14 @@ private fun SettingsSheet(
     onOpenAbout: () -> Unit,
     onOpenGuide: () -> Unit,
     onFeedback: () -> Unit,
-    onClearCache: () -> Unit
+    onClearCache: () -> Unit,
+    cacheStats: () -> com.sunglow.spectrum.ui.AppCacheStats,
+    onClearResults: () -> Unit,
+    onClearMemory: () -> Unit
 ) {
     val colors = SunglowTheme.colors
     val context = LocalContext.current
+    var stats by remember { mutableStateOf(cacheStats()) }
     val activity = context.findActivity()
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -1721,7 +1730,12 @@ private fun SettingsSheet(
         }
     }
 
-    Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 28.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(start = 20.dp, end = 20.dp, bottom = 28.dp)
+    ) {
         Text(
             text = stringResource(R.string.settings_title),
             style = MaterialTheme.typography.titleMedium,
@@ -1894,6 +1908,61 @@ private fun SettingsSheet(
         }
 
         Spacer(Modifier.height(18.dp))
+        Text(
+            text = stringResource(R.string.settings_data_cache),
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.faint
+        )
+        Spacer(Modifier.height(6.dp))
+        CacheRow(
+            title = stringResource(R.string.settings_cache_disk),
+            detail = if (stats.diskCount == 0) stringResource(R.string.settings_cache_none)
+            else stringResource(
+                R.string.settings_cache_disk_line,
+                stats.diskCount,
+                formatCacheBytes(stats.diskBytes),
+                stats.oldest?.let {
+                    java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault())
+                        .format(java.util.Date(it))
+                } ?: "—"
+            ),
+            action = stringResource(R.string.settings_cache_clear),
+            enabled = stats.diskCount > 0
+        ) {
+            onClearResults()
+            stats = cacheStats()
+        }
+        CacheRow(
+            title = stringResource(R.string.settings_cache_memory),
+            detail = stringResource(R.string.settings_cache_memory_line, stats.memoryCount),
+            action = stringResource(R.string.settings_cache_clear),
+            enabled = stats.memoryCount > 0
+        ) {
+            onClearMemory()
+            stats = cacheStats()
+        }
+        CacheRow(
+            title = stringResource(R.string.settings_cache_session),
+            detail = stringResource(R.string.settings_cache_session_line),
+            action = null,
+            enabled = false
+        ) {}
+
+        Spacer(Modifier.height(14.dp))
+        Text(
+            text = stringResource(R.string.settings_notes_title),
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.faint
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = stringResource(R.string.settings_notes_body),
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+            color = colors.faint,
+            lineHeight = 14.sp
+        )
+
+        Spacer(Modifier.height(18.dp))
         Box(Modifier.fillMaxWidth().height(1.dp).background(colors.rule))
         SettingsAction(stringResource(R.string.guide_title), onOpenGuide)
         SettingsAction(stringResource(R.string.settings_about), onOpenAbout)
@@ -1914,6 +1983,55 @@ private fun SettingsSheet(
             lineHeight = 15.sp
         )
     }
+}
+
+@Composable
+private fun CacheRow(
+    title: String,
+    detail: String,
+    action: String?,
+    enabled: Boolean,
+    onClick: () -> Unit
+) {
+    val colors = SunglowTheme.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.ink
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = detail,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                color = colors.faint,
+                lineHeight = 13.sp
+            )
+        }
+        if (action != null) {
+            Text(
+                text = action,
+                style = MaterialTheme.typography.labelSmall,
+                color = if (enabled) colors.accentCool else colors.faint,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .clickable(enabled = enabled, onClick = onClick)
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            )
+        }
+    }
+}
+
+private fun formatCacheBytes(bytes: Long): String = when {
+    bytes < 1024 -> bytes.toString() + " B"
+    bytes < 1024 * 1024 -> String.format(java.util.Locale.US, "%.1f KB", bytes / 1024.0)
+    else -> String.format(java.util.Locale.US, "%.1f MB", bytes / (1024.0 * 1024.0))
 }
 
 @Composable

@@ -25,7 +25,18 @@
     <string name="reminder_permission_denied">Notification permission is off, so alerts cannot be sent</string>
     <string name="settings_about">About &amp; privacy</string>
     <string name="settings_feedback">Feedback</string>
-    <string name="settings_clear_cache">Clear local cache</string>
+    <string name="settings_clear_cache">Clear all cache</string>
+    <string name="settings_data_cache">Data &amp; cache</string>
+    <string name="settings_cache_disk">Disk results</string>
+    <string name="settings_cache_disk_line">%1$d entries · %2$s · oldest %3$s</string>
+    <string name="settings_cache_memory">In-memory point</string>
+    <string name="settings_cache_memory_line">%1$d entries (max 12)</string>
+    <string name="settings_cache_session">Field / trend</string>
+    <string name="settings_cache_session_line">Current session only; released on exit</string>
+    <string name="settings_cache_clear">Clear</string>
+    <string name="settings_cache_none">None</string>
+    <string name="settings_notes_title">Data sources and quota</string>
+    <string name="settings_notes_body">Source: Open-Meteo (CC BY 4.0, free tier is non-commercial). One point uses about 51 requests; a 10-day trend about 102; the field uses 6 here (121 points in 2 batches × 3 APIs). Results cache for 6 hours, so the same city/date/period does not fetch again.</string>
     <string name="cache_cleared">Cache cleared</string>
 
     <string name="about_title">About</string>

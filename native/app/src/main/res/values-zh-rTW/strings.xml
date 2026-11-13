@@ -25,7 +25,18 @@
     <string name="reminder_permission_denied">未取得通知權限，提醒不會傳送</string>
     <string name="settings_about">關於與隱私</string>
     <string name="settings_feedback">意見回饋</string>
-    <string name="settings_clear_cache">清除本機快取</string>
+    <string name="settings_clear_cache">清除全部快取</string>
+    <string name="settings_data_cache">資料與快取</string>
+    <string name="settings_cache_disk">磁碟結果</string>
+    <string name="settings_cache_disk_line">%1$d 筆 · %2$s · 最舊 %3$s</string>
+    <string name="settings_cache_memory">記憶體單點</string>
+    <string name="settings_cache_memory_line">%1$d 筆（上限 12）</string>
+    <string name="settings_cache_session">觀測場 / 趨勢</string>
+    <string name="settings_cache_session_line">僅本次工作階段，離開即釋放</string>
+    <string name="settings_cache_clear">清除</string>
+    <string name="settings_cache_none">無</string>
+    <string name="settings_notes_title">資料口徑與額度</string>
+    <string name="settings_notes_body">資料來源 Open-Meteo（CC BY 4.0，免費層僅限非商業）。一次單點約 51 個請求，十日趨勢約 102 個，觀測場本實作 6 個（121 點分 2 批 × 3 介面）。結果快取 6 小時，同城同日同時段命中快取不再取數。</string>
     <string name="cache_cleared">快取已清除</string>
 
     <string name="about_title">關於</string>

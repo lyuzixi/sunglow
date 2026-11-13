@@ -27,7 +27,18 @@
     <string name="reminder_permission_denied">未获得通知权限，提醒不会发送</string>
     <string name="settings_about">关于与隐私</string>
     <string name="settings_feedback">意见反馈</string>
-    <string name="settings_clear_cache">清除本地缓存</string>
+    <string name="settings_clear_cache">清除全部缓存</string>
+    <string name="settings_data_cache">数据与缓存</string>
+    <string name="settings_cache_disk">磁盘结果</string>
+    <string name="settings_cache_disk_line">%1$d 条 · %2$s · 最旧 %3$s</string>
+    <string name="settings_cache_memory">内存单点</string>
+    <string name="settings_cache_memory_line">%1$d 条（上限 12）</string>
+    <string name="settings_cache_session">观测场 / 趋势</string>
+    <string name="settings_cache_session_line">仅当前会话，退出即释放</string>
+    <string name="settings_cache_clear">清除</string>
+    <string name="settings_cache_none">无</string>
+    <string name="settings_notes_title">数据口径与额度</string>
+    <string name="settings_notes_body">数据来源 Open-Meteo（CC BY 4.0，免费层仅限非商业）。一次单点约 51 个请求，十日趋势约 102 个，观测场本实现 6 个（121 点分 2 批 × 3 接口）。结果缓存 6 小时，同城同日同时段命中缓存不再取数。</string>
     <string name="cache_cleared">缓存已清除</string>
 
     <!-- M5 · 关于 -->

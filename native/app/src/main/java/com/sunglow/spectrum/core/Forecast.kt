@@ -289,6 +289,9 @@ object ForecastCache {
     }
 
     fun clear() = map.clear()
+
+    /** 当前内存里有效的单点结果条数（供设置页盘点） */
+    fun size(): Int = map.size
 }
 
 /* ---------- 取数 → 计算 ---------- */

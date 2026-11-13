@@ -18,6 +18,13 @@ import java.util.Locale
 
 class CachedResult(val result: ForecastResult, val savedAt: Long)
 
+/** 磁盘缓存盘点：条数、体积、最旧文件时间（毫秒） */
+data class ResultCacheStats(
+    val count: Int,
+    val bytes: Long,
+    val oldest: Long?
+)
+
 object ResultCache {
 
     /* N5：对齐网页 6 小时口径（原先 36 小时，会白烧额度）；离线条另有 ForecastStore 兜底 */
@@ -74,6 +81,17 @@ object ResultCache {
 
     fun clear(ctx: Context) {
         runCatching { dirOf(ctx).listFiles()?.forEach { it.delete() } }
+    }
+
+    fun stats(ctx: Context): ResultCacheStats {
+        val files = runCatching {
+            dirOf(ctx).listFiles()?.filter { it.isFile } ?: emptyList()
+        }.getOrDefault(emptyList())
+        return ResultCacheStats(
+            count = files.size,
+            bytes = files.sumOf { it.length() },
+            oldest = files.minOfOrNull { it.lastModified() }
+        )
     }
 
     private fun prune(d: File) {

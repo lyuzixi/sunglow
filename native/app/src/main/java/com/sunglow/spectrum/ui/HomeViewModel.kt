@@ -54,6 +54,14 @@ data class CompareCell(
     val grade: String
 )
 
+/** 设置页盘点用：磁盘结果 + 内存单点缓存 */
+data class AppCacheStats(
+    val diskCount: Int,
+    val diskBytes: Long,
+    val oldest: Long?,
+    val memoryCount: Int
+)
+
 data class HomeUiState(
     val city: City = DEFAULT_CITY,
     val dates: List<String> = emptyList(),
@@ -432,6 +440,27 @@ class HomeViewModel(private val app: Application) : AndroidViewModel(app) {
         com.sunglow.spectrum.data.ResultCache.clear(getApplication())
         _state.update { it.copy(offlineAt = null, heat = null) }
         WidgetUpdater.updateAll(getApplication())
+    }
+
+    fun cacheStats(): AppCacheStats {
+        val d = com.sunglow.spectrum.data.ResultCache.stats(getApplication())
+        return AppCacheStats(
+            diskCount = d.count,
+            diskBytes = d.bytes,
+            oldest = d.oldest,
+            memoryCount = ForecastCache.size()
+        )
+    }
+
+    /** 只清磁盘结果（单点结果族），当前内存结果与观测场保留 */
+    fun clearResultCache() {
+        com.sunglow.spectrum.data.ResultCache.clear(getApplication())
+        _state.update { it.copy(offlineAt = null) }
+    }
+
+    /** 只清单点内存缓存（最多 12 条），磁盘结果保留 */
+    fun clearPointCache() {
+        ForecastCache.clear()
     }
 
     /* ---------- 多点对比 ---------- */
