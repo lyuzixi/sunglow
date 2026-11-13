@@ -211,8 +211,8 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 item {
                     val notice = when {
                         state.offlineAt != null && state.error != null ->
-                            stringResource(R.string.home_cache_time_kind, time, errorLabel(state.errorKind))
-                        state.offlineAt != null -> stringResource(R.string.home_cache_time, time)
+                            stringResource(R.string.home_cache_time_kind, time ?: "", errorLabel(state.errorKind))
+                        state.offlineAt != null -> stringResource(R.string.home_cache_time, time ?: "")
                         else -> stringResource(R.string.home_error_retry, errorLabel(state.errorKind))
                     }
                     NoticeStrip(notice, stringResource(R.string.home_retry), vm::refresh)
