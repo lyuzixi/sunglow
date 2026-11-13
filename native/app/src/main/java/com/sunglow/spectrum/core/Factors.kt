@@ -143,7 +143,9 @@ data class FacDisplayRow(
     val score: Double?,
     val desc: String,
     val judge: String,
-    val judgeCls: String
+    val judgeCls: String,
+    val nameKey: String,
+    val descKey: String
 )
 
 /* ---------- 显示单位（与网页 v2/src/core/units.ts 同口径；imperial 默认关闭） ---------- */
@@ -211,7 +213,11 @@ fun facDisplayRows(r: ForecastResult): List<FacDisplayRow> {
     fun row(key: String, name: String, value: String, desc: String): FacDisplayRow {
         val s = scoreMap[key]
         val j = judgmentOf(s)
-        return FacDisplayRow(key, name, value, s, desc, j.text, j.cls)
+        return FacDisplayRow(
+            key, name, value, s, desc, j.text, j.cls,
+            nameKey = "factor_name_$key",
+            descKey = "factor_desc_$key"
+        )
     }
 
     val coverVal = typeDetailText(p.type, decks.map { it.cover })

@@ -1138,7 +1138,7 @@ private fun FactorsSheet(result: ForecastResult) {
                 Column(modifier = Modifier.padding(vertical = 9.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = row.name,
+                            text = factorName(row.nameKey),
                             style = MaterialTheme.typography.bodyMedium,
                             color = colors.ink,
                             modifier = Modifier.weight(1f)
@@ -1156,7 +1156,7 @@ private fun FactorsSheet(result: ForecastResult) {
                                 .padding(horizontal = 6.dp, vertical = 1.dp)
                         ) {
                             Text(
-                                text = row.judge,
+                                text = judgeLabel(row.judgeCls),
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                                 color = judgeColor(row.judgeCls, colors)
                             )
@@ -1164,7 +1164,7 @@ private fun FactorsSheet(result: ForecastResult) {
                     }
                     Spacer(Modifier.height(3.dp))
                     Text(
-                        text = row.desc,
+                        text = factorDesc(row.descKey),
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
                         color = colors.faint,
                         lineHeight = 14.sp
@@ -2323,6 +2323,54 @@ private fun colorLabel(key: String): String = when (key) {
     "pinkPurple" -> stringResource(R.string.color_pinkPurple)
     else -> stringResource(R.string.color_yellowGreen)
 }
+
+@Composable
+private fun factorName(key: String): String = stringResource(
+    when (key) {
+        "cover" -> R.string.factor_name_cover
+        "base" -> R.string.factor_name_base
+        "heq" -> R.string.factor_name_heq
+        "heff" -> R.string.factor_name_heff
+        "dedge" -> R.string.factor_name_dedge
+        "block" -> R.string.factor_name_block
+        "aod" -> R.string.factor_name_aod
+        "vis" -> R.string.factor_name_vis
+        "rh" -> R.string.factor_name_rh
+        "stab" -> R.string.factor_name_stab
+        "wind" -> R.string.factor_name_wind
+        "cape" -> R.string.factor_name_cape
+        else -> R.string.factor_name_consist
+    }
+)
+
+@Composable
+private fun factorDesc(key: String): String = stringResource(
+    when (key) {
+        "cover" -> R.string.factor_desc_cover
+        "base" -> R.string.factor_desc_base
+        "heq" -> R.string.factor_desc_heq
+        "heff" -> R.string.factor_desc_heff
+        "dedge" -> R.string.factor_desc_dedge
+        "block" -> R.string.factor_desc_block
+        "aod" -> R.string.factor_desc_aod
+        "vis" -> R.string.factor_desc_vis
+        "rh" -> R.string.factor_desc_rh
+        "stab" -> R.string.factor_desc_stab
+        "wind" -> R.string.factor_desc_wind
+        "cape" -> R.string.factor_desc_cape
+        else -> R.string.factor_desc_consist
+    }
+)
+
+@Composable
+private fun judgeLabel(cls: String): String = stringResource(
+    when (cls) {
+        "ok" -> R.string.judge_ok
+        "mid" -> R.string.judge_mid
+        "bad" -> R.string.judge_bad
+        else -> R.string.judge_miss
+    }
+)
 
 private fun gradeColor(grade: String, colors: SunglowColors): Color {
     val band = QUALITY_BANDS.firstOrNull { it.key == grade } ?: return colors.muted
