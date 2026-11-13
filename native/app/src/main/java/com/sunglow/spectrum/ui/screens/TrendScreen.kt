@@ -33,13 +33,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.sunglow.spectrum.core.QUALITY_LABEL
+import com.sunglow.spectrum.R
 import com.sunglow.spectrum.core.TrendWindow
 import com.sunglow.spectrum.core.gradeOf
 import com.sunglow.spectrum.core.rankWindows
@@ -82,7 +83,7 @@ fun TrendScreen(vm: HomeViewModel = viewModel()) {
             ) {
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text(
-                        text = "十日趋势",
+                        text = stringResource(R.string.trend_title),
                         style = MaterialTheme.typography.headlineSmall.copy(fontSize = 20.sp),
                         color = colors.ink
                     )
@@ -96,9 +97,9 @@ fun TrendScreen(vm: HomeViewModel = viewModel()) {
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = if (state.trendLoading) {
-                        "正在计算 ${state.trendDone}/${state.trendTotal} 天…"
+                        stringResource(R.string.trend_loading, state.trendDone, state.trendTotal)
                     } else {
-                        "朝霞与晚霞逐日概率 · 点任意一天查看详情"
+                        stringResource(R.string.trend_sub)
                     },
                     style = MaterialTheme.typography.labelSmall,
                     color = colors.faint
@@ -131,7 +132,7 @@ fun TrendScreen(vm: HomeViewModel = viewModel()) {
             item {
                 Column(Modifier.padding(horizontal = 18.dp)) {
                     Text(
-                        text = "最值得出门",
+                        text = stringResource(R.string.trend_best),
                         style = MaterialTheme.typography.titleSmall,
                         color = colors.ink
                     )
@@ -153,7 +154,7 @@ fun TrendScreen(vm: HomeViewModel = viewModel()) {
                     }
                     Spacer(Modifier.height(16.dp))
                     Text(
-                        text = "逐日明细",
+                        text = stringResource(R.string.trend_detail),
                         style = MaterialTheme.typography.titleSmall,
                         color = colors.ink
                     )
@@ -190,7 +191,7 @@ fun TrendScreen(vm: HomeViewModel = viewModel()) {
         if (state.trend.isEmpty() && !state.trendLoading) {
             item {
                 Text(
-                    text = "还没有趋势数据，点这里加载",
+                    text = stringResource(R.string.trend_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = colors.accentCool,
                     modifier = Modifier
@@ -227,8 +228,10 @@ private fun BestCard(
 ) {
     val colors = SunglowTheme.colors
     val gradeCol = bandColor(cell.grade, colors)
-    val summary = date + " " + (if (periodAm) "朝霞" else "晚霞") +
-        " 质量 " + cell.q.roundToInt() + " 分 出现概率 " + cell.p.roundToInt() + "%"
+    val periodText = stringResource(if (periodAm) R.string.trend_am else R.string.trend_pm)
+    val summary = date + " " + periodText + " " +
+        stringResource(R.string.trend_quality, cell.q.roundToInt(), cell.p.roundToInt())
+    val rankDesc = stringResource(R.string.trend_rank, rank, summary)
     Column(
         modifier = modifier
             .heightIn(min = 44.dp)
@@ -241,7 +244,7 @@ private fun BestCard(
             )
             .clickable(onClick = onClick)
             .semantics(mergeDescendants = true) {
-                contentDescription = "第 " + rank + " 名 " + summary
+                contentDescription = rankDesc
             }
             .padding(10.dp)
     ) {
@@ -253,7 +256,7 @@ private fun BestCard(
             )
             Spacer(Modifier.weight(1f))
             Text(
-                text = if (periodAm) "朝" else "晚",
+                text = stringResource(if (periodAm) R.string.trend_am_short else R.string.trend_pm_short),
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                 color = colors.faint
             )
@@ -267,7 +270,7 @@ private fun BestCard(
         )
         Spacer(Modifier.height(2.dp))
         Text(
-            text = cell.q.roundToInt().toString() + " 分",
+            text = stringResource(R.string.trend_score, cell.q.roundToInt()),
             style = MaterialTheme.typography.titleMedium.copy(
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold
@@ -283,7 +286,7 @@ private fun BestCard(
             )
             Spacer(Modifier.weight(1f))
             Text(
-                text = QUALITY_LABEL[cell.grade] ?: cell.grade,
+                text = gradeLabel(cell.grade),
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                 color = gradeCol
             )
@@ -294,9 +297,16 @@ private fun BestCard(
 @Composable
 private fun TrendDayRow(row: TrendRow, onClick: () -> Unit) {
     val colors = SunglowTheme.colors
-    fun descOf(c: TrendCell?): String =
-        if (c == null) "无数据" else c.p.roundToInt().toString() + "% 质量 " + c.q.roundToInt() + " 分"
-    val desc = row.date + " 朝霞 " + descOf(row.am) + " 晚霞 " + descOf(row.pm)
+    val none = stringResource(R.string.trend_none)
+    val amDesc = row.am?.let {
+        stringResource(R.string.trend_cell_desc, it.p.roundToInt(), it.q.roundToInt())
+    } ?: none
+    val pmDesc = row.pm?.let {
+        stringResource(R.string.trend_cell_desc, it.p.roundToInt(), it.q.roundToInt())
+    } ?: none
+    val desc = stringResource(R.string.trend_row_desc, row.date, amDesc, pmDesc) +
+        stringResource(R.string.trend_click)
+    val weekday = weekdayRes(row.date)?.let { stringResource(it) } ?: ""
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -307,7 +317,7 @@ private fun TrendDayRow(row: TrendRow, onClick: () -> Unit) {
             .border(1.dp, colors.rule, RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
             .semantics(mergeDescendants = true) {
-                contentDescription = desc + "，点击查看当日结论"
+                contentDescription = desc
             }
             .padding(horizontal = 12.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -320,14 +330,14 @@ private fun TrendDayRow(row: TrendRow, onClick: () -> Unit) {
                 fontWeight = FontWeight.Medium
             )
             Text(
-                text = weekdayOf(row.date),
+                text = weekday,
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                 color = colors.faint
             )
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            ProbRow("朝", row.am)
-            ProbRow("晚", row.pm)
+            ProbRow(stringResource(R.string.trend_am_short), row.am)
+            ProbRow(stringResource(R.string.trend_pm_short), row.pm)
         }
     }
 }
@@ -377,8 +387,7 @@ private fun ProbRow(label: String, cell: TrendCell?) {
             ) {
                 Text(
                     /* 网页 qb 徽章：等级 + 质量分；数字可读色不用浅色阶 */
-                    text = (QUALITY_LABEL[cell.grade]?.take(1) ?: cell.grade) +
-                        cell.q.roundToInt().toString(),
+                    text = gradeShort(cell.grade) + cell.q.roundToInt().toString(),
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
                     color = bandColor(cell.grade, colors)
                 )
@@ -390,17 +399,42 @@ private fun ProbRow(label: String, cell: TrendCell?) {
 }
 
 private fun bandColor(grade: String, colors: SunglowColors): Color = when (grade) {
-    "优" -> Color(0xFF9FE6BD)
-    "良" -> Color(0xFF9AC765)
-    "一般" -> colors.mid
+    com.sunglow.spectrum.core.GRADE_YOU -> Color(0xFF9FE6BD)
+    com.sunglow.spectrum.core.GRADE_LIANG -> Color(0xFF9AC765)
+    com.sunglow.spectrum.core.GRADE_YIBAN -> colors.mid
     else -> colors.bad
 }
 
-private fun weekdayOf(dateStr: String): String = try {
+@Composable
+private fun gradeLabel(grade: String): String = stringResource(
+    when (grade) {
+        com.sunglow.spectrum.core.GRADE_YOU -> R.string.grade_you
+        com.sunglow.spectrum.core.GRADE_LIANG -> R.string.grade_liang
+        com.sunglow.spectrum.core.GRADE_YIBAN -> R.string.grade_yiban
+        else -> R.string.grade_cha
+    }
+)
+
+@Composable
+private fun gradeShort(grade: String): String = stringResource(
+    when (grade) {
+        com.sunglow.spectrum.core.GRADE_YOU -> R.string.grade_short_you
+        com.sunglow.spectrum.core.GRADE_LIANG -> R.string.grade_short_liang
+        com.sunglow.spectrum.core.GRADE_YIBAN -> R.string.grade_short_yiban
+        else -> R.string.grade_short_cha
+    }
+)
+
+private fun weekdayRes(dateStr: String): Int? = try {
     when (LocalDate.parse(dateStr).dayOfWeek.value) {
-        1 -> "周一"; 2 -> "周二"; 3 -> "周三"; 4 -> "周四"
-        5 -> "周五"; 6 -> "周六"; else -> "周日"
+        1 -> R.string.trend_week_mon
+        2 -> R.string.trend_week_tue
+        3 -> R.string.trend_week_wed
+        4 -> R.string.trend_week_thu
+        5 -> R.string.trend_week_fri
+        6 -> R.string.trend_week_sat
+        else -> R.string.trend_week_sun
     }
 } catch (_: Exception) {
-    ""
+    null
 }

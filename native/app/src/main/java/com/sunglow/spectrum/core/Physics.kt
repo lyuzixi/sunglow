@@ -239,14 +239,25 @@ val DECK_TYPE_SCORE: Map<String, Double> = mapOf(
     "卷云" to 0.95
 )
 
+const val CLOUD_LEVEL_LOW = "低云"
+const val CLOUD_LEVEL_MID = "中云"
+const val CLOUD_LEVEL_HIGH = "高云"
+const val DECK_ST_FOG = "层云/雾"
+const val DECK_SC = "层积云"
+const val DECK_CU = "积云"
+const val DECK_AC = "高积云"
+const val DECK_AS = "高层云"
+const val DECK_CS = "卷层云"
+const val DECK_CI = "卷云"
+
 private fun deckTypeName(level: Int, h: Double, cover: Double): String = when (level) {
     0 -> when {
-        h < 0.35 -> "层云/雾"
-        h < 2.0 -> "层积云"
-        else -> "积云"
+        h < 0.35 -> DECK_ST_FOG
+        h < 2.0 -> DECK_SC
+        else -> DECK_CU
     }
-    1 -> if (h < 4.2) "高积云" else "高层云"
-    else -> if (cover >= 70) "卷层云" else "卷云"
+    1 -> if (h < 4.2) DECK_AC else DECK_AS
+    else -> if (cover >= 70) DECK_CS else DECK_CI
 }
 
 data class EnvLike(
@@ -276,7 +287,7 @@ fun cloudDecks(env: EnvLike): List<Deck> {
         Deck(
             key = key,
             level = level,
-            nameZh = when (level) { 0 -> "低云"; 1 -> "中云"; else -> "高云" },
+            nameZh = when (level) { 0 -> CLOUD_LEVEL_LOW; 1 -> CLOUD_LEVEL_MID; else -> CLOUD_LEVEL_HIGH },
             base = base,
             cover = cover,
             type = type,

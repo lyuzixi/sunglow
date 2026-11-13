@@ -531,11 +531,16 @@ val QUALITY_BANDS: List<QualityBand> = listOf(
     QualityBand("差", 0.0, 44.0, "#c0392b", "#f2796a")
 )
 
+const val GRADE_YOU = "优"
+const val GRADE_LIANG = "良"
+const val GRADE_YIBAN = "一般"
+const val GRADE_CHA = "差"
+
 val QUALITY_LABEL: Map<String, String> = mapOf(
-    "优" to "优秀",
-    "良" to "良好",
-    "一般" to "一般",
-    "差" to "较差"
+    GRADE_YOU to "优秀",
+    GRADE_LIANG to "良好",
+    GRADE_YIBAN to "一般",
+    GRADE_CHA to "较差"
 )
 
 fun gradeOf(q: Double?): String {

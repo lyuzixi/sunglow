@@ -173,7 +173,11 @@ fun refScore(env: Env): RefResult {
 
 /** 遮挡层四档：0–25 通透 / 25–50 轻度 / 50–75 明显 / 75–100 严重 */
 const val OCC_BAND_HI = 25.0
-val OCC_BAND_NAMES: List<String> = listOf("通透", "轻度遮挡", "明显遮挡", "严重遮挡")
+const val OCC_CLEAR = "通透"
+const val OCC_LIGHT = "轻度遮挡"
+const val OCC_MEDIUM = "明显遮挡"
+const val OCC_HEAVY = "严重遮挡"
+val OCC_BAND_NAMES: List<String> = listOf(OCC_CLEAR, OCC_LIGHT, OCC_MEDIUM, OCC_HEAVY)
 
 /** 遮挡层配色与各档 alpha（网页 TX_RGB / TX_BAND_A） */
 val OCC_RGB: List<Int> = listOf(26, 36, 58)

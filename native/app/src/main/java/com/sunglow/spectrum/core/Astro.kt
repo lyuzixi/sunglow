@@ -167,8 +167,17 @@ fun utcMillis(year: Int, month: Int, day: Int): Long {
     return c.timeInMillis
 }
 
+const val DIR_N = "北"
+const val DIR_NE = "东北"
+const val DIR_E = "东"
+const val DIR_SE = "东南"
+const val DIR_S = "南"
+const val DIR_SW = "西南"
+const val DIR_W = "西"
+const val DIR_NW = "西北"
+
 /** 8 方位词（方言无关的稳定下标：0=北，顺时针，45° 一档四舍五入） */
-val DIR_WORDS: List<String> = listOf("北", "东北", "东", "东南", "南", "西南", "西", "西北")
+val DIR_WORDS: List<String> = listOf(DIR_N, DIR_NE, DIR_E, DIR_SE, DIR_S, DIR_SW, DIR_W, DIR_NW)
 
 fun dirIndex(brg: Double): Int = (wrap360(brg) / 45.0).roundToInt() % 8
 

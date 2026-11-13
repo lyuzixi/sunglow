@@ -33,8 +33,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.sunglow.spectrum.R
 import com.sunglow.spectrum.core.City
 import com.sunglow.spectrum.ui.theme.SunglowTheme
 
@@ -70,7 +72,7 @@ fun CitySheet(
                 .padding(bottom = 20.dp)
         ) {
             Text(
-                text = "选择城市",
+                text = stringResource(R.string.city_choose),
                 style = MaterialTheme.typography.headlineMedium,
                 color = colors.ink
             )
@@ -82,7 +84,7 @@ fun CitySheet(
                 onValueChange = { q = it },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("城市名、拼音或省份") },
+                placeholder = { Text(stringResource(R.string.city_search_hint)) },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = colors.accentCool,
@@ -100,7 +102,7 @@ fun CitySheet(
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
             ) {
                 Text(
-                    text = "使用当前定位",
+                    text = stringResource(R.string.city_locate),
                     style = MaterialTheme.typography.bodyLarge,
                     color = colors.accentCool
                 )
@@ -110,7 +112,7 @@ fun CitySheet(
                 q.isBlank() -> {
                     if (recent.isNotEmpty()) {
                         Text(
-                            text = "最近使用",
+                            text = stringResource(R.string.city_recent),
                             style = MaterialTheme.typography.labelSmall,
                             color = colors.muted
                         )
@@ -123,7 +125,7 @@ fun CitySheet(
                         Spacer(Modifier.height(16.dp))
                     }
                     Text(
-                        text = "输入城市名、拼音或省份，例如「杭州」「hangzhou」「广东」。",
+                        text = stringResource(R.string.city_search_note),
                         style = MaterialTheme.typography.bodyMedium,
                         color = colors.muted
                     )
@@ -131,7 +133,7 @@ fun CitySheet(
 
                 results.isEmpty() -> {
                     Text(
-                        text = "没有匹配的城市，换个关键词试试。",
+                        text = stringResource(R.string.city_no_match),
                         style = MaterialTheme.typography.bodyMedium,
                         color = colors.muted
                     )
@@ -201,7 +203,7 @@ private fun CityRow(city: City, onClick: () -> Unit) {
             }
         }
         Text(
-            text = "选择",
+            text = stringResource(R.string.city_pick),
             style = MaterialTheme.typography.bodyMedium,
             color = colors.accentCool
         )

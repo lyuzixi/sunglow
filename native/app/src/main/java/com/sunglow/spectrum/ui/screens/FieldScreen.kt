@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,6 +52,7 @@ import org.osmdroid.tileprovider.tilesource.OnlineTileSourceBase
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.util.MapTileIndex
 import org.osmdroid.views.MapView
+import com.sunglow.spectrum.R
 import com.sunglow.spectrum.core.City
 import com.sunglow.spectrum.core.DEG
 import com.sunglow.spectrum.core.ForecastResult
@@ -118,20 +120,22 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
         Column(Modifier.padding(horizontal = 18.dp, vertical = 14.dp)) {
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
-                    text = "观测场",
+                    text = stringResource(R.string.field_title),
                     style = MaterialTheme.typography.headlineSmall.copy(fontSize = 20.sp),
                     color = colors.ink
                 )
                 Spacer(Modifier.weight(1f))
                 Text(
-                    text = state.city.name + " · " + (if (state.period == Period.AM) "朝霞" else "晚霞"),
+                    text = state.city.name + " · " + stringResource(
+                        if (state.period == Period.AM) R.string.widget_am else R.string.widget_pm
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = colors.faint
                 )
             }
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "城市周边热力面 · 点任意位置读数",
+                text = stringResource(R.string.field_subtitle),
                 style = MaterialTheme.typography.labelSmall,
                 color = colors.faint
             )
@@ -139,7 +143,8 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
 
         if (result == null) {
             Text(
-                text = if (state.loading) "正在取数…" else "暂无数据，请先回结论页计算",
+                text = if (state.loading) stringResource(R.string.field_loading)
+                else stringResource(R.string.field_no_data),
                 style = MaterialTheme.typography.bodyMedium,
                 color = colors.muted,
                 modifier = Modifier.padding(18.dp)
@@ -167,7 +172,8 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
             horizontalArrangement = Arrangement.End
         ) {
             Text(
-                text = if (showMap) "切到光路剖面" else "切到地图",
+                text = if (showMap) stringResource(R.string.field_to_ray)
+                else stringResource(R.string.field_to_map),
                 style = MaterialTheme.typography.labelSmall,
                 color = colors.accentCool,
                 modifier = Modifier
@@ -177,7 +183,8 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
             )
             Spacer(Modifier.width(10.dp))
             Text(
-                text = if (showOcclusion) "遮挡层 开" else "遮挡层 关",
+                text = if (showOcclusion) stringResource(R.string.field_occlusion_on)
+                else stringResource(R.string.field_occlusion_off),
                 style = MaterialTheme.typography.labelSmall,
                 color = if (showOcclusion) colors.accent else colors.faint,
                 modifier = Modifier
@@ -201,7 +208,7 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
                         )
                         Spacer(Modifier.weight(1f))
                         Text(
-                            text = "关闭",
+                            text = stringResource(R.string.common_close),
                             style = MaterialTheme.typography.labelSmall,
                             color = colors.accentCool,
                             modifier = Modifier
@@ -211,11 +218,11 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
                         )
                     }
                     Spacer(Modifier.height(6.dp))
-                    InfoRow("距当前城市", uDist(km))
-                    InfoRow("所属区域", if (c.region.isBlank()) "—" else c.region)
+                    InfoRow(stringResource(R.string.field_dist_city), uDist(km))
+                    InfoRow(stringResource(R.string.field_region), if (c.region.isBlank()) "—" else c.region)
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        text = "查看该城市",
+                        text = stringResource(R.string.field_view_city),
                         style = MaterialTheme.typography.labelSmall,
                         color = colors.accentCool,
                         modifier = Modifier
@@ -233,24 +240,27 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
 
         Column(Modifier.padding(horizontal = 18.dp, vertical = 12.dp)) {
             Text(
-                text = "云幕与光路",
+                text = stringResource(R.string.field_canvas),
                 style = MaterialTheme.typography.titleSmall,
                 color = colors.ink
             )
             Spacer(Modifier.height(8.dp))
             Panel {
-                InfoRow("主云层", result.sRT.primary.nameZh + " · " + result.sRT.primary.type)
-                InfoRow("云量", result.sRT.primary.cover.roundToInt().toString() + "%")
-                InfoRow("云底高度", uAlt(result.sRT.primary.base * 1000))
-                InfoRow("云边界距离", uDist(result.sRT.d))
-                InfoRow("霞光深入上限", uDist(result.sRT.geom.xMax))
-                InfoRow("持续时间", fmtDur(result.sRT.geom.dur))
-                InfoRow("等效地面高度", uAlt(result.sRT.heq * 1000))
+                InfoRow(
+                    stringResource(R.string.field_main_deck),
+                    cloudLevelLabel(result.sRT.primary.nameZh) + " · " + cloudTypeLabel(result.sRT.primary.type)
+                )
+                InfoRow(stringResource(R.string.field_cover), result.sRT.primary.cover.roundToInt().toString() + "%")
+                InfoRow(stringResource(R.string.field_base), uAlt(result.sRT.primary.base * 1000))
+                InfoRow(stringResource(R.string.field_edge), uDist(result.sRT.d))
+                InfoRow(stringResource(R.string.field_xmax), uDist(result.sRT.geom.xMax))
+                InfoRow(stringResource(R.string.field_duration), fmtDur(result.sRT.geom.dur))
+                InfoRow(stringResource(R.string.field_heq), uAlt(result.sRT.heq * 1000))
             }
 
             Spacer(Modifier.height(12.dp))
             Text(
-                text = "几何判定",
+                text = stringResource(R.string.field_geometry),
                 style = MaterialTheme.typography.titleSmall,
                 color = colors.ink
             )
@@ -258,11 +268,11 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
             Panel {
                 Text(
                     text = if (result.sRT.geom.ok) {
-                        "火烧云三角几何条件成立：阳光可以从云底下方射入。"
+                        stringResource(R.string.field_geom_ok)
                     } else if (isNum(result.sRT.d)) {
-                        "不成立：云边界 ${uDist(result.sRT.d)} 已超过霞光深入上限 ${uDist(result.sRT.geom.xMax)}。"
+                        stringResource(R.string.field_geom_edge, uDist(result.sRT.d), uDist(result.sRT.geom.xMax))
                     } else {
-                        "不成立：日出/日落方向 400 km 内没有可承载霞光的云盘。"
+                        stringResource(R.string.field_geom_nocloud)
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = if (result.sRT.geom.ok) colors.good else colors.bad,
@@ -272,7 +282,7 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
 
             Spacer(Modifier.height(12.dp))
             Text(
-                text = "多点对比",
+                text = stringResource(R.string.field_compare),
                 style = MaterialTheme.typography.titleSmall,
                 color = colors.ink
             )
@@ -281,13 +291,13 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
 
             Spacer(Modifier.height(12.dp))
             Text(
-                text = "周边点位",
+                text = stringResource(R.string.field_nearby),
                 style = MaterialTheme.typography.titleSmall,
                 color = colors.ink
             )
             Spacer(Modifier.height(2.dp))
             Text(
-                text = "点选城市加入对比，最多 4 个",
+                text = stringResource(R.string.field_nearby_hint),
                 style = MaterialTheme.typography.labelSmall,
                 color = colors.faint
             )
@@ -296,7 +306,7 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
 
             Spacer(Modifier.height(12.dp))
             Text(
-                text = "实况校准",
+                text = stringResource(R.string.field_calib),
                 style = MaterialTheme.typography.titleSmall,
                 color = colors.ink
             )
@@ -305,17 +315,14 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
 
             Spacer(Modifier.height(12.dp))
             Text(
-                text = "说明",
+                text = stringResource(R.string.common_note),
                 style = MaterialTheme.typography.titleSmall,
                 color = colors.ink
             )
             Spacer(Modifier.height(8.dp))
             Panel {
                 Text(
-                    text = "热力面按 121 点网格铺满城市周边 500 km（80 km 格距），颜色是综合指数（越高越可能出霞）；" +
-                        "可在综合 / 概率 / 质量 / 分歧四种口径间切换，点地图任意位置可看该格读数。" +
-                        "样带仍沿日出/日落方位取 17 个采样点，默认隐藏，可在设置里重新显示。" +
-                        "地图底图为高德公开瓦片，无需密钥，可拖拽与双指缩放；已做 GCJ-02 纠偏。",
+                    text = stringResource(R.string.field_help),
                     style = MaterialTheme.typography.labelSmall,
                     color = colors.faint,
                     lineHeight = 16.sp
@@ -337,7 +344,7 @@ private fun RayProfile(result: ForecastResult) {
     Column(modifier = Modifier.padding(horizontal = 18.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = "日落方位",
+                text = stringResource(R.string.field_sun_az),
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
                 color = colors.faint
             )
@@ -352,7 +359,7 @@ private fun RayProfile(result: ForecastResult) {
             )
             Spacer(Modifier.weight(1f))
             Text(
-                text = "云边界 " + uDist(d) + " / 上限 " + uDist(xMax),
+                text = stringResource(R.string.field_edge_xmax, uDist(d), uDist(xMax)),
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                 color = colors.faint
             )
@@ -509,19 +516,19 @@ private fun RayProfile(result: ForecastResult) {
         Spacer(Modifier.height(6.dp))
         Row(Modifier.fillMaxWidth()) {
             Text(
-                text = "城市",
+                text = stringResource(R.string.field_layer_city),
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp),
                 color = colors.faint
             )
             Spacer(Modifier.weight(1f))
             Text(
-                text = "云盘",
+                text = stringResource(R.string.field_layer_cloud),
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp),
                 color = colors.accent
             )
             Spacer(Modifier.weight(1f))
             Text(
-                text = "太阳",
+                text = stringResource(R.string.field_layer_sun),
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp),
                 color = Color(0xFFFFC773)
             )
@@ -539,7 +546,7 @@ private class AmapTileSource(
     name: String,
     base: String,
     maxZoom: Int
-) : OnlineTileSourceBase(name, 3, maxZoom, 256, "", arrayOf(base), "© 高德地图") {
+) : OnlineTileSourceBase(name, 3, maxZoom, 256, "", arrayOf(base), "© AMap") {
     override fun getTileURLString(pMapTileIndex: Long): String =
         baseUrl +
             "x=" + MapTileIndex.getX(pMapTileIndex) +
@@ -776,11 +783,11 @@ private fun blendTo(rgb: Int, target: List<Int>, k: Double): Int {
 }
 
 /** 观测场四维口径：与网页 MapDim（mix/p/q/dv）一致 */
-private enum class FieldDim(val label: String, val hint: String) {
-    MIX("综合指数", "0 → 100 · 越高越可能出霞"),
-    P("出现概率", "0 → 100% · 三模型加权"),
-    Q("观赏质量", "0 → 100 · 只看成片质量"),
-    DV("模型分歧", "0 → 100 · 越小越可信")
+private enum class FieldDim(val labelRes: Int, val hintRes: Int) {
+    MIX(R.string.field_dim_mix, R.string.field_dim_mix_hint),
+    P(R.string.field_dim_p, R.string.field_dim_p_hint),
+    Q(R.string.field_dim_q, R.string.field_dim_q_hint),
+    DV(R.string.field_dim_dv, R.string.field_dim_dv_hint)
 }
 
 private fun HeatCell.dimValue(dim: FieldDim): Double = when (dim) {
@@ -989,14 +996,16 @@ private fun OsmMap(
     val colors = SunglowTheme.colors
     val density = LocalDensity.current
     val city = state.city
-    val sources = remember {
+    val streetLabel = stringResource(R.string.map_street)
+    val satelliteLabel = stringResource(R.string.map_satellite)
+    val sources = remember(streetLabel, satelliteLabel) {
         listOf(
-            "街道" to AmapTileSource(
+            streetLabel to AmapTileSource(
                 "AmapStreet",
                 "https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&",
                 18
             ),
-            "卫星" to AmapTileSource(
+            satelliteLabel to AmapTileSource(
                 "AmapSat",
                 "https://webst01.is.autonavi.com/appmaptile?style=6&",
                 18
@@ -1153,7 +1162,9 @@ private fun OsmMap(
                     .padding(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                listOf("经纬网" to showGraticule, "数值" to showValues).forEach { (label, on) ->
+                val graticuleLabel = stringResource(R.string.field_graticule)
+                val valuesLabel = stringResource(R.string.field_values)
+                listOf(graticuleLabel to showGraticule, valuesLabel to showValues).forEach { (label, on) ->
                     Text(
                         text = label,
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
@@ -1163,7 +1174,7 @@ private fun OsmMap(
                             .background(if (on) colors.card.copy(alpha = 0.92f) else Color(0x66070B14))
                             .border(1.dp, if (on) colors.ruleStrong else colors.rule, RoundedCornerShape(999.dp))
                             .clickable {
-                                if (label == "经纬网") showGraticule = !showGraticule
+                                if (label == graticuleLabel) showGraticule = !showGraticule
                                 else showValues = !showValues
                             }
                             .padding(horizontal = 8.dp, vertical = 3.dp)
@@ -1195,7 +1206,7 @@ private fun OsmMap(
             }
 
             Text(
-                text = "© 高德地图",
+                text = stringResource(R.string.common_map_credit),
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
                 color = colors.faint,
                 modifier = Modifier
@@ -1210,7 +1221,7 @@ private fun OsmMap(
         if (state.heatLoading) {
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "热力面生成中 " + state.heatDone + "/" + state.heatTotal + " …",
+                text = stringResource(R.string.field_building, state.heatDone, state.heatTotal),
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
                 color = colors.faint
             )
@@ -1221,7 +1232,7 @@ private fun OsmMap(
                 FieldDim.values().forEach { d ->
                     val on = d == dim
                     Text(
-                        text = d.label,
+                        text = d.labelRes.let { stringResource(it) },
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
                         color = if (on) colors.ink else colors.faint,
                         modifier = Modifier
@@ -1236,7 +1247,7 @@ private fun OsmMap(
             Spacer(Modifier.height(6.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = dim.label,
+                    text = dim.labelRes.let { stringResource(it) },
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
                     color = colors.faint
                 )
@@ -1254,7 +1265,7 @@ private fun OsmMap(
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    text = dim.hint,
+                    text = dim.hintRes.let { stringResource(it) },
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                     color = colors.faint
                 )
@@ -1272,7 +1283,7 @@ private fun OsmMap(
             Spacer(Modifier.height(6.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "样带采样点",
+                    text = stringResource(R.string.field_samples),
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
                     color = colors.faint
                 )
@@ -1290,7 +1301,7 @@ private fun OsmMap(
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    text = "主云层云量 0 → 100% · 点圆点看读数",
+                    text = stringResource(R.string.field_samples_hint),
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                     color = colors.faint
                 )
@@ -1325,13 +1336,13 @@ private fun SampleCard(km: Double, t: TransectPt?, xMax: Double, onClose: () -> 
     Panel {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = "样带点 · 距城市 " + uDist(km),
+                text = stringResource(R.string.field_sample_title, uDist(km)),
                 style = MaterialTheme.typography.titleSmall,
                 color = colors.ink
             )
             Spacer(Modifier.weight(1f))
             Text(
-                text = "关闭",
+                text = stringResource(R.string.common_close),
                 style = MaterialTheme.typography.labelSmall,
                 color = colors.accentCool,
                 modifier = Modifier
@@ -1343,19 +1354,19 @@ private fun SampleCard(km: Double, t: TransectPt?, xMax: Double, onClose: () -> 
         Spacer(Modifier.height(6.dp))
         if (t == null) {
             Text(
-                text = "该点没有取到数据",
+                text = stringResource(R.string.field_sample_nodata),
                 style = MaterialTheme.typography.labelSmall,
                 color = colors.faint
             )
             return@Panel
         }
-        InfoRow("低云 / 中云 / 高云", pct(t.cLow) + " / " + pct(t.cMid) + " / " + pct(t.cHigh))
-        InfoRow("低中云遮挡", pct(cloudBlockOf(t.cLow, t.cMid)))
-        InfoRow("能见度", uDist(if (isNum(t.vis)) t.vis!! / 1000 else null))
+        InfoRow(stringResource(R.string.field_lowmidhigh), pct(t.cLow) + " / " + pct(t.cMid) + " / " + pct(t.cHigh))
+        InfoRow(stringResource(R.string.field_block), pct(cloudBlockOf(t.cLow, t.cMid)))
+        InfoRow(stringResource(R.string.field_visibility), uDist(if (isNum(t.vis)) t.vis!! / 1000 else null))
         InfoRow(
-            "霞光可及",
-            if (km <= xMax) "范围内 · 上限 " + uDist(xMax)
-            else "已超出 · 上限 " + uDist(xMax)
+            stringResource(R.string.field_reach),
+            if (km <= xMax) stringResource(R.string.field_reach_in, uDist(xMax))
+            else stringResource(R.string.field_reach_out, uDist(xMax))
         )
     }
 }
@@ -1374,13 +1385,13 @@ private fun HeatCard(cell: HeatCell, city: City, onClose: () -> Unit) {
     Panel {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = "观测格 · 距城市 " + uDist(km) + " · " + dirWordOf(brg),
+                text = stringResource(R.string.field_cell_title, uDist(km), dirLabel(dirWordOf(brg))),
                 style = MaterialTheme.typography.titleSmall,
                 color = colors.ink
             )
             Spacer(Modifier.weight(1f))
             Text(
-                text = "关闭",
+                text = stringResource(R.string.common_close),
                 style = MaterialTheme.typography.labelSmall,
                 color = colors.accentCool,
                 modifier = Modifier
@@ -1391,20 +1402,23 @@ private fun HeatCard(cell: HeatCell, city: City, onClose: () -> Unit) {
         }
         Spacer(Modifier.height(6.dp))
         InfoRow(
-            "综合指数 I",
+            stringResource(R.string.field_cell_idx),
             cell.idx.roundToInt().toString() + " · " + gradeLabel(cell.grade)
         )
         InfoRow(
-            "出现概率 P / 质量 Q",
+            stringResource(R.string.field_cell_pq),
             cell.p.roundToInt().toString() + "% / " + cell.q.roundToInt().toString()
         )
-        InfoRow("主云层", cell.type + " · " + cell.cover.roundToInt().toString() + "%")
-        InfoRow("云边界距离", uDist(cell.d))
+        InfoRow(stringResource(R.string.field_cell_deck), cloudTypeLabel(cell.type) + " · " + cell.cover.roundToInt().toString() + "%")
+        InfoRow(stringResource(R.string.field_cell_edge), uDist(cell.d))
         /* N3b：遮挡分档 + 参考旁证 + 形态分歧 */
-        InfoRow("光路遮挡", OCC_BAND_NAMES[occBandOf(cell.occ)] + " · " + cell.occ.roundToInt())
-        InfoRow("参考旁证", cell.ref.roundToInt().toString() + " · 不参与加权")
-        InfoRow("形态分歧", cell.refGap.roundToInt().toString() + " · " + fieldConfOf(cell.refGap).let { String.format(java.util.Locale.US, "%.2f", it) })
-        InfoRow("覆盖范围", "500 km 半径 · 121 点 · 80 km 格距")
+        InfoRow(stringResource(R.string.field_cell_occ), occLabel(OCC_BAND_NAMES[occBandOf(cell.occ)]) + " · " + cell.occ.roundToInt())
+        InfoRow(
+            stringResource(R.string.field_cell_ref),
+            cell.ref.roundToInt().toString() + " · " + stringResource(R.string.field_not_weighted)
+        )
+        InfoRow(stringResource(R.string.field_cell_gap), cell.refGap.roundToInt().toString() + " · " + fieldConfOf(cell.refGap).let { String.format(java.util.Locale.US, "%.2f", it) })
+        InfoRow(stringResource(R.string.field_coverage), stringResource(R.string.field_coverage_value))
     }
 }
 
@@ -1416,7 +1430,7 @@ private fun ComparePanel(state: HomeUiState, onClear: () -> Unit) {
     Panel {
         if (state.compareCities.isEmpty()) {
             Text(
-                text = "还没有选点。下方「周边点位」里点城市即可加入对比。",
+                text = stringResource(R.string.field_compare_empty),
                 style = MaterialTheme.typography.labelSmall,
                 color = colors.faint,
                 lineHeight = 16.sp
@@ -1425,13 +1439,14 @@ private fun ComparePanel(state: HomeUiState, onClear: () -> Unit) {
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = "已选 ${state.compareCities.size}/4 · 按概率排名",
+                text = stringResource(R.string.field_compare_count, state.compareCities.size),
                 style = MaterialTheme.typography.labelSmall,
                 color = colors.faint
             )
             Spacer(Modifier.weight(1f))
             Text(
-                text = if (state.compareLoading) "计算中…" else "清空",
+                text = if (state.compareLoading) stringResource(R.string.common_calculating)
+                else stringResource(R.string.common_clear),
                 style = MaterialTheme.typography.labelSmall,
                 color = if (state.compareLoading) colors.faint else colors.accentCool,
                 modifier = Modifier
@@ -1503,7 +1518,7 @@ private fun ComparePanel(state: HomeUiState, onClear: () -> Unit) {
         if (state.compareRows.size < state.compareCities.size && !state.compareLoading) {
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "部分点位没有取到数据（可能超出预报范围）",
+                text = stringResource(R.string.field_compare_partial),
                 style = MaterialTheme.typography.labelSmall,
                 color = colors.faint
             )
@@ -1579,14 +1594,14 @@ private fun CalibPanel(state: HomeUiState, onRecord: (Boolean) -> Unit) {
     val rec = state.sightings[state.city.name] ?: (0 to 0)
     Panel {
         Text(
-            text = state.city.name + " · 已记录 " + rec.second + " 次，看到 " + rec.first + " 次",
+            text = state.city.name + " · " + stringResource(R.string.field_calib_recorded, rec.second, rec.first),
             style = MaterialTheme.typography.bodySmall,
             color = colors.muted
         )
         if (rec.second > 0) {
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "本地命中率 " + (rec.first * 100 / rec.second) + "%（只统计你自己的记录）",
+                text = stringResource(R.string.field_calib_hit, (rec.first * 100 / rec.second).toString()),
                 style = MaterialTheme.typography.labelSmall,
                 color = colors.faint
             )
@@ -1604,7 +1619,7 @@ private fun CalibPanel(state: HomeUiState, onRecord: (Boolean) -> Unit) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "这次看到了",
+                    text = stringResource(R.string.field_calib_saw),
                     style = MaterialTheme.typography.bodySmall,
                     color = colors.good
                 )
@@ -1620,7 +1635,7 @@ private fun CalibPanel(state: HomeUiState, onRecord: (Boolean) -> Unit) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "没看到",
+                    text = stringResource(R.string.field_calib_miss),
                     style = MaterialTheme.typography.bodySmall,
                     color = colors.muted
                 )
@@ -1629,17 +1644,92 @@ private fun CalibPanel(state: HomeUiState, onRecord: (Boolean) -> Unit) {
     }
 }
 
-private fun gradeLabel(grade: String): String = when (grade) {
-    "优" -> "优秀"
-    "良" -> "良好"
-    "一般" -> "一般"
-    else -> "较差"
+@Composable
+private fun gradeLabel(grade: String): String = stringResource(
+    when (grade) {
+        com.sunglow.spectrum.core.GRADE_YOU -> R.string.grade_you
+        com.sunglow.spectrum.core.GRADE_LIANG -> R.string.grade_liang
+        com.sunglow.spectrum.core.GRADE_YIBAN -> R.string.grade_yiban
+        else -> R.string.grade_cha
+    }
+)
+
+@Composable
+private fun gradeShort(grade: String): String = stringResource(
+    when (grade) {
+        com.sunglow.spectrum.core.GRADE_YOU -> R.string.grade_short_you
+        com.sunglow.spectrum.core.GRADE_LIANG -> R.string.grade_short_liang
+        com.sunglow.spectrum.core.GRADE_YIBAN -> R.string.grade_short_yiban
+        else -> R.string.grade_short_cha
+    }
+)
+
+private fun dirRes(word: String): Int = when (word) {
+    com.sunglow.spectrum.core.DIR_N -> R.string.dir_n
+    com.sunglow.spectrum.core.DIR_NE -> R.string.dir_ne
+    com.sunglow.spectrum.core.DIR_E -> R.string.dir_e
+    com.sunglow.spectrum.core.DIR_SE -> R.string.dir_se
+    com.sunglow.spectrum.core.DIR_S -> R.string.dir_s
+    com.sunglow.spectrum.core.DIR_SW -> R.string.dir_sw
+    com.sunglow.spectrum.core.DIR_W -> R.string.dir_w
+    com.sunglow.spectrum.core.DIR_NW -> R.string.dir_nw
+    else -> 0
+}
+
+@Composable
+private fun dirLabel(word: String): String {
+    val id = dirRes(word)
+    return if (id == 0) word else stringResource(id)
+}
+
+private fun occRes(word: String): Int = when (word) {
+    com.sunglow.spectrum.core.OCC_CLEAR -> R.string.occ_clear
+    com.sunglow.spectrum.core.OCC_LIGHT -> R.string.occ_light
+    com.sunglow.spectrum.core.OCC_MEDIUM -> R.string.occ_medium
+    com.sunglow.spectrum.core.OCC_HEAVY -> R.string.occ_heavy
+    else -> 0
+}
+
+@Composable
+private fun occLabel(word: String): String {
+    val id = occRes(word)
+    return if (id == 0) word else stringResource(id)
+}
+
+private fun cloudLevelRes(level: String): Int = when (level) {
+    com.sunglow.spectrum.core.CLOUD_LEVEL_LOW -> R.string.cloud_low
+    com.sunglow.spectrum.core.CLOUD_LEVEL_MID -> R.string.cloud_mid
+    com.sunglow.spectrum.core.CLOUD_LEVEL_HIGH -> R.string.cloud_high
+    else -> 0
+}
+
+@Composable
+private fun cloudLevelLabel(level: String): String {
+    val id = cloudLevelRes(level)
+    return if (id == 0) level else stringResource(id)
+}
+
+private fun cloudTypeRes(type: String): Int = when (type) {
+    com.sunglow.spectrum.core.DECK_ST_FOG -> R.string.cloud_st_fog
+    com.sunglow.spectrum.core.DECK_SC -> R.string.cloud_sc
+    com.sunglow.spectrum.core.DECK_CU -> R.string.cloud_cu
+    com.sunglow.spectrum.core.DECK_AC -> R.string.cloud_ac
+    com.sunglow.spectrum.core.DECK_AS -> R.string.cloud_as
+    com.sunglow.spectrum.core.DECK_CS -> R.string.cloud_cs
+    com.sunglow.spectrum.core.DECK_CI -> R.string.cloud_ci
+    else -> 0
+}
+
+@Composable
+private fun cloudTypeLabel(type: String): String {
+    val id = cloudTypeRes(type)
+    return if (id == 0) type else stringResource(id)
 }
 
 private fun bandColor(grade: String, colors: SunglowColors): Color = when (grade) {
-    "优" -> Color(0xFF9FE6BD)
-    "良" -> Color(0xFF9AC765)
-    "一般" -> colors.mid
+    com.sunglow.spectrum.core.GRADE_YOU -> Color(0xFF9FE6BD)
+    com.sunglow.spectrum.core.GRADE_LIANG -> Color(0xFF9AC765)
+    com.sunglow.spectrum.core.GRADE_YIBAN -> colors.mid
     else -> colors.bad
 }
 
