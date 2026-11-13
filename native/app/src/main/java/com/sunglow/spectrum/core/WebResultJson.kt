@@ -93,21 +93,67 @@ fun packMetaOf(r: ForecastResult): PackMeta = PackMeta(
     lon = r.city.lon
 )
 
-/** 单点 pack：网页打开即还原这份结论，不再请求 */
-fun buildPointPack(r: ForecastResult, gen: Long = System.currentTimeMillis()): String? {
+/** 十日趋势条目：网页 trendCacheGet 读 {ts, rows:[{date,period,P,Q,grade}]} */
+private fun webTrendEntry(
+    r: ForecastResult,
+    rows: List<TrendRow>
+): PackEntry? {
+    if (rows.isEmpty()) return null
+    val arr = rows.flatMap { row ->
+        listOfNotNull(
+            row.am?.let { c ->
+                buildJsonObject {
+                    put("date", row.date)
+                    put("period", "am")
+                    put("P", c.p)
+                    put("Q", c.q)
+                    put("grade", c.grade)
+                }
+            },
+            row.pm?.let { c ->
+                buildJsonObject {
+                    put("date", row.date)
+                    put("period", "pm")
+                    put("P", c.p)
+                    put("Q", c.q)
+                    put("grade", c.grade)
+                }
+            }
+        )
+    }
+    if (arr.isEmpty()) return null
+    val key = "SUNGLOW.v2.trend." + r.dateStr + "@" +
+        String.format(Locale.US, "%.1f", r.city.lat) + "," +
+        String.format(Locale.US, "%.1f", r.city.lon)
+    return PackEntry(
+        key,
+        buildJsonObject {
+            put("ts", System.currentTimeMillis())
+            put("rows", JsonArray(arr))
+        }
+    )
+}
+
+/** 单点 + 趋势 pack：网页打开即还原结论与十日趋势，不再请求 */
+fun buildSnapshotPack(
+    r: ForecastResult,
+    trend: List<TrendRow> = emptyList(),
+    gen: Long = System.currentTimeMillis()
+): String? {
     val value = buildJsonObject {
         put("ts", System.currentTimeMillis())
         put("obj", webForecastJson(r))
     }
-    return encodePack(
-        gen = gen,
-        q = packMetaOf(r),
-        entries = listOf(PackEntry(webPointKey(r), value))
-    )
+    val entries = mutableListOf(PackEntry(webPointKey(r), value))
+    webTrendEntry(r, trend)?.let { entries.add(it) }
+    return encodePack(gen = gen, q = packMetaOf(r), entries = entries)
 }
 
-fun packShareUrlOf(r: ForecastResult, gen: Long = System.currentTimeMillis()): String? =
-    buildPointPack(r, gen)?.let { SHARE_SITE + "#/?pack=" + it }
+fun packShareUrlOf(
+    r: ForecastResult,
+    trend: List<TrendRow> = emptyList(),
+    gen: Long = System.currentTimeMillis()
+): String? = buildSnapshotPack(r, trend, gen)?.let { SHARE_SITE + "#/?pack=" + it }
 
 /* ------------------------------------------------------------------ 子结构 */
 

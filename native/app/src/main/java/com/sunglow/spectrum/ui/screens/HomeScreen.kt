@@ -1410,7 +1410,7 @@ private fun ShareSheet(
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
     val caption = remember(result, view) { captionOf(result, view) }
-    val link = remember(result) { shareUrlOf(result) }
+    val link = remember(result, state.trend) { shareUrlOf(result, state.trend) }
     val qr = remember(result) { ShareCard.qr(link, 512) }
     val heat = state.heat
     var qrOpen by remember(result) { mutableStateOf(false) }
