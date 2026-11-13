@@ -59,6 +59,14 @@ class OpenMeteoClient(
 ) {
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
+    /**
+     * 真实发出的 HTTP 请求数（每次 execute 记一次，含重试补发）。
+     * 「切日期不取数」这类纪律要能被断言：看这个计数有没有涨。
+     */
+    @Volatile
+    var requestCount: Int = 0
+        private set
+
     suspend fun forecastBatched(
         model: String?,
         pts: List<LatLon>,
@@ -130,6 +138,7 @@ class OpenMeteoClient(
     }
 
     private fun execute(url: String): String {
+        requestCount++
         val req = Request.Builder()
             .url(url)
             .header("User-Agent", "SUNGLOW-Android/1.0")

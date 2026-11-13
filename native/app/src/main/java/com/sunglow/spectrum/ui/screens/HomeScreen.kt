@@ -72,6 +72,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
@@ -204,10 +205,11 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
 
         if (result != null) {
             val time = state.offlineAt?.let { offlineTime(it) }
+            /* N5：缓存结果（6 小时内）不是「离线」，如实写成缓存；断网时 error 同时在，提示更清楚 */
             val notice = when {
                 state.offlineAt != null && state.error != null ->
-                    "离线数据 · 更新于 " + time + " · " + errorLabel(state.errorKind)
-                state.offlineAt != null -> "离线数据 · 更新于 " + time
+                    "缓存数据 · 更新于 " + time + " · " + errorLabel(state.errorKind)
+                state.offlineAt != null -> "缓存数据 · 更新于 " + time
                 state.error != null -> errorLabel(state.errorKind) + " · 点右侧重试"
                 else -> null
             }
@@ -276,7 +278,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
         } else if (state.loading) {
             item { PageSkeleton(colors) }
         } else {
-            item { StatusCard(state.error, state.errorKind, vm::refresh) }
+            item { StatusCard(state.error, state.errorKind, vm::refresh, state.needsFetch) }
         }
     }
     }
@@ -341,7 +343,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                         Toast.makeText(context, context.getString(R.string.cache_cleared), Toast.LENGTH_SHORT).show()
                     }
                 )
-                "about" -> AboutSheet()
+                "about" -> AboutSheet(state.requestCount)
                 "guide" -> GuideSheet()
             }
         }
@@ -362,6 +364,12 @@ private fun HeroBlock(
     onShare: () -> Unit
 ) {
     val colors = SunglowTheme.colors
+    /* N5 首帧：窄屏用 B3 的 720w 分档图（解码更快、内存更省），大屏仍用原图 */
+    val heroRes = if (LocalConfiguration.current.screenWidthDp <= 420) {
+        R.drawable.hero_photo_720
+    } else {
+        R.drawable.hero_photo
+    }
     val view = result?.let { verdictViewOf(it, modelSel) }
 
     /* 照片缓推镜：8 秒 1.00 → 1.04，只在首帧跑一次 */
@@ -377,7 +385,7 @@ private fun HeroBlock(
             .background(Color(0xFF1B2130))
     ) {
         Image(
-            painter = painterResource(R.drawable.hero_photo),
+            painter = painterResource(heroRes),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
@@ -2003,7 +2011,7 @@ private fun GuideSheet() {
 }
 
 @Composable
-private fun AboutSheet() {
+private fun AboutSheet(requestCount: Int = 0) {
     val colors = SunglowTheme.colors
     Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 28.dp)) {
         Text(
@@ -2068,6 +2076,14 @@ private fun AboutSheet() {
             style = MaterialTheme.typography.labelSmall,
             color = colors.faint,
             lineHeight = 16.sp
+        )
+        /* N5：额度纪律可观测——真机验收「不取数」就看这个计数有没有涨 */
+        Spacer(Modifier.height(10.dp))
+        Text(
+            text = "本次会话已发出 " + requestCount + " 次取数请求（切日期不会自动增加）",
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+            color = colors.faint,
+            lineHeight = 14.sp
         )
     }
 }
@@ -2186,16 +2202,17 @@ private fun errorLabel(kind: String?): String = when (kind) {
 /* ---------- 状态卡 ---------- */
 
 @Composable
-private fun StatusCard(error: String?, kind: String?, onRetry: () -> Unit) {
+private fun StatusCard(error: String?, kind: String?, onRetry: () -> Unit, needsFetch: Boolean = false) {
     val colors = SunglowTheme.colors
-    val title = when (kind) {
+    /* N5：切日期后没有新鲜缓存时按纪律不自动取数，这里明确告诉用户可以点更新 */
+    val title = if (needsFetch) "这一天还没有数据" else when (kind) {
         "NETWORK" -> "连不上网络"
         "TIMEOUT" -> "请求超时"
         "RATE_LIMIT" -> "接口限流"
         "NO_DATA" -> "暂无可用数据"
         else -> if (error != null) "取数失败" else "暂无数据"
     }
-    val action = when (kind) {
+    val action = if (needsFetch) "点此更新" else when (kind) {
         "NETWORK" -> "检查网络后重新计算"
         "TIMEOUT" -> "稍后重试"
         "RATE_LIMIT" -> "约一分钟后重试"

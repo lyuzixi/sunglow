@@ -20,7 +20,8 @@ class CachedResult(val result: ForecastResult, val savedAt: Long)
 
 object ResultCache {
 
-    private const val TTL = 36 * 3600000L
+    /* N5：对齐网页 6 小时口径（原先 36 小时，会白烧额度）；离线条另有 ForecastStore 兜底 */
+    private const val TTL = com.sunglow.spectrum.core.RESULT_CACHE_TTL_MS
     private const val MAX = 24
     private const val VERSION = 2
 

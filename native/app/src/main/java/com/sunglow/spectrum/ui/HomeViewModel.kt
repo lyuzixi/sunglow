@@ -8,6 +8,8 @@ import com.sunglow.spectrum.core.ForecastCache
 import com.sunglow.spectrum.core.ForecastEngine
 import com.sunglow.spectrum.core.ForecastOutcome
 import com.sunglow.spectrum.core.ForecastResult
+import com.sunglow.spectrum.core.LoadMode
+import com.sunglow.spectrum.core.decideLoad
 import com.sunglow.spectrum.core.Period
 import com.sunglow.spectrum.core.TzCache
 import com.sunglow.spectrum.core.addDaysIso
@@ -85,6 +87,10 @@ data class HomeUiState(
     val offlineAt: Long? = null,
     /** 错误分型（FailureKind.name），界面据此给出动作 */
     val errorKind: String? = null,
+    /** N5：这一天的结果没有新鲜缓存，且按纪律**不自动取数**，等用户点「更新」 */
+    val needsFetch: Boolean = false,
+    /** N5：本次会话真实发出的请求数（真机验收「不取数」就看这个数有没有涨） */
+    val requestCount: Int = 0,
     /** 观测场是否显示 17 个样带采样点 */
     val showSamples: Boolean = false,
     /** 观测场热力面 */
@@ -103,7 +109,8 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     private val repo = CityRepository(app)
     private val location = LocationProvider(app)
-    private val engine = ForecastEngine(OpenMeteoClient())
+    private val client = OpenMeteoClient()
+    private val engine = ForecastEngine(client)
     private val prefs = app.getSharedPreferences("sunglow_prefs", android.content.Context.MODE_PRIVATE)
 
     private val startCity = repo.lastCity() ?: DEFAULT_CITY
@@ -127,10 +134,14 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     private var trendJob: Job? = null
     private var heatJob: Job? = null
 
+    /* N5 取数纪律：本会话是否已经做过一次自动加载。
+       做过之后，切日期/时段就不再自动取数（省额度，等用户显式点更新）。 */
+    private var autoFetchSpent = false
+
     init {
         val dates = buildDates(startCity)
         _state.update { it.copy(dates = dates, dateStr = dates.firstOrNull().orEmpty()) }
-        load()
+        load(LoadMode.AUTO)
         /* 小组件 / 通知点进来：城市、日期、时段一次性应用 */
         viewModelScope.launch {
             LaunchBus.target.collect { t ->
@@ -169,10 +180,12 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                 errorKind = null,
                 offlineAt = null,
                 heat = null,
-                heatError = null
+                heatError = null,
+                needsFetch = false
             )
         }
-        load()
+        /* 深链是用户显式动作：缓存优先，没有才取 */
+        load(LoadMode.CLICK)
     }
 
     /* ---------- 十日趋势 ---------- */
@@ -284,10 +297,13 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                 offlineAt = null,
                 heat = null,
                 heatError = null,
+                needsFetch = false,
                 citySheetOpen = false
             )
         }
-        load()
+        /* 换城市 = 用户显式动作：缓存优先，没有才取 */
+        autoFetchSpent = false
+        load(LoadMode.CLICK)
     }
 
     fun selectDate(dateStr: String) {
@@ -298,10 +314,12 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                 result = null,
                 offlineAt = null,
                 heat = null,
-                heatError = null
+                heatError = null,
+                needsFetch = false
             )
         }
-        load()
+        /* N5：切日期只读缓存，不自动取数（要取数由用户点「更新」） */
+        load(LoadMode.AUTO)
     }
 
     fun selectPeriod(period: Period) {
@@ -312,13 +330,15 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                 result = null,
                 offlineAt = null,
                 heat = null,
-                heatError = null
+                heatError = null,
+                needsFetch = false
             )
         }
-        load()
+        /* N5：切时段同样不自动取数 */
+        load(LoadMode.AUTO)
     }
 
-    fun refresh() = load(force = true)
+    fun refresh() = load(LoadMode.FORCE)
 
     fun setCitySheetOpen(open: Boolean) {
         _state.update { it.copy(citySheetOpen = open) }
@@ -461,23 +481,32 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     /* ---------- 取数 ---------- */
 
-    private fun load(force: Boolean = false) {
+    /**
+     * N5：取数纪律的唯一入口。
+     * AUTO —— 自动加载只看缓存；CLICK —— 用户点「更新」，缓存优先；FORCE —— 刷新，绕开缓存。
+     */
+    private fun load(mode: LoadMode = LoadMode.AUTO) {
         job?.cancel()
         val s = _state.value
         if (s.dateStr.isBlank()) return
         job = viewModelScope.launch {
             val app = getApplication<Application>()
-            /* 冷启动/切日期：先把磁盘快照画出来，再让网络结果覆盖 */
-            if (!force) {
-                val cached = withContext(Dispatchers.IO) {
-                    com.sunglow.spectrum.data.ResultCache.get(app, s.city, s.dateStr, s.period)
-                }
-                if (cached != null && _state.value.result == null) {
-                    _state.update { it.copy(result = cached.result, offlineAt = cached.savedAt) }
-                }
+            /* 先读磁盘缓存（6 小时口径）：命中就先画出来 */
+            val cached = withContext(Dispatchers.IO) {
+                com.sunglow.spectrum.data.ResultCache.get(app, s.city, s.dateStr, s.period)
             }
-            _state.update { it.copy(loading = true, error = null, errorKind = null) }
-            when (val out = engine.run(s.city, s.dateStr, s.period, force)) {
+            val decision = decideLoad(mode, cached != null, autoFetchSpent)
+            if (mode == LoadMode.AUTO) autoFetchSpent = true
+            if (cached != null && _state.value.result == null) {
+                _state.update { it.copy(result = cached.result, offlineAt = cached.savedAt) }
+            }
+            if (!decision.fetch) {
+                /* 不取数：把界面落定，缺结果时提示用户点更新 */
+                _state.update { it.copy(loading = false, needsFetch = it.result == null) }
+                return@launch
+            }
+            _state.update { it.copy(loading = true, error = null, errorKind = null, needsFetch = false) }
+            when (val out = engine.run(s.city, s.dateStr, s.period, mode == LoadMode.FORCE)) {
                 is ForecastOutcome.Success -> {
                     _state.update {
                         it.copy(
@@ -485,7 +514,8 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                             result = out.result,
                             error = null,
                             errorKind = null,
-                            offlineAt = null
+                            offlineAt = null,
+                            requestCount = client.requestCount
                         )
                     }
                     withContext(Dispatchers.IO) {
@@ -499,7 +529,8 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                     it.copy(
                         loading = false,
                         error = out.message,
-                        errorKind = out.kind.name
+                        errorKind = out.kind.name,
+                        requestCount = client.requestCount
                     )
                 }
             }
