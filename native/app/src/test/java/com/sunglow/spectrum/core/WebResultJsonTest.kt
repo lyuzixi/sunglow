@@ -159,7 +159,8 @@ class WebResultJsonTest {
         assertNotNull("含观测场的 pack 不应为空", pack)
         val snap = decodePack(pack)
         assertNotNull(snap)
-        assertEquals(3, snap!!.entries.size)
+        println("MAP_KEYS=${snap!!.entries.map { it.key }}")
+        assertEquals("entries=${snap.entries.map { it.key }}", 3, snap.entries.size)
         val mapKey = snap.entries[2].key ?: ""
         assertTrue("观测场键格式：$mapKey",
             mapKey == "SUNGLOW.v2.map.v9.2026-11-12@39.9,116.4")
@@ -205,7 +206,7 @@ class WebResultJsonTest {
         assertNotNull("121 点观测场应能在 7,600 字符内打包", pack)
         assertTrue("pack 长度 ${pack?.length} 应 ≤ 7600", (pack?.length ?: Int.MAX_VALUE) <= 7600)
         val snap = decodePack(pack)
-        assertEquals(3, snap!!.entries.size)
+        assertEquals("entries=${snap!!.entries.map { it.key }}", 3, snap.entries.size)
         val cm = snap.entries[2].value["cm"]!!.jsonObject
         val n = cm["r"]!!.jsonArray.size
         assertTrue("抽稀后应为 121/61/41 点，实际 $n", n in listOf(121, 61, 41))
