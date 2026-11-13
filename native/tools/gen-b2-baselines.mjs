@@ -201,6 +201,11 @@ try {
 try {
   const extras = await import(mod("shareextras.ts"))
   const astro = await import(mod("astro.ts"))
+  /* 文案语言必须钉死简体：CI 的 navigator.language 是 en-US，不钉会采到英文串，
+     和 App 的中文实现天然对不上（本地能过、云端必红就是这么来的）。 */
+  const i18n = await import(mod("i18n.ts"))
+  if (i18n.setLang) i18n.setLang("zh")
+  console.log("  ics lang =", i18n.getLang ? i18n.getLang() : "?")
   const events = astro.sunEvents(Date.UTC(2026, 10, 13), 39.9042, 116.4074)
   const evMs = events.setMs
   const fakeR = {
@@ -220,6 +225,13 @@ try {
       "https://sunglow.cloud/?s=ABCdef1234567890"
     )
   } finally { Date.now = realNow }
+
+  /* state.ts 会用 navigator.language 初始化语言（CI 上是 en-US），
+     采到英文串就和 App 的中文实现天然对不上。这里再钉一次并硬校验。 */
+  if (i18n.setLang) i18n.setLang("zh")
+  if (!String(built.fileName).startsWith("霞光档案")) {
+    throw new Error("日历基准跑成了非简体：" + built.fileName)
+  }
 
   /* 展开折行后解析字段 */
   const unfolded = []
