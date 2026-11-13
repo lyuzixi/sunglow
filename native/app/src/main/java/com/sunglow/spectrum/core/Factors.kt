@@ -1,5 +1,6 @@
 package com.sunglow.spectrum.core
 
+import kotlinx.serialization.Serializable
 import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
@@ -15,6 +16,7 @@ import kotlin.math.roundToLong
  */
 
 /** （键, 原始数值, 展示得分）—— 与网页 State.factorRows 同构；null = 缺数据 */
+@Serializable
 data class FacRow(val key: String, val raw: Double?, val score: Double?)
 
 /** facRowsOf 的输入：都是计算期就知道的原始量 */

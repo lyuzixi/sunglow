@@ -201,6 +201,19 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
         }
 
         if (result != null) {
+            val time = state.offlineAt?.let { offlineTime(it) }
+            val notice = when {
+                state.offlineAt != null && state.error != null ->
+                    "离线数据 · 更新于 " + time + " · " + errorLabel(state.errorKind)
+                state.offlineAt != null -> "离线数据 · 更新于 " + time
+                state.error != null -> errorLabel(state.errorKind) + " · 点右侧重试"
+                else -> null
+            }
+            if (notice != null) {
+                item {
+                    NoticeStrip(notice, "重试", vm::refresh)
+                }
+            }
             val view = verdictViewOf(result, modelSel)
             item {
                 Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp)) {
@@ -258,8 +271,10 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                     textAlign = TextAlign.Center
                 )
             }
+        } else if (state.loading) {
+            item { PageSkeleton(colors) }
         } else {
-            item { StatusCard(state.error, state.loading, vm::refresh) }
+            item { StatusCard(state.error, state.errorKind, vm::refresh) }
         }
     }
     }
@@ -298,16 +313,18 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
             when (sheet) {
                 "factors" -> FactorsSheet(result)
                 "ray" -> RaySheet(result)
-                "share" -> ShareSheet(result, verdictViewOf(result, modelSel))
+                "share" -> ShareSheet(result, verdictViewOf(result, modelSel), state, vm::loadHeat)
                 "settings" -> SettingsSheet(
                     themeMode = state.themeMode,
                     lang = state.lang,
                     reminderEnabled = state.reminderEnabled,
                     reminderThreshold = state.reminderThreshold,
+                    showSamples = state.showSamples,
                     onSetTheme = vm::setThemeMode,
                     onSetLang = vm::setLanguage,
                     onSetReminder = vm::setReminderEnabled,
                     onSetThreshold = vm::setReminderThreshold,
+                    onSetSamples = vm::setShowSamples,
                     onOpenAbout = { sheet = "about" },
                     onFeedback = {
                         runCatching {
@@ -1356,13 +1373,21 @@ private fun TimeLine(result: ForecastResult, colors: SunglowColors) {
 }
 
 @Composable
-private fun ShareSheet(result: ForecastResult, view: VerdictView) {
+private fun ShareSheet(
+    result: ForecastResult,
+    view: VerdictView,
+    state: com.sunglow.spectrum.ui.HomeUiState,
+    onLoadHeat: () -> Unit
+) {
     val colors = SunglowTheme.colors
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
     val caption = remember(result, view) { captionOf(result, view) }
     val link = remember(result) { shareUrlOf(result) }
     val qr = remember(result) { ShareCard.qr(link, 512) }
+    /* 模板 0＝结论版（天色带）；1＝地图版（热力缩略 + 分歧/可信度） */
+    var template by remember(result) { mutableStateOf(0) }
+    val heat = state.heat
     Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 28.dp)) {
         Text(
             text = stringResource(R.string.share_title),
@@ -1377,15 +1402,59 @@ private fun ShareSheet(result: ForecastResult, view: VerdictView) {
         )
         Spacer(Modifier.height(14.dp))
 
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("结论版" to 0, "地图版" to 1).forEach { (label, t) ->
+                val on = template == t
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                    color = if (on) Color(0xFF06101C) else colors.muted,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(999.dp))
+                        .then(
+                            if (on) Modifier.background(Brush.horizontalGradient(colors.spectrum))
+                            else Modifier.background(colors.glass)
+                        )
+                        .border(
+                            1.dp,
+                            if (on) Color.Transparent else colors.ruleStrong,
+                            RoundedCornerShape(999.dp)
+                        )
+                        .clickable {
+                            template = t
+                            if (t == 1 && heat == null) onLoadHeat()
+                        }
+                        .padding(horizontal = 14.dp, vertical = 7.dp)
+                )
+            }
+        }
+        if (template == 1) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = when {
+                    heat != null -> "热力缩略 " + heat.n + "×" + heat.n +
+                        " · 覆盖约 " + heat.spanKm().roundToInt() + " km 见方"
+                    state.heatLoading -> "正在生成热力面 " + state.heatDone + "/" + state.heatTotal + "…"
+                    state.heatError != null -> state.heatError
+                    else -> "点「地图版」开始生成观测场缩略图"
+                },
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                color = colors.faint
+            )
+        }
+        Spacer(Modifier.height(12.dp))
+
         /* 主操作：生成 1080×1440 竖版图卡并调起系统分享 */
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(999.dp))
                 .background(Brush.horizontalGradient(colors.spectrum))
-                .clickable {
+                .clickable(enabled = template == 0 || heat != null) {
                     haptics.confirm()
-                    runCatching { ShareCard.shareImage(context, result, view, colors.isDark) }
+                    runCatching {
+                        ShareCard.shareImage(context, result, view, colors.isDark, template, heat)
+                    }
                         .onFailure {
                             Toast.makeText(
                                 context,
@@ -1530,10 +1599,12 @@ private fun SettingsSheet(
     lang: String,
     reminderEnabled: Boolean,
     reminderThreshold: Int,
+    showSamples: Boolean,
     onSetTheme: (Int) -> Unit,
     onSetLang: (String) -> Unit,
     onSetReminder: (Boolean) -> Unit,
     onSetThreshold: (Int) -> Unit,
+    onSetSamples: (Boolean) -> Unit,
     onOpenAbout: () -> Unit,
     onFeedback: () -> Unit,
     onClearCache: () -> Unit
@@ -1711,6 +1782,34 @@ private fun SettingsSheet(
         )
 
         Spacer(Modifier.height(18.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.settings_samples),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.ink
+                )
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    text = stringResource(R.string.samples_hint),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.faint
+                )
+            }
+            Switch(
+                checked = showSamples,
+                onCheckedChange = onSetSamples,
+                colors = androidx.compose.material3.SwitchDefaults.colors(
+                    checkedThumbColor = Color(0xFF06101C),
+                    checkedTrackColor = colors.accent,
+                    uncheckedThumbColor = colors.faint,
+                    uncheckedTrackColor = colors.glassStrong,
+                    uncheckedBorderColor = colors.ruleStrong
+                )
+            )
+        }
+
+        Spacer(Modifier.height(18.dp))
         Box(Modifier.fillMaxWidth().height(1.dp).background(colors.rule))
         SettingsAction(stringResource(R.string.settings_about), onOpenAbout)
         SettingsAction(stringResource(R.string.settings_feedback), onFeedback)
@@ -1814,7 +1913,7 @@ private fun Context.findActivity(): Activity? {
 }
 
 @Composable
-private fun SkeletonBar(modifier: Modifier) {
+private fun SkeletonBar(modifier: Modifier, base: Color = Color.White) {
     val breath = rememberInfiniteTransition(label = "skeleton")
     val a by breath.animateFloat(
         initialValue = 0.26f,
@@ -1825,15 +1924,115 @@ private fun SkeletonBar(modifier: Modifier) {
     Box(
         modifier
             .clip(RoundedCornerShape(6.dp))
-            .background(Color.White.copy(alpha = a))
+            .background(base.copy(alpha = a))
     )
+}
+
+/** 首屏骨架：与真实布局同构（结论句 + 模型卡），避免取数回来时整页跳变 */
+@Composable
+private fun PageSkeleton(colors: SunglowColors) {
+    Column(Modifier.padding(horizontal = 18.dp, vertical = 12.dp)) {
+        SkeletonBar(Modifier.fillMaxWidth().height(16.dp), colors.ruleStrong)
+        Spacer(Modifier.height(8.dp))
+        SkeletonBar(Modifier.fillMaxWidth(0.68f).height(16.dp), colors.ruleStrong)
+        Spacer(Modifier.height(16.dp))
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(colors.card)
+                .border(1.dp, colors.rule, RoundedCornerShape(14.dp))
+                .padding(14.dp)
+        ) {
+            SkeletonBar(Modifier.fillMaxWidth(0.4f).height(13.dp), colors.rule)
+            Spacer(Modifier.height(14.dp))
+            repeat(3) {
+                SkeletonBar(Modifier.fillMaxWidth().height(12.dp), colors.rule)
+                Spacer(Modifier.height(10.dp))
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(colors.card)
+                .border(1.dp, colors.rule, RoundedCornerShape(14.dp))
+                .padding(14.dp)
+        ) {
+            repeat(2) {
+                SkeletonBar(Modifier.fillMaxWidth().height(12.dp), colors.rule)
+                Spacer(Modifier.height(10.dp))
+            }
+        }
+    }
+}
+
+/** 离线/更新失败提示条：不遮挡主结论，只说明数据新鲜度 */
+@Composable
+private fun NoticeStrip(text: String, action: String?, onAction: () -> Unit) {
+    val colors = SunglowTheme.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 18.dp, vertical = 6.dp)
+            .clip(RoundedCornerShape(999.dp))
+            .background(colors.glass)
+            .border(1.dp, colors.rule, RoundedCornerShape(999.dp))
+            .padding(horizontal = 12.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+            color = colors.muted,
+            modifier = Modifier.weight(1f)
+        )
+        if (action != null) {
+            Text(
+                text = action,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                color = colors.accentCool,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .clickable(onClick = onAction)
+                    .padding(horizontal = 8.dp, vertical = 2.dp)
+            )
+        }
+    }
+}
+
+private fun offlineTime(ms: Long): String =
+    java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+        .format(java.util.Date(ms))
+
+private fun errorLabel(kind: String?): String = when (kind) {
+    "NETWORK" -> "网络不可用"
+    "TIMEOUT" -> "请求超时"
+    "RATE_LIMIT" -> "接口限流"
+    "NO_DATA" -> "暂无数据"
+    else -> "更新失败"
 }
 
 /* ---------- 状态卡 ---------- */
 
 @Composable
-private fun StatusCard(error: String?, loading: Boolean, onRetry: () -> Unit) {
+private fun StatusCard(error: String?, kind: String?, onRetry: () -> Unit) {
     val colors = SunglowTheme.colors
+    val title = when (kind) {
+        "NETWORK" -> "连不上网络"
+        "TIMEOUT" -> "请求超时"
+        "RATE_LIMIT" -> "接口限流"
+        "NO_DATA" -> "暂无可用数据"
+        else -> if (error != null) "取数失败" else "暂无数据"
+    }
+    val action = when (kind) {
+        "NETWORK" -> "检查网络后重新计算"
+        "TIMEOUT" -> "稍后重试"
+        "RATE_LIMIT" -> "约一分钟后重试"
+        "NO_DATA" -> "换个日期或城市"
+        else -> "重新计算"
+    }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -1844,7 +2043,7 @@ private fun StatusCard(error: String?, loading: Boolean, onRetry: () -> Unit) {
             .padding(16.dp)
     ) {
         Text(
-            text = if (error != null) "取数失败" else if (loading) "正在取数…" else "暂无数据",
+            text = title,
             style = MaterialTheme.typography.titleSmall,
             color = if (error != null) colors.bad else colors.ink
         )
@@ -1858,12 +2057,12 @@ private fun StatusCard(error: String?, loading: Boolean, onRetry: () -> Unit) {
         }
         Spacer(Modifier.height(10.dp))
         Text(
-            text = if (loading) "请稍候" else "重新计算",
+            text = action,
             style = MaterialTheme.typography.bodyMedium,
             color = colors.accentCool,
             modifier = Modifier
                 .clip(RoundedCornerShape(999.dp))
-                .clickable(enabled = !loading, onClick = onRetry)
+                .clickable(onClick = onRetry)
                 .padding(horizontal = 8.dp, vertical = 4.dp)
         )
     }

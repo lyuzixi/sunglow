@@ -5,6 +5,7 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.Locale
 import java.util.TimeZone
+import kotlinx.serialization.Serializable
 import kotlin.math.abs
 import kotlin.math.roundToLong
 
@@ -14,6 +15,7 @@ import kotlin.math.roundToLong
  * 时间轴统一存真实时间戳；只有显示的最后一刻才换算成城市墙钟。
  */
 
+@Serializable
 data class TzInfo(
     /** IANA 名，如 "Asia/Shanghai"；经度估算态为 null */
     val iana: String? = null,

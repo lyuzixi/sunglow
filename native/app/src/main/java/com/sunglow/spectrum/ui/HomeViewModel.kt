@@ -78,7 +78,19 @@ data class HomeUiState(
     val lang: String = "zh",
     val reminderEnabled: Boolean = false,
     /** 提醒阈值（概率百分比） */
-    val reminderThreshold: Int = 45
+    val reminderThreshold: Int = 45,
+    /** 当前画面来自磁盘快照的时间（毫秒）；非空表示这是离线/缓存数据 */
+    val offlineAt: Long? = null,
+    /** 错误分型（FailureKind.name），界面据此给出动作 */
+    val errorKind: String? = null,
+    /** 观测场是否显示 17 个样带采样点 */
+    val showSamples: Boolean = false,
+    /** 观测场热力面 */
+    val heat: com.sunglow.spectrum.core.HeatGrid? = null,
+    val heatLoading: Boolean = false,
+    val heatDone: Int = 0,
+    val heatTotal: Int = 0,
+    val heatError: String? = null
 )
 
 val DEFAULT_CITY = City("北京市", 116.4074, 39.9042, "北京市")
@@ -101,6 +113,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             lang = prefs.getString("lang", "zh") ?: "zh",
             reminderEnabled = prefs.getBoolean("reminder_enabled", false),
             reminderThreshold = prefs.getInt("reminder_threshold", 45),
+            showSamples = prefs.getBoolean("show_samples", false),
             sightings = parseSightings(prefs.getString("sightings", "").orEmpty())
         )
     )
@@ -110,6 +123,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     private var job: Job? = null
     private var trendJob: Job? = null
+    private var heatJob: Job? = null
 
     init {
         val dates = buildDates(startCity)
@@ -141,7 +155,11 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                 dateStr = date,
                 period = t.period ?: it.period,
                 result = null,
-                error = null
+                error = null,
+                errorKind = null,
+                offlineAt = null,
+                heat = null,
+                heatError = null
             )
         }
         load()
@@ -165,28 +183,79 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                     trend = if (force) emptyList() else it.trend
                 )
             }
-            val rows = mutableListOf<TrendRow>()
             try {
-                for ((i, d) in s.dates.withIndex()) {
-                    /* 逐日串行：接口限流比"快"重要，缓存命中后重进会很快 */
-                    val amRes = engine.run(s.city, d, Period.AM, force)
-                    val pmRes = engine.run(s.city, d, Period.PM, force)
-                    val am = (amRes as? ForecastOutcome.Success)?.result
-                    val pm = (pmRes as? ForecastOutcome.Success)?.result
-                    rows += TrendRow(
+                /* 区间取数：10 天朝/晚各 3 个请求（合计 6 个），不再是 60 个 */
+                val amOut = engine.runRange(s.city, s.dates, Period.AM, force)
+                _state.update { it.copy(trendDone = s.dates.size / 2) }
+                val pmOut = engine.runRange(s.city, s.dates, Period.PM, force)
+
+                val rows = s.dates.mapIndexed { i, d ->
+                    val am = (amOut.getOrNull(i) as? ForecastOutcome.Success)?.result
+                    val pm = (pmOut.getOrNull(i) as? ForecastOutcome.Success)?.result
+                    TrendRow(
                         date = d,
                         am = am?.let { TrendCell(it.p, it.q, it.grade) },
                         pm = pm?.let { TrendCell(it.p, it.q, it.grade) }
                     )
-                    _state.update { it.copy(trend = rows.toList(), trendDone = i + 1) }
-                    delay(120)
+                }
+                _state.update {
+                    it.copy(
+                        trend = rows,
+                        trendDone = s.dates.size,
+                        trendLoading = false,
+                        trendError = firstFailure(amOut, pmOut)
+                    )
                 }
             } catch (e: Exception) {
-                _state.update { it.copy(trendError = "趋势取数中断，请点重试") }
-            } finally {
-                _state.update { it.copy(trendLoading = false) }
+                _state.update { it.copy(trendLoading = false, trendError = "趋势取数中断，请点重试") }
             }
         }
+    }
+
+    /** 趋势里第一条失败文案：部分天成功时也把原因说清楚 */
+    private fun firstFailure(vararg lists: List<ForecastOutcome>): String? {
+        for (l in lists) for (o in l) if (o is ForecastOutcome.Failure) return o.message
+        return null
+    }
+
+    /* ---------- 观测场热力面 ---------- */
+
+    fun loadHeat(force: Boolean = false) {
+        val s = _state.value
+        if (s.heatLoading) return
+        if (s.result == null) return
+        if (!force && s.heat != null &&
+            s.heat.dateStr == s.dateStr && s.heat.period == s.period
+        ) return
+        heatJob?.cancel()
+        heatJob = viewModelScope.launch {
+            _state.update {
+                it.copy(
+                    heatLoading = true,
+                    heatDone = 0,
+                    heatTotal = 24,
+                    heatError = null,
+                    heat = if (force) null else it.heat
+                )
+            }
+            val grid = runCatching {
+                engine.runHeat(s.city, s.dateStr, s.period) { done, total ->
+                    _state.update { st -> st.copy(heatDone = done, heatTotal = total) }
+                }
+            }.getOrNull()
+            _state.update {
+                it.copy(
+                    heatLoading = false,
+                    heat = grid,
+                    heatError = if (grid == null) "热力面没有取到数据，请稍后重试" else null
+                )
+            }
+        }
+    }
+
+    fun setShowSamples(on: Boolean) {
+        prefs.edit().putBoolean("show_samples", on).apply()
+        _state.update { it.copy(showSamples = on) }
     }
 
     /* ---------- 选择 ---------- */
@@ -201,6 +270,10 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                 dateStr = dates.firstOrNull().orEmpty(),
                 result = null,
                 error = null,
+                errorKind = null,
+                offlineAt = null,
+                heat = null,
+                heatError = null,
                 citySheetOpen = false
             )
         }
@@ -209,13 +282,29 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     fun selectDate(dateStr: String) {
         if (dateStr == _state.value.dateStr) return
-        _state.update { it.copy(dateStr = dateStr) }
+        _state.update {
+            it.copy(
+                dateStr = dateStr,
+                result = null,
+                offlineAt = null,
+                heat = null,
+                heatError = null
+            )
+        }
         load()
     }
 
     fun selectPeriod(period: Period) {
         if (period == _state.value.period) return
-        _state.update { it.copy(period = period) }
+        _state.update {
+            it.copy(
+                period = period,
+                result = null,
+                offlineAt = null,
+                heat = null,
+                heatError = null
+            )
+        }
         load()
     }
 
@@ -254,6 +343,8 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     fun clearLocalCache() {
         ForecastCache.clear()
         ForecastStore.clear(getApplication())
+        com.sunglow.spectrum.data.ResultCache.clear(getApplication())
+        _state.update { it.copy(offlineAt = null, heat = null) }
         WidgetUpdater.updateAll(getApplication())
     }
 
@@ -359,20 +450,41 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         val s = _state.value
         if (s.dateStr.isBlank()) return
         job = viewModelScope.launch {
-            _state.update { it.copy(loading = true, error = null) }
+            val app = getApplication<Application>()
+            /* 冷启动/切日期：先把磁盘快照画出来，再让网络结果覆盖 */
+            if (!force) {
+                val cached = withContext(Dispatchers.IO) {
+                    com.sunglow.spectrum.data.ResultCache.get(app, s.city, s.dateStr, s.period)
+                }
+                if (cached != null && _state.value.result == null) {
+                    _state.update { it.copy(result = cached.result, offlineAt = cached.savedAt) }
+                }
+            }
+            _state.update { it.copy(loading = true, error = null, errorKind = null) }
             when (val out = engine.run(s.city, s.dateStr, s.period, force)) {
                 is ForecastOutcome.Success -> {
                     _state.update {
-                        it.copy(loading = false, result = out.result, error = null)
+                        it.copy(
+                            loading = false,
+                            result = out.result,
+                            error = null,
+                            errorKind = null,
+                            offlineAt = null
+                        )
                     }
-                    val app = getApplication<Application>()
                     withContext(Dispatchers.IO) {
                         ForecastStore.save(app, out.result)
+                        com.sunglow.spectrum.data.ResultCache.save(app, out.result)
                     }
                     WidgetUpdater.updateAll(app)
                 }
                 is ForecastOutcome.Failure -> _state.update {
-                    it.copy(loading = false, result = null, error = out.message)
+                    /* 有旧结果（离线快照）时保留它，只把错误挂出来，别把整页清空 */
+                    it.copy(
+                        loading = false,
+                        error = out.message,
+                        errorKind = out.kind.name
+                    )
                 }
             }
         }

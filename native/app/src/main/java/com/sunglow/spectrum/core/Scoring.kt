@@ -1,5 +1,6 @@
 package com.sunglow.spectrum.core
 
+import kotlinx.serialization.Serializable
 import kotlin.math.max
 import kotlin.math.min
 
@@ -15,6 +16,7 @@ const val API_TZ = "auto"
 
 /* ---------- 环境场 ---------- */
 
+@Serializable
 data class Env(
     val tMs: Long,
     val t: Double?,
@@ -136,6 +138,7 @@ data class ScoreCtx(
     val aod: Double? = null
 )
 
+@Serializable
 data class StatResult(
     val p: Double,
     val q: Double,
@@ -339,6 +342,7 @@ fun scoreStat(env: Env, tr: TransectSummary, ctx: ScoreCtx): StatResult {
 
 /* ---------- 光追算法 ---------- */
 
+@Serializable
 data class RaySample(
     val t: Double,
     val magDeg: Double,
@@ -347,6 +351,7 @@ data class RaySample(
     val color: RayColor
 )
 
+@Serializable
 data class RayResult(
     val p: Double,
     val q: Double,
@@ -539,6 +544,7 @@ fun gradeOf(q: Double?): String {
     return QUALITY_BANDS.last().key
 }
 
+@Serializable
 data class EnsBand(
     val key: String,
     val max: Double,

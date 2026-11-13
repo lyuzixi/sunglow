@@ -1,5 +1,6 @@
 package com.sunglow.spectrum.core
 
+import kotlinx.serialization.Serializable
 import kotlin.math.cbrt
 import kotlin.math.exp
 import kotlin.math.hypot
@@ -98,6 +99,7 @@ private val LUM_FULL: Double = run {
     if (s == 0.0) 1.0 else s
 }
 
+@Serializable
 data class RayColor(
     val tau550: Double,
     val t550: Double,
@@ -216,6 +218,7 @@ fun colorName(hue: Double, sat: Double, t550: Double): Pair<String, String> {
 
 /* ---- 云层识别 ---- */
 
+@Serializable
 data class Deck(
     val key: String,
     val level: Int,
@@ -293,6 +296,7 @@ fun deckTypeDetail(type: String, covers: List<Double?>?): DeckTypeDetail =
 
 /* ---- 沿样带的云边界分析 ---- */
 
+@Serializable
 data class TransectPt(
     val d: Double,
     val cLow: Double? = null,
@@ -382,6 +386,7 @@ fun analyseTransect(transect: List<TransectPt>?, levelKey: String): TransectResu
 
 /* ---- 火烧云三角几何 ---- */
 
+@Serializable
 data class FireGeom(
     val xMax: Double,
     val thFar: Double,
@@ -426,6 +431,7 @@ fun cloudBlockOf(cLow: Double?, cMid: Double?): Double {
 
 /* ---- 亮度分级 ---- */
 
+@Serializable
 data class BrightLevel(val txt: String, val score: Double)
 
 fun brightnessLevel(t550: Double): BrightLevel = when {

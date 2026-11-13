@@ -21,6 +21,7 @@ import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
 import com.sunglow.spectrum.R
 import com.sunglow.spectrum.core.ForecastResult
+import com.sunglow.spectrum.core.HeatGrid
 import com.sunglow.spectrum.core.QUALITY_BANDS
 import com.sunglow.spectrum.core.QUALITY_LABEL
 import com.sunglow.spectrum.core.VerdictView
@@ -51,8 +52,15 @@ object ShareCard {
     const val W = 1080f
     const val H = 1440f
 
-    /** 画一张图卡；dark 决定用哪套令牌 */
-    fun render(ctx: Context, r: ForecastResult, view: VerdictView, dark: Boolean): Bitmap {
+    /** 画一张图卡；dark 决定用哪套令牌。template 0＝结论版，1＝地图版（需 heat） */
+    fun render(
+        ctx: Context,
+        r: ForecastResult,
+        view: VerdictView,
+        dark: Boolean,
+        template: Int = 0,
+        heat: HeatGrid? = null
+    ): Bitmap {
         val bmp = Bitmap.createBitmap(W.toInt(), H.toInt(), Bitmap.Config.ARGB_8888)
         val cv = Canvas(bmp)
 
@@ -198,69 +206,6 @@ object ShareCard {
         /* 结论句 */
         txt(conclWord(view.p), 64f, 812f, 42f, ink, sansBold)
 
-        /* 天色带 */
-        val bandY = 890f
-        val bandH = 92f
-        val bandW = W - 128f
-        txt("天色带", 64f, bandY - 18f, 26f, faint)
-        val sky = skyBandOf(r, System.currentTimeMillis().toDouble(), r.dateStr)
-        if (sky != null) {
-            val total = sky.segments.sumOf { it.weight.toDouble() }.takeIf { it > 0 } ?: 1.0
-            cv.save()
-            val clip = Path().apply { addRoundRect(RectF(64f, bandY, 64f + bandW, bandY + bandH), 12f, 12f, Path.Direction.CW) }
-            cv.clipPath(clip)
-            var x = 64f
-            for (s in sky.segments) {
-                val w = (s.weight / total * bandW).toFloat()
-                paint.reset()
-                paint.color = duskColor(s.key, dark)
-                cv.drawRect(x, bandY, x + w + 1f, bandY + bandH, paint)
-                x += w
-            }
-            /* 霞光窗口 */
-            if (sky.winWidth > 0f) {
-                val wx = 64f + sky.winLeft * bandW
-                val ww = sky.winWidth * bandW
-                fillRound(wx, bandY, ww, bandH, 0f, withAlpha(Color.WHITE, if (dark) 0x24 else 0x30))
-                paint.reset()
-                paint.isAntiAlias = true
-                paint.style = Paint.Style.STROKE
-                paint.strokeWidth = 3f
-                paint.color = withAlpha(Color.WHITE, if (dark) 0xCC else 0xE6)
-                cv.drawRoundRect(RectF(wx, bandY + 1.5f, wx + ww, bandY + bandH - 1.5f), 8f, 8f, paint)
-                paint.style = Paint.Style.FILL
-            }
-            cv.restore()
-
-            /* 时刻刻度 */
-            val markY = bandY + bandH + 30f
-            for (m in sky.marks) {
-                val mx = (64f + m.pct * bandW).coerceIn(86f, W - 86f)
-                val align = when (m.align) {
-                    -1 -> Paint.Align.LEFT
-                    1 -> Paint.Align.RIGHT
-                    else -> Paint.Align.CENTER
-                }
-                txt(m.time, mx, markY, 21f, faint, sans, align)
-            }
-        } else {
-            fillRound(64f, bandY, bandW, bandH, 12f, withAlpha(faint, 0x18))
-            txt("此刻没有可用的天色带", 84f, bandY + 56f, 26f, faint)
-        }
-
-        /* 事实行 */
-        var fy = 1060f
-        paint.reset()
-        paint.color = rule
-        cv.drawRect(64f, 1018f, W - 64f, 1019.5f, paint)
-
-        fun fact(k: String, v: String) {
-            txt(k, 64f, fy, 26f, faint)
-            txt(v, W - 64f, fy, 28f, ink, sans, Paint.Align.RIGHT)
-            fy += 44f
-        }
-
-        fact("云边界距离", uDist(r.sRT.d) + " / 上限 " + uDist(r.sRT.geom.xMax))
         val win = glowWindow(
             evMs = r.evMs,
             isAM = r.period == com.sunglow.spectrum.core.Period.AM,
@@ -269,15 +214,112 @@ object ShareCard {
             thNearDeg = r.sRT.geom.thNearDeg,
             thFarDeg = r.sRT.geom.thFarDeg
         )
-        fact(
-            "最佳观赏窗口",
-            if (win != null) fmtClock(win.first, r.tz) + " – " + fmtClock(win.second, r.tz) else "—"
-        )
-        fact("峰值透射率 T550", fmtSci(r.sRT.peak.color.t550))
-        fact(
-            "模型可信度",
-            if (isNum(r.dvI)) r.conf.level + " · ΔI " + r.dvI!!.roundToInt() else r.conf.level
-        )
+        val useMap = template == 1 && heat != null
+
+        if (useMap) {
+            val h = heat!!
+            /* 地图版：16:9 热力缩略 + 右侧关键读数 */
+            val mx = 64f
+            val my = 862f
+            val mw = 560f
+            val mh = mw * 9f / 16f
+            txt("观测场热力 · 综合指数", mx, my - 16f, 24f, faint)
+            drawHeat(cv, h, RectF(mx, my, mx + mw, my + mh), dark)
+            txt(
+                "覆盖约 " + h.spanKm().roundToInt() + " km 见方 · " +
+                    (if (r.period == com.sunglow.spectrum.core.Period.AM) "朝霞" else "晚霞") +
+                    " " + fmtClock(r.evMs, r.tz),
+                mx, my + mh + 26f, 20f, faint
+            )
+            txt("综合指数越高，出霞机会越大", mx, my + mh + 52f, 19f, faint)
+
+            var ry = my + 16f
+            fun right(label: String, value: String) {
+                txt(label, 660f, ry, 23f, faint)
+                txt(value, 660f, ry + 36f, 30f, ink, sansBold)
+                ry += 82f
+            }
+            right("模型分歧 ΔI", if (isNum(r.dvI)) r.dvI!!.roundToInt().toString() else "—")
+            right("模型可信度", r.conf.level)
+            right("云边界距离", uDist(r.sRT.d))
+            right(
+                "最佳窗口",
+                if (win != null) fmtClock(win.first, r.tz) + "–" + fmtClock(win.second, r.tz) else "—"
+            )
+        } else {
+            /* 天色带 */
+            val bandY = 890f
+            val bandH = 92f
+            val bandW = W - 128f
+            txt("天色带", 64f, bandY - 18f, 26f, faint)
+            val sky = skyBandOf(r, System.currentTimeMillis().toDouble(), r.dateStr)
+            if (sky != null) {
+                val total = sky.segments.sumOf { it.weight.toDouble() }.takeIf { it > 0 } ?: 1.0
+                cv.save()
+                val clip = Path().apply { addRoundRect(RectF(64f, bandY, 64f + bandW, bandY + bandH), 12f, 12f, Path.Direction.CW) }
+                cv.clipPath(clip)
+                var x = 64f
+                for (s in sky.segments) {
+                    val w = (s.weight / total * bandW).toFloat()
+                    paint.reset()
+                    paint.color = duskColor(s.key, dark)
+                    cv.drawRect(x, bandY, x + w + 1f, bandY + bandH, paint)
+                    x += w
+                }
+                /* 霞光窗口 */
+                if (sky.winWidth > 0f) {
+                    val wx = 64f + sky.winLeft * bandW
+                    val ww = sky.winWidth * bandW
+                    fillRound(wx, bandY, ww, bandH, 0f, withAlpha(Color.WHITE, if (dark) 0x24 else 0x30))
+                    paint.reset()
+                    paint.isAntiAlias = true
+                    paint.style = Paint.Style.STROKE
+                    paint.strokeWidth = 3f
+                    paint.color = withAlpha(Color.WHITE, if (dark) 0xCC else 0xE6)
+                    cv.drawRoundRect(RectF(wx, bandY + 1.5f, wx + ww, bandY + bandH - 1.5f), 8f, 8f, paint)
+                    paint.style = Paint.Style.FILL
+                }
+                cv.restore()
+
+                /* 时刻刻度 */
+                val markY = bandY + bandH + 30f
+                for (m in sky.marks) {
+                    val mx2 = (64f + m.pct * bandW).coerceIn(86f, W - 86f)
+                    val align = when (m.align) {
+                        -1 -> Paint.Align.LEFT
+                        1 -> Paint.Align.RIGHT
+                        else -> Paint.Align.CENTER
+                    }
+                    txt(m.time, mx2, markY, 21f, faint, sans, align)
+                }
+            } else {
+                fillRound(64f, bandY, bandW, bandH, 12f, withAlpha(faint, 0x18))
+                txt("此刻没有可用的天色带", 84f, bandY + 56f, 26f, faint)
+            }
+
+            /* 事实行 */
+            var fy = 1060f
+            paint.reset()
+            paint.color = rule
+            cv.drawRect(64f, 1018f, W - 64f, 1019.5f, paint)
+
+            fun fact(k: String, v: String) {
+                txt(k, 64f, fy, 26f, faint)
+                txt(v, W - 64f, fy, 28f, ink, sans, Paint.Align.RIGHT)
+                fy += 44f
+            }
+
+            fact("云边界距离", uDist(r.sRT.d) + " / 上限 " + uDist(r.sRT.geom.xMax))
+            fact(
+                "最佳观赏窗口",
+                if (win != null) fmtClock(win.first, r.tz) + " – " + fmtClock(win.second, r.tz) else "—"
+            )
+            fact("峰值透射率 T550", fmtSci(r.sRT.peak.color.t550))
+            fact(
+                "模型可信度",
+                if (isNum(r.dvI)) r.conf.level + " · ΔI " + r.dvI!!.roundToInt() else r.conf.level
+            )
+        }
 
         /* 页脚 */
         paint.reset()
@@ -326,8 +368,15 @@ object ShareCard {
         }.getOrNull()
 
     /** 存到 cache/share/ 并分享 */
-    fun shareImage(ctx: Context, r: ForecastResult, view: VerdictView, dark: Boolean) {
-        val bmp = render(ctx, r, view, dark)
+    fun shareImage(
+        ctx: Context,
+        r: ForecastResult,
+        view: VerdictView,
+        dark: Boolean,
+        template: Int = 0,
+        heat: HeatGrid? = null
+    ) {
+        val bmp = render(ctx, r, view, dark, template, heat)
         val dir = File(ctx.cacheDir, "share").apply { mkdirs() }
         val f = File(dir, shareFileNameOf(r))
         FileOutputStream(f).use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
@@ -344,6 +393,47 @@ object ShareCard {
     }
 
     /* ---------- 内部 ---------- */
+
+    /** 热力面缩略：最近邻位图 + 双线性过滤放大，保持格子边界柔和 */
+    private fun drawHeat(cv: Canvas, heat: HeatGrid, dst: RectF, dark: Boolean) {
+        val n = heat.n
+        val bmp = Bitmap.createBitmap(n, n, Bitmap.Config.ARGB_8888)
+        val px = IntArray(n * n)
+        for (c in heat.cells) px[c.i * n + c.j] = heatColor(c.idx / 100.0, dark)
+        bmp.setPixels(px, 0, n, 0, 0, n, n)
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            isFilterBitmap = true
+            alpha = 240
+        }
+        cv.save()
+        cv.clipPath(
+            Path().apply { addRoundRect(dst, 14f, 14f, Path.Direction.CW) }
+        )
+        cv.drawBitmap(bmp, null, dst, p)
+        cv.restore()
+        bmp.recycle()
+
+        p.reset()
+        p.isAntiAlias = true
+        p.style = Paint.Style.STROKE
+        p.strokeWidth = 2f
+        p.color = withAlpha(Color.WHITE, if (dark) 0x33 else 0x55)
+        cv.drawRoundRect(dst, 14f, 14f, p)
+    }
+
+    private fun heatColor(t: Double, dark: Boolean): Int {
+        val v = t.coerceIn(0.0, 1.0).toFloat()
+        fun mix(a: Int, b: Int, f: Float): Int = Color.rgb(
+            (Color.red(a) + (Color.red(b) - Color.red(a)) * f).toInt(),
+            (Color.green(a) + (Color.green(b) - Color.green(a)) * f).toInt(),
+            (Color.blue(a) + (Color.blue(b) - Color.blue(a)) * f).toInt()
+        )
+        val cool = Color.parseColor(if (dark) "#3FA9C8" else "#2E8FB0")
+        val mid = Color.parseColor(if (dark) "#E2B45E" else "#D99B3F")
+        val hot = Color.parseColor(if (dark) "#F2796A" else "#C0392B")
+        val c = if (v <= 0.5f) mix(cool, mid, v / 0.5f) else mix(mid, hot, (v - 0.5f) / 0.5f)
+        return withAlpha(c, 240)
+    }
 
     private fun c(color: androidx.compose.ui.graphics.Color): Int = color.toArgb()
 

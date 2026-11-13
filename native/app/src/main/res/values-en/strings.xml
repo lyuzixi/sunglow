@@ -12,6 +12,8 @@
     <string name="theme_light">Light</string>
     <string name="settings_language">Language</string>
     <string name="settings_reminder">Glow alert</string>
+    <string name="settings_samples">Transect points</string>
+    <string name="samples_hint">Show the 17 transect sample dots over the heat map (heat map only by default)</string>
     <string name="reminder_enable">Check daily and send a local notification</string>
     <string name="reminder_threshold">Threshold</string>
     <string name="reminder_hint">Checks each morning and afternoon. You will be notified when the window is near and the probability reaches the threshold. System scheduling may delay it by a few minutes.</string>

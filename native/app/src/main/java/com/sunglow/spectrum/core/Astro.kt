@@ -2,6 +2,7 @@ package com.sunglow.spectrum.core
 
 import java.util.Calendar
 import java.util.TimeZone
+import kotlinx.serialization.Serializable
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.acos
@@ -27,6 +28,7 @@ data class SolarPos(
     val hourAngle: Double      // 度
 )
 
+@Serializable
 data class SunEvents(
     val noonMs: Double,
     val riseMs: Double?,
@@ -154,6 +156,7 @@ fun eventAzimuth(dateS: String, period: Period, lat: Double, lon: Double): Doubl
     return if (az.isFinite()) wrap360(az) else null
 }
 
+@Serializable
 enum class Period { AM, PM }
 
 /** UTC 零点毫秒（不依赖设备时区） */

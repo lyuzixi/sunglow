@@ -1,8 +1,7 @@
 package com.sunglow.spectrum.ui.screens
 
 import android.view.MotionEvent
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvasimport androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +22,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,11 +50,18 @@ import org.osmdroid.tileprovider.tilesource.OnlineTileSourceBase
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.util.MapTileIndex
 import org.osmdroid.views.MapView
+import com.sunglow.spectrum.core.City
+import com.sunglow.spectrum.core.DEG
 import com.sunglow.spectrum.core.ForecastResult
+import com.sunglow.spectrum.core.HeatCell
+import com.sunglow.spectrum.core.HeatGrid
 import com.sunglow.spectrum.core.Period
+import com.sunglow.spectrum.core.RAD
 import com.sunglow.spectrum.core.TransectPt
 import com.sunglow.spectrum.core.cloudBlockOf
+import com.sunglow.spectrum.core.dirWordOf
 import com.sunglow.spectrum.core.fmtDur
+import com.sunglow.spectrum.core.haversineKm
 import com.sunglow.spectrum.core.isNum
 import com.sunglow.spectrum.core.transectPoints
 import com.sunglow.spectrum.core.uAlt
@@ -76,6 +84,11 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
     val colors = SunglowTheme.colors
     val result = state.result
     var showMap by remember(state.city.name) { mutableStateOf(true) }
+
+    /* 进入观测场才生成热力面：9 个请求 + 225 点计算，结果缓存在 ViewModel 里 */
+    LaunchedEffect(state.city.name, state.dateStr, state.period, result) {
+        if (result != null) vm.loadHeat()
+    }
 
     Column(
         modifier = Modifier
@@ -100,7 +113,7 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
             }
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "沿日出/日落方位的光路剖面",
+                text = "城市周边热力面 · 点任意位置读数",
                 style = MaterialTheme.typography.labelSmall,
                 color = colors.faint
             )
@@ -117,7 +130,7 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
         }
 
         if (showMap) {
-            OsmMap(city = state.city, result = result, modifier = Modifier.padding(horizontal = 18.dp))
+            OsmMap(state, result, modifier = Modifier.padding(horizontal = 18.dp))
         } else {
             RayProfile(result)
         }
@@ -219,8 +232,9 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
             Spacer(Modifier.height(8.dp))
             Panel {
                 Text(
-                    text = "剖面沿日出/日落方位取 17 个等距采样点，逐点读取云量、云底与气溶胶。" +
-                        "地图底图为高德公开瓦片，无需密钥，可拖拽与双指缩放；中心点已做 GCJ-02 纠偏。",
+                    text = "热力面按 15×15 网格铺满城市周边约 660 km，颜色是综合指数（越高越可能出霞）；" +
+                        "点地图任意位置可看该格的概率与质量。样带仍沿日出/日落方位取 17 个采样点，" +
+                        "默认隐藏，可在设置里重新显示。地图底图为高德公开瓦片，无需密钥，可拖拽与双指缩放；已做 GCJ-02 纠偏。",
                     style = MaterialTheme.typography.labelSmall,
                     color = colors.faint,
                     lineHeight = 16.sp
@@ -485,6 +499,7 @@ private fun wgsToGcj(lat: Double, lon: Double): Pair<Double, Double> {
 private class MapHolder {
     var lastKey: String = ""
     var overlay: TransectOverlay? = null
+    var heatOverlay: HeatOverlay? = null
 }
 
 /** 样带上的一个采样点（坐标已转 GCJ-02） */
@@ -586,14 +601,94 @@ private fun rampColor(t: Float, colors: SunglowColors): Color {
     else lerp(colors.accentAlt, colors.accent, (v - 0.5f) / 0.5f)
 }
 
+/** 把 15×15 热力面做成位图：每个像素一个格点，绘制时再放大 */
+private fun heatBitmap(grid: HeatGrid, colors: SunglowColors): android.graphics.Bitmap {
+    val n = grid.n
+    val bmp = android.graphics.Bitmap.createBitmap(n, n, android.graphics.Bitmap.Config.ARGB_8888)
+    val px = IntArray(n * n)
+    for (c in grid.cells) {
+        val argb = rampColor((c.idx / 100.0).toFloat(), colors).toArgb()
+        px[c.i * n + c.j] = (argb and 0x00FFFFFF) or (200 shl 24)
+    }
+    bmp.setPixels(px, 0, n, 0, 0, n, n)
+    return bmp
+}
+
+/**
+ * 热力面覆盖层：把整幅位图贴到「北西角 → 南东角」的投影矩形上，并接管任意点选。
+ * 底图是 GCJ-02 网格，四角先做纠偏再投影，否则放大后有偏移。
+ */
+private class HeatOverlay(
+    private val onPick: (Int, Int) -> Unit
+) : org.osmdroid.views.overlay.Overlay() {
+    var bitmap: android.graphics.Bitmap? = null
+    var grid: HeatGrid? = null
+    var selected: HeatCell? = null
+
+    private val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+    private val pt = android.graphics.Point()
+    private val pt2 = android.graphics.Point()
+    private val dst = android.graphics.Rect()
+
+    private fun rectOf(mapView: MapView, g: HeatGrid): Boolean {
+        val nw = wgsToGcj(g.lat0 + g.dLat / 2, g.lon0 - g.dLon / 2)
+        val se = wgsToGcj(
+            g.lat0 - (g.n - 1) * g.dLat - g.dLat / 2,
+            g.lon0 + (g.n - 1) * g.dLon + g.dLon / 2
+        )
+        val proj = mapView.projection
+        proj.toPixels(GeoPoint(nw.first, nw.second), pt)
+        proj.toPixels(GeoPoint(se.first, se.second), pt2)
+        dst.set(pt.x, pt.y, pt2.x, pt2.y)
+        return dst.width() > 4 && dst.height() > 4
+    }
+
+    override fun draw(c: android.graphics.Canvas, mapView: MapView, shadow: Boolean) {
+        if (shadow) return
+        val bmp = bitmap ?: return
+        val g = grid ?: return
+        if (!rectOf(mapView, g)) return
+        p.reset()
+        p.isFilterBitmap = true
+        p.alpha = 190
+        c.drawBitmap(bmp, null, dst, p)
+
+        selected?.let { cell ->
+            val cx = dst.left + (cell.j + 0.5f) / g.n * dst.width()
+            val cy = dst.top + (cell.i + 0.5f) / g.n * dst.height()
+            p.reset()
+            p.isAntiAlias = true
+            p.style = android.graphics.Paint.Style.STROKE
+            p.strokeWidth = 3f
+            p.color = 0xFFFFFFFF.toInt()
+            c.drawCircle(cx, cy, 11f, p)
+            p.style = android.graphics.Paint.Style.FILL
+            p.color = 0xFFFFFFFF.toInt()
+            c.drawCircle(cx, cy, 4f, p)
+        }
+    }
+
+    override fun onSingleTapConfirmed(e: MotionEvent, mapView: MapView): Boolean {
+        val g = grid ?: return false
+        if (bitmap == null) return false
+        if (!rectOf(mapView, g)) return false
+        if (!dst.contains(e.x.toInt(), e.y.toInt())) return false
+        val fx = ((e.x - dst.left) / dst.width()).coerceIn(0f, 0.9999f)
+        val fy = ((e.y - dst.top) / dst.height()).coerceIn(0f, 0.9999f)
+        onPick((fy * g.n).toInt(), (fx * g.n).toInt())
+        return true
+    }
+}
+
 @Composable
 private fun OsmMap(
-    city: com.sunglow.spectrum.core.City,
+    state: HomeUiState,
     result: ForecastResult,
     modifier: Modifier = Modifier
 ) {
     val colors = SunglowTheme.colors
     val density = LocalDensity.current
+    val city = state.city
     val sources = remember {
         listOf(
             "街道" to AmapTileSource(
@@ -610,10 +705,22 @@ private fun OsmMap(
     }
     var basemap by remember { mutableStateOf(0) }
     var picked by remember(city.name) { mutableStateOf(-1) }
+    var pickedCell by remember(city.name, state.dateStr, state.period) {
+        mutableStateOf<HeatCell?>(null)
+    }
     val holder = remember { MapHolder() }
+    val heat = state.heat
+    val showSamples = state.showSamples
 
-    /* 样带坐标与主云层云量：与预报同一份数据，不额外取数 */
-    val dots = remember(result) {
+    /* 热力面位图：15×15 像素，绘制时双线性放大到整幅 */
+    val heatBmp = remember(heat, colors.isDark) { heat?.let { heatBitmap(it, colors) } }
+    /* 覆盖层在 factory 里只创建一次，用可变引用读最新的热力面 */
+    val heatNow = remember { mutableStateOf<HeatGrid?>(null) }
+    SideEffect { heatNow.value = heat }
+
+    /* 样带坐标与主云层云量：默认隐藏，设置里打开才画 */
+    val dots: List<SampleDot> = remember(result, showSamples) {
+        if (!showSamples) return@remember emptyList()
         val coords = transectPoints(result.city, result.evAz)
         val key = result.sRT.primary.key
         result.transect.mapIndexedNotNull { i, t ->
@@ -662,9 +769,19 @@ private fun OsmMap(
                         controller.setCenter(GeoPoint(p.first, p.second))
                         holder.lastKey = basemap.toString() + "|" + city.name
 
+                        val ho = HeatOverlay { i, j ->
+                            pickedCell = heatNow.value?.cellAt(i, j)
+                            picked = -1
+                        }
+                        overlays.add(ho)
+                        holder.heatOverlay = ho
+
                         val ov = TransectOverlay(
                             colorFor = { t -> rampColor(t, colors).toArgb() },
-                            onPick = { picked = it },
+                            onPick = {
+                                picked = it
+                                pickedCell = null
+                            },
                             dotRadius = with(density) { 6.dp.toPx() },
                             strokeWidth = with(density) { 2.dp.toPx() }
                         )
@@ -693,6 +810,11 @@ private fun OsmMap(
                         holder.lastKey = key
                         val p = wgsToGcj(city.lat, city.lon)
                         mv.controller.setCenter(GeoPoint(p.first, p.second))
+                    }
+                    holder.heatOverlay?.let {
+                        it.bitmap = heatBmp
+                        it.grid = heat
+                        it.selected = pickedCell
                     }
                     holder.overlay?.let {
                         it.dots = dots
@@ -739,11 +861,54 @@ private fun OsmMap(
             )
         }
 
-        if (dots.isNotEmpty()) {
+        if (state.heatLoading) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "热力面生成中 " + state.heatDone + "/" + state.heatTotal + " …",
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                color = colors.faint
+            )
+        } else if (heat != null) {
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "样带热力",
+                    text = "综合指数",
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                    color = colors.faint
+                )
+                Spacer(Modifier.width(6.dp))
+                Box(
+                    modifier = Modifier
+                        .width(54.dp)
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(colors.accentCool, colors.accentAlt, colors.accent)
+                            )
+                        )
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = "0 → 100 · 点任意位置看读数",
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                    color = colors.faint
+                )
+            }
+        } else if (state.heatError != null) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = state.heatError,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                color = colors.bad
+            )
+        }
+
+        if (showSamples && dots.isNotEmpty()) {
+            Spacer(Modifier.height(6.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "样带采样点",
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
                     color = colors.faint
                 )
@@ -768,8 +933,13 @@ private fun OsmMap(
             }
         }
 
+        pickedCell?.let { cell ->
+            Spacer(Modifier.height(8.dp))
+            HeatCard(cell, city, onClose = { pickedCell = null })
+        }
+
         val sel = dots.getOrNull(picked)
-        if (sel != null) {
+        if (showSamples && sel != null) {
             Spacer(Modifier.height(8.dp))
             SampleCard(
                 km = sel.km,
@@ -823,6 +993,50 @@ private fun SampleCard(km: Double, t: TransectPt?, xMax: Double, onClose: () -> 
             if (km <= xMax) "范围内 · 上限 " + uDist(xMax)
             else "已超出 · 上限 " + uDist(xMax)
         )
+    }
+}
+
+/* ---------- 热力格读数 ---------- */
+
+/** 点选热力格的即时读数（全部来自本地网格，不再请求） */
+@Composable
+private fun HeatCard(cell: HeatCell, city: City, onClose: () -> Unit) {
+    val colors = SunglowTheme.colors
+    val km = haversineKm(city.lat, city.lon, cell.lat, cell.lon)
+    val dy = (cell.lat - city.lat) * DEG
+    val dx = (cell.lon - city.lon) * DEG * kotlin.math.cos(city.lat * DEG)
+    val brg = ((kotlin.math.atan2(dx, dy) * RAD) + 360.0) % 360.0
+
+    Panel {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = "观测格 · 距城市 " + uDist(km) + " · " + dirWordOf(brg),
+                style = MaterialTheme.typography.titleSmall,
+                color = colors.ink
+            )
+            Spacer(Modifier.weight(1f))
+            Text(
+                text = "关闭",
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.accentCool,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .clickable(onClick = onClose)
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+            )
+        }
+        Spacer(Modifier.height(6.dp))
+        InfoRow(
+            "综合指数 I",
+            cell.idx.roundToInt().toString() + " · " + gradeLabel(cell.grade)
+        )
+        InfoRow(
+            "出现概率 P / 质量 Q",
+            cell.p.roundToInt().toString() + "% / " + cell.q.roundToInt().toString()
+        )
+        InfoRow("主云层", cell.type + " · " + cell.cover.roundToInt().toString() + "%")
+        InfoRow("云边界距离", uDist(cell.d))
+        InfoRow("覆盖范围", "整幅约 660 km 见方 · 15×15 格")
     }
 }
 

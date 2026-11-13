@@ -5,6 +5,9 @@ import com.sunglow.spectrum.data.OpenMeteoClient
 import com.sunglow.spectrum.data.WeatherErrorKind
 import com.sunglow.spectrum.data.WeatherException
 import com.sunglow.spectrum.data.friendly
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -37,8 +40,10 @@ val TRANSECT: List<Int> = listOf(
 
 const val NO_DATA_MSG = "这次没有取到数据：气象接口没有响应或网络中断。稍后点「重新计算」再试一次。"
 
+@Serializable
 data class ModelRow(val id: String, val label: String, val p: Double, val q: Double)
 
+@Serializable
 data class ForecastResult(
     val dateStr: String,
     val period: Period,
@@ -71,9 +76,15 @@ data class ForecastResult(
     val fromCache: Boolean = false
 )
 
+/** 失败分型：界面据此给出不同的文案与下一步动作 */
+enum class FailureKind { NETWORK, TIMEOUT, RATE_LIMIT, NO_DATA, OTHER }
+
 sealed interface ForecastOutcome {
     data class Success(val result: ForecastResult) : ForecastOutcome
-    data class Failure(val message: String) : ForecastOutcome
+    data class Failure(
+        val message: String,
+        val kind: FailureKind = FailureKind.OTHER
+    ) : ForecastOutcome
 }
 
 /** 样带坐标：沿日出/日落方位，25 km 一档（d=0 就是城市本身） */
@@ -85,7 +96,7 @@ fun transectPoints(city: City, evAz: Double): List<LatLon> = TRANSECT.map { d ->
     }
 }
 
-private fun summaryOf(t: TransectResult): TransectSummary = TransectSummary(
+internal fun summaryOf(t: TransectResult): TransectSummary = TransectSummary(
     hasDeck = t.hasDeck,
     dFar = t.dFar,
     upstreamAod = t.upstreamAod,
@@ -321,18 +332,11 @@ class ForecastEngine(private val client: OpenMeteoClient) {
         val sG: List<Series?> = try {
             client.forecastBatched(MODEL_GFS, pts, dateStr, dateStr, F_VARS)
         } catch (e: WeatherException) {
-            return ForecastOutcome.Failure(
-                when (e.kind) {
-                    WeatherErrorKind.RATE_LIMIT -> if (e.fatal) RATE_LIMIT_FATAL else RATE_LIMIT_SOFT
-                    WeatherErrorKind.NETWORK -> NETWORK_MSG
-                    WeatherErrorKind.TIMEOUT -> TIMEOUT_MSG
-                    else -> if (e.fatal) RATE_LIMIT_FATAL else e.friendly()
-                }
-            )
+            return failureOf(e)
         } catch (e: Exception) {
-            return ForecastOutcome.Failure(NETWORK_MSG)
+            return ForecastOutcome.Failure(NETWORK_MSG, FailureKind.NETWORK)
         }
-        if (sG.isEmpty()) return ForecastOutcome.Failure(NO_DATA_MSG)
+        if (sG.isEmpty()) return ForecastOutcome.Failure(NO_DATA_MSG, FailureKind.NO_DATA)
 
         val sE = try {
             client.forecastBatched(MODEL_EC, pts, dateStr, dateStr, F_VARS)
@@ -369,6 +373,130 @@ class ForecastEngine(private val client: OpenMeteoClient) {
         )
         ForecastCache.put(city, dateStr, period, result)
         return ForecastOutcome.Success(result)
+    }
+
+    /**
+     * 区间取数：一次请求拿回多天（start_date=首日 / end_date=末日），逐日 assemble。
+     * 日期列表里已有缓存的直接复用；缺失的天合并成一个区间，只发 3 个请求。
+     * 方位角用首日事件方位近似（10 天内变化 < 1°，对样带位置无实质影响）。
+     */
+    suspend fun runRange(
+        city: City,
+        dates: List<String>,
+        period: Period,
+        force: Boolean = false
+    ): List<ForecastOutcome> {
+        if (dates.isEmpty()) return emptyList()
+        val out = HashMap<String, ForecastOutcome>()
+        val need = ArrayList<String>()
+        for (d in dates) {
+            val hit = if (force) null else ForecastCache.get(city, d, period)
+            when {
+                hit != null -> out[d] = ForecastOutcome.Success(hit.copy(fromCache = true))
+                parseYmd(d) == null -> out[d] = ForecastOutcome.Failure("日期格式不正确")
+                else -> need.add(d)
+            }
+        }
+        fun collect(): List<ForecastOutcome> = dates.map {
+            out[it] ?: ForecastOutcome.Failure(NO_DATA_MSG, FailureKind.NO_DATA)
+        }
+        if (need.isEmpty()) return collect()
+
+        val firstD = need.first()
+        val lastD = need.last()
+        val ymd = parseYmd(firstD) ?: return collect()
+        val tz0 = TzCache.cityTz(city.lat, city.lon)
+        val anchor0 = utcMillis(ymd.first, ymd.second, ymd.third) - tz0.offsetSec * 1000L
+        val ev0 = sunEvents(anchor0, city.lat, city.lon)
+        val evMs0 = (if (period == Period.AM) ev0.riseMs else ev0.setMs)
+            ?: (anchor0 + 12 * 3600000.0)
+        val evAz = solarPosition(evMs0, city.lat, city.lon).azimuth
+        val pts = transectPoints(city, evAz)
+
+        val sG: List<Series?> = try {
+            client.forecastBatched(MODEL_GFS, pts, firstD, lastD, F_VARS)
+        } catch (e: WeatherException) {
+            need.forEach { out[it] = failureOf(e) }
+            return collect()
+        } catch (e: Exception) {
+            need.forEach { out[it] = ForecastOutcome.Failure(NETWORK_MSG, FailureKind.NETWORK) }
+            return collect()
+        }
+        if (sG.isEmpty()) {
+            need.forEach { out[it] = ForecastOutcome.Failure(NO_DATA_MSG, FailureKind.NO_DATA) }
+            return collect()
+        }
+        val sE = try {
+            client.forecastBatched(MODEL_EC, pts, firstD, lastD, F_VARS)
+        } catch (_: Exception) {
+            null
+        }
+        val sA = try {
+            client.aqBatched(pts, firstD, lastD)
+        } catch (_: Exception) {
+            null
+        }
+
+        /* 接口回来的时区是权威值：校准并记住 */
+        var tz = tz0
+        val tzLive = sG.filterNotNull().firstOrNull { it.tz.iana != null && !it.tz.est }?.tz
+        if (tzLive != null) {
+            tz = tzLive
+            TzCache.remember(city.lat, city.lon, tzLive)
+        }
+
+        for (d in need) {
+            val p = parseYmd(d) ?: continue
+            val anchor = utcMillis(p.first, p.second, p.third) - tz.offsetSec * 1000L
+            val events = sunEvents(anchor, city.lat, city.lon)
+            val evMs = (if (period == Period.AM) events.riseMs else events.setMs)
+                ?: (anchor + 12 * 3600000.0)
+            val omega = sunAltRate(evMs, city.lat, city.lon)
+            val leadH = (evMs - System.currentTimeMillis()) / 3600000.0
+            val r = assembleForecast(
+                city = city,
+                dateStr = d,
+                period = period,
+                tz = tz,
+                events = events,
+                evMs = evMs,
+                evAz = evAz,
+                omega = omega,
+                leadH = leadH,
+                sG = sG,
+                sE = sE,
+                sA = sA
+            )
+            ForecastCache.put(city, d, period, r)
+            out[d] = ForecastOutcome.Success(r)
+        }
+        return collect()
+    }
+
+    /** 观测场热力面：15×15 全区域铺满，分 3 批取数，边算边回调进度 */
+    suspend fun runHeat(
+        city: City,
+        dateStr: String,
+        period: Period,
+        onProgress: (Int, Int) -> Unit = { _, _ -> }
+    ): HeatGrid? = withContext(Dispatchers.Default) {
+        buildHeatGrid(client, city, dateStr, period, onProgress)
+    }
+
+    companion object {
+        /** 接口异常 → 用户可读的分型文案 */
+        fun failureOf(e: WeatherException): ForecastOutcome.Failure = when (e.kind) {
+            WeatherErrorKind.RATE_LIMIT -> ForecastOutcome.Failure(
+                if (e.fatal) RATE_LIMIT_FATAL else RATE_LIMIT_SOFT,
+                FailureKind.RATE_LIMIT
+            )
+            WeatherErrorKind.NETWORK -> ForecastOutcome.Failure(NETWORK_MSG, FailureKind.NETWORK)
+            WeatherErrorKind.TIMEOUT -> ForecastOutcome.Failure(TIMEOUT_MSG, FailureKind.TIMEOUT)
+            WeatherErrorKind.HTTP -> ForecastOutcome.Failure(
+                if (e.fatal) RATE_LIMIT_FATAL else e.friendly(),
+                FailureKind.NO_DATA
+            )
+        }
     }
 }
 

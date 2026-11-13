@@ -1,6 +1,9 @@
 package com.sunglow.spectrum.core
 
+import kotlinx.serialization.Serializable
+
 /** 城市（数据来自 v2/src/core/citydata.ts，由 native/tools/gen-cities.mjs 生成资源） */
+@Serializable
 data class City(
     val name: String,
     val lon: Double,

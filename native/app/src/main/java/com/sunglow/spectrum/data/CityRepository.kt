@@ -19,7 +19,7 @@ class CityRepository(context: Context) {
     /** 生成资源里带的别名列（name → 拼音/英文，空格分隔） */
     private val assetAliases = HashMap<String, String>()
 
-    val cities: List<City> by lazy { loadCatalog() }
+    val cities: List<City> by lazy { ensureCatalog() }
 
     private val index: List<Pair<City, String>> by lazy {
         cities.map { c ->
@@ -31,12 +31,39 @@ class CityRepository(context: Context) {
         }
     }
 
-    private fun loadCatalog(): List<City> {
-        val fromAsset = runCatching {
-            appContext.assets.open("cities.tsv").bufferedReader().use { it.readLines() }
-        }.getOrNull().orEmpty()
-        val parsed = fromAsset.mapNotNull { parseLine(it) }
-        return if (parsed.isNotEmpty()) parsed else BUILTIN_CITIES
+    /**
+     * 城市表全进程只解析一次：Application 在后台线程预热，之后任何界面取用都是内存命中。
+     * 解析 29 KB 的 tsv 在启动主线程上做会直接卡住首帧。
+     */
+    private fun ensureCatalog(): List<City> {
+        cachedCities?.let { c ->
+            val a = cachedAliases
+            if (a != null && assetAliases.isEmpty()) assetAliases.putAll(a)
+            return c
+        }
+        synchronized(CACHE_LOCK) {
+            cachedCities?.let { return it }
+            val fromAsset = runCatching {
+                appContext.assets.open("cities.tsv").bufferedReader().use { it.readLines() }
+            }.getOrNull().orEmpty()
+            val aliases = HashMap<String, String>()
+            val parsed = fromAsset.mapNotNull { parseCatalogLine(it, aliases) }
+            val out = if (parsed.isNotEmpty()) parsed else BUILTIN_CITIES
+            cachedAliases = aliases
+            cachedCities = out
+            assetAliases.putAll(aliases)
+            return out
+        }
+    }
+
+    private fun parseCatalogLine(line: String, aliases: MutableMap<String, String>): City? {
+        if (line.isBlank()) return null
+        val p = line.split('\t')
+        if (p.size < 4) return null
+        val lon = p[1].toDoubleOrNull() ?: return null
+        val lat = p[2].toDoubleOrNull() ?: return null
+        if (p.size >= 5 && p[4].isNotBlank()) aliases[p[0]] = p[4]
+        return City(name = p[0], lon = lon, lat = lat, region = p[3])
     }
 
     private fun parseLine(line: String): City? {
@@ -128,6 +155,14 @@ class CityRepository(context: Context) {
     private companion object {
         const val KEY_RECENT = "recent_cities"
         const val MAX_RECENT = 8
+
+        @Volatile
+        private var cachedCities: List<City>? = null
+
+        @Volatile
+        private var cachedAliases: Map<String, String>? = null
+
+        private val CACHE_LOCK = Any()
 
         val CN_PINYIN: Map<String, String> = mapOf(
             "北京市" to "beijing bj", "上海市" to "shanghai sh", "广州市" to "guangzhou gz",

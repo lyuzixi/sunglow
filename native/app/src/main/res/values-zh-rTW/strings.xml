@@ -12,6 +12,8 @@
     <string name="theme_light">淺色</string>
     <string name="settings_language">語言</string>
     <string name="settings_reminder">霞光提醒</string>
+    <string name="settings_samples">觀測場取樣點</string>
+    <string name="samples_hint">在熱力面上顯示 17 個樣帶取樣點（預設只看熱力面）</string>
     <string name="reminder_enable">每日檢查並傳送本機通知</string>
     <string name="reminder_threshold">提醒門檻</string>
     <string name="reminder_hint">每天清晨與午後各檢查一次；窗口接近且機率達到門檻時通知，系統排程可能延遲數分鐘。</string>
