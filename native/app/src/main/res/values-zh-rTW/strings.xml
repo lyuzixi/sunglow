@@ -130,7 +130,14 @@
     <string name="field_geom_nocloud">不成立：日出/日落方向 400 km 內沒有可承載霞光的雲盤。</string>
     <string name="field_compare">多點對比</string>
     <string name="field_nearby">周邊點位</string>
-    <string name="field_nearby_hint">點選城市加入對比，最多 4 個</string>
+    <string name="field_nearby_hint">點選周邊城市，或用下方搜尋 / 經緯度加入，最多 4 個</string>
+    <string name="field_add_point">搜尋城市或輸入座標</string>
+    <string name="field_search_hint">城市名 / 拼音 / 英文</string>
+    <string name="field_search_empty">沒有符合的城市</string>
+    <string name="field_coord_lat">緯度</string>
+    <string name="field_coord_lon">經度</string>
+    <string name="field_coord_add">加入</string>
+    <string name="field_compare_full">已滿 4 個，先移除一個再加入</string>
     <string name="field_calib">實況校準</string>
     <string name="field_help">熱力面按 121 點網格鋪滿城市周邊 500 km（80 km 格距），顏色是綜合指數（越高越可能出霞）；可在綜合 / 機率 / 品質 / 分歧四種口徑間切換，點地圖任意位置可看該格讀數。樣帶仍沿日出/日落方位取 17 個取樣點，預設隱藏，可在設定裡重新顯示。地圖底圖為高德公開圖磚，無需金鑰，可拖曳與雙指縮放；已做 GCJ-02 糾偏。</string>
     <string name="field_sun_az">太陽方位</string>

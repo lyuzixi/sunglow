@@ -19,8 +19,10 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,6 +44,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -303,6 +306,14 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
             )
             Spacer(Modifier.height(8.dp))
             NearbyPanel(state, onToggle = vm::toggleCompare, nearby = vm.nearby(8))
+            Spacer(Modifier.height(10.dp))
+            CompareAddPanel(
+                search = vm::searchCities,
+                onToggle = vm::toggleCompare,
+                onAddPoint = vm::addCustomPoint,
+                selected = state.compareCities.map { it.name }.toSet(),
+                full = state.compareCities.size >= 4
+            )
 
             Spacer(Modifier.height(12.dp))
             Text(
@@ -1582,6 +1593,145 @@ private fun NearbyPanel(
                     }
                 }
             }
+        }
+    }
+}
+
+/* ---------- 添加对比点：城市搜索 + 经纬度 ---------- */
+
+@Composable
+private fun CompareAddPanel(
+    search: (String) -> List<City>,
+    onToggle: (City) -> Unit,
+    onAddPoint: (Double, Double) -> Boolean,
+    selected: Set<String>,
+    full: Boolean
+) {
+    val colors = SunglowTheme.colors
+    var q by rememberSaveable { mutableStateOf("") }
+    var lat by rememberSaveable { mutableStateOf("") }
+    var lon by rememberSaveable { mutableStateOf("") }
+    val results = remember(q, search) {
+        val s = q.trim()
+        if (s.isEmpty()) emptyList() else search(s)
+    }
+    val latV = lat.trim().toDoubleOrNull()
+    val lonV = lon.trim().toDoubleOrNull()
+    val canAdd = !full && latV != null && lonV != null &&
+        latV in -90.0..90.0 && lonV in -180.0..180.0
+
+    Panel {
+        Text(
+            text = stringResource(R.string.field_add_point),
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.faint
+        )
+        Spacer(Modifier.height(6.dp))
+        OutlinedTextField(
+            value = q,
+            onValueChange = { q = it },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            textStyle = MaterialTheme.typography.bodySmall,
+            placeholder = {
+                Text(
+                    stringResource(R.string.field_search_hint),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.faint
+                )
+            }
+        )
+        if (q.isNotBlank()) {
+            if (results.isEmpty()) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    stringResource(R.string.field_search_empty),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.faint
+                )
+            } else {
+                results.forEach { c ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                onToggle(c)
+                                q = ""
+                            }
+                            .padding(vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            c.name,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (selected.contains(c.name)) colors.accentCool else colors.ink,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            c.region,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = colors.faint
+                        )
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = lat,
+                onValueChange = { lat = it },
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodySmall,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                placeholder = {
+                    Text(
+                        stringResource(R.string.field_coord_lat),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = colors.faint
+                    )
+                }
+            )
+            Spacer(Modifier.width(8.dp))
+            OutlinedTextField(
+                value = lon,
+                onValueChange = { lon = it },
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodySmall,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                placeholder = {
+                    Text(
+                        stringResource(R.string.field_coord_lon),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = colors.faint
+                    )
+                }
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(
+                text = stringResource(R.string.field_coord_add),
+                style = MaterialTheme.typography.labelSmall,
+                color = if (canAdd) colors.accentCool else colors.faint,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .clickable(enabled = canAdd) {
+                        if (latV != null && lonV != null && onAddPoint(latV, lonV)) {
+                            lat = ""
+                            lon = ""
+                        }
+                    }
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            )
+        }
+        if (full) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                stringResource(R.string.field_compare_full),
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.faint
+            )
         }
     }
 }

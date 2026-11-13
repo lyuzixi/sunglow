@@ -130,7 +130,14 @@
     <string name="field_geom_nocloud">Does not hold: no cloud deck within 400 km along the sun direction.</string>
     <string name="field_compare">Multi-point compare</string>
     <string name="field_nearby">Nearby points</string>
-    <string name="field_nearby_hint">Tap a city to add, up to 4</string>
+    <string name="field_nearby_hint">Tap a nearby city, or search / enter coordinates below, up to 4</string>
+    <string name="field_add_point">Search a city or enter coordinates</string>
+    <string name="field_search_hint">City / pinyin / English</string>
+    <string name="field_search_empty">No matching city</string>
+    <string name="field_coord_lat">Latitude</string>
+    <string name="field_coord_lon">Longitude</string>
+    <string name="field_coord_add">Add</string>
+    <string name="field_compare_full">4 points selected — remove one first</string>
     <string name="field_calib">Field calibration</string>
     <string name="field_help">The heat field covers a 121-point grid within 500 km of the city (80 km spacing); color is the composite index (higher = more likely). Switch between composite, probability, quality and divergence, and tap anywhere to read that cell. The transect still samples 17 points along the sun azimuth, hidden by default and re-enabled in Settings. Basemap: AMap public tiles, no key, pan and pinch to zoom; GCJ-02 corrected.</string>
     <string name="field_sun_az">Sun azimuth</string>
