@@ -21,7 +21,7 @@ import { fileURLToPath } from "node:url"
 const here = dirname(fileURLToPath(import.meta.url))
 const res = resolve(here, "../app/src/main/res")
 const screensDir = resolve(here, "../app/src/main/java/com/sunglow/spectrum/ui/screens")
-const localizedScreens = ["FieldScreen.kt", "TrendScreen.kt", "CitySheet.kt"]
+const localizedScreens = ["FieldScreen.kt", "TrendScreen.kt", "CitySheet.kt", "HomeScreen.kt"]
 const files = {
   zh: resolve(res, "values/strings.xml"),
   hant: resolve(res, "values-zh-rTW/strings.xml"),

@@ -1088,24 +1088,24 @@ private fun FactorsSheet(result: ForecastResult) {
     val rows = remember(result) { facDisplayRows(result) }
     Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 28.dp)) {
         Text(
-            text = "影响因素",
+            text = stringResource(R.string.factor_title),
             style = MaterialTheme.typography.titleMedium,
             color = colors.ink
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            text = "13 项判据 · 按云场 / 光路 / 大气 / 动力 / 一致性分组",
+            text = stringResource(R.string.factor_sub),
             style = MaterialTheme.typography.labelSmall,
             color = colors.faint
         )
         Spacer(Modifier.height(10.dp))
         val byKey = remember(rows) { rows.associateBy { it.key } }
         val groups = listOf(
-            Triple("云场", "云量、云底与低层遮挡", listOf("cover", "base", "block")),
-            Triple("光路", "云边界与霞光深入", listOf("heq", "heff", "dedge")),
-            Triple("大气", "气溶胶、能见度与湿度", listOf("aod", "vis", "rh")),
-            Triple("动力", "气压、风与对流", listOf("stab", "wind", "cape")),
-            Triple("一致性", "三路算法的分歧", listOf("consist"))
+            Triple(stringResource(R.string.factor_group_cloud), stringResource(R.string.factor_group_cloud_note), listOf("cover", "base", "block")),
+            Triple(stringResource(R.string.factor_group_ray), stringResource(R.string.factor_group_ray_note), listOf("heq", "heff", "dedge")),
+            Triple(stringResource(R.string.factor_group_atmo), stringResource(R.string.factor_group_atmo_note), listOf("aod", "vis", "rh")),
+            Triple(stringResource(R.string.factor_group_dyn), stringResource(R.string.factor_group_dyn_note), listOf("stab", "wind", "cape")),
+            Triple(stringResource(R.string.factor_group_consist), stringResource(R.string.factor_group_consist_note), listOf("consist"))
         )
         groups.forEach { (title, note, keys) ->
             Row(
@@ -1128,7 +1128,7 @@ private fun FactorsSheet(result: ForecastResult) {
                 )
                 Spacer(Modifier.weight(1f))
                 Text(
-                    text = keys.count { byKey.containsKey(it) }.toString() + " 项",
+                    text = stringResource(R.string.factor_count, keys.count { byKey.containsKey(it) }),
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                     color = colors.faint
                 )
@@ -1182,25 +1182,25 @@ private fun RaySheet(result: ForecastResult) {
     val g = r.geom
     val samples = r.samples
     val keyRows = listOf(
-        "几何窗口" to if (g.ok) fmtDur(g.dur) else "不成立",
-        "亮度等级" to r.bright.txt,
-        "峰值透射率 T550" to fmtSci(r.peak.color.t550),
-        "峰值光学厚度 τ" to String.format(Locale.US, "%.2f", r.peak.color.tau550),
-        "峰值颜色" to r.peak.color.nameZh,
-        "色相跨距" to String.format(Locale.US, "%.1f", r.hueSpread) + "°",
-        "气溶胶标高 Hs" to String.format(Locale.US, "%.2f", r.hs) + " km",
-        "近边界角" to if (g.thNearDeg.isFinite()) String.format(Locale.US, "%.1f", g.thNearDeg) + "°" else "—",
-        "远边界角" to if (g.thFarDeg.isFinite()) String.format(Locale.US, "%.1f", g.thFarDeg) + "°" else "—"
+        stringResource(R.string.ray_geom_window) to if (g.ok) fmtDur(g.dur) else stringResource(R.string.ray_not_ok),
+        stringResource(R.string.ray_bright_level) to brightLabel(r.bright.score),
+        stringResource(R.string.ray_peak_t550) to fmtSci(r.peak.color.t550),
+        stringResource(R.string.ray_tau) to String.format(Locale.US, "%.2f", r.peak.color.tau550),
+        stringResource(R.string.ray_peak_color) to colorLabel(r.peak.color.nameKey),
+        stringResource(R.string.ray_hue_spread) to String.format(Locale.US, "%.1f", r.hueSpread) + "°",
+        stringResource(R.string.ray_hs) to String.format(Locale.US, "%.2f", r.hs) + " km",
+        stringResource(R.string.ray_near) to if (g.thNearDeg.isFinite()) String.format(Locale.US, "%.1f", g.thNearDeg) + "°" else "—",
+        stringResource(R.string.ray_far) to if (g.thFarDeg.isFinite()) String.format(Locale.US, "%.1f", g.thFarDeg) + "°" else "—"
     )
     Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 28.dp)) {
         Text(
-            text = "光路细节",
+            text = stringResource(R.string.fold_ray),
             style = MaterialTheme.typography.titleMedium,
             color = colors.ink
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            text = "同一份取数：多波长光路积分 + CIE 色度",
+            text = stringResource(R.string.ray_sub),
             style = MaterialTheme.typography.labelSmall,
             color = colors.faint
         )
@@ -1230,13 +1230,13 @@ private fun RaySheet(result: ForecastResult) {
         /* 光谱色样：刚被照亮 → 掠地最红 */
         Spacer(Modifier.height(16.dp))
         Text(
-            text = "光谱色样",
+            text = stringResource(R.string.ray_spectrum),
             style = MaterialTheme.typography.titleSmall,
             color = colors.ink
         )
         Spacer(Modifier.height(2.dp))
         Text(
-            text = "左＝刚被照亮，右＝掠地最红",
+            text = stringResource(R.string.ray_spectrum_hint),
             style = MaterialTheme.typography.labelSmall,
             color = colors.faint
         )
@@ -1256,7 +1256,7 @@ private fun RaySheet(result: ForecastResult) {
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = s.color.nameZh,
+                        text = colorLabel(s.color.nameKey),
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp),
                         color = colors.faint,
                         maxLines = 1,
@@ -1273,7 +1273,7 @@ private fun RaySheet(result: ForecastResult) {
         /* 亮度·彩度曲线 */
         Spacer(Modifier.height(16.dp))
         Text(
-            text = "亮度 · 彩度曲线",
+            text = stringResource(R.string.ray_curve),
             style = MaterialTheme.typography.titleSmall,
             color = colors.ink
         )
@@ -1324,13 +1324,13 @@ private fun RaySheet(result: ForecastResult) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.width(14.dp).height(2.dp).background(colors.accentAlt))
             Spacer(Modifier.width(4.dp))
-            Text("亮度", style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp), color = colors.faint)
+            Text(stringResource(R.string.label_bright), style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp), color = colors.faint)
             Spacer(Modifier.width(12.dp))
             Box(Modifier.width(14.dp).height(2.dp).background(colors.accentCool))
             Spacer(Modifier.width(4.dp))
-            Text("彩度", style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp), color = colors.faint)
+            Text(stringResource(R.string.ray_chroma), style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp), color = colors.faint)
             Spacer(Modifier.weight(1f))
-            Text("刚被照亮 → 掠地最红", style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp), color = colors.faint)
+            Text(stringResource(R.string.ray_just_lit), style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp), color = colors.faint)
         }
     }
 }
@@ -1347,20 +1347,20 @@ private fun TimeLine(result: ForecastResult, colors: SunglowColors) {
         thFarDeg = result.sRT.geom.thFarDeg
     )
     Text(
-        text = "照亮时间轴",
+        text = stringResource(R.string.ray_timeline),
         style = MaterialTheme.typography.titleSmall,
         color = colors.ink
     )
     Spacer(Modifier.height(2.dp))
     Text(
-        text = "本地云底被低角度阳光照亮的时段",
+        text = stringResource(R.string.ray_timeline_hint),
         style = MaterialTheme.typography.labelSmall,
         color = colors.faint
     )
     Spacer(Modifier.height(8.dp))
     if (win == null) {
         Text(
-            text = "本次没有可行的观赏窗口",
+            text = stringResource(R.string.ray_no_window),
             style = MaterialTheme.typography.labelSmall,
             color = colors.mid
         )
@@ -1386,13 +1386,13 @@ private fun TimeLine(result: ForecastResult, colors: SunglowColors) {
     Spacer(Modifier.height(6.dp))
     Row(Modifier.fillMaxWidth()) {
         Text(
-            text = "开始 " + fmtClock(win.first, result.tz),
+            text = stringResource(R.string.ray_start, fmtClock(win.first, result.tz)),
             style = MaterialTheme.typography.labelSmall,
             color = colors.faint
         )
         Spacer(Modifier.weight(1f))
         Text(
-            text = "结束 " + fmtClock(win.second, result.tz),
+            text = stringResource(R.string.ray_end, fmtClock(win.second, result.tz)),
             style = MaterialTheme.typography.labelSmall,
             color = colors.faint
         )
@@ -1595,7 +1595,7 @@ private fun ShareSheet(
                     Spacer(Modifier.height(3.dp))
                     Text(
                         text = result.city.shortName + " · " + result.dateStr + " · " +
-                            (if (result.period == Period.AM) "朝霞" else "晚霞"),
+                            (if (result.period == Period.AM) stringResource(R.string.widget_am) else stringResource(R.string.widget_pm)),
                         style = MaterialTheme.typography.labelSmall,
                         color = colors.faint
                     )
