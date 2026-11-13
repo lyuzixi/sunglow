@@ -265,6 +265,14 @@ const out = {
   unavailable
 }
 
+/* 每组样本的期望条数：云端没有 v2 依赖时曾静默变成 0 条，断言看着绿其实空跑。
+   这里硬校验，少一条就让 CI 红，避免门禁失效却没人发现。 */
+const expected = { snap: 1, calib: 17, trend: 2, map: 2, field: 8, ramp: 7, ics: 1 }
+const shortGroups = Object.entries(expected)
+  .filter(([k, n]) => (samples[k] || []).length < n)
+  .map(([k, n]) => k + " " + (samples[k] || []).length + "/" + n)
+if (!samples.rampAnchors || samples.rampAnchors.length < 8) shortGroups.push("rampAnchors")
+
 const outPath = resolve(here, "../app/src/test/resources/golden/b2-baselines.json")
 mkdirSync(dirname(outPath), { recursive: true })
 writeFileSync(outPath, JSON.stringify(out, null, 1) + "\n", "utf8")
@@ -272,3 +280,9 @@ console.log("B2 baselines written:", outPath)
 console.log("  hashes:", Object.keys(hashes).length, "files")
 console.log("  samples:", Object.entries(samples).map(([k, v]) => k + "=" + v.length).join(" "))
 if (unavailable.length) console.warn("  unavailable:", unavailable.join(" | "))
+
+/* 条数不足直接失败：宁可红，也不要一份「空断言」的基准 */
+if (shortGroups.length) {
+  console.error("::error::基准采样不足：" + shortGroups.join("; ") + "（CI 上多半是缺 vue 依赖，见 Stub vue 步骤）")
+  process.exitCode = 1
+}

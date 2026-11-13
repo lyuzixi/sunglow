@@ -31,7 +31,9 @@ class IcsGoldenTest {
 
     @Test
     fun `ics text matches web buildIcs byte for byte`() {
-        val sample = baselines()["samples"]!!.jsonObject["ics"]!!.jsonArray.first().jsonObject
+        val group = baselines()["samples"]!!.jsonObject["ics"]!!.jsonArray
+        val sample = group.firstOrNull()?.jsonObject
+            ?: error("samples.ics 为空：基准生成器没采到日历样本（CI 上通常是缺 vue 依赖）")
 
         val text = icsTextOf(
             startMs = sample["startMs"]!!.jsonPrimitive.double,

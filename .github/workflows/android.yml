@@ -108,6 +108,34 @@ jobs:
         working-directory: .
         run: npx --yes tsx native/tools/gen-cities.mjs
 
+      # 网页端 core 里有几处 `import { ref } from "vue"`（快照的响应式状态）。
+      # CI 不装 v2 依赖，裸导会失败 → trend / map / ics 三组基准会静默变成 0 条，
+      # 对应断言看着绿其实是空跑。这里放一个只含响应式最小实现的 vue 替身，
+      # 让基准生成器真正采到样本；生成器末尾还会校验每组条数，少一条就红。
+      - name: Stub vue for baseline generators
+        working-directory: .
+        run: |
+          mkdir -p v2/node_modules/vue
+          cat > v2/node_modules/vue/package.json <<'JSON'
+          {"name":"vue","version":"3.5.0","type":"module","main":"index.mjs","exports":{".":"./index.mjs"}}
+          JSON
+          cat > v2/node_modules/vue/index.mjs <<'JS'
+          export const ref = (value) => ({ value });
+          export const shallowRef = (value) => ({ value });
+          export const reactive = (o) => o;
+          export const computed = (fn) => ({ get value() { return fn(); } });
+          export const watch = () => () => {};
+          export const watchEffect = () => () => {};
+          export const nextTick = (fn) => Promise.resolve().then(fn);
+          export const onMounted = () => {};
+          export const onBeforeUnmount = () => {};
+          export const inject = () => null;
+          export const provide = () => {};
+          export const toRaw = (o) => o;
+          export const unref = (v) => (v && v.value !== undefined ? v.value : v);
+          export default {};
+          JS
+
       # B2 四包深同步的网页侧基准：常量 + 纯函数样本，随网页源码实时生成
       - name: Generate B2 baselines
         working-directory: .
