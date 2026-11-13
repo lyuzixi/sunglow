@@ -9,6 +9,12 @@
  *
  * 注意：本脚本只读取 v2/src/core，不修改任何网页源码。
  * 一旦算法口径调整，必须重跑本脚本，否则原生端会按旧基准通过测试。
+ *
+ * 2026-11-13 · B1「两端长期全量同步」契约：
+ *   · 基准不入库，CI 每次从 v2 源码实时生成；网页改一行 TS、Kotlin 没跟上就红。
+ *   · verdict 是打通「改 TS → CI 红 → 改 Kotlin → 绿」回路的最小分组。
+ *   · trend / field / calib / snapshot 分组待 B2 各功能包实现时接入，
+ *     写在 pendingGroups 里作为待办清单，不生成假基准。
  */
 
 /* 网页端模块在模块加载时可能触碰浏览器存储，先在 Node 里补一个内存实现 */
@@ -34,6 +40,7 @@ const mod = (name) => pathToFileURL(resolve(coreDir, name)).href
 const astro = await import(mod("astro.ts"))
 const physics = await import(mod("physics.ts"))
 const scoring = await import(mod("scoring.ts"))
+const verdict = await import(mod("verdict.ts"))
 
 /* ---------- 确定性伪随机（保证每次生成同一批用例） ---------- */
 let seed = 20261112
@@ -286,10 +293,27 @@ transectCases.push({
          upstreamAod: null, upstreamLowMax: null, upstreamMidMax: null, upstreamVisMin: null }
 })
 
+/* ---------- 4. 结论口径：等级分档 / 结论词 / 模型顺序 ---------- */
+/* 覆盖每个分档的下边界、边界前后与越界值；Kotlin 侧 VerdictGoldenTest 逐项断言。 */
+const gradeQs = [-1, 0, 43.9, 44, 44.9, 45, 63.9, 64, 64.9, 65, 78.9, 79, 79.9, 80, 99.9, 100, 120]
+const gradeCases = gradeQs.map((q) => ({ q, key: scoring.gradeOf(q) }))
+const wordPs = [-5, 0, 24.9, 25, 44.9, 45, 69.9, 70, 85, 100, 150]
+const wordCases = wordPs.map((p) => ({ p, word: verdict.conclWord(p) }))
+const bandCases = scoring.QUALITY_BANDS.map((b) => ({ key: b.key, min: b.min, max: b.max }))
+const modelCases = verdict.MODEL_ITEMS.map((m) => ({ id: m.id, label: m.label }))
+
 const golden = deepRound({
-  version: 1,
+  version: 2,
   source: "v2/src/core (TypeScript)",
   generatedAt: new Date().toISOString(),
+  verdict: {
+    grades: gradeCases,
+    words: wordCases,
+    bands: bandCases,
+    models: modelCases
+  },
+  /* B2 各功能包实现时接入断言，接入后从数组移除对应名字 */
+  pendingGroups: ["trend", "field", "calib", "snapshot"],
   astro: astroCases,
   sunEvents: eventCases,
   eventAzimuth: azimuthCases,
@@ -305,6 +329,10 @@ mkdirSync(dirname(outPath), { recursive: true })
 writeFileSync(outPath, JSON.stringify(golden, null, 1) + "\n", "utf8")
 
 const counts = {
+  "verdict.grades": golden.verdict.grades.length,
+  "verdict.words": golden.verdict.words.length,
+  "verdict.bands": golden.verdict.bands.length,
+  pendingGroups: golden.pendingGroups,
   astro: golden.astro.length,
   sunEvents: golden.sunEvents.length,
   eventAzimuth: golden.eventAzimuth.length,

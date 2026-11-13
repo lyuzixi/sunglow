@@ -88,13 +88,16 @@ jobs:
         with:
           node-version: "22"
 
-      # 品牌图：顶栏小标 + 首屏天空照，构建时复制进原生资源，仓库里不存第二份二进制
+      # 品牌图：顶栏小标 + 首屏天空照，构建时从 v2 复制，仓库里不存第二份原图。
+      # hero_photo_720.webp 是 B3 的密度分档（720×480 / 24KB，由 native/tools 生成说明），
+      # 供低密度设备选用；Kotlin 侧按屏幕宽度择一加载，见 docs/android-b3-optimization.md。
       - name: Copy brand assets into app resources
         working-directory: .
         run: |
           mkdir -p native/app/src/main/res/drawable-nodpi
           cp v2/src/assets/logo-mark.png native/app/src/main/res/drawable-nodpi/logo_mark.png
           cp v2/src/assets/hero-photo.webp native/app/src/main/res/drawable-nodpi/hero_photo.webp
+          cp native/assets/hero_photo_720.webp native/app/src/main/res/drawable-nodpi/hero_photo_720.webp
 
       - name: Generate algorithm baseline (golden)
         working-directory: .
@@ -104,6 +107,16 @@ jobs:
       - name: Generate city catalog
         working-directory: .
         run: npx --yes tsx native/tools/gen-cities.mjs
+
+      # B2 四包深同步的网页侧基准：常量 + 纯函数样本，随网页源码实时生成
+      - name: Generate B2 baselines
+        working-directory: .
+        run: npx --yes tsx native/tools/gen-b2-baselines.mjs
+
+      # 三语资源一致性：新增文案必须简/繁/英同批提交，否则这里直接红
+      - name: Check i18n resource parity
+        working-directory: .
+        run: node native/tools/check-i18n.mjs
 
       - name: Unit tests (含算法基准对拍)
         shell: bash

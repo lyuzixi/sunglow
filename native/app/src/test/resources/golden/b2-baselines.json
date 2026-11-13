@@ -1,0 +1,279 @@
+{
+ "version": 1,
+ "generatedAt": "2026-11-13T05:07:27.785Z",
+ "source": "v2/src/core (TypeScript)",
+ "note": "B2 基准：常量与纯函数样本。Kotlin 断言随各功能包接入，见 docs/android-b2-workcards.md。",
+ "hashes": {
+  "snap.ts": "f2cd479f1ef69f08",
+  "calib.ts": "0a78cfe9aae66265",
+  "trend.ts": "a2b41fcdd2756841",
+  "mapdata.ts": "1aff7b0730e87714",
+  "verdict.ts": "d011fe8401b8f094",
+  "units.ts": "5dc338f25adb6350"
+ },
+ "constants": {
+  "map": {
+   "MAP_RADIUS_KM": {
+    "expr": "500",
+    "value": 500
+   },
+   "MAP_GRID_KM": {
+    "expr": "80",
+    "value": 80
+   },
+   "MAP_CACHE_TTL": {
+    "expr": "6 * 3600000",
+    "value": 21600000
+   },
+   "MAP_CACHE_MAX": {
+    "expr": "5",
+    "value": 5
+   },
+   "FIELD_OUT_KM": {
+    "expr": "70",
+    "value": 70
+   },
+   "EDGE_NOISE_KM": {
+    "expr": "26",
+    "value": 26
+   },
+   "CITY_NEAR_KM": {
+    "expr": "60",
+    "value": 60
+   }
+  },
+  "calib": {
+   "CALIB_GRID_DEG": {
+    "expr": "0.5",
+    "value": 0.5
+   },
+   "CALIB_BUCKET": {
+    "expr": "20",
+    "value": 20
+   },
+   "CALIB_HIT_MIN": {
+    "expr": "2",
+    "value": 2
+   },
+   "CALIB_MIN_N": {
+    "expr": "8",
+    "value": 8
+   },
+   "CALIB_MIN_BUCKET": {
+    "expr": "3",
+    "value": 3
+   },
+   "CALIB_MAX": {
+    "expr": "200",
+    "value": 200
+   },
+   "CALIB_AFTER_H": {
+    "expr": "-1",
+    "value": -1
+   }
+  },
+  "trend": {
+   "TREND_N": {
+    "expr": "10",
+    "value": 10
+   },
+   "TREND_CACHE_TTL": {
+    "expr": "6 * 3600000",
+    "value": 21600000
+   },
+   "TREND_CACHE_PREFIX": {
+    "expr": "\"SUNGLOW.v2.trend.\"",
+    "value": "SUNGLOW.v2.trend."
+   }
+  },
+  "snap": {
+   "SNAP_VER": {
+    "expr": "\"1\"",
+    "value": "1"
+   },
+   "SNAP_MAX": {
+    "expr": "2000",
+    "value": 2000
+   },
+   "SNAP_N_FAC": {
+    "expr": "4",
+    "value": 4
+   }
+  }
+ },
+ "samples": {
+  "snap": [
+   {
+    "raw": "MXx0b2Zjd2Z8MjAyNi0xMS0xM3xwbXwzOS45MDQyfDExNi40MDc0fOWMl-S6rOW4gnzljJfkuqzluIJ8NzJ8Njh8MXwxLjB8MHw2fDQ4MHwxfDF8MS4zMHwxMjAuMHwyNXx2aXN-MjR-ODIhYmFzZX4xLjN-NzAhYW9kfjAuMzF-NjAhY292ZXJ-NjB-NTV8NDgw",
+    "decoded": {
+     "gen": 1794546447000,
+     "date": "2026-11-13",
+     "period": "pm",
+     "lat": 39.9042,
+     "lon": 116.4074,
+     "name": "北京市",
+     "region": "北京市",
+     "P": 72,
+     "Q": 68,
+     "consist": 1,
+     "dvI": 1,
+     "spread": 0,
+     "spreadQ": 6,
+     "tzMin": 480,
+     "deck": 1,
+     "type": "层积云",
+     "baseKm": 1.3,
+     "dKm": 120,
+     "durMin": 25,
+     "factors": [
+      {
+       "k": "vis",
+       "v": 24,
+       "s": 82
+      },
+      {
+       "k": "base",
+       "v": 1.3,
+       "s": 70
+      },
+      {
+       "k": "aod",
+       "v": 0.31,
+       "s": 60
+      },
+      {
+       "k": "cover",
+       "v": 60,
+       "s": 55
+      }
+     ]
+    },
+    "keys": [
+     "cover",
+     "base",
+     "heq",
+     "heff",
+     "dedge",
+     "block",
+     "aod",
+     "vis",
+     "rh",
+     "stab",
+     "wind",
+     "cape"
+    ],
+    "types": [
+     "层云/雾",
+     "层积云",
+     "积云",
+     "高积云",
+     "高层云",
+     "卷层云",
+     "卷云"
+    ]
+   }
+  ],
+  "calib": [
+   {
+    "lat": 39.9042,
+    "lon": 116.4074,
+    "group": "80,233"
+   },
+   {
+    "lat": 23.1291,
+    "lon": 113.2644,
+    "group": "46,227"
+   },
+   {
+    "lat": -33.8688,
+    "lon": 151.2093,
+    "group": "-68,302"
+   },
+   {
+    "p": 0,
+    "bucket": 0
+   },
+   {
+    "p": 7,
+    "bucket": 0
+   },
+   {
+    "p": 19,
+    "bucket": 0
+   },
+   {
+    "p": 20,
+    "bucket": 1
+   },
+   {
+    "p": 42,
+    "bucket": 2
+   },
+   {
+    "p": 65,
+    "bucket": 3
+   },
+   {
+    "p": 88,
+    "bucket": 4
+   },
+   {
+    "p": 100,
+    "bucket": 4
+   },
+   {
+    "leadH": null,
+    "canAnnotate": false
+   },
+   {
+    "leadH": -2,
+    "canAnnotate": true
+   },
+   {
+    "leadH": -1,
+    "canAnnotate": true
+   },
+   {
+    "leadH": 0,
+    "canAnnotate": false
+   },
+   {
+    "leadH": 1,
+    "canAnnotate": false
+   },
+   {
+    "leadH": 4,
+    "canAnnotate": false
+   }
+  ],
+  "trend": [
+   {
+    "day0": 1794528000000,
+    "lat": 39.9042,
+    "lon": 116.4074,
+    "key": "SUNGLOW.v2.trend.2026-11-13@39.9,116.4"
+   },
+   {
+    "day0": 1794614400000,
+    "lat": 23.1291,
+    "lon": 113.2644,
+    "key": "SUNGLOW.v2.trend.2026-11-14@23.1,113.3"
+   }
+  ],
+  "map": [
+   {
+    "dateS": "2026-11-13",
+    "lat": 39.9042,
+    "lon": 116.4074,
+    "key": "SUNGLOW.v2.map.v9.2026-11-13@39.9,116.4"
+   },
+   {
+    "dateS": "2026-11-14",
+    "lat": 23.1291,
+    "lon": 113.2644,
+    "key": "SUNGLOW.v2.map.v9.2026-11-14@23.1,113.3"
+   }
+  ]
+ },
+ "unavailable": []
+}

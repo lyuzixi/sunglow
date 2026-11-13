@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>隐私政策 · 霞光档案 SUNGLOW</title>
+<meta name="description" content="霞光档案（SUNGLOW）Android 内测版与网页版的隐私政策：不收集账号、设备标识与使用行为，定位仅用于匹配最近城市。">
+<style>
+  :root{--bg:#f4f6fb;--paper:#fff;--ink:#111a2c;--ink2:#46556f;--ink3:#6b7b96;--line:rgba(40,60,100,.10);--pink:#e02d62;--cyan:#0f9fbf;--amber:#e07a1c;--display:"Space Grotesk","Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;--body:"Inter","PingFang SC","Microsoft YaHei",system-ui,sans-serif}
+  *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.85 var(--body);-webkit-font-smoothing:antialiased}
+  body::before{content:"";position:fixed;inset:0 0 auto;height:300px;pointer-events:none;background:radial-gradient(760px 260px at 78% -10%,rgba(224,45,98,.10),transparent 70%),radial-gradient(620px 240px at 10% -12%,rgba(15,159,191,.08),transparent 70%)}
+  .wrap{max-width:860px;margin:0 auto;padding:0 20px 80px;position:relative}
+  header.top{display:flex;align-items:center;gap:12px;padding:26px 0 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .brand{font:600 15px var(--display);letter-spacing:.14em;color:var(--ink)}
+  .brand i{display:inline-block;width:22px;height:2px;background:linear-gradient(90deg,var(--pink),var(--amber),var(--cyan));vertical-align:middle;margin-right:9px}
+  .langs{margin-left:auto;display:flex;gap:6px}
+  .langs button{font:600 12px var(--body);border:1px solid var(--line);background:#fff;color:var(--ink2);border-radius:999px;padding:5px 12px;cursor:pointer}
+  .langs button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .hero{padding:44px 0 18px}
+  .kicker{font:600 11px var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--pink)}
+  h1{font:600 34px/1.25 var(--display);letter-spacing:-.02em;margin:14px 0 10px}
+  .meta{font-size:12.5px;color:var(--ink3)}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:20px 24px;margin:0 0 14px;box-shadow:0 4px 20px rgba(20,35,70,.035)}
+  .card h2{font:600 16px var(--body);margin:0 0 8px;display:flex;gap:10px;align-items:baseline}
+  .card h2 span{font:600 11px var(--display);color:var(--pink)}
+  .card p{margin:0;color:var(--ink2);font-size:14px}
+  .card p+p{margin-top:8px}
+  a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
+  code{font:12.5px Consolas,Menlo,monospace;background:#eef2f9;border-radius:5px;padding:1px 5px;color:#33415e;word-break:break-all}
+  .foot{border-top:1px solid var(--line);margin-top:30px;padding-top:18px;font-size:12.5px;color:var(--ink3);display:flex;gap:18px;flex-wrap:wrap}
+  @media(max-width:600px){h1{font-size:27px}.card{padding:17px 18px}.langs{margin-left:0;width:100%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <span class="brand"><i></i>SUNGLOW</span>
+    <div class="langs" role="group" aria-label="Language">
+      <button type="button" data-lang="zh" aria-pressed="true">简体</button>
+      <button type="button" data-lang="hant" aria-pressed="false">繁體</button>
+      <button type="button" data-lang="en" aria-pressed="false">EN</button>
+    </div>
+  </header>
+
+  <div class="hero">
+    <div class="kicker" data-i18n="隐私政策">隐私政策</div>
+    <h1 data-i18n="霞光档案 · 隐私政策">霞光档案 · 隐私政策</h1>
+    <div class="meta" data-i18n="适用：Android 内测版与 sunglow.cloud 网页版 · 最近更新 2026-11-13">适用：Android 内测版与 sunglow.cloud 网页版 · 最近更新 2026-11-13</div>
+  </div>
+
+  <div class="card">
+    <h2><span>01</span><b data-i18n="概览">概览</b></h2>
+    <p data-i18n="霞光档案是一个查询朝霞 / 晚霞概率的观赏参考工具，由个人开发者维护，免费、无广告、无账号体系。本政策说明 App 与网页版会接触哪些数据、不会做什么。">霞光档案是一个查询朝霞 / 晚霞概率的观赏参考工具，由个人开发者维护，免费、无广告、无账号体系。本政策说明 App 与网页版会接触哪些数据、不会做什么。</p>
+  </div>
+
+  <div class="card">
+    <h2><span>02</span><b data-i18n="我们不收集什么">我们不收集什么</b></h2>
+    <p data-i18n="不收集姓名、手机号、邮箱、账号、设备标识符、通讯录、精确轨迹或使用行为；不接入任何广告、统计、崩溃上报或第三方追踪 SDK；不建立用户画像，也不向第三方出售数据。">不收集姓名、手机号、邮箱、账号、设备标识符、通讯录、精确轨迹或使用行为；不接入任何广告、统计、崩溃上报或第三方追踪 SDK；不建立用户画像，也不向第三方出售数据。</p>
+  </div>
+
+  <div class="card">
+    <h2><span>03</span><b data-i18n="何时联网、发送什么">何时联网、发送什么</b></h2>
+    <p data-i18n="仅在查询预报时，直接向 Open-Meteo 的气象与空气质量接口请求所选城市的经纬度、日期与所需气象变量；接口响应只在本机参与计算。观测场底图会向高德公开瓦片服务请求当前视野内的图砖编号。">仅在查询预报时，直接向 Open-Meteo 的气象与空气质量接口请求所选城市的经纬度、日期与所需气象变量；接口响应只在本机参与计算。观测场底图会向高德公开瓦片服务请求当前视野内的图砖编号。</p>
+    <p data-i18n="没有自建后端，也没有中转服务器：应用不会把你的查询、城市、结论或分享内容发送到开发者或任何分析服务。">没有自建后端，也没有中转服务器：应用不会把你的查询、城市、结论或分享内容发送到开发者或任何分析服务。</p>
+  </div>
+
+  <div class="card">
+    <h2><span>04</span><b data-i18n="定位权限">定位权限</b></h2>
+    <p data-i18n="App 声明粗略与精确定位权限，仅在设置中主动点「使用当前位置」时读取一次最近位置，用于匹配最近的城市。坐标不会上传、不会保存为轨迹、不用于后台追踪。拒绝权限不影响手动选择城市，应用仍可完整使用。">App 声明粗略与精确定位权限，仅在设置中主动点「使用当前位置」时读取一次最近位置，用于匹配最近的城市。坐标不会上传、不会保存为轨迹、不用于后台追踪。拒绝权限不影响手动选择城市，应用仍可完整使用。</p>
+  </div>
+
+  <div class="card">
+    <h2><span>05</span><b data-i18n="本机存储">本机存储</b></h2>
+    <p data-i18n="城市、日期、时段、主题、语言、提醒偏好，以及最近一次预报的离线快照与 6 小时缓存，都只存在设备本地（Android 应用私有目录 / 网页 localStorage）。清除应用数据或卸载应用即可全部删除；网页版可在设置中清除缓存。">城市、日期、时段、主题、语言、提醒偏好，以及最近一次预报的离线快照与 6 小时缓存，都只存在设备本地（Android 应用私有目录 / 网页 localStorage）。清除应用数据或卸载应用即可全部删除；网页版可在设置中清除缓存。</p>
+  </div>
+
+  <div class="card">
+    <h2><span>06</span><b data-i18n="通知与桌面小组件">通知与桌面小组件</b></h2>
+    <p data-i18n="霞光提醒由本机定时计算并在本地发送，不经过服务器；系统调度可能有几分钟误差。可在设置中随时关闭通知，也可拒绝通知权限。桌面小组件只读取本机最近一次结果用于显示。">霞光提醒由本机定时计算并在本地发送，不经过服务器；系统调度可能有几分钟误差。可在设置中随时关闭通知，也可拒绝通知权限。桌面小组件只读取本机最近一次结果用于显示。</p>
+  </div>
+
+  <div class="card">
+    <h2><span>07</span><b data-i18n="第三方服务与署名">第三方服务与署名</b></h2>
+    <p data-i18n="气象与空气质量数据来自 Open-Meteo，依 CC BY 4.0 署名，其免费层仅限非商业用途（许可：https://open-meteo.com/en/terms）。观测场底图使用高德公开栅格瓦片，图面保留「© 高德地图」署名。">气象与空气质量数据来自 Open-Meteo，依 CC BY 4.0 署名，其免费层仅限非商业用途（许可：https://open-meteo.com/en/terms）。观测场底图使用高德公开栅格瓦片，图面保留「© 高德地图」署名。</p>
+    <p data-i18n="分享图卡在本机生成，保存与系统分享由用户主动触发；生成过程不上传图片或文案。">分享图卡在本机生成，保存与系统分享由用户主动触发；生成过程不上传图片或文案。</p>
+  </div>
+
+  <div class="card">
+    <h2><span>08</span><b data-i18n="儿童与适用范围">儿童与适用范围</b></h2>
+    <p data-i18n="本应用面向一般公众的观赏参考，不面向 13 岁以下儿童，也不会刻意收集儿童信息。概率预报仅供观赏参考，不构成出行、航海、航空等安全决策依据。">本应用面向一般公众的观赏参考，不面向 13 岁以下儿童，也不会刻意收集儿童信息。概率预报仅供观赏参考，不构成出行、航海、航空等安全决策依据。</p>
+  </div>
+
+  <div class="card">
+    <h2><span>09</span><b data-i18n="变更与联系">变更与联系</b></h2>
+    <p data-i18n="政策如有变更，会更新本页的「最近更新」日期。当前内测版为未签正式证书的 debug 包，通过 GitHub Release 分发；问题与建议请在 lyuzixi/sunglow 仓库提交 Issue。">政策如有变更，会更新本页的「最近更新」日期。当前内测版为未签正式证书的 debug 包，通过 GitHub Release 分发；问题与建议请在 lyuzixi/sunglow 仓库提交 Issue。</p>
+  </div>
+
+  <div class="foot">
+    <a href="./index.html" data-i18n="返回首页">返回首页</a>
+    <a href="./download.html" data-i18n="Android 内测版下载">Android 内测版下载</a>
+    <a href="https://github.com/lyuzixi/sunglow" rel="noopener noreferrer" target="_blank">GitHub</a>
+    <span data-i18n="SUNGLOW · 霞光档案">SUNGLOW · 霞光档案</span>
+  </div>
+</div>
+
+<script>
+(function () {
+  var DICT = {
+    hant: {
+      "隐私政策": "隱私權政策", "霞光档案 · 隐私政策": "霞光檔案 · 隱私權政策",
+      "适用：Android 内测版与 sunglow.cloud 网页版 · 最近更新 2026-11-13": "適用：Android 內測版與 sunglow.cloud 網頁版 · 最近更新 2026-11-13",
+      "概览": "概覽", "我们不收集什么": "我們不蒐集什麼", "何时联网、发送什么": "何時連網、傳送什麼",
+      "定位权限": "定位權限", "本机存储": "本機儲存", "通知与桌面小组件": "通知與桌面小工具",
+      "第三方服务与署名": "第三方服務與署名", "儿童与适用范围": "兒童與適用範圍", "变更与联系": "變更與聯絡",
+      "返回首页": "返回首頁", "Android 内测版下载": "Android 內測版下載", "SUNGLOW · 霞光档案": "SUNGLOW · 霞光檔案",
+      "霞光档案是一个查询朝霞 / 晚霞概率的观赏参考工具，由个人开发者维护，免费、无广告、无账号体系。本政策说明 App 与网页版会接触哪些数据、不会做什么。": "霞光檔案是查詢朝霞／晚霞機率的觀賞參考工具，由個人開發者維護，免費、無廣告、無帳號體系。本政策說明 App 與網頁版會接觸哪些資料、不會做什麼。",
+      "不收集姓名、手机号、邮箱、账号、设备标识符、通讯录、精确轨迹或使用行为；不接入任何广告、统计、崩溃上报或第三方追踪 SDK；不建立用户画像，也不向第三方出售数据。": "不蒐集姓名、手機號、電子郵件、帳號、裝置識別碼、通訊錄、精確軌跡或使用行為；不接入任何廣告、統計、崩潰回報或第三方追蹤 SDK；不建立使用者輪廓，也不向第三方出售資料。",
+      "仅在查询预报时，直接向 Open-Meteo 的气象与空气质量接口请求所选城市的经纬度、日期与所需气象变量；接口响应只在本机参与计算。观测场底图会向高德公开瓦片服务请求当前视野内的图砖编号。": "僅在查詢預報時，直接向 Open-Meteo 的氣象與空氣品質介面請求所選城市的經緯度、日期與所需氣象變數；回應只在本機參與計算。觀測場底圖會向高德公開圖磚服務請求目前視野內的圖磚編號。",
+      "没有自建后端，也没有中转服务器：应用不会把你的查询、城市、结论或分享内容发送到开发者或任何分析服务。": "沒有自建後端，也沒有中轉伺服器：應用程式不會把你的查詢、城市、結論或分享內容傳送給開發者或任何分析服務。",
+      "App 声明粗略与精确定位权限，仅在设置中主动点「使用当前位置」时读取一次最近位置，用于匹配最近的城市。坐标不会上传、不会保存为轨迹、不用于后台追踪。拒绝权限不影响手动选择城市，应用仍可完整使用。": "App 宣告粗略與精確定位權限，僅在設定中主動點「使用目前位置」時讀取一次最近位置，用於匹配最近的城市。座標不會上傳、不會保存為軌跡、不用於背景追蹤。拒絕權限不影響手動選擇城市，應用程式仍可完整使用。",
+      "城市、日期、时段、主题、语言、提醒偏好，以及最近一次预报的离线快照与 6 小时缓存，都只存在设备本地（Android 应用私有目录 / 网页 localStorage）。清除应用数据或卸载应用即可全部删除；网页版可在设置中清除缓存。": "城市、日期、時段、主題、語言、提醒偏好，以及最近一次預報的離線快照與 6 小時快取，都只存在裝置本機（Android 應用私有目錄／網頁 localStorage）。清除應用資料或移除應用程式即可全部刪除；網頁版可在設定中清除快取。",
+      "霞光提醒由本机定时计算并在本地发送，不经过服务器；系统调度可能有几分钟误差。可在设置中随时关闭通知，也可拒绝通知权限。桌面小组件只读取本机最近一次结果用于显示。": "霞光提醒由本機定時計算並在本機發送，不經過伺服器；系統排程可能有幾分鐘誤差。可在設定中隨時關閉通知，也可拒絕通知權限。桌面小工具只讀取本機最近一次結果用於顯示。",
+      "气象与空气质量数据来自 Open-Meteo，依 CC BY 4.0 署名，其免费层仅限非商业用途（许可：https://open-meteo.com/en/terms）。观测场底图使用高德公开栅格瓦片，图面保留「© 高德地图」署名。": "氣象與空氣品質資料來自 Open-Meteo，依 CC BY 4.0 署名，其免費層僅限非商業用途（授權：https://open-meteo.com/en/terms）。觀測場底圖使用高德公開柵格圖磚，畫面保留「© 高德地圖」署名。",
+      "分享图卡在本机生成，保存与系统分享由用户主动触发；生成过程不上传图片或文案。": "分享圖卡在本機產生，儲存與系統分享由使用者主動觸發；產生過程不上傳圖片或文案。",
+      "本应用面向一般公众的观赏参考，不面向 13 岁以下儿童，也不会刻意收集儿童信息。概率预报仅供观赏参考，不构成出行、航海、航空等安全决策依据。": "本應用程式面向一般公眾的觀賞參考，不面向 13 歲以下兒童，也不會刻意蒐集兒童資訊。機率預報僅供觀賞參考，不構成出行、航海、航空等安全決策依據。",
+      "政策如有变更，会更新本页的「最近更新」日期。当前内测版为未签正式证书的 debug 包，通过 GitHub Release 分发；问题与建议请在 lyuzixi/sunglow 仓库提交 Issue。": "政策如有變更，會更新本頁的「最近更新」日期。目前內測版為未簽正式憑證的 debug 包，透過 GitHub Release 散布；問題與建議請在 lyuzixi/sunglow 儲存庫提交 Issue。"
+    },
+    en: {
+      "隐私政策": "Privacy Policy", "霞光档案 · 隐私政策": "SUNGLOW · Privacy Policy",
+      "适用：Android 内测版与 sunglow.cloud 网页版 · 最近更新 2026-11-13": "Applies to the Android beta and sunglow.cloud · Last updated 2026-11-13",
+      "概览": "Overview", "我们不收集什么": "What we do not collect", "何时联网、发送什么": "When we go online, and what is sent",
+      "定位权限": "Location permission", "本机存储": "On-device storage", "通知与桌面小组件": "Notifications and widget",
+      "第三方服务与署名": "Third-party services and attribution", "儿童与适用范围": "Children and scope", "变更与联系": "Changes and contact",
+      "返回首页": "Back to home", "Android 内测版下载": "Android beta download", "SUNGLOW · 霞光档案": "SUNGLOW · Sunset Glow Archive",
+      "霞光档案是一个查询朝霞 / 晚霞概率的观赏参考工具，由个人开发者维护，免费、无广告、无账号体系。本政策说明 App 与网页版会接触哪些数据、不会做什么。": "SUNGLOW is a sky-watching reference tool for sunrise and sunset glow probabilities. It is maintained by an individual developer and is free, ad-free and account-free. This policy explains what data the app and website touch, and what they never do.",
+      "不收集姓名、手机号、邮箱、账号、设备标识符、通讯录、精确轨迹或使用行为；不接入任何广告、统计、崩溃上报或第三方追踪 SDK；不建立用户画像，也不向第三方出售数据。": "We do not collect names, phone numbers, emails, accounts, device identifiers, contacts, precise location trails or usage behaviour. There are no advertising, analytics, crash-reporting or tracking SDKs, no user profiling, and no sale of data to third parties.",
+      "仅在查询预报时，直接向 Open-Meteo 的气象与空气质量接口请求所选城市的经纬度、日期与所需气象变量；接口响应只在本机参与计算。观测场底图会向高德公开瓦片服务请求当前视野内的图砖编号。": "Only when you request a forecast does the app call Open-Meteo weather and air-quality APIs with the selected city coordinates, date and required weather variables; responses are processed on your device only. The field map requests the tile indices visible in the current viewport from AMap public tiles.",
+      "没有自建后端，也没有中转服务器：应用不会把你的查询、城市、结论或分享内容发送到开发者或任何分析服务。": "There is no backend and no relay server. Your queries, cities, verdicts and share content are never sent to the developer or to any analytics service.",
+      "App 声明粗略与精确定位权限，仅在设置中主动点「使用当前位置」时读取一次最近位置，用于匹配最近的城市。坐标不会上传、不会保存为轨迹、不用于后台追踪。拒绝权限不影响手动选择城市，应用仍可完整使用。": "The app declares coarse and fine location permissions, and reads the last known position once only when you explicitly tap Use current location, in order to match the nearest city. Coordinates are never uploaded, never stored as a trail and never used for background tracking. Denying permission does not affect manual city selection.",
+      "城市、日期、时段、主题、语言、提醒偏好，以及最近一次预报的离线快照与 6 小时缓存，都只存在设备本地（Android 应用私有目录 / 网页 localStorage）。清除应用数据或卸载应用即可全部删除；网页版可在设置中清除缓存。": "City, date, period, theme, language, reminder preferences, the latest forecast snapshot and the 6-hour cache stay on your device only (Android app-private storage / browser localStorage). Clearing app data or uninstalling removes everything; the web app can clear its cache in Settings.",
+      "霞光提醒由本机定时计算并在本地发送，不经过服务器；系统调度可能有几分钟误差。可在设置中随时关闭通知，也可拒绝通知权限。桌面小组件只读取本机最近一次结果用于显示。": "Glow reminders are computed and sent locally, with no server involved; system scheduling may be a few minutes late. You can disable reminders at any time or deny the notification permission. The home-screen widget only reads the most recent local result.",
+      "气象与空气质量数据来自 Open-Meteo，依 CC BY 4.0 署名，其免费层仅限非商业用途（许可：https://open-meteo.com/en/terms）。观测场底图使用高德公开栅格瓦片，图面保留「© 高德地图」署名。": "Weather and air-quality data come from Open-Meteo under CC BY 4.0; its free tier is for non-commercial use only (license: https://open-meteo.com/en/terms). The field basemap uses AMap public raster tiles and retains the © AMap attribution on screen.",
+      "分享图卡在本机生成，保存与系统分享由用户主动触发；生成过程不上传图片或文案。": "Share cards are rendered on the device. Saving and system sharing are user-initiated, and no image or text is uploaded in the process.",
+      "本应用面向一般公众的观赏参考，不面向 13 岁以下儿童，也不会刻意收集儿童信息。概率预报仅供观赏参考，不构成出行、航海、航空等安全决策依据。": "This app is a general-audience sky-watching reference, is not directed at children under 13 and does not knowingly collect children's information. Probability forecasts are for sky-watching only and are not a basis for travel, marine or aviation safety decisions.",
+      "政策如有变更，会更新本页的「最近更新」日期。当前内测版为未签正式证书的 debug 包，通过 GitHub Release 分发；问题与建议请在 lyuzixi/sunglow 仓库提交 Issue。": "Changes to this policy update the Last updated date above. The current beta is an unsigned debug build distributed via GitHub Release; please report issues in the lyuzixi/sunglow repository."
+    }
+  };
+  var nodes = Array.prototype.slice.call(document.querySelectorAll("[data-i18n]"));
+  var original = nodes.map(function (el) { return el.textContent; });
+  var title = document.title;
+  var buttons = Array.prototype.slice.call(document.querySelectorAll(".langs button"));
+  function apply(lang) {
+    var d = DICT[lang];
+    nodes.forEach(function (el, i) {
+      var key = el.getAttribute("data-i18n") || original[i];
+      el.textContent = d && Object.prototype.hasOwnProperty.call(d, key) ? d[key] : key;
+    });
+    document.documentElement.lang = lang === "hant" ? "zh-Hant" : lang === "en" ? "en" : "zh-CN";
+    document.title = lang === "en" ? "Privacy Policy · SUNGLOW" : lang === "hant" ? "隱私權政策 · 霞光檔案" : title;
+    buttons.forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-lang") === lang)); });
+    try { localStorage.setItem("sunglow.privacy.lang", lang); } catch (e) { /* 隐私模式 */ }
+  }
+  buttons.forEach(function (b) { b.addEventListener("click", function () { apply(b.getAttribute("data-lang")); }); });
+  var saved = "zh";
+  try { saved = localStorage.getItem("sunglow.privacy.lang") || "zh"; } catch (e) { /* ignore */ }
+  if (saved !== "zh") apply(saved);
+})();
+</script>
+</body>
+</html>

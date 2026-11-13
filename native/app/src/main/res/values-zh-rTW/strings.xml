@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">霞光檔案</string>
+    <string name="app_name_full">霞光檔案 · 光譜觀測版</string>
+    <string name="brand_mark">SUNGLOW</string>
+    <string name="lang_zh">簡體</string>
+    <string name="lang_zh_tw">繁體</string>
+    <string name="lang_en">英文</string>
 
     <string name="tab_conclusion">結論</string>
     <string name="tab_trend">趨勢</string>
@@ -25,7 +30,8 @@
 
     <string name="about_title">關於</string>
     <string name="about_version">霞光檔案 1.0.0 · 光譜觀測版</string>
-    <string name="about_data">資料來源：Open-Meteo 氣象與空氣品質介面；底圖為高德公開圖磚。</string>
+    <string name="about_data">資料來源：Open-Meteo 氣象與空氣品質介面（CC BY 4.0，授權 https://open-meteo.com/en/terms）；底圖為高德公開圖磚，© 高德地圖。</string>
+    <string name="privacy_url">https://sunglow.cloud/privacy.html</string>
     <string name="about_privacy_title">隱私說明</string>
     <string name="privacy_body">定位只用於比對最近的城市，不會上傳或保存座標軌跡。通知由本機計算與傳送，不經過伺服器。應用不收集帳號、裝置識別碼與使用行為；僅在取數時向 Open-Meteo 傳送城市座標與日期。</string>
     <string name="about_licenses">開源元件：Kotlin、Jetpack Compose、OkHttp、osmdroid、ZXing、AndroidX WorkManager。</string>

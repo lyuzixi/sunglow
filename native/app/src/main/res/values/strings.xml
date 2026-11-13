@@ -3,18 +3,7 @@
     <string name="app_name">霞光档案</string>
     <string name="app_name_full">霞光档案 · 光谱观测版</string>
     <string name="brand_mark">SUNGLOW</string>
-    <string name="shell_badge">原生版 · 建设中</string>
-    <string name="shell_title">算法内核已就位</string>
-    <string name="shell_body">这一版把朝霞与晚霞的物理模型搬进了原生代码：太阳位置、光路消光、云幕判据与评分全部用 Kotlin 重写，并用基准数据逐项核对。界面、取数与观测场将按阶段接入。</string>
-    <string name="shell_section_core">已完成</string>
-    <string name="shell_section_next">下一步</string>
-    <string name="core_math">数学与球面几何</string>
-    <string name="core_astro">太阳位置与曙暮时刻</string>
-    <string name="core_physics">光路消光与云幕模型</string>
-    <string name="core_scoring">统计评分与光追评分</string>
-    <string name="next_api">气象取数（Open-Meteo）</string>
-    <string name="next_city">城市库与定位</string>
-    <string name="next_ui">结论卡与日期条</string>
+    <!-- P0 空壳期文案（shell_* / core_* / next_*）已于 2026-11-13 清理：代码无引用，且三语未对齐。 -->
 
     <!-- M5 · 导航与设置 -->
     <string name="tab_conclusion">结论</string>
@@ -44,7 +33,8 @@
     <!-- M5 · 关于 -->
     <string name="about_title">关于</string>
     <string name="about_version">霞光档案 1.0.0 · 光谱观测版</string>
-    <string name="about_data">数据来源：Open-Meteo 气象与空气质量接口；底图为高德公开瓦片。</string>
+    <string name="about_data">数据来源：Open-Meteo 气象与空气质量接口（CC BY 4.0，许可 https://open-meteo.com/en/terms）；底图为高德公开瓦片，© 高德地图。</string>
+    <string name="privacy_url">https://sunglow.cloud/privacy.html</string>
     <string name="about_privacy_title">隐私说明</string>
     <string name="privacy_body">定位只用于匹配最近的城市，不会上传或保存坐标轨迹。通知由本机计算与发送，不经过服务器。应用不收集账号、设备标识与使用行为；仅在取数时向 Open-Meteo 发送城市坐标与日期。</string>
     <string name="about_licenses">开源组件：Kotlin、Jetpack Compose、OkHttp、osmdroid、ZXing、AndroidX WorkManager。</string>
