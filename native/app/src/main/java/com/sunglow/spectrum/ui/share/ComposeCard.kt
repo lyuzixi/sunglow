@@ -19,7 +19,6 @@ import com.sunglow.spectrum.core.ForecastResult
 import com.sunglow.spectrum.core.HeatGrid
 import com.sunglow.spectrum.core.QUALITY_BANDS
 import com.sunglow.spectrum.core.VerdictView
-import com.sunglow.spectrum.core.conclWord
 import com.sunglow.spectrum.core.fmtClock
 import com.sunglow.spectrum.core.glowWindow
 import com.sunglow.spectrum.core.judgmentOf
@@ -229,7 +228,7 @@ object ComposeCard {
             W - M, y + 118f, 25f, faint, sans, Paint.Align.RIGHT
         )
         y += 198f
-        wrap(conclWord(view.p), M, y, 40f, ink, W - 2 * M, 50f)
+        wrap(conclText(ctx, view.p), M, y, 40f, ink, W - 2 * M, 50f)
 
         /* 天色带 */
         y += 78f

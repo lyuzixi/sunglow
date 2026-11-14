@@ -26,7 +26,6 @@ import com.sunglow.spectrum.core.QUALITY_BANDS
 import com.sunglow.spectrum.core.QUALITY_LABEL
 import com.sunglow.spectrum.core.VerdictView
 import com.sunglow.spectrum.core.captionOf
-import com.sunglow.spectrum.core.conclWord
 import com.sunglow.spectrum.core.fmtClock
 import com.sunglow.spectrum.core.glowWindow
 import com.sunglow.spectrum.core.isNum
@@ -204,7 +203,7 @@ object ShareCard {
         txt(ctx.getString(R.string.share_view_q, view.q.roundToInt().toString()), W - 64f, 748f, 26f, faint, sans, Paint.Align.RIGHT)
 
         /* 结论句 */
-        txt(conclWord(view.p), 64f, 812f, 42f, ink, sansBold)
+        txt(conclText(ctx, view.p), 64f, 812f, 42f, ink, sansBold)
 
         val win = glowWindow(
             evMs = r.evMs,
@@ -524,7 +523,7 @@ object ShareCard {
         txt(ctx.getString(R.string.share_view_q, view.q.roundToInt()), w - 72f, 1290f, 30f, faint, sans, Paint.Align.RIGHT)
 
         /* 结论句 */
-        txt(conclWord(view.p), 72f, 1330f, 50f, ink, sansBold)
+        txt(conclText(ctx, view.p), 72f, 1330f, 50f, ink, sansBold)
 
         /* 事实两行 */
         val win = glowWindow(
