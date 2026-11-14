@@ -458,6 +458,8 @@
     <string name="concl_worth">Worth expecting</string>
     <string name="concl_try">Worth a try</string>
     <string name="concl_unlikely">Unlikely</string>
+    <string name="event_sunrise">Sunrise</string>
+    <string name="event_sunset">Sunset</string>
     <string name="share_view_q">Viewing quality %1$s</string>
     <string name="share_heat_title">Field heat · composite index</string>
     <string name="share_heat_span">About %1$s km across · %2$s</string>
