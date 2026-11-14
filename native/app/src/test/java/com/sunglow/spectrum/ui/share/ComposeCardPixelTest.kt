@@ -5,6 +5,8 @@ import com.sunglow.spectrum.core.City
 import com.sunglow.spectrum.core.ForecastResult
 import com.sunglow.spectrum.core.HeatCell
 import com.sunglow.spectrum.core.HeatGrid
+import com.sunglow.spectrum.core.heatFrameOf
+import com.sunglow.spectrum.core.heatNodesOf
 import com.sunglow.spectrum.core.ModelSel
 import com.sunglow.spectrum.core.Period
 import com.sunglow.spectrum.core.QUALITY_BANDS
@@ -130,30 +132,30 @@ class ComposeCardPixelTest {
     }
 
     private fun sampleHeat(): HeatGrid {
-        val n = 13
-        val dLat = 0.72
-        val dLon = 0.78
-        val lat0 = lat + dLat * (n - 1) / 2.0
-        val lon0 = lon - dLon * (n - 1) / 2.0
-        val cells = ArrayList<HeatCell>(n * n)
-        for (i in 0 until n) {
-            for (j in 0 until n) {
-                val dx = j - (n - 1) / 2.0
-                val dy = i - (n - 1) / 2.0
-                val dist = kotlin.math.sqrt(dx * dx + dy * dy)
-                val p = (86.0 - dist * 8.0).coerceIn(6.0, 92.0)
-                val q = (78.0 - dist * 6.0).coerceIn(8.0, 88.0)
-                val idx = 0.55 * p + 0.45 * q
-                val band = QUALITY_BANDS.firstOrNull { idx >= it.min && idx <= it.max }
-                    ?: QUALITY_BANDS.last()
-                cells.add(
-                    HeatCell(
-                        i = i, j = j, lat = lat0 - i * dLat, lon = lon0 + j * dLon,
-                        p = p, q = q, idx = idx, grade = band.key,
-                        type = "卷云", cover = 35.0, d = 180.0
-                    )
+        val nodes = heatNodesOf(lat, lon)
+        val frame = heatFrameOf(lat, lon)
+        val n = frame[0].toInt()
+        val dLat = frame[3]
+        val dLon = frame[4]
+        val lat0 = frame[1]
+        val lon0 = frame[2]
+        val cells = ArrayList<HeatCell>(nodes.size)
+        for (node in nodes) {
+            val dx = node.j - (n - 1) / 2.0
+            val dy = node.i - (n - 1) / 2.0
+            val dist = kotlin.math.sqrt(dx * dx + dy * dy)
+            val p = (86.0 - dist * 8.0).coerceIn(6.0, 92.0)
+            val q = (78.0 - dist * 6.0).coerceIn(8.0, 88.0)
+            val idx = 0.55 * p + 0.45 * q
+            val band = QUALITY_BANDS.firstOrNull { idx >= it.min && idx <= it.max }
+                ?: QUALITY_BANDS.last()
+            cells.add(
+                HeatCell(
+                    i = node.i, j = node.j, lat = node.lat, lon = node.lon,
+                    p = p, q = q, idx = idx, grade = band.key,
+                    type = "卷云", cover = 35.0, d = 180.0
                 )
-            }
+            )
         }
         return HeatGrid("2026-11-12", Period.PM, n, lat0, lon0, dLat, dLon, cells)
     }

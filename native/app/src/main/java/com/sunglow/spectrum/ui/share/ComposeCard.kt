@@ -623,12 +623,12 @@ object ComposeCard {
                         paint.color = modelDot(cd.id)
                         cv.drawCircle(x + 17f, cy + 21f, 3.5f, paint)
                         txt(
-                            fit(cd.name, 22f, sansBold, cw - 150f),
+                            fit(cd.name, 22f, sansBold, cw - 255f),
                             x + 27f, cy + 26f, 22f, ink, sansBold
                         )
                         txt(
-                            fit(cd.sub, 13f, sans, 150f),
-                            x + cw - 14f, cy + 24f, 13f, faint, sans, Paint.Align.RIGHT
+                            fit(cd.sub, 12.5f, sans, 210f),
+                            x + cw - 14f, cy + 24f, 12.5f, faint, sans, Paint.Align.RIGHT
                         )
 
                         if (cd.missing) {
