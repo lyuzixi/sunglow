@@ -46,6 +46,9 @@ object ComposeCard {
     private const val BASE_IDS =
         "sky,window,qr,trend,map,models,facCloud,facPath,facAir,facDyn,rayRows,raySwatch,rayTime,rayCurve"
 
+    /** 仅供 Robolectric 基线使用：品牌可变字体在无真机字体的环境会量出异常字形。 */
+    var testForceSans = false
+
     fun canRender(mods: List<String>): Boolean = mods.all { it in BASE_IDS.split(",") }
 
     /** 与 render 使用同一套高度规则，供回归测试核对实际位图高度。 */
@@ -53,7 +56,7 @@ object ComposeCard {
         val on = mods.toSet()
         var h = 900f
         if ("sky" in on) h += 148f
-        if ("window" in on) h += 96f
+        if ("window" in on) h += 140f
         if ("qr" in on) h += 252f
         if ("trend" in on) h += 180f
         if ("map" in on) h += 490f
@@ -63,7 +66,7 @@ object ComposeCard {
         if ("facAir" in on) h += 160f
         if ("facDyn" in on) h += 160f
         if ("rayRows" in on) h += 210f
-        if ("raySwatch" in on) h += 130f
+        if ("raySwatch" in on) h += 145f
         if ("rayTime" in on) h += 120f
         if ("rayCurve" in on) h += 180f
         return h.roundToInt()
@@ -94,7 +97,8 @@ object ComposeCard {
         val cool = c(if (dark) DarkTokens.accentCool else LightTokens.accentCool)
         val rule = c(if (dark) DarkTokens.ruleStrong else LightTokens.ruleStrong)
 
-        val display = runCatching { ResourcesCompat.getFont(ctx, R.font.space_grotesk) }.getOrNull()
+        val display = if (testForceSans) null
+        else runCatching { ResourcesCompat.getFont(ctx, R.font.space_grotesk) }.getOrNull()
         val sans = Typeface.create("sans-serif", Typeface.NORMAL)
         val sansBold = Typeface.create("sans-serif", Typeface.BOLD)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
