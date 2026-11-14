@@ -437,12 +437,18 @@ object ComposeCard {
                         val s = fr?.score
                         if (s != null && s.isFinite()) {
                             val j = judgmentOf(s)
+                            val jt = when (j.cls) {
+                                "ok" -> ctx.getString(R.string.judge_ok)
+                                "mid" -> ctx.getString(R.string.judge_mid)
+                                "bad" -> ctx.getString(R.string.judge_bad)
+                                else -> ctx.getString(R.string.judge_miss)
+                            }
                             fillRound(
                                 bx, y + 10f,
                                 (bw * s.coerceIn(0.0, 1.0)).toFloat().coerceAtLeast(3f),
                                 10f, 5f, judgeColor(j.cls, dark)
                             )
-                            txt(j.text, W - M, y + 23f, 20f, judgeColor(j.cls, dark), sans, Paint.Align.RIGHT)
+                            txt(jt, W - M, y + 23f, 20f, judgeColor(j.cls, dark), sans, Paint.Align.RIGHT)
                         } else {
                             txt(
                                 ctx.getString(R.string.judge_miss),
