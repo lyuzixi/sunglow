@@ -134,6 +134,7 @@ object ComposeCard {
             paint.typeface = sansBold
             paint.textSize = size
             paint.color = color
+            paint.textAlign = Paint.Align.LEFT
             var start = 0
             var yy = y
             while (start < s.length) {
