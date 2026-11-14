@@ -336,7 +336,7 @@
     <string name="model_title">各模型獨立結果</string>
     <string name="model_hint">點卡片，上方資料隨之切換</string>
     <string name="model_ens">多模型綜合</string>
-    <string name="model_ens_desc">GFS 30% + EC 34% + 光追 36%</string>
+    <string name="model_ens_desc" formatted="false">GFS 30% + EC 34% + 光追 36%</string>
     <string name="model_gfs">GFS 模式</string>
     <string name="model_gfs_desc">NOAA 全球模式 · 1 小時解析度</string>
     <string name="model_ec">ECMWF-IFS 模式</string>

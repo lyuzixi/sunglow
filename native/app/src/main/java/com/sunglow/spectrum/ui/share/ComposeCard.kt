@@ -540,7 +540,6 @@ object ComposeCard {
                             paint.reset()
                             paint.isAntiAlias = true
                             paint.shader = RadialGradient(
-                                px.toFloat(), py.toFloat(), 0f,
                                 px.toFloat(), py.toFloat(), blobR,
                                 withAlpha(gColor, alpha.roundToInt()),
                                 withAlpha(gColor, 0),

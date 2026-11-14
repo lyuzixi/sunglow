@@ -336,7 +336,7 @@
     <string name="model_title">Independent model results</string>
     <string name="model_hint">Tap a card to switch the readout</string>
     <string name="model_ens">Ensemble</string>
-    <string name="model_ens_desc">GFS 30% + EC 34% + Ray 36%</string>
+    <string name="model_ens_desc" formatted="false">GFS 30% + EC 34% + Ray 36%</string>
     <string name="model_gfs">GFS model</string>
     <string name="model_gfs_desc">NOAA global · 1-hour steps</string>
     <string name="model_ec">ECMWF-IFS</string>
