@@ -61,6 +61,7 @@ android {
 
     testOptions {
         unitTests.isReturnDefaultValues = true
+        unitTests.isIncludeAndroidResources = true
     }
 }
 
@@ -91,4 +92,6 @@ dependencies {
     implementation("androidx.work:work-runtime-ktx:2.10.0")
 
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation("androidx.test:core:1.6.1")
 }
