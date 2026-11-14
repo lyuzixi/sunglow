@@ -82,7 +82,6 @@ object ComposeCard {
         val skyOn = "sky" in on
 
         val h = heightFor(mods).toFloat()
-        h = h.coerceAtLeast(880f)
 
         val bmp = Bitmap.createBitmap(W.toInt(), h.toInt(), Bitmap.Config.ARGB_8888)
         val cv = Canvas(bmp)
