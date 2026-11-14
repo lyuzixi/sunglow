@@ -42,7 +42,7 @@ import kotlin.math.roundToLong
  *   · 每张校验：宽度、高度公式、页脚存在、底部留白、右边缘无溢出
  *   · 模块图与「只有天色带」的基线做像素差，防止模块被勾选后其实什么都没画
  *
- * 输出：native/app/build/pixel-cards/*.png + manifest.json
+ * 输出：native/app/build/pixel-cards 下的 PNG + manifest.json
  * CI 会把整个目录挂成 artifact，人工抽查时直接看图。
  */
 @RunWith(RobolectricTestRunner::class)
