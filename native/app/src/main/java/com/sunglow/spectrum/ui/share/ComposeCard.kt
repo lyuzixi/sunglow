@@ -48,20 +48,11 @@ object ComposeCard {
 
     fun canRender(mods: List<String>): Boolean = mods.all { it in BASE_IDS.split(",") }
 
-    fun render(
-        ctx: Context,
-        r: ForecastResult,
-        view: VerdictView,
-        dark: Boolean,
-        mods: List<String>,
-        trend: List<TrendRow> = emptyList(),
-        heat: HeatGrid? = null
-    ): Bitmap {
+    /** 与 render 使用同一套高度规则，供回归测试核对实际位图高度。 */
+    fun heightFor(mods: List<String>): Int {
         val on = mods.toSet()
-        val skyOn = "sky" in on
-
         var h = 900f
-        if (skyOn) h += 148f
+        if ("sky" in on) h += 148f
         if ("window" in on) h += 96f
         if ("qr" in on) h += 252f
         if ("trend" in on) h += 180f
@@ -75,6 +66,22 @@ object ComposeCard {
         if ("raySwatch" in on) h += 130f
         if ("rayTime" in on) h += 120f
         if ("rayCurve" in on) h += 180f
+        return h.roundToInt()
+    }
+
+    fun render(
+        ctx: Context,
+        r: ForecastResult,
+        view: VerdictView,
+        dark: Boolean,
+        mods: List<String>,
+        trend: List<TrendRow> = emptyList(),
+        heat: HeatGrid? = null
+    ): Bitmap {
+        val on = mods.toSet()
+        val skyOn = "sky" in on
+
+        val h = heightFor(mods).toFloat()
         h = h.coerceAtLeast(880f)
 
         val bmp = Bitmap.createBitmap(W.toInt(), h.toInt(), Bitmap.Config.ARGB_8888)
