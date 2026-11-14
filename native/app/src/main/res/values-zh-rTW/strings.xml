@@ -79,11 +79,11 @@
     <string name="compose_loading">載入中</string>
     <string name="compose_preview">結構預覽</string>
     <string name="compose_preview_hint">示意版式，非最終像素</string>
-    <string name="compose_note">基礎與資料模組已用像素版匯出；因素與光追模組在 R3-4 起接入；選擇與順序僅保留於本次工作階段。</string>
+    <string name="compose_note">基礎、資料與四組影響因素已用像素版匯出；光追模組在 R3-5 起接入；選擇與順序僅保留於本次工作階段。</string>
     <string name="compose_window_note">日出日落前後，太陽高度與方位共同決定</string>
     <string name="compose_preview_pixel">像素預覽</string>
     <string name="compose_export">匯出合成卡</string>
-    <string name="compose_export_blocked">本批支援 天色帶 / 最佳視窗 / 二維碼 / 趨勢 / 觀測場 / 模型卡</string>
+    <string name="compose_export_blocked">本批支援基礎、資料與影響因素模組</string>
     <string name="compose_unsupported">含未接入模組，僅結構預覽</string>
     <string name="share_make_card">產生分享圖卡</string>
     <string name="share_system">系統分享</string>
