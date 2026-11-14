@@ -454,6 +454,10 @@
     <string name="factor_value_cape_only">CAPE %1$s J/kg</string>
     <string name="share_photo_caption">實拍 · 廣州珠江</string>
     <string name="share_prob_p">出現機率 P</string>
+    <string name="concl_very_likely">大概率出現</string>
+    <string name="concl_worth">值得期待</string>
+    <string name="concl_try">可以一試</string>
+    <string name="concl_unlikely">希望不大</string>
     <string name="share_view_q">觀賞品質 %1$s</string>
     <string name="share_heat_title">觀測場熱力 · 綜合指數</string>
     <string name="share_heat_span">覆蓋約 %1$s km 見方 · %2$s</string>

@@ -454,6 +454,10 @@
     <string name="factor_value_cape_only">CAPE %1$s J/kg</string>
     <string name="share_photo_caption">Live · Pearl River, Guangzhou</string>
     <string name="share_prob_p">Probability P</string>
+    <string name="concl_very_likely">Very likely</string>
+    <string name="concl_worth">Worth expecting</string>
+    <string name="concl_try">Worth a try</string>
+    <string name="concl_unlikely">Unlikely</string>
     <string name="share_view_q">Viewing quality %1$s</string>
     <string name="share_heat_title">Field heat · composite index</string>
     <string name="share_heat_span">About %1$s km across · %2$s</string>
