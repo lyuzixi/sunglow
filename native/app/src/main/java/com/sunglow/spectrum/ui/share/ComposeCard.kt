@@ -22,7 +22,11 @@ import com.sunglow.spectrum.core.VerdictView
 import com.sunglow.spectrum.core.conclWord
 import com.sunglow.spectrum.core.fmtClock
 import com.sunglow.spectrum.core.glowWindow
+import com.sunglow.spectrum.core.judgmentOf
 import com.sunglow.spectrum.core.skyBandOf
+import com.sunglow.spectrum.core.uAlt
+import com.sunglow.spectrum.core.uDist
+import com.sunglow.spectrum.core.uSpeed
 import com.sunglow.spectrum.ui.TrendRow
 import com.sunglow.spectrum.ui.i18n.gradeText
 import com.sunglow.spectrum.ui.theme.DarkTokens
@@ -39,7 +43,7 @@ object ComposeCard {
 
     const val W = 1080f
     private const val M = 64f
-    private const val BASE_IDS = "sky,window,qr,trend,map,models"
+    private const val BASE_IDS = "sky,window,qr,trend,map,models,facCloud,facPath,facAir,facDyn"
 
     fun canRender(mods: List<String>): Boolean = mods.all { it in BASE_IDS.split(",") }
 
@@ -62,6 +66,10 @@ object ComposeCard {
         if ("trend" in on) h += 180f
         if ("map" in on) h += 490f
         if ("models" in on) h += 150f
+        if ("facCloud" in on) h += 160f
+        if ("facPath" in on) h += 160f
+        if ("facAir" in on) h += 160f
+        if ("facDyn" in on) h += 160f
         h = h.coerceAtLeast(880f)
 
         val bmp = Bitmap.createBitmap(W.toInt(), h.toInt(), Bitmap.Config.ARGB_8888)
@@ -399,6 +407,52 @@ object ComposeCard {
                     }
                     y += 16f
                 }
+                "facCloud", "facPath", "facAir", "facDyn" -> {
+                    val keys = when (id) {
+                        "facCloud" -> listOf("cover", "base", "block")
+                        "facPath" -> listOf("heq", "heff", "dedge")
+                        "facAir" -> listOf("aod", "vis", "rh")
+                        else -> listOf("stab", "wind", "cape")
+                    }
+                    val titleRes = when (id) {
+                        "facCloud" -> R.string.compose_mod_fac_cloud
+                        "facPath" -> R.string.compose_mod_fac_path
+                        "facAir" -> R.string.compose_mod_fac_air
+                        else -> R.string.compose_mod_fac_dyn
+                    }
+                    txt(ctx.getString(titleRes), M, y, 25f, faint)
+                    txt(
+                        ctx.getString(R.string.factor_count, keys.size),
+                        W - M, y, 19f, faint, sans, Paint.Align.RIGHT
+                    )
+                    y += 32f
+                    val byKey = r.factorRows.associateBy { it.key }
+                    for (k in keys) {
+                        val fr = byKey[k]
+                        txt(ctx.getString(facNameRes(k)), M, y + 23f, 21f, muted)
+                        txt(facRawText(k, fr?.raw), M + 300f, y + 23f, 20f, faint)
+                        val bx = M + 520f
+                        val bw = 250f
+                        fillRound(bx, y + 10f, bw, 10f, 5f, withAlpha(faint, 0x18))
+                        val s = fr?.score
+                        if (s != null && s.isFinite()) {
+                            val j = judgmentOf(s)
+                            fillRound(
+                                bx, y + 10f,
+                                (bw * s.coerceIn(0.0, 1.0)).toFloat().coerceAtLeast(3f),
+                                10f, 5f, judgeColor(j.cls, dark)
+                            )
+                            txt(j.text, W - M, y + 23f, 20f, judgeColor(j.cls, dark), sans, Paint.Align.RIGHT)
+                        } else {
+                            txt(
+                                ctx.getString(R.string.judge_miss),
+                                W - M, y + 23f, 20f, faint, sans, Paint.Align.RIGHT
+                            )
+                        }
+                        y += 34f
+                    }
+                    y += 10f
+                }
                 else -> Unit
             }
         }
@@ -416,6 +470,44 @@ object ComposeCard {
     }
 
     private fun c(color: androidx.compose.ui.graphics.Color): Int = color.toArgb()
+
+    private fun judgeColor(cls: String, dark: Boolean): Int = when (cls) {
+        "ok" -> Color.parseColor(if (dark) "#6FD3A2" else "#178A52")
+        "mid" -> Color.parseColor(if (dark) "#E0B45C" else "#C07A10")
+        "bad" -> Color.parseColor(if (dark) "#E08A6A" else "#C2603A")
+        else -> Color.parseColor(if (dark) "#8A93A6" else "#7A8494")
+    }
+
+    private fun facNameRes(key: String): Int = when (key) {
+        "cover" -> R.string.factor_name_cover
+        "base" -> R.string.factor_name_base
+        "heq" -> R.string.factor_name_heq
+        "heff" -> R.string.factor_name_heff
+        "dedge" -> R.string.factor_name_dedge
+        "block" -> R.string.factor_name_block
+        "aod" -> R.string.factor_name_aod
+        "vis" -> R.string.factor_name_vis
+        "rh" -> R.string.factor_name_rh
+        "stab" -> R.string.factor_name_stab
+        "wind" -> R.string.factor_name_wind
+        else -> R.string.factor_name_cape
+    }
+
+    private fun facRawText(key: String, raw: Double?): String {
+        if (raw == null || !raw.isFinite()) return "—"
+        return when (key) {
+            "cover", "block", "rh" -> raw.roundToInt().toString() + "%"
+            "base" -> uAlt(raw * 1000)
+            "heq", "heff" -> uDist(raw, 2)
+            "dedge" -> uDist(raw)
+            "aod" -> String.format(java.util.Locale.US, "%.2f", raw)
+            "vis" -> uDist(raw / 1000, 1)
+            "stab" -> "|ΔP/Δt| = " + String.format(java.util.Locale.US, "%.2f", raw) + " hPa/h"
+            "wind" -> uSpeed(raw)
+            "cape" -> "CAPE " + raw.roundToInt() + " J/kg"
+            else -> String.format(java.util.Locale.US, "%.2f", raw)
+        }
+    }
 
     private fun withAlpha(color: Int, alpha: Int): Int =
         (color and 0x00FFFFFF) or ((alpha and 0xFF) shl 24)
