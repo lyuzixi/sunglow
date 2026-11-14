@@ -477,9 +477,9 @@ object ComposeCard {
                         ctx.getString(R.string.ray_bright_level) to
                             ctx.getString(brightRes(r.sRT.bright.score)),
                         ctx.getString(R.string.ray_peak_t550) to
-                            String.format(java.util.Locale.US, "%.2e", pk.t550),
+                            String.format(java.util.Locale.US, "%.2e", pk.color.t550),
                         ctx.getString(R.string.ray_tau) to
-                            String.format(java.util.Locale.US, "%.1f", pk.tau550),
+                            String.format(java.util.Locale.US, "%.1f", pk.color.tau550),
                         ctx.getString(R.string.ray_peak_color) to
                             (ctx.getString(colorRes(pk.color.nameKey)) + " · " +
                                 ctx.getString(R.string.label_sat) + " " +
