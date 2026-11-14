@@ -53,8 +53,8 @@ object ComposeCard {
 
         var h = 900f
         if (skyOn) h += 148f
-        if (windowOn) h += 96f
-        if (qrOn) h += 252f
+        if ("window" in on) h += 96f
+        if ("qr" in on) h += 252f
         h = h.coerceAtLeast(880f)
 
         val bmp = Bitmap.createBitmap(W.toInt(), h.toInt(), Bitmap.Config.ARGB_8888)
