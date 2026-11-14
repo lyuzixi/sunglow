@@ -429,10 +429,10 @@ object ComposeCard {
                     val byKey = r.factorRows.associateBy { it.key }
                     for (k in keys) {
                         val fr = byKey[k]
-                        txt(ctx.getString(facNameRes(k)), M, y + 23f, 21f, muted)
-                        txt(facRawText(k, fr?.raw), M + 300f, y + 23f, 20f, faint)
-                        val bx = M + 520f
-                        val bw = 250f
+                        txt(ctx.getString(facNameRes(k)), M, y + 23f, 20f, muted)
+                        txt(facRawText(k, fr?.raw), M + 286f, y + 23f, 19f, faint)
+                        val bx = M + 560f
+                        val bw = 210f
                         fillRound(bx, y + 10f, bw, 10f, 5f, withAlpha(faint, 0x18))
                         val s = fr?.score
                         if (s != null && s.isFinite()) {
