@@ -83,11 +83,11 @@
     <string name="compose_loading">加载中</string>
     <string name="compose_preview">结构预览</string>
     <string name="compose_preview_hint">示意版式，非最终像素</string>
-    <string name="compose_note">基础、数据与四组影响因素已用像素版导出；光追模块在 R3-5 起接入；选择与顺序仅保留在本次会话。</string>
+    <string name="compose_note">14 个模块均已像素化，沿用同一份取数；选择与顺序仅保留在本次会话。</string>
     <string name="compose_window_note">日出日落前后，太阳高度与方位共同决定</string>
     <string name="compose_preview_pixel">像素预览</string>
     <string name="compose_export">导出合成卡</string>
-    <string name="compose_export_blocked">本批支持基础、数据与影响因素模块</string>
+    <string name="compose_export_blocked">14 个模块全部可导出</string>
     <string name="compose_unsupported">含未接入模块，仅结构预览</string>
     <string name="share_make_card">生成分享图卡</string>
     <string name="share_system">系统分享</string>

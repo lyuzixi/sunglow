@@ -79,11 +79,11 @@
     <string name="compose_loading">Loading</string>
     <string name="compose_preview">Structure preview</string>
     <string name="compose_preview_hint">Schematic layout, not final pixels</string>
-    <string name="compose_note">Base, data and four factor groups export at pixel size; ray modules land from R3-5. Choices and order last for this session only.</string>
+    <string name="compose_note">All 14 modules render at pixel size from the same fetch. Choices and order last for this session only.</string>
     <string name="compose_window_note">Set by sun altitude and azimuth around sunrise or sunset</string>
     <string name="compose_preview_pixel">Pixel preview</string>
     <string name="compose_export">Export compose card</string>
-    <string name="compose_export_blocked">This batch supports base, data and factor modules</string>
+    <string name="compose_export_blocked">All 14 modules can be exported</string>
     <string name="compose_unsupported">Includes modules not wired yet; structure preview only</string>
     <string name="share_make_card">Create share card</string>
     <string name="share_system">Share text</string>
