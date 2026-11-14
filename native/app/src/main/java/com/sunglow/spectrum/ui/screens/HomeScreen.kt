@@ -1513,7 +1513,9 @@ private fun ShareSheet(
                     safeShare {
                         ShareCard.shareBitmap(
                             context,
-                            ComposeCard.render(context, result, view, colors.isDark, mods),
+                            ComposeCard.render(
+                                context, result, view, colors.isDark, mods, state.trend, state.heat
+                            ),
                             "sunglow-compose-" + result.dateStr + "-" +
                                 result.period.name.lowercase() + ".png",
                             shareBodyOf(result, view)
@@ -1756,8 +1758,8 @@ private fun ComposePanel(
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
     val previewBmp = if (canPixel) {
-        remember(result, view.p, view.q, view.grade, effective, dark) {
-            ComposeCard.render(context, result, view, dark, effective)
+        remember(result, view.p, view.q, view.grade, effective, dark, state.trend, state.heat) {
+            ComposeCard.render(context, result, view, dark, effective, state.trend, state.heat)
         }
     } else {
         null
@@ -2040,8 +2042,10 @@ private fun ComposePanel(
     ) {
         Text(
             text = stringResource(if (canPixel) R.string.compose_export else R.string.compose_export_blocked),
-            style = MaterialTheme.typography.labelLarge.copy(fontSize = 13.sp),
-            color = if (canPixel) Color(0xFF06101C) else colors.faint
+            style = MaterialTheme.typography.labelLarge.copy(fontSize = 13.sp, lineHeight = 17.sp),
+            color = if (canPixel) Color(0xFF06101C) else colors.faint,
+            textAlign = TextAlign.Center,
+            maxLines = 2
         )
     }
     Spacer(Modifier.height(10.dp))

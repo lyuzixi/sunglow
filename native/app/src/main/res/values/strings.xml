@@ -83,11 +83,11 @@
     <string name="compose_loading">加载中</string>
     <string name="compose_preview">结构预览</string>
     <string name="compose_preview_hint">示意版式，非最终像素</string>
-    <string name="compose_note">基础模块已用像素版导出；趋势、因素与光追模块在 R3-3 起接入；选择与顺序仅保留在本次会话。</string>
+    <string name="compose_note">基础与数据模块已用像素版导出；因素与光追模块在 R3-4 起接入；选择与顺序仅保留在本次会话。</string>
     <string name="compose_window_note">日出日落前后，太阳高度与方位共同决定</string>
     <string name="compose_preview_pixel">像素预览</string>
     <string name="compose_export">导出合成卡</string>
-    <string name="compose_export_blocked">本批仅支持 天色带 / 最佳窗口 / 二维码</string>
+    <string name="compose_export_blocked">本批支持 天色带 / 最佳窗口 / 二维码 / 趋势 / 观测场 / 模型卡</string>
     <string name="compose_unsupported">含未接入模块，仅结构预览</string>
     <string name="share_make_card">生成分享图卡</string>
     <string name="share_system">系统分享</string>
