@@ -161,7 +161,7 @@ object ShareCard {
         val cityTop = 424f
         txt(r.city.name, 64f, cityTop, 58f, ink, sansBold)
         val periodWord = if (r.period == com.sunglow.spectrum.core.Period.AM) ctx.getString(R.string.widget_am) else ctx.getString(R.string.widget_pm)
-        val dateLine = r.dateStr + " · " + periodWord + " · " + r.evName + " " + fmtClock(r.evMs, r.tz)
+        val dateLine = r.dateStr + " · " + periodWord + " · " + eventName(ctx, r.period) + " " + fmtClock(r.evMs, r.tz)
         txt(dateLine, 64f, cityTop + 40f, 30f, muted)
 
         if (view.single) {
@@ -496,7 +496,7 @@ object ShareCard {
         txt(r.city.name, 72f, 916f, 76f, ink, sansBold)
         val periodWord = if (r.period == com.sunglow.spectrum.core.Period.AM) ctx.getString(R.string.widget_am) else ctx.getString(R.string.widget_pm)
         txt(
-            r.dateStr + " · " + periodWord + " · " + r.evName + " " + fmtClock(r.evMs, r.tz),
+            r.dateStr + " · " + periodWord + " · " + eventName(ctx, r.period) + " " + fmtClock(r.evMs, r.tz),
             72f, 972f, 34f, muted
         )
 

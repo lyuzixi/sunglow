@@ -198,7 +198,7 @@ object ComposeCard {
         } else {
             ctx.getString(R.string.widget_pm)
         }
-        txt(r.dateStr + " · " + periodWord + " · " + r.evName + " " + fmtClock(r.evMs, r.tz), M, y, 28f, muted)
+        txt(r.dateStr + " · " + periodWord + " · " + eventName(ctx, r.period) + " " + fmtClock(r.evMs, r.tz), M, y, 28f, muted)
 
         /* 结论层 */
         y += 72f
