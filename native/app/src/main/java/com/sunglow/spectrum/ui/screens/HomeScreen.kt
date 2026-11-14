@@ -126,6 +126,7 @@ import com.sunglow.spectrum.ui.motion.open
 import com.sunglow.spectrum.ui.motion.pressScale
 import com.sunglow.spectrum.ui.motion.rememberMotionEnabled
 import com.sunglow.spectrum.ui.motion.tap
+import com.sunglow.spectrum.ui.share.ComposeCard
 import com.sunglow.spectrum.ui.share.ShareCard
 import com.sunglow.spectrum.ui.theme.DuskAstro
 import com.sunglow.spectrum.ui.theme.DuskCivil
@@ -1500,7 +1501,25 @@ private fun ShareSheet(
         Spacer(Modifier.height(12.dp))
 
         if (composeMode) {
-            ComposePanel(result = result, caption = caption, state = state, onLoadHeat = onLoadHeat)
+            ComposePanel(
+                result = result,
+                view = view,
+                caption = caption,
+                state = state,
+                onLoadHeat = onLoadHeat,
+                dark = colors.isDark,
+                onExport = { mods ->
+                    safeShare {
+                        ShareCard.shareBitmap(
+                            context,
+                            ComposeCard.render(context, result, view, colors.isDark, mods),
+                            "sunglow-compose-" + result.dateStr + "-" +
+                                result.period.name.lowercase() + ".png",
+                            shareBodyOf(result, view)
+                        )
+                    }
+                }
+            )
         } else {
         Spacer(Modifier.height(14.dp))
 
@@ -1714,9 +1733,12 @@ private val COMPOSE_DEFAULT_ON = setOf("sky", "qr")
 @Composable
 private fun ComposePanel(
     result: ForecastResult,
+    view: VerdictView,
     caption: String,
     state: com.sunglow.spectrum.ui.HomeUiState,
-    onLoadHeat: () -> Unit
+    onLoadHeat: () -> Unit,
+    dark: Boolean,
+    onExport: (List<String>) -> Unit
 ) {
     val colors = SunglowTheme.colors
     var on by remember(result) { mutableStateOf(COMPOSE_DEFAULT_ON) }
@@ -1729,6 +1751,16 @@ private fun ComposePanel(
     }
 
     val effective = order.filter { it in on && available(it) }
+    val canPixel = ComposeCard.canRender(effective)
+    val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
+    val previewBmp = if (canPixel) {
+        remember(result, view.p, view.q, view.grade, effective, dark) {
+            ComposeCard.render(context, result, view, dark, effective)
+        }
+    } else {
+        null
+    }
 
     fun move(id: String, delta: Int) {
         val idx = order.indexOf(id)
@@ -1877,95 +1909,141 @@ private fun ComposePanel(
     }
 
     Spacer(Modifier.height(14.dp))
-    Text(
-        text = stringResource(R.string.compose_preview),
-        style = MaterialTheme.typography.labelSmall,
-        color = colors.faint
-    )
-    Spacer(Modifier.height(6.dp))
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(colors.bg2)
-            .border(1.dp, colors.rule, RoundedCornerShape(14.dp))
-            .padding(10.dp)
-    ) {
-        if ("sky" in effective) {
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(12.dp)
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(Brush.horizontalGradient(colors.spectrum))
-            )
-            Spacer(Modifier.height(8.dp))
-        }
-        Box(
+    if (previewBmp != null) {
+        Text(
+            text = stringResource(R.string.compose_preview_pixel),
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.faint
+        )
+        Spacer(Modifier.height(6.dp))
+        Image(
+            bitmap = previewBmp.asImageBitmap(),
+            contentDescription = stringResource(R.string.compose_title),
+            contentScale = ContentScale.FillWidth,
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(10.dp))
-                .background(colors.glassStrong)
+                .clip(RoundedCornerShape(14.dp))
+                .border(1.dp, colors.rule, RoundedCornerShape(14.dp))
+                .aspectRatio(previewBmp.width.toFloat() / previewBmp.height.toFloat())
+        )
+        Spacer(Modifier.height(5.dp))
+        Text(
+            text = stringResource(R.string.compose_preview_hint),
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+            color = colors.faint
+        )
+    } else {
+        Text(
+            text = stringResource(R.string.compose_preview),
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.faint
+        )
+        Spacer(Modifier.height(6.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(colors.bg2)
+                .border(1.dp, colors.rule, RoundedCornerShape(14.dp))
                 .padding(10.dp)
         ) {
-            Text(
-                text = caption,
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                color = colors.ink,
-                maxLines = 2,
-                lineHeight = 14.sp
-            )
-        }
-        effective.filter { it != "sky" && it != "qr" }.forEach { id ->
-            Spacer(Modifier.height(6.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(7.dp))
-                    .background(colors.glass)
-                    .padding(horizontal = 9.dp, vertical = 7.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            if ("sky" in effective) {
                 Box(
                     Modifier
-                        .size(6.dp)
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(colors.accent)
+                        .fillMaxWidth()
+                        .height(12.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Brush.horizontalGradient(colors.spectrum))
                 )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = stringResource(COMPOSE_MODULES.first { it.id == id }.nameRes),
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                    color = colors.muted
-                )
+                Spacer(Modifier.height(8.dp))
             }
-        }
-        if ("qr" in effective) {
-            Spacer(Modifier.height(8.dp))
             Box(
                 modifier = Modifier
-                    .align(Alignment.End)
-                    .size(42.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color.White)
-                    .padding(5.dp),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(colors.glassStrong)
+                    .padding(10.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.compose_mod_qr),
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 7.sp),
-                    color = Color(0xFF06101C)
+                    text = caption,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                    color = colors.ink,
+                    maxLines = 2,
+                    lineHeight = 14.sp
                 )
             }
+            effective.filter { it != "sky" && it != "qr" }.forEach { id ->
+                Spacer(Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(7.dp))
+                        .background(colors.glass)
+                        .padding(horizontal = 9.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        Modifier
+                            .size(6.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(colors.accent)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(COMPOSE_MODULES.first { it.id == id }.nameRes),
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                        color = colors.muted
+                    )
+                }
+            }
+            if ("qr" in effective) {
+                Spacer(Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .size(42.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.White)
+                        .padding(5.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.compose_mod_qr),
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 7.sp),
+                        color = Color(0xFF06101C)
+                    )
+                }
+            }
         }
+        Spacer(Modifier.height(5.dp))
+        Text(
+            text = stringResource(R.string.compose_unsupported),
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+            color = colors.faint,
+            lineHeight = 13.sp
+        )
     }
-    Spacer(Modifier.height(5.dp))
-    Text(
-        text = stringResource(R.string.compose_preview_hint),
-        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-        color = colors.faint
-    )
+
     Spacer(Modifier.height(12.dp))
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (canPixel) colors.accent else colors.glass)
+            .clickable(enabled = canPixel) {
+                haptics.confirm()
+                onExport(effective)
+            }
+            .padding(vertical = 12.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = stringResource(if (canPixel) R.string.compose_export else R.string.compose_export_blocked),
+            style = MaterialTheme.typography.labelLarge.copy(fontSize = 13.sp),
+            color = if (canPixel) Color(0xFF06101C) else colors.faint
+        )
+    }
+    Spacer(Modifier.height(10.dp))
     Text(
         text = stringResource(R.string.compose_note),
         style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
