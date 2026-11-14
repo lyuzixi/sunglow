@@ -61,6 +61,11 @@ class ComposeCardPixelTest {
     private val city = City("北京市", lon, lat, "北京市")
     private val tz = TzInfo("Asia/Shanghai", 8 * 3600, false)
 
+    @org.junit.Before
+    fun setUp() {
+        ComposeCard.testForceSans = true
+    }
+
     private fun makeSeries(evT: Long, cLow: Double, cMid: Double, cHigh: Double): Series {
         fun rows(v: Double?): List<SeriesRow> = listOf(
             SeriesRow((evT - 2 * 3600000L).toDouble(), v),
@@ -195,15 +200,16 @@ class ComposeCardPixelTest {
     }
 
     private fun footerPresent(bmp: Bitmap): Boolean {
-        val top = bmp.height - 110
-        val colors = HashSet<Int>()
+        val bg = bmp.getPixel(4, bmp.height - 4)
+        var inkPixels = 0
         val row = IntArray(bmp.width)
-        for (y in top until bmp.height step 2) {
+        for (y in bmp.height - 112 until bmp.height) {
             bmp.getPixels(row, 0, bmp.width, 0, y, bmp.width, 1)
-            for (x in 0 until bmp.width step 4) colors.add(row[x])
-            if (colors.size > 4) return true
+            for (x in 0 until bmp.width step 4) {
+                if (row[x] != bg) inkPixels++
+            }
         }
-        return colors.size > 4
+        return inkPixels > 200
     }
 
     private fun assertCommon(name: String, bmp: Bitmap, mods: List<String>) {
