@@ -65,6 +65,22 @@
     <string name="compose_mod_trend">十日趨勢</string>
     <string name="compose_mod_map">觀測場縮圖</string>
     <string name="compose_mod_models">模型卡</string>
+    <string name="compose_model_count">%1$d 張</string>
+    <string name="compose_model_ens_name">多模型綜合</string>
+    <string name="compose_model_ens_sub" formatted="false">GFS 30% + EC 34% + 光追 36%</string>
+    <string name="compose_model_gfs_name">GFS 模式</string>
+    <string name="compose_model_gfs_sub">NOAA 全球模式 · 1 小時解析度</string>
+    <string name="compose_model_ec_name">ECMWF-IFS 模式</string>
+    <string name="compose_model_ec_sub">歐洲中心全球模式</string>
+    <string name="compose_model_rt_name">光追演算法</string>
+    <string name="compose_model_rt_sub">純物理：多波長光路積分 + CIE 色度</string>
+    <string name="compose_model_missing">該日期/點位未取到 ECMWF 資料，本次綜合結果由 GFS 與光追演算法構成。</string>
+    <string name="compose_trend_best">最值得出門</string>
+    <string name="compose_trend_legend">左＝出現機率　右＝品質分　①②③＝前三名　—＝該時段無資料</string>
+    <string name="period_am_short">朝</string>
+    <string name="period_pm_short">晚</string>
+    <string name="compose_map_meta">%1$d 格點 · 半徑 %2$d km</string>
+    <string name="compose_map_note">熱力面 + 取樣點 + 城市錨點 · 與地圖同一份資料</string>
     <string name="compose_mod_fac_cloud">雲體條件</string>
     <string name="compose_mod_fac_path">光路幾何</string>
     <string name="compose_mod_fac_air">大氣通透</string>
@@ -79,7 +95,7 @@
     <string name="compose_loading">載入中</string>
     <string name="compose_preview">結構預覽</string>
     <string name="compose_preview_hint">示意版式，非最終像素</string>
-    <string name="compose_note">14 個模組均已像素化，沿用同一份取數；選擇與順序僅保留於本次工作階段。</string>
+    <string name="compose_note">14 個模組均已像素化，沿用同一份取數；選擇與順序會自動儲存。</string>
     <string name="compose_window_note">日出日落前後，太陽高度與方位共同決定</string>
     <string name="compose_preview_pixel">像素預覽</string>
     <string name="compose_export">匯出合成卡</string>

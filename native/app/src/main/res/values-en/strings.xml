@@ -65,6 +65,22 @@
     <string name="compose_mod_trend">10-day trend</string>
     <string name="compose_mod_map">Field thumb</string>
     <string name="compose_mod_models">Model card</string>
+    <string name="compose_model_count">%1$d cards</string>
+    <string name="compose_model_ens_name">Multi-model blend</string>
+    <string name="compose_model_ens_sub" formatted="false">GFS 30% + EC 34% + ray 36%</string>
+    <string name="compose_model_gfs_name">GFS model</string>
+    <string name="compose_model_gfs_sub">NOAA global · hourly</string>
+    <string name="compose_model_ec_name">ECMWF-IFS</string>
+    <string name="compose_model_ec_sub">European Centre global model</string>
+    <string name="compose_model_rt_name">Ray tracing</string>
+    <string name="compose_model_rt_sub">Physics: multi-wavelength path + CIE</string>
+    <string name="compose_model_missing">No ECMWF data for this date/site; the blend used GFS and ray tracing only.</string>
+    <string name="compose_trend_best">Best days</string>
+    <string name="compose_trend_legend">Left = probability　Right = quality　①②③ = top 3　— = no data</string>
+    <string name="period_am_short">AM</string>
+    <string name="period_pm_short">PM</string>
+    <string name="compose_map_meta">%1$d points · %2$d km radius</string>
+    <string name="compose_map_note">heat field + samples + city anchor · same data as the map</string>
     <string name="compose_mod_fac_cloud">Cloud</string>
     <string name="compose_mod_fac_path">Path</string>
     <string name="compose_mod_fac_air">Air</string>
@@ -79,7 +95,7 @@
     <string name="compose_loading">Loading</string>
     <string name="compose_preview">Structure preview</string>
     <string name="compose_preview_hint">Schematic layout, not final pixels</string>
-    <string name="compose_note">All 14 modules render at pixel size from the same fetch. Choices and order last for this session only.</string>
+    <string name="compose_note">All 14 modules render at pixel size from the same fetch. Choices and order are saved automatically.</string>
     <string name="compose_window_note">Set by sun altitude and azimuth around sunrise or sunset</string>
     <string name="compose_preview_pixel">Pixel preview</string>
     <string name="compose_export">Export compose card</string>

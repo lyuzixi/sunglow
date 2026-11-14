@@ -8,6 +8,7 @@ import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.RadialGradient
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Shader
@@ -21,7 +22,9 @@ import com.sunglow.spectrum.core.QUALITY_BANDS
 import com.sunglow.spectrum.core.VerdictView
 import com.sunglow.spectrum.core.fmtClock
 import com.sunglow.spectrum.core.glowWindow
+import com.sunglow.spectrum.core.gradeOf
 import com.sunglow.spectrum.core.judgmentOf
+import com.sunglow.spectrum.core.mixedIndex
 import com.sunglow.spectrum.core.skyBandOf
 import com.sunglow.spectrum.core.uAlt
 import com.sunglow.spectrum.core.uDist
@@ -30,7 +33,9 @@ import com.sunglow.spectrum.ui.TrendRow
 import com.sunglow.spectrum.ui.i18n.gradeText
 import com.sunglow.spectrum.ui.theme.DarkTokens
 import com.sunglow.spectrum.ui.theme.LightTokens
+import kotlin.math.cos
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 /*
@@ -57,9 +62,9 @@ object ComposeCard {
         if ("sky" in on) h += 148f
         if ("window" in on) h += 140f
         if ("qr" in on) h += 252f
-        if ("trend" in on) h += 180f
-        if ("map" in on) h += 490f
-        if ("models" in on) h += 150f
+        if ("trend" in on) h += 250f
+        if ("map" in on) h += 300f
+        if ("models" in on) h += 300f
         if ("facCloud" in on) h += 160f
         if ("facPath" in on) h += 160f
         if ("facAir" in on) h += 160f
@@ -125,6 +130,21 @@ object ComposeCard {
             paint.isAntiAlias = true
             paint.color = color
             cv.drawRoundRect(RectF(x, y, x + w, y + hh), rad, rad, paint)
+        }
+
+        fun measure(s: String, size: Float, tf: Typeface? = sansBold): Float {
+            paint.reset()
+            paint.typeface = tf
+            paint.textSize = size
+            return paint.measureText(s)
+        }
+
+        fun fit(s: String, size: Float, tf: Typeface?, maxW: Float): String {
+            paint.reset()
+            paint.typeface = tf
+            paint.textSize = size
+            val n = paint.breakText(s, true, maxW, null)
+            return if (n >= s.length) s else s.substring(0, n).trimEnd() + "…"
         }
 
         fun wrap(s: String, x: Float, y: Float, size: Float, color: Int, maxW: Float, lh: Float): Float {
@@ -325,68 +345,232 @@ object ComposeCard {
                 }
                 "trend" -> {
                     txt(ctx.getString(R.string.compose_mod_trend), M, y, 25f, faint)
-                    y += 26f
-                    val chartH = 96f
-                    val baseY = y + chartH
-                    val n = trend.size.coerceAtMost(10)
-                    if (n == 0) {
-                        fillRound(M, y, W - 2 * M, chartH, 10f, withAlpha(faint, 0x12))
+                    y += 34f
+                    val days = trend.take(10)
+                    if (days.isEmpty()) {
+                        fillRound(M, y, W - 2 * M, 96f, 10f, withAlpha(faint, 0x12))
                         txt(ctx.getString(R.string.compose_unavailable), M + 16f, y + 54f, 22f, faint)
+                        y += 120f
                     } else {
-                        val colW = (W - 2 * M) / n
-                        paint.reset()
-                        paint.color = rule
-                        cv.drawRect(M, baseY, W - M, baseY + 1.2f, paint)
-                        for (k in 0 until n) {
-                            val row = trend[k]
-                            val x = M + k * colW
-                            fun bar(cell: com.sunglow.spectrum.ui.TrendCell?, offset: Float, bw: Float) {
-                                if (cell == null) return
-                                val bh = (cell.p / 100f * chartH).toFloat().coerceAtLeast(2f)
-                                val band = QUALITY_BANDS.firstOrNull { it.key == cell.grade } ?: QUALITY_BANDS.last()
-                                val gColor = Color.parseColor(if (dark) band.dark else band.color)
-                                fillRound(x + offset, baseY - bh, bw, bh, 4f, withAlpha(gColor, 0xE8))
+                        val inner = W - 2 * M
+                        val labelW = 28f
+                        val gap = 5f
+                        val n = days.size
+                        val cellW = (inner - labelW - gap * (n - 1)) / n
+                        val x0 = M + labelW
+                        val rowH = 34f
+                        val rowGap = 12f
+
+                        val all = ArrayList<Triple<String, Boolean, com.sunglow.spectrum.ui.TrendCell>>()
+                        for (d in days) {
+                            d.am?.let { all.add(Triple(d.date, true, it)) }
+                            d.pm?.let { all.add(Triple(d.date, false, it)) }
+                        }
+                        val ranked = all.sortedWith(
+                            compareByDescending<Triple<String, Boolean, com.sunglow.spectrum.ui.TrendCell>> { it.third.q }
+                                .thenByDescending { it.third.p }
+                        ).take(3)
+
+                        if (ranked.isNotEmpty()) {
+                            val best = ctx.getString(R.string.compose_trend_best)
+                            txt(best, M, y + 17f, 16f, faint)
+                            var cx = M + measure(best, 16f, sansBold) + 12f
+                            val chipH = 26f
+                            val marks = listOf("①", "②", "③")
+                            ranked.forEachIndexed { i, rk ->
+                                val period = if (rk.second) {
+                                    ctx.getString(R.string.period_am_short)
+                                } else {
+                                    ctx.getString(R.string.period_pm_short)
+                                }
+                                val label = marks[i] + " " + rk.first.takeLast(5) + " " +
+                                    weekdayShort(ctx, rk.first) + period + " · " +
+                                    rk.third.q.roundToInt() + " · " + rk.third.p.roundToInt() + "%"
+                                val tw = measure(label, 14f, sansBold) + 20f
+                                if (cx + tw > W - M) return@forEachIndexed
+                                fillRound(cx, y, tw, chipH, 13f, withAlpha(accent, if (i == 0) 0x28 else 0x12))
+                                paint.reset()
+                                paint.isAntiAlias = true
+                                paint.color = withAlpha(accent, if (i == 0) 0x88 else 0x44)
+                                paint.style = Paint.Style.STROKE
+                                paint.strokeWidth = 1.5f
+                                cv.drawRoundRect(RectF(cx, y, cx + tw, y + chipH), 13f, 13f, paint)
+                                paint.style = Paint.Style.FILL
+                                txt(
+                                    label, cx + 10f, y + 18f, 14f,
+                                    if (i == 0) accent else muted, sansBold
+                                )
+                                cx += tw + 6f
                             }
-                            bar(row.am, colW * 0.16f, colW * 0.28f)
-                            bar(row.pm, colW * 0.54f, colW * 0.28f)
+                            y += 38f
+                        }
+
+                        for (ri in 0..1) {
+                            val am = ri == 0
+                            val cy = y + ri * (rowH + rowGap)
+                            val cur = (r.period == com.sunglow.spectrum.core.Period.AM) == am
+                            if (cur) {
+                                fillRound(M, cy + rowH / 2f - 7f, 3f, 14f, 1.5f, accent)
+                            }
                             txt(
-                                row.date.takeLast(5),
-                                x + colW / 2f, baseY + 24f, 16f,
+                                ctx.getString(if (am) R.string.period_am_short else R.string.period_pm_short),
+                                M + if (cur) 7f else 0f, cy + rowH / 2f + 6f, 18f,
+                                if (cur) ink else faint, if (cur) sansBold else sans
+                            )
+
+                            days.forEachIndexed { k, d ->
+                                val cell = if (am) d.am else d.pm
+                                val x = x0 + k * (cellW + gap)
+                                if (cell == null) {
+                                    fillRound(x, cy, cellW, rowH, 6f, withAlpha(faint, 0x0E))
+                                    paint.reset()
+                                    paint.isAntiAlias = true
+                                    paint.color = withAlpha(faint, 0x55)
+                                    paint.style = Paint.Style.STROKE
+                                    paint.strokeWidth = 1f
+                                    cv.drawRoundRect(RectF(x, cy, x + cellW, cy + rowH), 6f, 6f, paint)
+                                    paint.style = Paint.Style.FILL
+                                    txt(
+                                        "—", x + cellW / 2f, cy + rowH / 2f + 5f, 15f,
+                                        faint, sans, Paint.Align.CENTER
+                                    )
+                                    return@forEachIndexed
+                                }
+
+                                val pp = (cell.p / 100.0).coerceIn(0.0, 1.0).toFloat()
+                                val from = Color.parseColor(if (dark) "#1B2436" else "#EAF6FC")
+                                val to = Color.parseColor("#2E86C1")
+                                fillRound(
+                                    x, cy, cellW, rowH, 6f,
+                                    blend(from, to, if (dark) 0.28f + 0.54f * pp else pp * 0.78f)
+                                )
+                                paint.reset()
+                                paint.isAntiAlias = true
+                                paint.color = withAlpha(ink, if (dark) 0x18 else 0x10)
+                                paint.style = Paint.Style.STROKE
+                                paint.strokeWidth = 1f
+                                cv.drawRoundRect(
+                                    RectF(x + 0.5f, cy + 0.5f, x + cellW - 0.5f, cy + rowH - 0.5f),
+                                    5.5f, 5.5f, paint
+                                )
+                                paint.style = Paint.Style.FILL
+
+                                txt(
+                                    cell.p.roundToInt().toString() + "%",
+                                    x + 6f, cy + rowH / 2f + 5f, 14f, ink, sansBold
+                                )
+                                val band = QUALITY_BANDS.firstOrNull { it.key == cell.grade }
+                                    ?: QUALITY_BANDS.last()
+                                val gc = Color.parseColor(if (dark) band.dark else band.color)
+                                txt(
+                                    cell.q.roundToInt().toString(),
+                                    x + cellW - 6f, cy + rowH / 2f + 5f, 13f,
+                                    gc, sansBold, Paint.Align.RIGHT
+                                )
+
+                                val rk = ranked.indexOfFirst { it.first == d.date && it.second == am }
+                                if (rk >= 0) {
+                                    paint.reset()
+                                    paint.isAntiAlias = true
+                                    paint.color = withAlpha(accent, 0xCC)
+                                    cv.drawCircle(x + cellW / 2f, cy, 7.5f, paint)
+                                    txt(
+                                        (rk + 1).toString(),
+                                        x + cellW / 2f, cy + 3.6f, 13f,
+                                        Color.WHITE, sansBold, Paint.Align.CENTER
+                                    )
+                                }
+                            }
+                        }
+                        y += rowH * 2 + rowGap
+
+                        days.forEachIndexed { k, d ->
+                            val cx = x0 + k * (cellW + gap) + cellW / 2f
+                            txt(
+                                d.date.takeLast(5), cx, y + 16f, 14f,
+                                muted, sans, Paint.Align.CENTER
+                            )
+                            txt(
+                                weekdayShort(ctx, d.date), cx, y + 30f, 12f,
                                 faint, sans, Paint.Align.CENTER
                             )
                         }
+                        y += 44f
+                        txt(
+                            ctx.getString(R.string.compose_trend_legend),
+                            M, y + 12f, 13f, faint
+                        )
+                        y += 34f
                     }
-                    y += chartH + 40f
                 }
                 "map" -> {
                     txt(ctx.getString(R.string.compose_mod_map), M, y, 25f, faint)
-                    y += 26f
-                    val mw = 720f
-                    val mh = 405f
-                    val mx = (W - mw) / 2f
+                    val count = heat?.cells?.size ?: 0
+                    txt(
+                        ctx.getString(R.string.compose_map_meta, count, 500),
+                        W - M, y, 18f, faint, sans, Paint.Align.RIGHT
+                    )
+                    y += 34f
+                    val fw = W - 2 * M
+                    val fh = 210f
                     if (heat == null) {
-                        fillRound(mx, y, mw, mh, 12f, withAlpha(faint, 0x12))
-                        txt(ctx.getString(R.string.compose_unavailable), mx + 24f, y + mh / 2f, 24f, faint)
+                        fillRound(M, y, fw, fh, 12f, withAlpha(faint, 0x12))
+                        txt(ctx.getString(R.string.compose_unavailable), M + 24f, y + fh / 2f, 24f, faint)
                     } else {
-                        fillRound(mx, y, mw, mh, 12f, Color.parseColor(if (dark) "#0D1424" else "#F2F5FB"))
-                        val cw = mw / heat.n
-                        val ch = mh / heat.n
-                        for (i in 0 until heat.n) {
-                            for (j in 0 until heat.n) {
-                                val cell = heat.cellAt(i, j) ?: continue
-                                val band = QUALITY_BANDS.firstOrNull { it.key == cell.grade } ?: QUALITY_BANDS.last()
-                                val gColor = Color.parseColor(if (dark) band.dark else band.color)
-                                paint.reset()
-                                paint.color = withAlpha(gColor, 0xD8)
-                                cv.drawRect(mx + j * cw, y + i * ch, mx + (j + 1) * cw, y + (i + 1) * ch, paint)
-                            }
+                        fillRound(M, y, fw, fh, 12f, Color.parseColor(if (dark) "#0D1424" else "#F2F5FB"))
+                        val cx = M + fw / 2f
+                        val cy = y + fh / 2f
+                        val radius = min(fw, fh) / 2f - 10f
+                        val blobR = max(14f, radius / 6.25f)
+                        val centerLat = heat.lat0 - (heat.n - 1) / 2.0 * heat.dLat
+                        val centerLon = heat.lon0 + (heat.n - 1) / 2.0 * heat.dLon
+                        cv.save()
+                        val clip = Path().apply {
+                            addRoundRect(RectF(M + 1f, y + 1f, M + fw - 1f, y + fh - 1f), 11f, 11f, Path.Direction.CW)
+                        }
+                        cv.clipPath(clip)
+                        for (cell in heat.cells) {
+                            val dx = (cell.lon - centerLon) * 111.0 * cos(Math.toRadians(centerLat))
+                            val dy = (cell.lat - centerLat) * 111.0
+                            val px = cx + (dx / 500.0) * radius
+                            val py = cy - (dy / 500.0) * radius
+                            val band = QUALITY_BANDS.firstOrNull { it.key == cell.grade } ?: QUALITY_BANDS.last()
+                            val gColor = Color.parseColor(if (dark) band.dark else band.color)
+                            val alpha = (0.18 + 0.44 * (cell.p / 100.0).coerceIn(0.0, 1.0)) * 255
+                            paint.reset()
+                            paint.isAntiAlias = true
+                            paint.shader = RadialGradient(
+                                px.toFloat(), py.toFloat(), 0f,
+                                px.toFloat(), py.toFloat(), blobR,
+                                withAlpha(gColor, alpha.roundToInt()),
+                                withAlpha(gColor, 0),
+                                Shader.TileMode.CLAMP
+                            )
+                            cv.drawCircle(px.toFloat(), py.toFloat(), blobR, paint)
+                            paint.shader = null
+                        }
+                        for (cell in heat.cells) {
+                            val dx = (cell.lon - centerLon) * 111.0 * cos(Math.toRadians(centerLat))
+                            val dy = (cell.lat - centerLat) * 111.0
+                            val px = cx + (dx / 500.0) * radius
+                            val py = cy - (dy / 500.0) * radius
+                            paint.reset()
+                            paint.isAntiAlias = true
+                            paint.color = withAlpha(ink, 0x28)
+                            cv.drawCircle(px.toFloat(), py.toFloat(), 2.6f, paint)
+                            paint.color = withAlpha(Color.WHITE, 0xE8)
+                            cv.drawCircle(px.toFloat(), py.toFloat(), 1.2f, paint)
                         }
                         paint.reset()
                         paint.isAntiAlias = true
-                        paint.color = withAlpha(Color.WHITE, 0xEE)
-                        cv.drawCircle(mx + mw / 2f, y + mh / 2f, 6f, paint)
-                        paint.color = withAlpha(ink, 0xCC)
-                        cv.drawCircle(mx + mw / 2f, y + mh / 2f, 3f, paint)
+                        paint.color = Color.parseColor(if (dark) "#0D1526" else "#FFFFFF")
+                        cv.drawCircle(cx, cy, 6.5f, paint)
+                        paint.style = Paint.Style.STROKE
+                        paint.strokeWidth = 2f
+                        paint.color = accent
+                        cv.drawCircle(cx, cy, 6.5f, paint)
+                        paint.style = Paint.Style.FILL
+                        cv.restore()
                     }
                     val periodWord = if (r.period == com.sunglow.spectrum.core.Period.AM) {
                         ctx.getString(R.string.widget_am)
@@ -394,33 +578,95 @@ object ComposeCard {
                         ctx.getString(R.string.widget_pm)
                     }
                     txt(
-                        ctx.getString(
-                            R.string.share_heat_span,
-                            if (heat != null) heat.spanKm().roundToInt().toString() else "—",
-                            periodWord + " " + fmtClock(r.evMs, r.tz)
-                        ),
-                        mx, y + mh + 24f, 19f, faint
+                        periodWord + " " + fmtClock(r.evMs, r.tz) + " · " +
+                            ctx.getString(R.string.compose_map_note),
+                        M, y + fh + 26f, 18f, faint
                     )
-                    y += mh + 52f
+                    y += fh + 52f
                 }
                 "models" -> {
                     txt(ctx.getString(R.string.compose_mod_models), M, y, 25f, faint)
-                    y += 34f
-                    val labelW = 190f
-                    val barX = M + labelW
-                    val barW = W - M - 90f - barX
-                    for (m in r.models.take(3)) {
-                        txt(m.label, M, y + 18f, 22f, muted)
-                        fillRound(barX, y + 4f, barW, 14f, 7f, withAlpha(faint, 0x18))
-                        val bw = (barW * (m.p / 100.0).coerceIn(0.0, 1.0)).toFloat()
-                        fillRound(barX, y + 4f, bw.coerceAtLeast(3f), 14f, 7f, accent)
+                    txt(
+                        ctx.getString(R.string.compose_model_count, 4),
+                        W - M, y, 18f, faint, sans, Paint.Align.RIGHT
+                    )
+                    y += 30f
+                    val byId = r.models.associateBy { it.id }
+                    val cards = listOf(
+                        ModelCardData(
+                            "ens",
+                            ctx.getString(R.string.compose_model_ens_name),
+                            ctx.getString(R.string.compose_model_ens_sub),
+                            view.p, view.q, false
+                        ),
+                        modelCardOf(ctx, "gfs", byId["gfs"]),
+                        modelCardOf(ctx, "ec", byId["ec"]),
+                        modelCardOf(ctx, "rt", byId["rt"])
+                    )
+                    val cw = (W - 2 * M - 12f) / 2f
+                    val ch = 118f
+                    for (i in 0 until 4) {
+                        val x = M + (i % 2) * (cw + 12f)
+                        val cy = y + (i / 2) * (ch + 12f)
+                        val cd = cards[i]
+                        fillRound(x, cy, cw, ch, 12f, withAlpha(ink, if (dark) 0x10 else 0x08))
+                        paint.reset()
+                        paint.isAntiAlias = true
+                        paint.color = withAlpha(ink, 0x12)
+                        paint.style = Paint.Style.STROKE
+                        paint.strokeWidth = 1f
+                        cv.drawRoundRect(RectF(x, cy, x + cw, cy + ch), 12f, 12f, paint)
+                        paint.style = Paint.Style.FILL
+
+                        paint.reset()
+                        paint.isAntiAlias = true
+                        paint.color = modelDot(cd.id)
+                        cv.drawCircle(x + 17f, cy + 21f, 3.5f, paint)
                         txt(
-                            m.p.roundToInt().toString() + "%",
-                            W - M, y + 18f, 20f, ink, sans, Paint.Align.RIGHT
+                            fit(cd.name, 22f, sansBold, cw - 150f),
+                            x + 27f, cy + 26f, 22f, ink, sansBold
                         )
-                        y += 30f
+                        txt(
+                            fit(cd.sub, 13f, sans, 150f),
+                            x + cw - 14f, cy + 24f, 13f, faint, sans, Paint.Align.RIGHT
+                        )
+
+                        if (cd.missing) {
+                            wrap(
+                                ctx.getString(R.string.compose_model_missing),
+                                x + 15f, cy + 50f, 15f, faint, cw - 30f, 19f
+                            )
+                        } else {
+                            txt(
+                                cd.p.roundToInt().toString() + "%",
+                                x + 15f, cy + 68f, 40f, ink, sansBold
+                            )
+                            val grade = gradeOf(cd.q)
+                            val gt = gradeText(ctx, grade)
+                            val gw = measure(gt, 13f, sansBold) + 18f
+                            fillRound(
+                                x + cw - 14f - gw, cy + 40f, gw, 22f, 11f,
+                                withAlpha(gradeColor(grade, dark), if (dark) 0x2E else 0x1E)
+                            )
+                            txt(
+                                gt, x + cw - 14f - gw / 2f, cy + 55f, 13f,
+                                gradeColor(grade, dark), sansBold, Paint.Align.CENTER
+                            )
+
+                            fillRound(x + 15f, cy + 80f, cw - 30f, 5f, 2.5f, withAlpha(ink, 0x14))
+                            val bw = ((cw - 30f) * (cd.p / 100.0).coerceIn(0.0, 1.0)).toFloat()
+                            fillRound(
+                                x + 15f, cy + 80f, bw.coerceAtLeast(2f), 5f, 2.5f,
+                                modelDot(cd.id)
+                            )
+                            txt(
+                                "Q " + cd.q.roundToInt() + " · I " +
+                                    mixedIndex(cd.p, cd.q).roundToInt(),
+                                x + 15f, cy + 105f, 14f, faint
+                            )
+                        }
                     }
-                    y += 16f
+                    y += 2 * ch + 12f + 22f
                 }
                 "facCloud", "facPath", "facAir", "facDyn" -> {
                     val keys = when (id) {
@@ -693,6 +939,79 @@ object ComposeCard {
         val m = total / 60
         val s = total % 60
         return if (m > 0) m.toString() + "′" + s.toString() + "″" else s.toString() + "″"
+    }
+
+    private data class ModelCardData(
+        val id: String,
+        val name: String,
+        val sub: String,
+        val p: Double,
+        val q: Double,
+        val missing: Boolean
+    )
+
+    private fun modelCardOf(
+        ctx: Context,
+        id: String,
+        row: com.sunglow.spectrum.core.ModelRow?
+    ): ModelCardData {
+        val nameRes = when (id) {
+            "gfs" -> R.string.compose_model_gfs_name
+            "ec" -> R.string.compose_model_ec_name
+            else -> R.string.compose_model_rt_name
+        }
+        val subRes = when (id) {
+            "gfs" -> R.string.compose_model_gfs_sub
+            "ec" -> R.string.compose_model_ec_sub
+            else -> R.string.compose_model_rt_sub
+        }
+        val name = ctx.getString(nameRes)
+        val sub = ctx.getString(subRes)
+        if (row == null || !row.p.isFinite() || !row.q.isFinite()) {
+            return ModelCardData(id, name, sub, Double.NaN, Double.NaN, true)
+        }
+        return ModelCardData(id, name, sub, row.p, row.q, false)
+    }
+
+    private fun modelDot(id: String): Int = Color.parseColor(
+        when (id) {
+            "ens" -> "#BA7517"
+            "gfs" -> "#378ADD"
+            "ec" -> "#1D9E75"
+            else -> "#D85A30"
+        }
+    )
+
+    private fun gradeColor(grade: String, dark: Boolean): Int {
+        val band = QUALITY_BANDS.firstOrNull { it.key == grade } ?: QUALITY_BANDS.last()
+        return Color.parseColor(if (dark) band.dark else band.color)
+    }
+
+    private fun weekdayShort(ctx: Context, date: String): String {
+        val res = try {
+            when (java.time.LocalDate.parse(date).dayOfWeek.value) {
+                1 -> R.string.trend_week_mon
+                2 -> R.string.trend_week_tue
+                3 -> R.string.trend_week_wed
+                4 -> R.string.trend_week_thu
+                5 -> R.string.trend_week_fri
+                6 -> R.string.trend_week_sat
+                else -> R.string.trend_week_sun
+            }
+        } catch (_: Exception) {
+            return ""
+        }
+        return ctx.getString(res)
+    }
+
+    private fun blend(from: Int, to: Int, t: Float): Int {
+        val k = t.coerceIn(0f, 1f)
+        val inv = 1f - k
+        return Color.rgb(
+            (Color.red(from) * inv + Color.red(to) * k).roundToInt(),
+            (Color.green(from) * inv + Color.green(to) * k).roundToInt(),
+            (Color.blue(from) * inv + Color.blue(to) * k).roundToInt()
+        )
     }
 
     private fun facRawText(key: String, raw: Double?): String {

@@ -1733,6 +1733,34 @@ private val COMPOSE_MODULES = listOf(
 
 private val COMPOSE_DEFAULT_ON = setOf("sky", "qr")
 
+private const val COMPOSE_PREFS = "compose_ui"
+private const val COMPOSE_PREF_ON = "on"
+private const val COMPOSE_PREF_ORDER = "order"
+
+/** 只存 id，不存模块对象；读回时过滤未知 id、补齐缺失项，并强制 sky 在第一位。 */
+internal object ComposePrefs {
+    fun load(ctx: Context): Pair<Set<String>, List<String>> {
+        val p = ctx.getSharedPreferences(COMPOSE_PREFS, Context.MODE_PRIVATE)
+        val ids = COMPOSE_MODULES.map { it.id }
+        val saved = p.getStringSet(COMPOSE_PREF_ON, null)
+        val on = (saved?.filter { it in ids }?.toSet() ?: COMPOSE_DEFAULT_ON)
+            .let { if ("sky" in it) it else it + "sky" }
+        val savedOrder = p.getString(COMPOSE_PREF_ORDER, "").orEmpty()
+            .split("|").filter { it in ids }
+        val order = mutableListOf("sky")
+        savedOrder.filter { it != "sky" }.distinct().forEach { if (it !in order) order.add(it) }
+        ids.filter { it !in order }.forEach { order.add(it) }
+        return on to order
+    }
+
+    fun save(ctx: Context, on: Set<String>, order: List<String>) {
+        ctx.getSharedPreferences(COMPOSE_PREFS, Context.MODE_PRIVATE).edit()
+            .putStringSet(COMPOSE_PREF_ON, on)
+            .putString(COMPOSE_PREF_ORDER, order.joinToString("|"))
+            .apply()
+    }
+}
+
 @Composable
 private fun ComposePanel(
     result: ForecastResult,
@@ -1744,8 +1772,10 @@ private fun ComposePanel(
     onExport: (List<String>) -> Unit
 ) {
     val colors = SunglowTheme.colors
-    var on by remember(result) { mutableStateOf(COMPOSE_DEFAULT_ON) }
-    var order by remember(result) { mutableStateOf(COMPOSE_MODULES.map { it.id }) }
+    val context = LocalContext.current
+    val saved = remember { ComposePrefs.load(context) }
+    var on by remember { mutableStateOf(saved.first) }
+    var order by remember { mutableStateOf(saved.second) }
 
     fun available(id: String): Boolean = when (id) {
         "trend" -> state.trend.isNotEmpty()
@@ -1755,7 +1785,6 @@ private fun ComposePanel(
 
     val effective = order.filter { it in on && available(it) }
     val canPixel = ComposeCard.canRender(effective)
-    val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
     val previewBmp = if (canPixel) {
         remember(result, view.p, view.q, view.grade, effective, dark, state.trend, state.heat) {
@@ -1776,6 +1805,7 @@ private fun ComposePanel(
         list[idx] = list[target]
         list[target] = tmp
         order = list
+        ComposePrefs.save(context, on, list)
     }
 
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1799,8 +1829,11 @@ private fun ComposePanel(
                 .clip(RoundedCornerShape(999.dp))
                 .border(1.dp, colors.ruleStrong, RoundedCornerShape(999.dp))
                 .clickable {
-                    on = COMPOSE_DEFAULT_ON
-                    order = COMPOSE_MODULES.map { it.id }
+                    val next = COMPOSE_DEFAULT_ON
+                    val reset = COMPOSE_MODULES.map { it.id }
+                    on = next
+                    order = reset
+                    ComposePrefs.save(context, next, reset)
                 }
                 .padding(horizontal = 8.dp, vertical = 4.dp)
         )
@@ -1830,7 +1863,9 @@ private fun ComposePanel(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(8.dp))
                     .clickable(enabled = avail) {
-                        on = if (mod.id in on) on - mod.id else on + mod.id
+                        val next = if (mod.id in on) on - mod.id else on + mod.id
+                        on = next
+                        ComposePrefs.save(context, next, order)
                     }
                     .padding(vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
