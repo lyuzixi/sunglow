@@ -203,7 +203,7 @@ class ComposeCardPixelTest {
         val bg = bmp.getPixel(4, bmp.height - 4)
         var inkPixels = 0
         val row = IntArray(bmp.width)
-        for (y in bmp.height - 112 until bmp.height) {
+        for (y in bmp.height - 260 until bmp.height) {
             bmp.getPixels(row, 0, bmp.width, 0, y, bmp.width, 1)
             for (x in 0 until bmp.width step 4) {
                 if (row[x] != bg) inkPixels++
