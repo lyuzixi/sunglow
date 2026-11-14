@@ -43,7 +43,8 @@ object ComposeCard {
 
     const val W = 1080f
     private const val M = 64f
-    private const val BASE_IDS = "sky,window,qr,trend,map,models,facCloud,facPath,facAir,facDyn"
+    private const val BASE_IDS =
+        "sky,window,qr,trend,map,models,facCloud,facPath,facAir,facDyn,rayRows,raySwatch,rayTime,rayCurve"
 
     fun canRender(mods: List<String>): Boolean = mods.all { it in BASE_IDS.split(",") }
 
@@ -70,6 +71,10 @@ object ComposeCard {
         if ("facPath" in on) h += 160f
         if ("facAir" in on) h += 160f
         if ("facDyn" in on) h += 160f
+        if ("rayRows" in on) h += 210f
+        if ("raySwatch" in on) h += 130f
+        if ("rayTime" in on) h += 120f
+        if ("rayCurve" in on) h += 180f
         h = h.coerceAtLeast(880f)
 
         val bmp = Bitmap.createBitmap(W.toInt(), h.toInt(), Bitmap.Config.ARGB_8888)
@@ -459,6 +464,156 @@ object ComposeCard {
                     }
                     y += 10f
                 }
+                "rayRows" -> {
+                    val g = r.sRT.geom
+                    val pk = r.sRT.peak
+                    txt(ctx.getString(R.string.compose_mod_ray_rows), M, y, 25f, faint)
+                    y += 32f
+                    val inner = W - 2 * M
+                    val colW = (inner - 40f) / 2f
+                    val rows = listOf(
+                        ctx.getString(R.string.ray_geom_window) to
+                            (g.dur.roundToInt().toString() + " min"),
+                        ctx.getString(R.string.ray_bright_level) to
+                            ctx.getString(brightRes(r.sRT.bright.score)),
+                        ctx.getString(R.string.ray_peak_t550) to
+                            String.format(java.util.Locale.US, "%.2e", pk.t550),
+                        ctx.getString(R.string.ray_tau) to
+                            String.format(java.util.Locale.US, "%.1f", pk.tau550),
+                        ctx.getString(R.string.ray_peak_color) to
+                            (ctx.getString(colorRes(pk.color.nameKey)) + " · " +
+                                ctx.getString(R.string.label_sat) + " " +
+                                (pk.color.sat * 100).roundToInt() + "%"),
+                        ctx.getString(R.string.ray_hue_spread) to
+                            (r.sRT.hueSpread.roundToInt().toString() + "°"),
+                        ctx.getString(R.string.ray_hs) to
+                            String.format(java.util.Locale.US, "%.2f km", r.sRT.hs),
+                        ctx.getString(R.string.ray_near) to
+                            String.format(java.util.Locale.US, "%.2f°", g.thNearDeg),
+                        ctx.getString(R.string.ray_far) to
+                            String.format(java.util.Locale.US, "%.2f°", g.thFarDeg)
+                    )
+                    rows.forEachIndexed { i, row ->
+                        val col = i % 2
+                        val cx = M + col * (colW + 40f)
+                        txt(row.first, cx, y, 18f, faint)
+                        txt(row.second, cx + colW, y, 20f, ink, sans, Paint.Align.RIGHT)
+                        if (col == 1 || i == rows.lastIndex) y += 30f
+                    }
+                    y += 16f
+                }
+                "raySwatch" -> {
+                    txt(ctx.getString(R.string.ray_spectrum), M, y, 25f, faint)
+                    y += 30f
+                    val sm = r.sRT.samples
+                    if (sm.isEmpty()) {
+                        txt(ctx.getString(R.string.compose_unavailable), M, y + 20f, 20f, faint)
+                        y += 60f
+                    } else {
+                        val gap = 8f
+                        val sw = (W - 2 * M - gap * (sm.size - 1)) / sm.size
+                        sm.forEachIndexed { i, s ->
+                            val x = M + i * (sw + gap)
+                            fillRound(x, y, sw, 44f, 7f, Color.parseColor(s.color.hex))
+                            txt(
+                                ctx.getString(colorRes(s.color.nameKey)),
+                                x + sw / 2f, y + 68f, 16f, faint, sans, Paint.Align.CENTER
+                            )
+                        }
+                        txt(ctx.getString(R.string.ray_spectrum_hint), M, y + 96f, 18f, faint)
+                        y += 112f
+                    }
+                }
+                "rayTime" -> {
+                    txt(ctx.getString(R.string.ray_timeline), M, y, 25f, faint)
+                    y += 32f
+                    val g = r.sRT.geom
+                    val om = if (r.omega > 0.01) r.omega else 0.2
+                    if (!g.ok) {
+                        txt(ctx.getString(R.string.ray_no_window), M, y + 14f, 20f, faint)
+                        y += 56f
+                    } else {
+                        val t0 = g.thNearDeg / om
+                        val t1 = g.thFarDeg / om
+                        val mx = maxOf(t1 * 1.12, 0.8)
+                        val inner = W - 2 * M
+                        fillRound(M, y + 8f, inner, 12f, 6f, withAlpha(faint, 0x18))
+                        val l = (t0 / mx).coerceIn(0.0, 1.0).toFloat() * inner
+                        val w = ((t1 - t0) / mx).coerceIn(0.0, 1.0).toFloat() * inner
+                        fillRound(M + l, y + 8f, w.coerceAtLeast(4f), 12f, 6f, accent)
+                        txt(ctx.getString(R.string.ray_start, durText(t0)), M, y + 48f, 19f, faint)
+                        txt(
+                            ctx.getString(R.string.ray_end, durText(t1)),
+                            W - M, y + 48f, 19f, faint, sans, Paint.Align.RIGHT
+                        )
+                        y += 62f
+                    }
+                }
+                "rayCurve" -> {
+                    txt(ctx.getString(R.string.ray_curve), M, y, 25f, faint)
+                    y += 30f
+                    val sm = r.sRT.samples
+                    val g = r.sRT.geom
+                    val om = if (r.omega > 0.01) r.omega else 0.2
+                    if (sm.size < 2) {
+                        txt(ctx.getString(R.string.compose_unavailable), M, y + 24f, 20f, faint)
+                        y += 60f
+                    } else {
+                        val mins = sm.mapIndexed { i, s ->
+                            if (g.ok) (g.thNearDeg + s.t * (g.thFarDeg - g.thNearDeg)) / om else i * 3.0
+                        }
+                        val maxMin = maxOf((mins.maxOrNull() ?: 1.0) * 1.06, 0.5)
+                        val maxL = sm.maxOf { it.color.lumRel }.takeIf { it > 0 } ?: 1.0
+                        val maxC = sm.maxOf { it.color.chroma }.takeIf { it > 0 } ?: 1.0
+                        val cw = W - 2 * M
+                        val ch = 90f
+                        paint.reset()
+                        paint.color = rule
+                        for (k in 0..4) {
+                            val yy = y + ch - k * ch / 4f
+                            cv.drawLine(M, yy, M + cw, yy, paint)
+                        }
+                        fun px(min: Double): Float = M + (min / maxMin).toFloat() * cw
+                        fun py(v: Double): Float = y + ch - v.coerceIn(0.0, 1.0).toFloat() * ch
+                        fun poly(get: (Double, Double) -> Double, color: Int) {
+                            paint.reset()
+                            paint.color = color
+                            paint.strokeWidth = 2.2f
+                            var lastX = 0f
+                            var lastY = 0f
+                            sm.forEachIndexed { i, s ->
+                                val xx = px(mins[i])
+                                val yy = py(get(s.color.lumRel, s.color.chroma))
+                                if (i > 0) cv.drawLine(lastX, lastY, xx, yy, paint)
+                                lastX = xx
+                                lastY = yy
+                            }
+                        }
+                        poly({ lum, _ -> lum / maxL }, accent)
+                        poly(
+                            { _, chroma -> chroma / maxC },
+                            Color.parseColor(if (dark) "#E6B36A" else "#B5721F")
+                        )
+                        sm.forEachIndexed { i, s ->
+                            paint.reset()
+                            paint.color = Color.parseColor(s.color.hex)
+                            cv.drawRect(
+                                px(mins[i]) - 1.5f, y + ch + 2f,
+                                px(mins[i]) + 1.5f, y + ch + 10f, paint
+                            )
+                        }
+                        txt(durText(0.0), M, y + ch + 28f, 17f, faint)
+                        txt(
+                            durText(maxMin / 2), M + cw / 2f, y + ch + 28f, 17f,
+                            faint, sans, Paint.Align.CENTER
+                        )
+                        txt(
+                            durText(maxMin), M + cw, y + ch + 28f, 17f,
+                            faint, sans, Paint.Align.RIGHT
+                        )
+                        y += ch + 50f
+                    }
+                }
                 else -> Unit
             }
         }
@@ -497,6 +652,37 @@ object ComposeCard {
         "stab" -> R.string.factor_name_stab
         "wind" -> R.string.factor_name_wind
         else -> R.string.factor_name_cape
+    }
+
+    private fun brightRes(score: Double): Int = when {
+        score >= 100.0 -> R.string.bright_2
+        score >= 90.0 -> R.string.bright_3
+        score >= 72.0 -> R.string.bright_1
+        score >= 58.0 -> R.string.bright_4
+        score >= 28.0 -> R.string.bright_5
+        score >= 8.0 -> R.string.bright_6
+        else -> R.string.bright_7
+    }
+
+    private fun colorRes(key: String): Int = when (key) {
+        "hazy" -> R.string.color_hazy
+        "dull" -> R.string.color_dull
+        "deepRed" -> R.string.color_deepRed
+        "red" -> R.string.color_red
+        "orangeRed" -> R.string.color_orangeRed
+        "orange" -> R.string.color_orange
+        "golden" -> R.string.color_golden
+        "paleYellow" -> R.string.color_paleYellow
+        "pinkPurple" -> R.string.color_pinkPurple
+        else -> R.string.color_yellowGreen
+    }
+
+    private fun durText(min: Double): String {
+        if (!min.isFinite() || min <= 0.0) return "0″"
+        val total = min.roundToInt().coerceAtLeast(0)
+        val m = total / 60
+        val s = total % 60
+        return if (m > 0) m.toString() + "′" + s.toString() + "″" else s.toString() + "″"
     }
 
     private fun facRawText(key: String, raw: Double?): String {
