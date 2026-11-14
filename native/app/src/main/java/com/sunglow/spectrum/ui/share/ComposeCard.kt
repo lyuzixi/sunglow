@@ -62,17 +62,17 @@ object ComposeCard {
         if ("sky" in on) h += 148f
         if ("window" in on) h += 140f
         if ("qr" in on) h += 252f
-        if ("trend" in on) h += 250f
+        if ("trend" in on) h += 260f
         if ("map" in on) h += 300f
-        if ("models" in on) h += 300f
-        if ("facCloud" in on) h += 160f
-        if ("facPath" in on) h += 160f
-        if ("facAir" in on) h += 160f
-        if ("facDyn" in on) h += 160f
-        if ("rayRows" in on) h += 210f
-        if ("raySwatch" in on) h += 145f
-        if ("rayTime" in on) h += 120f
-        if ("rayCurve" in on) h += 180f
+        if ("models" in on) h += 310f
+        if ("facCloud" in on) h += 170f
+        if ("facPath" in on) h += 170f
+        if ("facAir" in on) h += 170f
+        if ("facDyn" in on) h += 170f
+        if ("rayRows" in on) h += 220f
+        if ("raySwatch" in on) h += 155f
+        if ("rayTime" in on) h += 130f
+        if ("rayCurve" in on) h += 190f
         return h.roundToInt()
     }
 
@@ -501,6 +501,7 @@ object ComposeCard {
                             M, y + 12f, 13f, faint
                         )
                         y += 34f
+                        y += 10f
                     }
                 }
                 "map" -> {
@@ -665,7 +666,7 @@ object ComposeCard {
                             )
                         }
                     }
-                    y += 2 * ch + 12f + 22f
+                    y += 2 * ch + 12f + 32f
                 }
                 "facCloud", "facPath", "facAir", "facDyn" -> {
                     val keys = when (id) {
@@ -717,7 +718,7 @@ object ComposeCard {
                         }
                         y += 34f
                     }
-                    y += 10f
+                    y += 20f
                 }
                 "rayRows" -> {
                     val g = r.sRT.geom
@@ -755,7 +756,7 @@ object ComposeCard {
                         txt(row.second, cx + colW, y, 20f, ink, sans, Paint.Align.RIGHT)
                         if (col == 1 || i == rows.lastIndex) y += 30f
                     }
-                    y += 16f
+                    y += 26f
                 }
                 "raySwatch" -> {
                     txt(ctx.getString(R.string.ray_spectrum), M, y, 25f, faint)
@@ -776,7 +777,7 @@ object ComposeCard {
                             )
                         }
                         txt(ctx.getString(R.string.ray_spectrum_hint), M, y + 96f, 18f, faint)
-                        y += 112f
+                        y += 122f
                     }
                 }
                 "rayTime" -> {
@@ -801,7 +802,7 @@ object ComposeCard {
                             ctx.getString(R.string.ray_end, durText(t1)),
                             W - M, y + 48f, 19f, faint, sans, Paint.Align.RIGHT
                         )
-                        y += 62f
+                        y += 72f
                     }
                 }
                 "rayCurve" -> {
@@ -866,7 +867,7 @@ object ComposeCard {
                             durText(maxMin), M + cw, y + ch + 28f, 17f,
                             faint, sans, Paint.Align.RIGHT
                         )
-                        y += ch + 50f
+                        y += ch + 60f
                     }
                 }
                 else -> Unit
