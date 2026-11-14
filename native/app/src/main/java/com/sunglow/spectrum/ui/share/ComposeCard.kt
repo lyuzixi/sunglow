@@ -16,12 +16,14 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.compose.ui.graphics.toArgb
 import com.sunglow.spectrum.R
 import com.sunglow.spectrum.core.ForecastResult
+import com.sunglow.spectrum.core.HeatGrid
 import com.sunglow.spectrum.core.QUALITY_BANDS
 import com.sunglow.spectrum.core.VerdictView
 import com.sunglow.spectrum.core.conclWord
 import com.sunglow.spectrum.core.fmtClock
 import com.sunglow.spectrum.core.glowWindow
 import com.sunglow.spectrum.core.skyBandOf
+import com.sunglow.spectrum.ui.TrendRow
 import com.sunglow.spectrum.ui.i18n.gradeText
 import com.sunglow.spectrum.ui.theme.DarkTokens
 import com.sunglow.spectrum.ui.theme.LightTokens
@@ -37,7 +39,7 @@ object ComposeCard {
 
     const val W = 1080f
     private const val M = 64f
-    private const val BASE_IDS = "sky,window,qr"
+    private const val BASE_IDS = "sky,window,qr,trend,map,models"
 
     fun canRender(mods: List<String>): Boolean = mods.all { it in BASE_IDS.split(",") }
 
@@ -46,7 +48,9 @@ object ComposeCard {
         r: ForecastResult,
         view: VerdictView,
         dark: Boolean,
-        mods: List<String>
+        mods: List<String>,
+        trend: List<TrendRow> = emptyList(),
+        heat: HeatGrid? = null
     ): Bitmap {
         val on = mods.toSet()
         val skyOn = "sky" in on
@@ -55,6 +59,9 @@ object ComposeCard {
         if (skyOn) h += 148f
         if ("window" in on) h += 96f
         if ("qr" in on) h += 252f
+        if ("trend" in on) h += 180f
+        if ("map" in on) h += 490f
+        if ("models" in on) h += 150f
         h = h.coerceAtLeast(880f)
 
         val bmp = Bitmap.createBitmap(W.toInt(), h.toInt(), Bitmap.Config.ARGB_8888)
@@ -292,6 +299,105 @@ object ComposeCard {
                     }
                     txt(ctx.getString(R.string.share_scan_same_city), M + qs + 28f, y + 92f, 22f, faint)
                     y += 220f
+                }
+                "trend" -> {
+                    txt(ctx.getString(R.string.compose_mod_trend), M, y, 25f, faint)
+                    y += 26f
+                    val chartH = 96f
+                    val baseY = y + chartH
+                    val n = trend.size.coerceAtMost(10)
+                    if (n == 0) {
+                        fillRound(M, y, W - 2 * M, chartH, 10f, withAlpha(faint, 0x12))
+                        txt(ctx.getString(R.string.compose_unavailable), M + 16f, y + 54f, 22f, faint)
+                    } else {
+                        val colW = (W - 2 * M) / n
+                        paint.reset()
+                        paint.color = rule
+                        cv.drawRect(M, baseY, W - M, baseY + 1.2f, paint)
+                        for (k in 0 until n) {
+                            val row = trend[k]
+                            val x = M + k * colW
+                            fun bar(cell: com.sunglow.spectrum.ui.TrendCell?, offset: Float, bw: Float) {
+                                if (cell == null) return
+                                val bh = (cell.p / 100f * chartH).toFloat().coerceAtLeast(2f)
+                                val band = QUALITY_BANDS.firstOrNull { it.key == cell.grade } ?: QUALITY_BANDS.last()
+                                val gColor = Color.parseColor(if (dark) band.dark else band.color)
+                                fillRound(x + offset, baseY - bh, bw, bh, 4f, withAlpha(gColor, 0xE8))
+                            }
+                            bar(row.am, colW * 0.16f, colW * 0.28f)
+                            bar(row.pm, colW * 0.54f, colW * 0.28f)
+                            txt(
+                                row.date.takeLast(5),
+                                x + colW / 2f, baseY + 24f, 16f,
+                                faint, sans, Paint.Align.CENTER
+                            )
+                        }
+                    }
+                    y += chartH + 40f
+                }
+                "map" -> {
+                    txt(ctx.getString(R.string.compose_mod_map), M, y, 25f, faint)
+                    y += 26f
+                    val mw = 720f
+                    val mh = 405f
+                    val mx = (W - mw) / 2f
+                    if (heat == null) {
+                        fillRound(mx, y, mw, mh, 12f, withAlpha(faint, 0x12))
+                        txt(ctx.getString(R.string.compose_unavailable), mx + 24f, y + mh / 2f, 24f, faint)
+                    } else {
+                        fillRound(mx, y, mw, mh, 12f, Color.parseColor(if (dark) "#0D1424" else "#F2F5FB"))
+                        val cw = mw / heat.n
+                        val ch = mh / heat.n
+                        for (i in 0 until heat.n) {
+                            for (j in 0 until heat.n) {
+                                val cell = heat.cellAt(i, j) ?: continue
+                                val band = QUALITY_BANDS.firstOrNull { it.key == cell.grade } ?: QUALITY_BANDS.last()
+                                val gColor = Color.parseColor(if (dark) band.dark else band.color)
+                                paint.reset()
+                                paint.color = withAlpha(gColor, 0xD8)
+                                cv.drawRect(mx + j * cw, y + i * ch, mx + (j + 1) * cw, y + (i + 1) * ch, paint)
+                            }
+                        }
+                        paint.reset()
+                        paint.isAntiAlias = true
+                        paint.color = withAlpha(Color.WHITE, 0xEE)
+                        cv.drawCircle(mx + mw / 2f, y + mh / 2f, 6f, paint)
+                        paint.color = withAlpha(ink, 0xCC)
+                        cv.drawCircle(mx + mw / 2f, y + mh / 2f, 3f, paint)
+                    }
+                    val periodWord = if (r.period == com.sunglow.spectrum.core.Period.AM) {
+                        ctx.getString(R.string.widget_am)
+                    } else {
+                        ctx.getString(R.string.widget_pm)
+                    }
+                    txt(
+                        ctx.getString(
+                            R.string.share_heat_span,
+                            if (heat != null) heat.spanKm().roundToInt().toString() else "—",
+                            periodWord + " " + fmtClock(r.evMs, r.tz)
+                        ),
+                        mx, y + mh + 24f, 19f, faint
+                    )
+                    y += mh + 52f
+                }
+                "models" -> {
+                    txt(ctx.getString(R.string.compose_mod_models), M, y, 25f, faint)
+                    y += 34f
+                    val labelW = 190f
+                    val barX = M + labelW
+                    val barW = W - M - 90f - barX
+                    for (m in r.models.take(3)) {
+                        txt(m.label, M, y + 18f, 22f, muted)
+                        fillRound(barX, y + 4f, barW, 14f, 7f, withAlpha(faint, 0x18))
+                        val bw = (barW * (m.p / 100.0).coerceIn(0.0, 1.0)).toFloat()
+                        fillRound(barX, y + 4f, bw.coerceAtLeast(3f), 14f, 7f, accent)
+                        txt(
+                            m.p.roundToInt().toString() + "%",
+                            W - M, y + 18f, 20f, ink, sans, Paint.Align.RIGHT
+                        )
+                        y += 30f
+                    }
+                    y += 16f
                 }
                 else -> Unit
             }
