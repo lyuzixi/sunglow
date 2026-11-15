@@ -5,6 +5,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.sunglow.spectrum.R
 import com.sunglow.spectrum.core.City
+import com.sunglow.spectrum.core.DisplayPrefs
+import com.sunglow.spectrum.core.ModelSel
 import com.sunglow.spectrum.core.ForecastCache
 import com.sunglow.spectrum.core.ForecastEngine
 import com.sunglow.spectrum.core.ForecastOutcome
@@ -88,6 +90,12 @@ data class HomeUiState(
     val sightings: Map<String, Pair<Int, Int>> = emptyMap(),
     /** 0 跟随系统 / 1 深色 / 2 浅色 */
     val themeMode: Int = 0,
+    /** 0 隐藏 / 1 照片 / 2 照片+霞光 / 3 仅霞光 */
+    val photoMode: Int = 2,
+    val imperial: Boolean = false,
+    val hour12: Boolean = false,
+    /** 输入已变化，等待用户明确点击「计算」 */
+    val pendingInput: Boolean = false,
     /** zh / zh_tw / en */
     val lang: String = "zh",
     val reminderEnabled: Boolean = false,
@@ -109,6 +117,17 @@ data class HomeUiState(
     val heatDone: Int = 0,
     val heatTotal: Int = 0,
     val heatError: String? = null,
+    /** 观测场独立输入与数据；主结论变化不会自动覆盖这里 */
+    val mapDateStr: String = "",
+    val mapPeriod: Period = Period.PM,
+    val mapModel: ModelSel = ModelSel.ENS,
+    val mapHeat: com.sunglow.spectrum.core.HeatGrid? = null,
+    val mapSrc: String = "",
+    val mapAgeMs: Long? = null,
+    val mapLoading: Boolean = false,
+    val mapDone: Int = 0,
+    val mapTotal: Int = 0,
+    val mapError: String? = null,
     /** 非空 = 正在看网页分享来的快照，不取数 */
     val packSnapshot: com.sunglow.spectrum.core.PackSnapshot? = null
 )
@@ -131,6 +150,9 @@ class HomeViewModel(private val app: Application) : AndroidViewModel(app) {
         HomeUiState(
             city = startCity,
             themeMode = prefs.getInt("theme_mode", 0),
+            photoMode = prefs.getInt("photo_mode", 2),
+            imperial = prefs.getBoolean("imperial", false),
+            hour12 = prefs.getBoolean("hour12", false),
             lang = prefs.getString("lang", "zh") ?: "zh",
             reminderEnabled = prefs.getBoolean("reminder_enabled", false),
             reminderThreshold = prefs.getInt("reminder_threshold", 45),
@@ -152,7 +174,16 @@ class HomeViewModel(private val app: Application) : AndroidViewModel(app) {
 
     init {
         val dates = buildDates(startCity)
-        _state.update { it.copy(dates = dates, dateStr = dates.firstOrNull().orEmpty()) }
+        DisplayPrefs.photoMode = prefs.getInt("photo_mode", 2)
+        DisplayPrefs.imperial = prefs.getBoolean("imperial", false)
+        DisplayPrefs.hour12 = prefs.getBoolean("hour12", false)
+        _state.update {
+            it.copy(
+                dates = dates,
+                dateStr = dates.firstOrNull().orEmpty(),
+                mapDateStr = dates.firstOrNull().orEmpty()
+            )
+        }
         val first = LaunchBus.target.value
         if (first?.pack != null) {
             applyPack(first.pack)
@@ -248,8 +279,8 @@ class HomeViewModel(private val app: Application) : AndroidViewModel(app) {
 
     /* ---------- 十日趋势 ---------- */
 
-    /** 切到趋势 Tab 时调用；已有完整结果就不重复跑 */
-    fun loadTrend(force: Boolean = false) {
+    /** 首次进入只读缓存；用户点击加载/重试时才允许网络。 */
+    fun loadTrend(force: Boolean = false, cacheOnly: Boolean = false) {
         val s = _state.value
         if (s.trendLoading) return
         if (!force && s.trend.size >= s.dates.size) return
@@ -266,9 +297,9 @@ class HomeViewModel(private val app: Application) : AndroidViewModel(app) {
             }
             try {
                 /* 区间取数：10 天朝/晚各 3 个请求（合计 6 个），不再是 60 个 */
-                val amOut = engine.runRange(s.city, s.dates, Period.AM, force)
+                val amOut = engine.runRange(s.city, s.dates, Period.AM, force, cacheOnly)
                 _state.update { it.copy(trendDone = s.dates.size / 2) }
-                val pmOut = engine.runRange(s.city, s.dates, Period.PM, force)
+                val pmOut = engine.runRange(s.city, s.dates, Period.PM, force, cacheOnly)
 
                 val rows = s.dates.mapIndexed { i, d ->
                     val am = (amOut.getOrNull(i) as? ForecastOutcome.Success)?.result
@@ -284,7 +315,11 @@ class HomeViewModel(private val app: Application) : AndroidViewModel(app) {
                         trend = rows,
                         trendDone = s.dates.size,
                         trendLoading = false,
-                        trendError = firstFailure(amOut, pmOut)
+                        trendError = if (cacheOnly && rows.all { it.am == null && it.pm == null }) {
+                            null
+                        } else {
+                            firstFailure(amOut, pmOut)
+                        }
                     )
                 }
             } catch (e: Exception) {
@@ -301,37 +336,71 @@ class HomeViewModel(private val app: Application) : AndroidViewModel(app) {
 
     /* ---------- 观测场热力面 ---------- */
 
-    fun loadHeat(force: Boolean = false) {
-        val s = _state.value
-        if (s.heatLoading) return
-        if (s.result == null) return
-        if (!force && s.heat != null &&
-            s.heat.dateStr == s.dateStr && s.heat.period == s.period
-        ) return
+    /** 兼容旧分享入口：加载当前观测场，而不是强制套用首页日期/时段。 */
+    fun loadHeat(force: Boolean = false) = loadMapHeat(force = force)
+
+    fun selectMapDate(date: String) {
+        _state.update { it.copy(mapDateStr = date, mapError = null) }
+    }
+
+    fun selectMapPeriod(period: Period) {
+        _state.update { it.copy(mapPeriod = period, mapError = null) }
+    }
+
+    fun selectMapModel(model: ModelSel) {
+        _state.update { it.copy(mapModel = model) }
+    }
+
+    /** 只有这个函数会为观测场取数；主结论 result 不是前置条件。 */
+    fun loadMapHeat(date: String? = null, period: Period? = null, force: Boolean = false) {
+        val before = _state.value
+        val wantedDate = date ?: before.mapDateStr.ifBlank { before.dateStr }
+        val wantedPeriod = period ?: before.mapPeriod
+        if (before.mapLoading) return
+        val current = before.mapHeat
+        if (!force && current != null && current.dateStr == wantedDate && current.period == wantedPeriod) return
         heatJob?.cancel()
         heatJob = viewModelScope.launch {
             _state.update {
                 it.copy(
+                    mapDateStr = wantedDate,
+                    mapPeriod = wantedPeriod,
+                    mapLoading = true,
+                    mapDone = 0,
+                    mapTotal = 24,
+                    mapError = null,
                     heatLoading = true,
                     heatDone = 0,
                     heatTotal = 24,
-                    heatError = null,
-                    heat = if (force) null else it.heat
+                    heatError = null
                 )
             }
             val grid = runCatching {
-                engine.runHeat(s.city, s.dateStr, s.period) { done, total ->
-                    _state.update { st -> st.copy(heatDone = done, heatTotal = total) }
+                engine.runHeat(before.city, wantedDate, wantedPeriod) { done, total ->
+                    _state.update { st -> st.copy(mapDone = done, mapTotal = total, heatDone = done, heatTotal = total) }
                 }
             }.getOrNull()
             _state.update {
+                val error = if (grid == null) app.getString(R.string.err_heat_failed) else null
                 it.copy(
+                    mapLoading = false,
+                    mapHeat = grid ?: it.mapHeat,
+                    mapSrc = if (grid == null) it.mapSrc else "network",
+                    mapAgeMs = if (grid == null) it.mapAgeMs else System.currentTimeMillis(),
+                    mapError = error,
                     heatLoading = false,
-                    heat = grid,
-                    heatError = if (grid == null) app.getString(R.string.err_heat_failed) else null
+                    heat = grid ?: it.heat,
+                    heatError = error
                 )
             }
         }
+    }
+
+    /** TOP 点位标签：25 km 内用最近城市短名，否则用经纬度。 */
+    fun mapPlaceLabel(lat: Double, lon: Double): String {
+        val near = repo.nearest(lat, lon)
+        if (near != null && near.second <= 25.0) return near.first.shortName
+        return String.format(Locale.US, "%.2f, %.2f", lat, lon)
     }
 
     fun setShowSamples(on: Boolean) {
@@ -353,15 +422,19 @@ class HomeViewModel(private val app: Application) : AndroidViewModel(app) {
                 error = null,
                 errorKind = null,
                 offlineAt = null,
+                pendingInput = true,
+                needsFetch = true,
+                citySheetOpen = false,
+                trend = emptyList(),
+                trendError = null,
+                /* 城市不同则旧地图不能冒充新城市；日期/时段变化则保留旧地图。 */
                 heat = null,
                 heatError = null,
-                needsFetch = false,
-                citySheetOpen = false
+                mapHeat = null,
+                mapError = null,
+                mapAgeMs = null
             )
         }
-        /* 换城市 = 用户显式动作：缓存优先，没有才取 */
-        autoFetchSpent = false
-        load(LoadMode.CLICK)
     }
 
     fun selectDate(dateStr: String) {
@@ -371,13 +444,12 @@ class HomeViewModel(private val app: Application) : AndroidViewModel(app) {
                 dateStr = dateStr,
                 result = null,
                 offlineAt = null,
-                heat = null,
-                heatError = null,
-                needsFetch = false
+                pendingInput = true,
+                needsFetch = true,
+                trend = emptyList(),
+                trendError = null
             )
         }
-        /* N5：切日期只读缓存，不自动取数（要取数由用户点「更新」） */
-        load(LoadMode.AUTO)
     }
 
     fun selectPeriod(period: Period) {
@@ -387,13 +459,18 @@ class HomeViewModel(private val app: Application) : AndroidViewModel(app) {
                 period = period,
                 result = null,
                 offlineAt = null,
-                heat = null,
-                heatError = null,
-                needsFetch = false
+                pendingInput = true,
+                needsFetch = true,
+                trend = emptyList(),
+                trendError = null
             )
         }
-        /* N5：切时段同样不自动取数 */
-        load(LoadMode.AUTO)
+    }
+
+    /** 首页唯一主动取数入口。 */
+    fun calculate() {
+        _state.update { it.copy(pendingInput = false) }
+        load(LoadMode.CLICK)
     }
 
     fun refresh() = load(LoadMode.FORCE)
@@ -412,6 +489,25 @@ class HomeViewModel(private val app: Application) : AndroidViewModel(app) {
     fun setThemeMode(mode: Int) {
         prefs.edit().putInt("theme_mode", mode).apply()
         _state.update { it.copy(themeMode = mode) }
+    }
+
+    fun setPhotoMode(mode: Int) {
+        val value = mode.coerceIn(0, 3)
+        prefs.edit().putInt("photo_mode", value).apply()
+        DisplayPrefs.photoMode = value
+        _state.update { it.copy(photoMode = value) }
+    }
+
+    fun setImperial(on: Boolean) {
+        prefs.edit().putBoolean("imperial", on).apply()
+        DisplayPrefs.imperial = on
+        _state.update { it.copy(imperial = on) }
+    }
+
+    fun setHour12(on: Boolean) {
+        prefs.edit().putBoolean("hour12", on).apply()
+        DisplayPrefs.hour12 = on
+        _state.update { it.copy(hour12 = on) }
     }
 
     /* ---------- M5 设置 ---------- */
@@ -438,7 +534,7 @@ class HomeViewModel(private val app: Application) : AndroidViewModel(app) {
         ForecastCache.clear()
         ForecastStore.clear(getApplication())
         com.sunglow.spectrum.data.ResultCache.clear(getApplication())
-        _state.update { it.copy(offlineAt = null, heat = null) }
+        _state.update { it.copy(offlineAt = null, heat = null, mapHeat = null, mapAgeMs = null) }
         WidgetUpdater.updateAll(getApplication())
     }
 

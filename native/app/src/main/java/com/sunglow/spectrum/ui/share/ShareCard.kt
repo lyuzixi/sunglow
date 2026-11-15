@@ -27,7 +27,7 @@ import com.sunglow.spectrum.core.QUALITY_LABEL
 import com.sunglow.spectrum.core.VerdictView
 import com.sunglow.spectrum.core.captionOf
 import com.sunglow.spectrum.core.fmtClock
-import com.sunglow.spectrum.core.glowWindow
+import com.sunglow.spectrum.core.bestWindowOf
 import com.sunglow.spectrum.core.isNum
 import com.sunglow.spectrum.core.shareFileNameOf
 import com.sunglow.spectrum.core.skyBandOf
@@ -60,6 +60,7 @@ object ShareCard {
         template: Int = 0,
         heat: HeatGrid? = null
     ): Bitmap {
+        if (template == 1) return renderField(ctx, r, view, dark, heat)
         val bmp = Bitmap.createBitmap(W.toInt(), H.toInt(), Bitmap.Config.ARGB_8888)
         val cv = Canvas(bmp)
 
@@ -205,14 +206,7 @@ object ShareCard {
         /* 结论句 */
         txt(conclText(ctx, view.p), 64f, 812f, 42f, ink, sansBold)
 
-        val win = glowWindow(
-            evMs = r.evMs,
-            isAM = r.period == com.sunglow.spectrum.core.Period.AM,
-            lat = r.city.lat,
-            lon = r.city.lon,
-            thNearDeg = r.sRT.geom.thNearDeg,
-            thFarDeg = r.sRT.geom.thFarDeg
-        )
+        val win = bestWindowOf(r)
         val useMap = template == 1 && heat != null
 
         if (useMap) {
@@ -246,7 +240,7 @@ object ShareCard {
             right(ctx.getString(R.string.factor_name_dedge), uDist(r.sRT.d))
             right(
                 ctx.getString(R.string.share_best_window),
-                if (win != null) fmtClock(win.first, r.tz) + "–" + fmtClock(win.second, r.tz) else "—"
+                if (win != null) fmtClock(win.startMs, r.tz) + "–" + fmtClock(win.endMs, r.tz) else "—"
             )
         } else {
             /* 天色带 */
@@ -314,7 +308,7 @@ object ShareCard {
             fact(ctx.getString(R.string.factor_name_dedge), ctx.getString(R.string.share_edge_max, uDist(r.sRT.d), uDist(r.sRT.geom.xMax)))
             fact(
                 ctx.getString(R.string.share_best_window_long),
-                if (win != null) fmtClock(win.first, r.tz) + " – " + fmtClock(win.second, r.tz) else "—"
+                if (win != null) fmtClock(win.startMs, r.tz) + " – " + fmtClock(win.endMs, r.tz) else "—"
             )
             fact(ctx.getString(R.string.ray_peak_t550), fmtSci(r.sRT.peak.color.t550))
             fact(
@@ -336,7 +330,7 @@ object ShareCard {
         val qy = 1212f
         fillRound(qx - 10f, qy - 10f, qrSize + 20f, qrSize + 20f, 16f, Color.WHITE)
         val qr = qr(
-            com.sunglow.spectrum.core.shareUrlOf(r),
+            com.sunglow.spectrum.core.qrShareUrlOf(r),
             qrSize,
             Color.parseColor("#070B14"),
             Color.WHITE
@@ -347,7 +341,93 @@ object ShareCard {
         }
         txt(ctx.getString(R.string.share_scan_same_city), qx + qrSize / 2f, qy + qrSize + 40f, 20f, faint, sans, Paint.Align.CENTER)
 
-        return bmp
+        val out = Bitmap.createScaledBitmap(bmp, ShareGeom.CONCLUSION_W, ShareGeom.CONCLUSION_H, true)
+        bmp.recycle()
+        return out
+    }
+
+    /** 780×660 观测场卡：满宽热力图，不复用结论卡的小圆盘。 */
+    private fun renderField(
+        ctx: Context,
+        r: ForecastResult,
+        view: VerdictView,
+        dark: Boolean,
+        heat: HeatGrid?
+    ): Bitmap {
+        val iw = 1080
+        val ih = 914
+        val bmp = Bitmap.createBitmap(iw, ih, Bitmap.Config.ARGB_8888)
+        val cv = Canvas(bmp)
+        val bg = c(if (dark) DarkTokens.bg else LightTokens.bg)
+        val ink = c(if (dark) DarkTokens.ink else LightTokens.ink)
+        val muted = c(if (dark) DarkTokens.muted else LightTokens.muted)
+        val faint = c(if (dark) DarkTokens.faint else LightTokens.faint)
+        val accent = c(if (dark) DarkTokens.accent else LightTokens.accent)
+        val rule = c(if (dark) DarkTokens.ruleStrong else LightTokens.ruleStrong)
+        cv.drawColor(bg)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        val sans = Typeface.create("sans-serif", Typeface.NORMAL)
+        val bold = Typeface.create("sans-serif", Typeface.BOLD)
+        fun txt(s: String, x: Float, y: Float, size: Float, color: Int, tf: Typeface? = sans, align: Paint.Align = Paint.Align.LEFT) {
+            paint.reset()
+            paint.isAntiAlias = true
+            paint.textSize = size
+            paint.color = color
+            paint.typeface = tf
+            paint.textAlign = align
+            cv.drawText(s, x, y, paint)
+        }
+        paint.reset()
+        paint.color = accent
+        cv.drawRect(0f, 0f, iw.toFloat(), 8f, paint)
+        txt(ctx.getString(R.string.share_heat_title), 56f, 72f, 32f, accent, bold)
+        txt(ctx.getString(R.string.app_name), iw - 56f, 72f, 24f, faint, sans, Paint.Align.RIGHT)
+        txt(r.city.name, 56f, 142f, 48f, ink, bold)
+        val period = if (r.period == com.sunglow.spectrum.core.Period.AM) ctx.getString(R.string.widget_am) else ctx.getString(R.string.widget_pm)
+        txt(r.dateStr + " · " + period + " · " + fmtClock(r.evMs, r.tz), 56f, 184f, 25f, muted)
+        txt("P ${view.p.roundToInt()}%  Q ${view.q.roundToInt()}", iw - 56f, 142f, 34f, ink, bold, Paint.Align.RIGHT)
+        val mapRect = RectF(56f, 222f, iw - 56f, 688f)
+        paint.reset()
+        paint.color = rule
+        cv.drawRoundRect(RectF(mapRect.left - 2f, mapRect.top - 2f, mapRect.right + 2f, mapRect.bottom + 2f), 20f, 20f, paint)
+        if (heat != null) {
+            cv.save()
+            val clip = Path().apply { addRoundRect(mapRect, 18f, 18f, Path.Direction.CW) }
+            cv.clipPath(clip)
+            drawHeat(cv, heat, mapRect, dark)
+            cv.restore()
+            txt(
+                ctx.getString(R.string.share_heat_span, heat.spanKm().roundToInt().toString(), period + " " + fmtClock(r.evMs, r.tz)),
+                70f, 674f, 19f, Color.WHITE
+            )
+        } else {
+            paint.reset()
+            paint.color = withAlpha(faint, 0x20)
+            cv.drawRoundRect(mapRect, 18f, 18f, paint)
+            txt(ctx.getString(R.string.share_heat_hint), mapRect.centerX(), mapRect.centerY(), 25f, faint, sans, Paint.Align.CENTER)
+        }
+        paint.reset()
+        paint.color = rule
+        cv.drawRect(56f, 724f, iw - 56f, 725f, paint)
+        txt(ctx.getString(R.string.share_confidence), 56f, 772f, 21f, faint)
+        txt(confText(ctx, r.conf.key), 56f, 810f, 30f, ink, bold)
+        txt(ctx.getString(R.string.share_divergence), 350f, 772f, 21f, faint)
+        txt(if (isNum(r.dvI)) r.dvI!!.roundToInt().toString() else "—", 350f, 810f, 30f, ink, bold)
+        txt(ctx.getString(R.string.home_data_credit), 56f, 866f, 18f, faint)
+        val qrSize = 126
+        val qx = iw - 56f - qrSize
+        val qy = 742f
+        paint.reset()
+        paint.color = Color.WHITE
+        cv.drawRoundRect(RectF(qx - 8f, qy - 8f, qx + qrSize + 8f, qy + qrSize + 8f), 12f, 12f, paint)
+        val qr = qr(com.sunglow.spectrum.core.qrShareUrlOf(r), qrSize, Color.parseColor("#070B14"), Color.WHITE)
+        if (qr != null) {
+            cv.drawBitmap(qr, qx, qy, null)
+            qr.recycle()
+        }
+        val out = Bitmap.createScaledBitmap(bmp, ShareGeom.FIELD_W, ShareGeom.FIELD_H, true)
+        bmp.recycle()
+        return out
     }
 
     /** 生成二维码；返回 null 表示编码失败（链接过长等） */
@@ -526,14 +606,7 @@ object ShareCard {
         txt(conclText(ctx, view.p), 72f, 1330f, 50f, ink, sansBold)
 
         /* 事实两行 */
-        val win = glowWindow(
-            evMs = r.evMs,
-            isAM = r.period == com.sunglow.spectrum.core.Period.AM,
-            lat = r.city.lat,
-            lon = r.city.lon,
-            thNearDeg = r.sRT.geom.thNearDeg,
-            thFarDeg = r.sRT.geom.thFarDeg
-        )
+        val win = bestWindowOf(r)
         paint.reset()
         paint.color = rule
         cv.drawRect(72f, 1392f, w - 72f, 1393.5f, paint)
@@ -545,7 +618,7 @@ object ShareCard {
             fy += 62f
         }
         fact(ctx.getString(R.string.factor_name_dedge), uDist(r.sRT.d))
-        fact(ctx.getString(R.string.share_best_window_long), if (win != null) fmtClock(win.first, r.tz) + " – " + fmtClock(win.second, r.tz) else "—")
+        fact(ctx.getString(R.string.share_best_window_long), if (win != null) fmtClock(win.startMs, r.tz) + " – " + fmtClock(win.endMs, r.tz) else "—")
 
         /* 页脚 + 二维码 */
         paint.reset()
@@ -708,7 +781,9 @@ object ShareCard {
         txt(ctx.getString(R.string.app_name) + " · " + ctx.getString(R.string.brand_mark), 64f, 1054f, 26f, ink, display)
         txt(ctx.getString(R.string.share_data_only), w - 64f, 1054f, 22f, faint, sans, Paint.Align.RIGHT)
 
-        return bmp
+        val out = Bitmap.createScaledBitmap(bmp, ShareGeom.TREND_W, ShareGeom.TREND_H, true)
+        bmp.recycle()
+        return out
     }
 
     /** 质量分档 → 画布颜色（与 App 内的徽章同色） */
@@ -754,7 +829,7 @@ object ShareCard {
     /* ---------- 内部 ---------- */
 
     /** 热力面缩略：最近邻位图 + 双线性过滤放大，保持格子边界柔和 */
-    private fun drawHeat(cv: Canvas, heat: HeatGrid, dst: RectF, dark: Boolean) {
+    internal fun drawHeat(cv: Canvas, heat: HeatGrid, dst: RectF, dark: Boolean) {
         val n = heat.n
         val bmp = Bitmap.createBitmap(n, n, Bitmap.Config.ARGB_8888)
         val px = IntArray(n * n)

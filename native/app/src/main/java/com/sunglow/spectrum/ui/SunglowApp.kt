@@ -1,5 +1,6 @@
 package com.sunglow.spectrum.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -25,6 +26,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -44,6 +47,7 @@ import com.sunglow.spectrum.R
 import com.sunglow.spectrum.ui.motion.rememberMotionEnabled
 import com.sunglow.spectrum.ui.screens.FieldScreen
 import com.sunglow.spectrum.ui.screens.HomeScreen
+import com.sunglow.spectrum.ui.screens.SecondaryScreen
 import com.sunglow.spectrum.ui.screens.SnapshotScreen
 import com.sunglow.spectrum.ui.screens.TrendScreen
 import com.sunglow.spectrum.ui.theme.SunglowTheme
@@ -57,6 +61,15 @@ fun SunglowApp(vm: HomeViewModel = viewModel()) {
     val colors = SunglowTheme.colors
     val state by vm.state.collectAsStateWithLifecycle()
     val tab = state.tab
+    val pageStack = remember { mutableStateListOf<AppPage>() }
+    val currentPage = pageStack.lastOrNull()
+    fun openPage(page: AppPage) {
+        if (pageStack.lastOrNull() != page) pageStack.add(page)
+    }
+    fun popPage() {
+        if (pageStack.isNotEmpty()) pageStack.removeAt(pageStack.lastIndex)
+    }
+    BackHandler(enabled = pageStack.isNotEmpty()) { popPage() }
     /* 系统「移除动画」开启时，Tab 转场直接落位（无障碍 + 低端机兜底） */
     val motionEnabled = rememberMotionEnabled()
 
@@ -67,26 +80,35 @@ fun SunglowApp(vm: HomeViewModel = viewModel()) {
             return@Column
         }
         Box(modifier = Modifier.weight(1f)) {
-            AnimatedContent(
-                targetState = tab,
-                transitionSpec = {
-                    if (motionEnabled) {
-                        (fadeIn(tween(220)) + slideInVertically(tween(220)) { it / 40 }) togetherWith
-                            fadeOut(tween(120))
-                    } else {
-                        fadeIn(tween(0)) togetherWith fadeOut(tween(0))
+            if (currentPage != null) {
+                SecondaryScreen(currentPage, vm, ::popPage, ::openPage)
+            } else {
+                AnimatedContent(
+                    targetState = tab,
+                    transitionSpec = {
+                        if (motionEnabled) {
+                            (fadeIn(tween(220)) + slideInVertically(tween(220)) { it / 40 }) togetherWith
+                                fadeOut(tween(120))
+                        } else {
+                            fadeIn(tween(0)) togetherWith fadeOut(tween(0))
+                        }
+                    },
+                    label = "tabSwitch"
+                ) { current ->
+                    when (current) {
+                        0 -> HomeScreen(vm, ::openPage)
+                        1 -> TrendScreen(vm)
+                        else -> FieldScreen(vm)
                     }
-                },
-                label = "tabSwitch"
-            ) { current ->
-                when (current) {
-                    0 -> HomeScreen(vm)
-                    1 -> TrendScreen(vm)
-                    else -> FieldScreen(vm)
                 }
             }
         }
-        SunglowTabBar(selected = tab, onSelect = { vm.selectTab(it) })
+        if (currentPage == null) {
+            SunglowTabBar(selected = tab, onSelect = {
+                pageStack.clear()
+                vm.selectTab(it)
+            })
+        }
     }
 }
 

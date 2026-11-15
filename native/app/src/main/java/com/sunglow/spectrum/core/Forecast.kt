@@ -387,7 +387,8 @@ class ForecastEngine(private val client: OpenMeteoClient) {
         city: City,
         dates: List<String>,
         period: Period,
-        force: Boolean = false
+        force: Boolean = false,
+        cacheOnly: Boolean = false
     ): List<ForecastOutcome> {
         if (dates.isEmpty()) return emptyList()
         val out = HashMap<String, ForecastOutcome>()
@@ -404,6 +405,10 @@ class ForecastEngine(private val client: OpenMeteoClient) {
             out[it] ?: ForecastOutcome.Failure(NO_DATA_MSG, FailureKind.NO_DATA)
         }
         if (need.isEmpty()) return collect()
+        if (cacheOnly) {
+            need.forEach { out[it] = ForecastOutcome.Failure(NO_DATA_MSG, FailureKind.NO_DATA) }
+            return collect()
+        }
 
         val firstD = need.first()
         val lastD = need.last()

@@ -17,6 +17,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -116,6 +117,7 @@ import com.sunglow.spectrum.core.uAlt
 import com.sunglow.spectrum.core.uDist
 import com.sunglow.spectrum.core.verdictViewOf
 import com.sunglow.spectrum.core.VerdictView
+import com.sunglow.spectrum.ui.AppPage
 import com.sunglow.spectrum.ui.HomeViewModel
 import com.sunglow.spectrum.ui.components.ChevronRight
 import com.sunglow.spectrum.ui.components.MoreIcon
@@ -147,7 +149,7 @@ import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(vm: HomeViewModel = viewModel()) {
+fun HomeScreen(vm: HomeViewModel = viewModel(), onOpenPage: (AppPage) -> Unit = {}) {
     val state by vm.state.collectAsStateWithLifecycle()
     val colors = SunglowTheme.colors
     val context = LocalContext.current
@@ -196,14 +198,32 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 modelSel = modelSel,
                 motion = motion,
                 onOpenCity = { vm.setCitySheetOpen(true) },
-                onOpenSettings = { sheet = "settings" },
+                onSelectDate = vm::selectDate,
+                onSelectPeriod = vm::selectPeriod,
+                onOpenSettings = { onOpenPage(AppPage.More) },
                 onCycleModel = cycleModel,
                 onShare = {
                     if (result != null) {
                         haptics.open()
-                        sheet = "share"
+                        onOpenPage(AppPage.Share)
                     }
                 }
+            )
+        }
+        item {
+            Text(
+                text = if (state.loading) stringResource(R.string.common_calculating)
+                else stringResource(R.string.home_calculate),
+                color = colors.bg,
+                style = MaterialTheme.typography.titleMedium,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .padding(horizontal = 18.dp, vertical = 8.dp)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(if (state.loading) colors.faint else colors.accent)
+                    .clickable(enabled = !state.loading) { vm.calculate() }
+                    .padding(vertical = 14.dp)
             )
         }
 
@@ -254,17 +274,17 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp)) {
                     FoldRow(stringResource(R.string.fold_factors), stringResource(R.string.fold_factors_note)) {
                         haptics.open()
-                        sheet = "factors"
+                        onOpenPage(AppPage.Factors)
                     }
                     Spacer(Modifier.height(8.dp))
                     FoldRow(stringResource(R.string.fold_ray), stringResource(R.string.fold_ray_note)) {
                         haptics.open()
-                        sheet = "ray"
+                        onOpenPage(AppPage.Ray)
                     }
                     Spacer(Modifier.height(8.dp))
                     FoldRow(stringResource(R.string.fold_share), stringResource(R.string.fold_share_note)) {
                         haptics.open()
-                        sheet = "share"
+                        onOpenPage(AppPage.Share)
                     }
                 }
             }
@@ -321,14 +341,20 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
             when (sheet) {
                 "factors" -> FactorsSheet(result)
                 "ray" -> RaySheet(result)
-                "share" -> ShareSheet(result, verdictViewOf(result, modelSel), state, vm::loadHeat)
+                "share" -> ShareSheet(result, verdictViewOf(result, modelSel), state, { vm.loadMapHeat() })
                 "settings" -> SettingsSheet(
                     themeMode = state.themeMode,
+                    photoMode = state.photoMode,
+                    imperial = state.imperial,
+                    hour12 = state.hour12,
                     lang = state.lang,
                     reminderEnabled = state.reminderEnabled,
                     reminderThreshold = state.reminderThreshold,
                     showSamples = state.showSamples,
                     onSetTheme = vm::setThemeMode,
+                    onSetPhotoMode = vm::setPhotoMode,
+                    onSetImperial = vm::setImperial,
+                    onSetHour12 = vm::setHour12,
                     onSetLang = vm::setLanguage,
                     onSetReminder = vm::setReminderEnabled,
                     onSetThreshold = vm::setReminderThreshold,
@@ -366,6 +392,8 @@ private fun HeroBlock(
     modelSel: ModelSel,
     motion: Boolean,
     onOpenCity: () -> Unit,
+    onSelectDate: (String) -> Unit,
+    onSelectPeriod: (Period) -> Unit,
     onOpenSettings: () -> Unit,
     onCycleModel: () -> Unit,
     onShare: () -> Unit
@@ -385,36 +413,52 @@ private fun HeroBlock(
         if (motion) heroScale.animateTo(1.04f, tween(8000, easing = LinearEasing))
     }
 
+    Column(modifier = Modifier.fillMaxWidth()) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(236.dp)
             .background(Color(0xFF1B2130))
     ) {
-        Image(
-            painter = painterResource(heroRes),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer {
-                    scaleX = heroScale.value
-                    scaleY = heroScale.value
-                }
-        )
-        /* 顶部压暗，保证状态栏与胶囊可读 */
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        0f to Color(0x6B060A12),
-                        0.34f to Color(0x0A060A12),
-                        0.76f to Color(0x57060A12),
-                        1f to Color(0xE0070B14)
+        if (state.photoMode == 1 || state.photoMode == 2) {
+            Image(
+                painter = painterResource(heroRes),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        scaleX = heroScale.value
+                        scaleY = heroScale.value
+                    }
+            )
+        }
+        if (state.photoMode == 3) {
+            Box(
+                Modifier.fillMaxSize().background(
+                    Brush.radialGradient(
+                        colors = listOf(colors.accent.copy(alpha = 0.42f), colors.accentCool.copy(alpha = 0.08f), Color.Transparent),
+                        center = Offset(260f, 420f),
+                        radius = 720f
                     )
                 )
-        )
+            )
+        }
+        /* 仅「实拍+霞光」叠加渐变；实拍模式保留原图，隐藏/霞光模式不伪装照片。 */
+        if (state.photoMode == 2) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            0f to Color(0x6B060A12),
+                            0.34f to Color(0x0A060A12),
+                            0.76f to Color(0x57060A12),
+                            1f to Color(0xE0070B14)
+                        )
+                    )
+            )
+        }
         /* 左下径向压暗，承载读数 */
         Canvas(Modifier.fillMaxSize()) {
             drawRect(
@@ -595,6 +639,71 @@ private fun HeroBlock(
                         SubStat(stringResource(R.string.home_confidence), confLabel(result.conf.key), Color.White)
                     }
                 }
+            }
+        }
+    }
+        HeroInputs(state, onOpenCity, onSelectDate, onSelectPeriod)
+    }
+}
+
+@Composable
+private fun HeroInputs(
+    state: com.sunglow.spectrum.ui.HomeUiState,
+    onOpenCity: () -> Unit,
+    onSelectDate: (String) -> Unit,
+    onSelectPeriod: (Period) -> Unit
+) {
+    val colors = SunglowTheme.colors
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(colors.bg2)
+            .padding(horizontal = 18.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Text(
+            text = state.city.shortName,
+            color = colors.ink,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .clickable(onClick = onOpenCity)
+                .padding(horizontal = 12.dp, vertical = 10.dp)
+        )
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            state.dates.forEach { d ->
+                val on = d == state.dateStr
+                Text(
+                    text = if (d.length >= 10) d.substring(5).replace('-', '/') else d,
+                    color = if (on) colors.bg else colors.muted,
+                    fontSize = 11.sp,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(if (on) colors.accent else colors.bg3)
+                        .clickable { onSelectDate(d) }
+                        .padding(horizontal = 11.dp, vertical = 8.dp)
+                )
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Period.values().forEach { p ->
+                val on = p == state.period
+                Text(
+                    text = stringResource(if (p == Period.AM) R.string.period_am_short else R.string.period_pm_short),
+                    color = if (on) colors.bg else colors.muted,
+                    style = MaterialTheme.typography.titleSmall,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(if (on) colors.accentCool else colors.bg3)
+                        .clickable { onSelectPeriod(p) }
+                        .padding(vertical = 10.dp)
+                )
             }
         }
     }
@@ -1090,7 +1199,7 @@ private fun FoldRow(title: String, note: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun FactorsSheet(result: ForecastResult) {
+internal fun FactorsSheet(result: ForecastResult) {
     val colors = SunglowTheme.colors
     val rows = remember(result) { facDisplayRows(result) }
     Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 28.dp)) {
@@ -1183,7 +1292,7 @@ private fun FactorsSheet(result: ForecastResult) {
 }
 
 @Composable
-private fun RaySheet(result: ForecastResult) {
+internal fun RaySheet(result: ForecastResult) {
     val colors = SunglowTheme.colors
     val r = result.sRT
     val g = r.geom
@@ -1407,7 +1516,7 @@ private fun TimeLine(result: ForecastResult, colors: SunglowColors) {
 }
 
 @Composable
-private fun ShareSheet(
+internal fun ShareSheet(
     result: ForecastResult,
     view: VerdictView,
     state: com.sunglow.spectrum.ui.HomeUiState,
@@ -1425,16 +1534,16 @@ private fun ShareSheet(
             )
         }
     }
-    val link = remember(result, webTrend, state.heat) {
-        shareUrlOf(result, webTrend, state.heat)
+    val heat = state.mapHeat ?: state.heat
+    val link = remember(result, webTrend, heat) {
+        shareUrlOf(result, webTrend, heat)
     }
-    val qr = remember(result, webTrend, state.heat) {
+    val qr = remember(result, webTrend, heat) {
         ShareCard.qr(
-            com.sunglow.spectrum.core.qrShareUrlOf(result, webTrend, state.heat),
+            com.sunglow.spectrum.core.qrShareUrlOf(result, webTrend, heat),
             512
         )
     }
-    val heat = state.heat
     var qrOpen by remember(result) { mutableStateOf(false) }
     var composeMode by remember(result) { mutableStateOf(false) }
 
@@ -1514,7 +1623,7 @@ private fun ShareSheet(
                         ShareCard.shareBitmap(
                             context,
                             ComposeCard.render(
-                                context, result, view, colors.isDark, mods, state.trend, state.heat
+                                context, result, view, colors.isDark, mods, state.trend, heat
                             ),
                             "sunglow-compose-" + result.dateStr + "-" +
                                 result.period.name.lowercase() + ".png",
@@ -1580,10 +1689,10 @@ private fun ShareSheet(
                 name = stringResource(R.string.share_tile_map),
                 sub = when {
                     heat != null -> stringResource(R.string.share_sub_map)
-                    state.heatLoading -> stringResource(R.string.share_map_loading)
+                    state.mapLoading -> stringResource(R.string.share_map_loading)
                     else -> stringResource(R.string.share_hint_map)
                 },
-                enabled = !state.heatLoading,
+                enabled = !state.mapLoading,
                 modifier = Modifier.weight(1f)
             ) {
                 haptics.tap()
@@ -1779,7 +1888,7 @@ private fun ComposePanel(
 
     fun available(id: String): Boolean = when (id) {
         "trend" -> state.trend.isNotEmpty()
-        "map" -> state.heat != null
+        "map" -> (state.mapHeat ?: state.heat) != null
         else -> true
     }
 
@@ -1787,8 +1896,8 @@ private fun ComposePanel(
     val canPixel = ComposeCard.canRender(effective)
     val haptics = LocalHapticFeedback.current
     val previewBmp = if (canPixel) {
-        remember(result, view.p, view.q, view.grade, effective, dark, state.trend, state.heat) {
-            ComposeCard.render(context, result, view, dark, effective, state.trend, state.heat)
+        remember(result, view.p, view.q, view.grade, effective, dark, state.trend, state.mapHeat, state.heat) {
+            ComposeCard.render(context, result, view, dark, effective, state.trend, state.mapHeat ?: state.heat)
         }
     } else {
         null
@@ -1894,7 +2003,7 @@ private fun ComposePanel(
                     modifier = Modifier.weight(1f)
                 )
                 if (!avail) {
-                    if (mod.id == "map" && !state.heatLoading) {
+                    if (mod.id == "map" && !state.mapLoading) {
                         Text(
                             text = stringResource(R.string.compose_load),
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
@@ -1907,7 +2016,7 @@ private fun ComposePanel(
                     } else {
                         Text(
                             text = stringResource(
-                                if (mod.id == "map" && state.heatLoading) R.string.compose_loading
+                                if (mod.id == "map" && state.mapLoading) R.string.compose_loading
                                 else R.string.compose_unavailable
                             ),
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
@@ -2135,13 +2244,19 @@ private fun ShareTile(
 /* ---------- 设置 ---------- */
 
 @Composable
-private fun SettingsSheet(
+internal fun SettingsSheet(
     themeMode: Int,
+    photoMode: Int,
+    imperial: Boolean,
+    hour12: Boolean,
     lang: String,
     reminderEnabled: Boolean,
     reminderThreshold: Int,
     showSamples: Boolean,
     onSetTheme: (Int) -> Unit,
+    onSetPhotoMode: (Int) -> Unit,
+    onSetImperial: (Boolean) -> Unit,
+    onSetHour12: (Boolean) -> Unit,
     onSetLang: (String) -> Unit,
     onSetReminder: (Boolean) -> Unit,
     onSetThreshold: (Int) -> Unit,
@@ -2233,6 +2348,41 @@ private fun SettingsSheet(
                     )
                 }
             }
+        }
+
+        Spacer(Modifier.height(18.dp))
+        Text(stringResource(R.string.settings_photo_mode), style = MaterialTheme.typography.labelSmall, color = colors.faint)
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            listOf(
+                R.string.photo_hidden to 0,
+                R.string.photo_photo to 1,
+                R.string.photo_both to 2,
+                R.string.photo_glow to 3
+            ).forEach { (label, mode) ->
+                val on = photoMode == mode
+                Text(
+                    text = stringResource(label),
+                    color = if (on) Color(0xFF06101C) else colors.muted,
+                    fontSize = 10.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(if (on) colors.accent else colors.glass)
+                        .clickable { onSetPhotoMode(mode) }
+                        .padding(vertical = 9.dp)
+                )
+            }
+        }
+        Spacer(Modifier.height(14.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.settings_imperial), color = colors.ink, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+            Switch(checked = imperial, onCheckedChange = onSetImperial)
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.settings_hour12), color = colors.ink, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+            Switch(checked = hour12, onCheckedChange = onSetHour12)
         }
 
         Spacer(Modifier.height(18.dp))
@@ -2515,7 +2665,7 @@ private fun SettingsAction(title: String, onClick: () -> Unit) {
  * 与「不内嵌 WebView」的既有约束一致（下载页与外壳都不带浏览器内核）。
  */
 @Composable
-private fun GuideSheet() {
+internal fun GuideSheet() {
     val colors = SunglowTheme.colors
     val context = LocalContext.current
     val steps = listOf(
@@ -2606,7 +2756,7 @@ private fun GuideSheet() {
 }
 
 @Composable
-private fun AboutSheet(requestCount: Int = 0) {
+internal fun AboutSheet(requestCount: Int = 0) {
     val colors = SunglowTheme.colors
     Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 28.dp)) {
         Text(

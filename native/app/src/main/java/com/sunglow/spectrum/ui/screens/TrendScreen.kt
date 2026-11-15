@@ -68,7 +68,7 @@ fun TrendScreen(vm: HomeViewModel = viewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     val colors = SunglowTheme.colors
 
-    LaunchedEffect(Unit) { vm.loadTrend() }
+    LaunchedEffect(Unit) { vm.loadTrend(cacheOnly = true) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),

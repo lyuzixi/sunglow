@@ -21,7 +21,7 @@ import com.sunglow.spectrum.core.HeatGrid
 import com.sunglow.spectrum.core.QUALITY_BANDS
 import com.sunglow.spectrum.core.VerdictView
 import com.sunglow.spectrum.core.fmtClock
-import com.sunglow.spectrum.core.glowWindow
+import com.sunglow.spectrum.core.bestWindowOf
 import com.sunglow.spectrum.core.gradeOf
 import com.sunglow.spectrum.core.judgmentOf
 import com.sunglow.spectrum.core.mixedIndex
@@ -307,18 +307,11 @@ object ComposeCard {
         for (id in mods) {
             when (id) {
                 "window" -> {
-                    val win = glowWindow(
-                        evMs = r.evMs,
-                        isAM = r.period == com.sunglow.spectrum.core.Period.AM,
-                        lat = r.city.lat,
-                        lon = r.city.lon,
-                        thNearDeg = r.sRT.geom.thNearDeg,
-                        thFarDeg = r.sRT.geom.thFarDeg
-                    )
+                    val win = bestWindowOf(r)
                     txt(ctx.getString(R.string.share_best_window), M, y, 25f, faint)
                     y += 44f
                     txt(
-                        if (win != null) fmtClock(win.first, r.tz) + " – " + fmtClock(win.second, r.tz) else "—",
+                        fmtClock(win.startMs, r.tz) + " – " + fmtClock(win.endMs, r.tz),
                         M, y, 44f, ink, sansBold
                     )
                     txt(ctx.getString(R.string.compose_window_note), M, y + 32f, 22f, faint)
@@ -331,7 +324,7 @@ object ComposeCard {
                     val qs = 170f
                     fillRound(M - 8f, y - 8f, qs + 16f, qs + 16f, 14f, Color.WHITE)
                     val qr = ShareCard.qr(
-                        com.sunglow.spectrum.core.shareUrlOf(r),
+                        com.sunglow.spectrum.core.qrShareUrlOf(r),
                         qs.toInt(),
                         Color.parseColor("#070B14"),
                         Color.WHITE
@@ -518,49 +511,9 @@ object ComposeCard {
                         fillRound(M, y, fw, fh, 12f, withAlpha(faint, 0x12))
                         txt(ctx.getString(R.string.compose_unavailable), M + 24f, y + fh / 2f, 24f, faint)
                     } else {
-                        fillRound(M, y, fw, fh, 12f, Color.parseColor(if (dark) "#0D1424" else "#F2F5FB"))
+                        ShareCard.drawHeat(cv, heat, RectF(M, y, M + fw, y + fh), dark)
                         val cx = M + fw / 2f
                         val cy = y + fh / 2f
-                        val radius = min(fw, fh) / 2f - 10f
-                        val blobR = max(14f, radius / 6.25f)
-                        val centerLat = heat.lat0 - (heat.n - 1) / 2.0 * heat.dLat
-                        val centerLon = heat.lon0 + (heat.n - 1) / 2.0 * heat.dLon
-                        cv.save()
-                        val clip = Path().apply {
-                            addRoundRect(RectF(M + 1f, y + 1f, M + fw - 1f, y + fh - 1f), 11f, 11f, Path.Direction.CW)
-                        }
-                        cv.clipPath(clip)
-                        for (cell in heat.cells) {
-                            val dx = (cell.lon - centerLon) * 111.0 * cos(Math.toRadians(centerLat))
-                            val dy = (cell.lat - centerLat) * 111.0
-                            val px = cx + (dx / 500.0) * radius
-                            val py = cy - (dy / 500.0) * radius
-                            val band = QUALITY_BANDS.firstOrNull { it.key == cell.grade } ?: QUALITY_BANDS.last()
-                            val gColor = Color.parseColor(if (dark) band.dark else band.color)
-                            val alpha = (0.18 + 0.44 * (cell.p / 100.0).coerceIn(0.0, 1.0)) * 255
-                            paint.reset()
-                            paint.isAntiAlias = true
-                            paint.shader = RadialGradient(
-                                px.toFloat(), py.toFloat(), blobR,
-                                withAlpha(gColor, alpha.roundToInt()),
-                                withAlpha(gColor, 0),
-                                Shader.TileMode.CLAMP
-                            )
-                            cv.drawCircle(px.toFloat(), py.toFloat(), blobR, paint)
-                            paint.shader = null
-                        }
-                        for (cell in heat.cells) {
-                            val dx = (cell.lon - centerLon) * 111.0 * cos(Math.toRadians(centerLat))
-                            val dy = (cell.lat - centerLat) * 111.0
-                            val px = cx + (dx / 500.0) * radius
-                            val py = cy - (dy / 500.0) * radius
-                            paint.reset()
-                            paint.isAntiAlias = true
-                            paint.color = withAlpha(ink, 0x28)
-                            cv.drawCircle(px.toFloat(), py.toFloat(), 2.6f, paint)
-                            paint.color = withAlpha(Color.WHITE, 0xE8)
-                            cv.drawCircle(px.toFloat(), py.toFloat(), 1.2f, paint)
-                        }
                         paint.reset()
                         paint.isAntiAlias = true
                         paint.color = Color.parseColor(if (dark) "#0D1526" else "#FFFFFF")
@@ -570,7 +523,6 @@ object ComposeCard {
                         paint.color = accent
                         cv.drawCircle(cx, cy, 6.5f, paint)
                         paint.style = Paint.Style.FILL
-                        cv.restore()
                     }
                     val periodWord = if (r.period == com.sunglow.spectrum.core.Period.AM) {
                         ctx.getString(R.string.widget_am)
@@ -818,7 +770,7 @@ object ComposeCard {
                         val mins = sm.mapIndexed { i, s ->
                             if (g.ok) (g.thNearDeg + s.t * (g.thFarDeg - g.thNearDeg)) / om else i * 3.0
                         }
-                        val maxMin = maxOf((mins.maxOrNull() ?: 1.0) * 1.06, 0.5)
+                        val domain = curveDomainOf(mins)
                         val maxL = sm.maxOf { it.color.lumRel }.takeIf { it > 0 } ?: 1.0
                         val maxC = sm.maxOf { it.color.chroma }.takeIf { it > 0 } ?: 1.0
                         val cw = W - 2 * M
@@ -829,7 +781,10 @@ object ComposeCard {
                             val yy = y + ch - k * ch / 4f
                             cv.drawLine(M, yy, M + cw, yy, paint)
                         }
-                        fun px(min: Double): Float = M + (min / maxMin).toFloat() * cw
+                        fun px(index: Int, min: Double): Float {
+                            val value = if (domain.useIndex) index.toDouble() else min
+                            return M + ((value - domain.start) / (domain.end - domain.start)).toFloat() * cw
+                        }
                         fun py(v: Double): Float = y + ch - v.coerceIn(0.0, 1.0).toFloat() * ch
                         fun poly(get: (Double, Double) -> Double, color: Int) {
                             paint.reset()
@@ -838,7 +793,7 @@ object ComposeCard {
                             var lastX = 0f
                             var lastY = 0f
                             sm.forEachIndexed { i, s ->
-                                val xx = px(mins[i])
+                                val xx = px(i, mins[i])
                                 val yy = py(get(s.color.lumRel, s.color.chroma))
                                 if (i > 0) cv.drawLine(lastX, lastY, xx, yy, paint)
                                 lastX = xx
@@ -854,17 +809,17 @@ object ComposeCard {
                             paint.reset()
                             paint.color = Color.parseColor(s.color.hex)
                             cv.drawRect(
-                                px(mins[i]) - 1.5f, y + ch + 2f,
-                                px(mins[i]) + 1.5f, y + ch + 10f, paint
+                                px(i, mins[i]) - 1.5f, y + ch + 2f,
+                                px(i, mins[i]) + 1.5f, y + ch + 10f, paint
                             )
                         }
-                        txt(durText(0.0), M, y + ch + 28f, 17f, faint)
+                        txt(durText(domain.start), M, y + ch + 28f, 17f, faint)
                         txt(
-                            durText(maxMin / 2), M + cw / 2f, y + ch + 28f, 17f,
+                            durText(domain.middle), M + cw / 2f, y + ch + 28f, 17f,
                             faint, sans, Paint.Align.CENTER
                         )
                         txt(
-                            durText(maxMin), M + cw, y + ch + 28f, 17f,
+                            durText(domain.end), M + cw, y + ch + 28f, 17f,
                             faint, sans, Paint.Align.RIGHT
                         )
                         y += ch + 60f
@@ -883,7 +838,10 @@ object ComposeCard {
         txt(ctx.getString(R.string.app_name) + " · " + ctx.getString(R.string.brand_mark), M, y, 26f, ink, display)
         y += 32f
         txt(ctx.getString(R.string.home_data_credit), M, y, 20f, faint)
-        return bmp
+        val outH = (bmp.height * ShareGeom.COMPOSE_W.toDouble() / bmp.width).roundToInt()
+        val out = Bitmap.createScaledBitmap(bmp, ShareGeom.COMPOSE_W, outH, true)
+        bmp.recycle()
+        return out
     }
 
     private fun c(color: androidx.compose.ui.graphics.Color): Int = color.toArgb()

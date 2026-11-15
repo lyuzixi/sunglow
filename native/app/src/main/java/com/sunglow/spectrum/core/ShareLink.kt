@@ -30,7 +30,7 @@ fun qrShareUrlOf(
     heat: HeatGrid? = null
 ): String {
     val pack = packShareUrlOf(r, trend, heat)
-    if (pack != null && pack.length <= 2600) return pack
+    if (pack != null && pack.length <= 1800) return pack
     return legacyShareUrlOf(r)
 }
 

@@ -5,11 +5,13 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -69,6 +71,11 @@ import com.sunglow.spectrum.core.OCC_BAND_NAMES
 import com.sunglow.spectrum.core.occBandOf
 import com.sunglow.spectrum.core.fieldConfOf
 import com.sunglow.spectrum.core.HeatGrid
+import com.sunglow.spectrum.core.ModelSel
+import com.sunglow.spectrum.core.heatPOf
+import com.sunglow.spectrum.core.heatQOf
+import com.sunglow.spectrum.core.heatValueOf
+import com.sunglow.spectrum.core.topHeatCells
 import com.sunglow.spectrum.core.HEAT_RADIUS_KM
 import com.sunglow.spectrum.core.fadeOf
 import com.sunglow.spectrum.core.fieldRampColor
@@ -108,9 +115,29 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
     /* 地图上要标注的邻近城市：按当前城市取最近 12 个（486 城排序一次即可） */
     val labelCities = remember(state.city.name) { vm.nearby(12).map { it.first } }
 
-    /* 进入观测场才生成热力面：6 个请求 + 121 点计算，结果缓存在 ViewModel 里 */
-    LaunchedEffect(state.city.name, state.dateStr, state.period, result) {
-        if (result != null) vm.loadHeat()
+    var fullScreen by remember { mutableStateOf(false) }
+    if (fullScreen) {
+        Column(Modifier.fillMaxSize().background(colors.bg).statusBarsPadding().padding(12.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.field_fullscreen), color = colors.ink, modifier = Modifier.weight(1f))
+                Text(
+                    stringResource(R.string.common_close),
+                    color = colors.accentCool,
+                    modifier = Modifier.clickable { fullScreen = false }.padding(12.dp)
+                )
+            }
+            OsmMap(
+                state = state,
+                result = result,
+                showOcclusion = showOcclusion,
+                lang = state.lang,
+                nearbyCities = labelCities,
+                onPickCity = { pickedCity = it },
+                expanded = true,
+                modifier = Modifier.weight(1f)
+            )
+        }
+        return
     }
 
     Column(
@@ -144,16 +171,19 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
             )
         }
 
-        if (result == null) {
-            Text(
-                text = if (state.loading) stringResource(R.string.field_loading)
-                else stringResource(R.string.field_no_data),
-                style = MaterialTheme.typography.bodyMedium,
-                color = colors.muted,
-                modifier = Modifier.padding(18.dp)
-            )
-            return@Column
-        }
+        MapControls(
+            state = state,
+            onCity = {
+                vm.selectTab(0)
+                vm.setCitySheetOpen(true)
+            },
+            onDate = vm::selectMapDate,
+            onPeriod = vm::selectMapPeriod,
+            onModel = vm::selectMapModel,
+            onLoad = { vm.loadMapHeat() },
+            onRefresh = { vm.loadMapHeat(force = true) },
+            onFullscreen = { fullScreen = true }
+        )
 
         if (showMap) {
             OsmMap(
@@ -165,8 +195,18 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
                 onPickCity = { pickedCity = it },
                 modifier = Modifier.padding(horizontal = 18.dp)
             )
-        } else {
+        } else if (result != null) {
             RayProfile(result)
+        }
+        MapTop4(state, vm::mapPlaceLabel)
+        if (result == null) {
+            Text(
+                text = if (state.mapLoading) stringResource(R.string.field_loading) else stringResource(R.string.field_map_only_note),
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.muted,
+                modifier = Modifier.padding(18.dp)
+            )
+            return@Column
         }
         Row(
             modifier = Modifier
@@ -794,6 +834,155 @@ private fun blendTo(rgb: Int, target: List<Int>, k: Double): Int {
 }
 
 /** 观测场四维口径：与网页 MapDim（mix/p/q/dv）一致 */
+@Composable
+private fun MapControls(
+    state: HomeUiState,
+    onCity: () -> Unit,
+    onDate: (String) -> Unit,
+    onPeriod: (Period) -> Unit,
+    onModel: (ModelSel) -> Unit,
+    onLoad: () -> Unit,
+    onRefresh: () -> Unit,
+    onFullscreen: () -> Unit
+) {
+    val colors = SunglowTheme.colors
+    Column(
+        modifier = Modifier
+            .padding(horizontal = 18.dp, vertical = 4.dp)
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(colors.bg2)
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(9.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                state.city.shortName + " · " + state.mapDateStr.ifBlank { state.dateStr },
+                color = colors.ink,
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.weight(1f).clickable(onClick = onCity)
+            )
+            Text(
+                stringResource(R.string.field_fullscreen),
+                color = colors.accentCool,
+                fontSize = 11.sp,
+                modifier = Modifier.clickable(onClick = onFullscreen).padding(8.dp)
+            )
+        }
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            state.dates.forEach { d ->
+                val on = d == state.mapDateStr
+                Text(
+                    if (d.length >= 10) d.substring(5).replace('-', '/') else d,
+                    color = if (on) colors.bg else colors.muted,
+                    fontSize = 10.sp,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(if (on) colors.accent else colors.bg3)
+                        .clickable { onDate(d) }
+                        .padding(horizontal = 10.dp, vertical = 8.dp)
+                )
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Period.values().forEach { p ->
+                val on = p == state.mapPeriod
+                Text(
+                    stringResource(if (p == Period.AM) R.string.widget_am else R.string.widget_pm),
+                    color = if (on) colors.bg else colors.muted,
+                    fontSize = 11.sp,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (on) colors.accentCool else colors.bg3)
+                        .clickable { onPeriod(p) }
+                        .padding(vertical = 8.dp)
+                )
+            }
+        }
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            ModelSel.values().forEach { m ->
+                val on = m == state.mapModel
+                Text(
+                    when (m) {
+                        ModelSel.ENS -> stringResource(R.string.model_ens)
+                        ModelSel.GFS -> "GFS"
+                        ModelSel.EC -> "EC"
+                        ModelSel.RT -> stringResource(R.string.model_rt)
+                    },
+                    color = if (on) colors.bg else colors.muted,
+                    fontSize = 10.sp,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(if (on) colors.accent else colors.bg3)
+                        .clickable { onModel(m) }
+                        .padding(horizontal = 10.dp, vertical = 7.dp)
+                )
+            }
+        }
+        state.mapHeat?.let { grid ->
+            if (grid.dateStr != state.dateStr || grid.period != state.period) {
+                Text(stringResource(R.string.field_map_stale, grid.dateStr, grid.period.name), color = colors.accent, fontSize = 11.sp)
+            }
+        }
+        if (state.mapError != null) Text(state.mapError, color = colors.bad, fontSize = 11.sp)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                if (state.mapLoading) stringResource(R.string.field_building, state.mapDone, state.mapTotal)
+                else stringResource(R.string.field_load_map),
+                color = colors.bg,
+                fontSize = 11.sp,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(9.dp))
+                    .background(if (state.mapLoading) colors.faint else colors.accent)
+                    .clickable(enabled = !state.mapLoading, onClick = onLoad)
+                    .padding(vertical = 11.dp)
+            )
+            Text(
+                stringResource(R.string.field_refresh),
+                color = colors.accentCool,
+                fontSize = 11.sp,
+                modifier = Modifier.clickable(enabled = !state.mapLoading, onClick = onRefresh).padding(11.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun MapTop4(state: HomeUiState, labelOf: (Double, Double) -> String) {
+    val grid = state.mapHeat ?: return
+    val colors = SunglowTheme.colors
+    Column(Modifier.padding(horizontal = 18.dp, vertical = 10.dp).fillMaxWidth()) {
+        Text(stringResource(R.string.field_top4), color = colors.ink, style = MaterialTheme.typography.titleSmall)
+        Spacer(Modifier.height(6.dp))
+        topHeatCells(grid, state.mapModel, 4).forEachIndexed { index, cell ->
+            Row(
+                Modifier.fillMaxWidth().padding(vertical = 7.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("${index + 1}", color = colors.accent, fontSize = 12.sp, modifier = Modifier.width(22.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(labelOf(cell.lat, cell.lon), color = colors.ink, fontSize = 13.sp)
+                    Text(
+                        String.format(Locale.US, "%.1f, %.1f", cell.lat, cell.lon),
+                        color = colors.faint,
+                        fontSize = 10.sp
+                    )
+                }
+                Text(
+                    "P ${heatPOf(cell, state.mapModel).roundToInt()}% · Q ${heatQOf(cell, state.mapModel).roundToInt()} · " +
+                        String.format(Locale.US, "%.0f", heatValueOf(cell, "mix", state.mapModel)),
+                    color = colors.muted,
+                    fontSize = 11.sp
+                )
+            }
+        }
+    }
+}
+
 private enum class FieldDim(val labelRes: Int, val hintRes: Int, val shortRes: Int) {
     MIX(R.string.field_dim_mix, R.string.field_dim_mix_hint, R.string.field_dim_mix_short),
     P(R.string.field_dim_p, R.string.field_dim_p_hint, R.string.field_dim_p_short),
@@ -801,10 +990,10 @@ private enum class FieldDim(val labelRes: Int, val hintRes: Int, val shortRes: I
     DV(R.string.field_dim_dv, R.string.field_dim_dv_hint, R.string.field_dim_dv_short)
 }
 
-private fun HeatCell.dimValue(dim: FieldDim): Double = when (dim) {
-    FieldDim.MIX -> idx
-    FieldDim.P -> p
-    FieldDim.Q -> q
+private fun HeatCell.dimValue(dim: FieldDim, model: ModelSel): Double = when (dim) {
+    FieldDim.MIX -> heatValueOf(this, "mix", model)
+    FieldDim.P -> heatValueOf(this, "p", model)
+    FieldDim.Q -> heatValueOf(this, "q", model)
     FieldDim.DV -> refGap
 }
 
@@ -817,7 +1006,8 @@ private fun heatBitmap(
     grid: HeatGrid,
     colors: SunglowColors,
     showOcclusion: Boolean = false,
-    dim: FieldDim = FieldDim.MIX
+    dim: FieldDim = FieldDim.MIX,
+    model: ModelSel = ModelSel.ENS
 ): android.graphics.Bitmap {
     val res = 48
     val bmp = android.graphics.Bitmap.createBitmap(res, res, android.graphics.Bitmap.Config.ARGB_8888)
@@ -828,7 +1018,7 @@ private fun heatBitmap(
             FieldPt(
                 it.lat,
                 it.lon,
-                it.dimValue(dim),
+                it.dimValue(dim, model),
                 it.occ,
                 if (dim == FieldDim.DV) 0.0 else it.refGap
             )
@@ -881,6 +1071,7 @@ private class HeatOverlay(
     var grid: HeatGrid? = null
     var selected: HeatCell? = null
     var dim: FieldDim = FieldDim.MIX
+    var model: ModelSel = ModelSel.ENS
     var showValues: Boolean = false
 
     private val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
@@ -922,7 +1113,7 @@ private class HeatOverlay(
                 if ((cell.i + cell.j) % 2 != 0) continue
                 val cx = dst.left + (cell.j + 0.5f) / g.n * dst.width()
                 val cy = dst.top + (cell.i + 0.5f) / g.n * dst.height() + tp.textSize / 3f
-                c.drawText(cell.dimValue(dim).roundToInt().toString(), cx, cy, tp)
+                c.drawText(cell.dimValue(dim, model).roundToInt().toString(), cx, cy, tp)
             }
         }
 
@@ -997,11 +1188,12 @@ private class GraticuleOverlay : org.osmdroid.views.overlay.Overlay() {
 @Composable
 private fun OsmMap(
     state: HomeUiState,
-    result: ForecastResult,
+    result: ForecastResult?,
     showOcclusion: Boolean = false,
     lang: String = "zh",
     nearbyCities: List<City> = emptyList(),
     onPickCity: (City) -> Unit = {},
+    expanded: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val colors = SunglowTheme.colors
@@ -1032,12 +1224,12 @@ private fun OsmMap(
         mutableStateOf<HeatCell?>(null)
     }
     val holder = remember { MapHolder() }
-    val heat = state.heat
+    val heat = state.mapHeat ?: state.heat
     val showSamples = state.showSamples
 
     /* 热力面位图：48×48 插值色面，维度或遮挡层变化时重算 */
-    val heatBmp = remember(heat, colors.isDark, showOcclusion, dim) {
-        heat?.let { heatBitmap(it, colors, showOcclusion, dim) }
+    val heatBmp = remember(heat, colors.isDark, showOcclusion, dim, state.mapModel) {
+        heat?.let { heatBitmap(it, colors, showOcclusion, dim, state.mapModel) }
     }
     /* 覆盖层在 factory 里只创建一次，用可变引用读最新的热力面 */
     val heatNow = remember { mutableStateOf<HeatGrid?>(null) }
@@ -1045,7 +1237,7 @@ private fun OsmMap(
 
     /* 样带坐标与主云层云量：默认隐藏，设置里打开才画 */
     val dots: List<SampleDot> = remember(result, showSamples) {
-        if (!showSamples) return@remember emptyList()
+        if (!showSamples || result == null) return@remember emptyList()
         val coords = transectPoints(result.city, result.evAz)
         val key = result.sRT.primary.key
         result.transect.mapIndexedNotNull { i, t ->
@@ -1068,7 +1260,7 @@ private fun OsmMap(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(260.dp)
+                .then(if (expanded) Modifier.fillMaxHeight() else Modifier.height(260.dp))
                 .clip(RoundedCornerShape(14.dp))
                 .border(1.dp, colors.rule, RoundedCornerShape(14.dp))
                 .background(colors.card)
@@ -1151,6 +1343,7 @@ private fun OsmMap(
                         it.grid = heat
                         it.selected = pickedCell
                         it.dim = dim
+                        it.model = state.mapModel
                         it.showValues = showValues
                     }
                     holder.graticule?.let { it.isEnabled = showGraticule }
@@ -1229,10 +1422,10 @@ private fun OsmMap(
             )
         }
 
-        if (state.heatLoading) {
+        if (state.mapLoading) {
             Spacer(Modifier.height(8.dp))
             Text(
-                text = stringResource(R.string.field_building, state.heatDone, state.heatTotal),
+                text = stringResource(R.string.field_building, state.mapDone, state.mapTotal),
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
                 color = colors.faint
             )
@@ -1281,10 +1474,10 @@ private fun OsmMap(
                     color = colors.faint
                 )
             }
-        } else if (state.heatError != null) {
+        } else if (state.mapError != null) {
             Spacer(Modifier.height(8.dp))
             Text(
-                text = state.heatError,
+                text = state.mapError.orEmpty(),
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
                 color = colors.bad
             )
@@ -1329,8 +1522,8 @@ private fun OsmMap(
             Spacer(Modifier.height(8.dp))
             SampleCard(
                 km = sel.km,
-                t = result.transect.getOrNull(picked),
-                xMax = result.sRT.geom.xMax,
+                t = result?.transect?.getOrNull(picked),
+                xMax = result?.sRT?.geom?.xMax ?: 400.0,
                 onClose = { picked = -1 }
             )
         }
@@ -1436,7 +1629,7 @@ private fun HeatCard(cell: HeatCell, city: City, onClose: () -> Unit) {
 /* ---------- 多点对比 ---------- */
 
 @Composable
-private fun ComparePanel(state: HomeUiState, onClear: () -> Unit) {
+internal fun ComparePanel(state: HomeUiState, onClear: () -> Unit) {
     val colors = SunglowTheme.colors
     Panel {
         if (state.compareCities.isEmpty()) {
@@ -1540,7 +1733,7 @@ private fun ComparePanel(state: HomeUiState, onClear: () -> Unit) {
 /* ---------- 周边点位 ---------- */
 
 @Composable
-private fun NearbyPanel(
+internal fun NearbyPanel(
     state: HomeUiState,
     onToggle: (com.sunglow.spectrum.core.City) -> Unit,
     nearby: List<Pair<com.sunglow.spectrum.core.City, Double>>
@@ -1600,7 +1793,7 @@ private fun NearbyPanel(
 /* ---------- 添加对比点：城市搜索 + 经纬度 ---------- */
 
 @Composable
-private fun CompareAddPanel(
+internal fun CompareAddPanel(
     search: (String) -> List<City>,
     onToggle: (City) -> Unit,
     onAddPoint: (Double, Double) -> Boolean,
@@ -1739,7 +1932,7 @@ private fun CompareAddPanel(
 /* ---------- 实况校准 ---------- */
 
 @Composable
-private fun CalibPanel(state: HomeUiState, onRecord: (Boolean) -> Unit) {
+internal fun CalibPanel(state: HomeUiState, onRecord: (Boolean) -> Unit) {
     val colors = SunglowTheme.colors
     val rec = state.sightings[state.city.name] ?: (0 to 0)
     Panel {
