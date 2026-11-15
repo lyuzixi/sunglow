@@ -13,7 +13,7 @@ import java.util.Locale
  * 带 tz 的墙钟语义沿用 Tz.kt 的 fmtClock；这里额外支持 12 小时制。
  */
 
-fun uTemp(c: Double?, imperial: Boolean = false): String {
+fun uTemp(c: Double?, imperial: Boolean = DisplayPrefs.imperial): String {
     if (c == null || c.isNaN() || c.isInfinite()) return "—"
     return if (imperial) {
         String.format(Locale.US, "%.1f", c * 1.8 + 32.0) + " °F"
@@ -26,7 +26,7 @@ fun uTemp(c: Double?, imperial: Boolean = false): String {
  * 时刻显示。offsetSeconds 为城市真实 UTC 偏移（秒）时按城市墙钟，
  * 否则退回设备本地时区（与网页「不传 tz 用浏览器本地时区」一致）。
  */
-fun uClock(ms: Double?, hour12: Boolean = false, offsetSeconds: Int? = null): String {
+fun uClock(ms: Double?, hour12: Boolean = DisplayPrefs.hour12, offsetSeconds: Int? = null): String {
     if (ms == null || ms.isNaN() || ms.isInfinite()) return "—"
     val zone: ZoneId = if (offsetSeconds != null) {
         ZoneOffset.ofTotalSeconds(offsetSeconds)
