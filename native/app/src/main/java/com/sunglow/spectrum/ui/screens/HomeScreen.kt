@@ -1841,6 +1841,7 @@ private val COMPOSE_MODULES = listOf(
 )
 
 private val COMPOSE_DEFAULT_ON = setOf("sky", "qr")
+private val COMPOSE_STANDARD_ON = setOf("sky", "window", "trend", "models", "qr")
 
 private const val COMPOSE_PREFS = "compose_ui"
 private const val COMPOSE_PREF_ON = "on"
@@ -1955,6 +1956,31 @@ private fun ComposePanel(
         lineHeight = 14.sp
     )
 
+    Spacer(Modifier.height(10.dp))
+    Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+        listOf(
+            Triple(R.string.compose_preset_minimal, COMPOSE_DEFAULT_ON, listOf("sky", "qr")),
+            Triple(R.string.compose_preset_standard, COMPOSE_STANDARD_ON, listOf("sky", "window", "trend", "models", "qr")),
+            Triple(R.string.compose_preset_full, COMPOSE_MODULES.map { it.id }.toSet(), COMPOSE_MODULES.map { it.id })
+        ).forEach { (labelRes, presetOn, presetOrder) ->
+            Text(
+                stringResource(labelRes),
+                color = if (on == presetOn) colors.bg else colors.muted,
+                fontSize = 11.sp,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(if (on == presetOn) colors.accent else colors.bg3)
+                    .clickable {
+                        on = presetOn
+                        order = presetOrder
+                        ComposePrefs.save(context, presetOn, presetOrder)
+                    }
+                    .padding(vertical = 12.dp)
+            )
+        }
+    }
     Spacer(Modifier.height(10.dp))
     COMPOSE_MODULES.map { it.groupRes }.distinct().forEach { group ->
         Text(

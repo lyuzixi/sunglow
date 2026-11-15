@@ -521,6 +521,9 @@
     <string name="field_fullscreen">全屏</string>
     <string name="field_map_stale">当前热力面为 %1$s · %2$s，与首页输入不同</string>
     <string name="field_map_only_note">观测场可独立加载；样带与光路剖面需要先在结论页计算单点结果。</string>
+    <string name="compose_preset_minimal">极简</string>
+    <string name="compose_preset_standard">标准</string>
+    <string name="compose_preset_full">完整</string>
     <!-- R5 页面骨架、设置与支持页 -->
     <string name="page_more">目录</string>
     <string name="page_back">返回</string>

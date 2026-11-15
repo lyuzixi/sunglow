@@ -514,6 +514,9 @@
     <string name="field_fullscreen">全螢幕</string>
     <string name="field_map_stale">目前熱力面為 %1$s · %2$s，與首頁輸入不同</string>
     <string name="field_map_only_note">觀測場可獨立載入；樣帶與光路剖面需要先在結論頁計算單點結果。</string>
+    <string name="compose_preset_minimal">極簡</string>
+    <string name="compose_preset_standard">標準</string>
+    <string name="compose_preset_full">完整</string>
     <!-- R5 頁面骨架、設定與支援頁 -->
     <string name="page_more">目錄</string>
     <string name="page_back">返回</string>

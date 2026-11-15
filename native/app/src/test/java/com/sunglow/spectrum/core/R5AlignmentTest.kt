@@ -92,31 +92,31 @@ class R5AlignmentTest {
     }
 
     @Test fun mapEnsUsesEnsComponents() {
-        val c = cell(70, 60, 50, 40)
+        val c = cell(70.0, 60.0, 50.0, 40.0)
         assertEquals(70.0, heatPOf(c, ModelSel.ENS), 1e-9)
         assertEquals(60.0, heatQOf(c, ModelSel.ENS), 1e-9)
     }
     @Test fun mapGfsUsesGfsComponents() {
-        val c = cell(70, 60, 50, 40)
+        val c = cell(70.0, 60.0, 50.0, 40.0)
         assertEquals(50.0, heatPOf(c, ModelSel.GFS), 1e-9)
         assertEquals(48.0, heatQOf(c, ModelSel.GFS), 1e-9)
     }
     @Test fun mapMissingGfsFallsBack() {
-        val c = cell(70, 60, null, 40)
+        val c = cell(70.0, 60.0, null, 40.0)
         assertEquals(70.0, heatPOf(c, ModelSel.GFS), 1e-9)
     }
     @Test fun mapEcUsesEcComponents() {
-        val c = cell(70, 60, 50, 40)
+        val c = cell(70.0, 60.0, 50.0, 40.0)
         assertEquals(40.0, heatPOf(c, ModelSel.EC), 1e-9)
         assertEquals(38.0, heatQOf(c, ModelSel.EC), 1e-9)
     }
     @Test fun mapRtUsesRtComponents() {
-        val c = cell(70, 60, 50, 40)
+        val c = cell(70.0, 60.0, 50.0, 40.0)
         assertEquals(66.0, heatPOf(c, ModelSel.RT), 1e-9)
         assertEquals(56.0, heatQOf(c, ModelSel.RT), 1e-9)
     }
     @Test fun mapMixFormula() {
-        val c = cell(70, 60, 50, 40)
+        val c = cell(70.0, 60.0, 50.0, 40.0)
         assertEquals(65.5, heatValueOf(c, "mix", ModelSel.ENS), 1e-9)
     }
     @Test fun topFourSorted() {

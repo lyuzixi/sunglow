@@ -514,6 +514,9 @@
     <string name="field_fullscreen">Fullscreen</string>
     <string name="field_map_stale">Heat map is %1$s · %2$s, different from Now</string>
     <string name="field_map_only_note">The field loads independently. Transect and ray profile require a point forecast from Now.</string>
+    <string name="compose_preset_minimal">Minimal</string>
+    <string name="compose_preset_standard">Standard</string>
+    <string name="compose_preset_full">Complete</string>
     <!-- R5 navigation, settings and support pages -->
     <string name="page_more">Catalog</string>
     <string name="page_back">Back</string>
