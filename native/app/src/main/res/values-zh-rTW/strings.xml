@@ -94,7 +94,7 @@
     <string name="compose_load">載入</string>
     <string name="compose_loading">載入中</string>
     <string name="compose_preview">結構預覽</string>
-    <string name="compose_preview_hint">示意版式，非最終像素</string>
+    <string name="compose_preview_hint">點擊預覽可全螢幕查看，支援 100% / 200% 縮放</string>
     <string name="compose_note">14 個模組均已像素化，沿用同一份取數；選擇與順序會自動儲存。</string>
     <string name="compose_window_note">日出日落前後，太陽高度與方位共同決定</string>
     <string name="compose_preview_pixel">像素預覽</string>
@@ -514,6 +514,11 @@
     <string name="field_fullscreen">全螢幕</string>
     <string name="field_map_stale">目前熱力面為 %1$s · %2$s，與首頁輸入不同</string>
     <string name="field_map_only_note">觀測場可獨立載入；樣帶與光路剖面需要先在結論頁計算單點結果。</string>
+    <string name="compose_output_info">輸出 %1$d 個模組 · PNG · %2$s</string>
+    <string name="compose_auto_height">寬 780 px，高度隨內容</string>
+    <string name="compose_zoom">像素預覽</string>
+    <string name="compose_zoom_in">放大 200%</string>
+    <string name="compose_zoom_fit">適應寬度</string>
     <string name="snapshot_best_window">最佳窗口 · %1$s</string>
     <string name="snapshot_curve">光追亮度曲線 · 按包內樣本繪製</string>
     <string name="home_hero_subtitle">光譜觀測 · 記錄霞光的條件、路徑與最佳窗口</string>

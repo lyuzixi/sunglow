@@ -286,20 +286,26 @@ private fun SnapshotRayCurve(ray: JsonObject) {
 }
 
 private fun snapshotWindow(obj: JsonObject?, snap: PackSnapshot): String? {
-    val evMs = obj.num("evMs")?.toLong() ?: return null
-    if (evMs <= 0L) return null
+    val evMs = obj.num("evMs") ?: return null
+    if (evMs <= 0.0) return null
     val geom = obj.obj("sRT").obj("geom")
     val duration = geom.num("dur")?.takeIf { it.isFinite() && it > 0.0 } ?: 20.0
     val city = obj.obj("city")
     val isAm = obj.text("period").ifBlank { snap.q.period } == "am"
-    val window = glowWindow(evMs, isAm, city.num("lat") ?: snap.q.lat, city.num("lon") ?: snap.q.lon, geom.num("thNearDeg"), geom.num("thFarDeg"))
-        ?: (evMs - (duration * 30_000).toLong() to evMs + (duration * 30_000).toLong())
+    val window = glowWindow(
+        evMs = evMs,
+        isAM = isAm,
+        lat = city.num("lat") ?: snap.q.lat,
+        lon = city.num("lon") ?: snap.q.lon,
+        thNearDeg = geom.num("thNearDeg") ?: Double.NaN,
+        thFarDeg = geom.num("thFarDeg") ?: Double.NaN
+    ) ?: (evMs - duration * 30_000.0 to evMs + duration * 30_000.0)
     val offset = obj.obj("tz").num("offsetSec")?.toLong() ?: 0L
     return snapshotClock(window.first, offset) + "–" + snapshotClock(window.second, offset)
 }
 
-private fun snapshotClock(ms: Long, offsetSec: Long): String =
-    Instant.ofEpochMilli(ms).plusSeconds(offsetSec).atZone(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern("HH:mm"))
+private fun snapshotClock(ms: Double, offsetSec: Long): String =
+    Instant.ofEpochMilli(ms.toLong()).plusSeconds(offsetSec).atZone(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern("HH:mm"))
 
 private fun JsonObject?.obj(key: String): JsonObject? = this?.get(key) as? JsonObject
 private fun JsonObject?.num(key: String): Double? = (this?.get(key) as? JsonPrimitive)?.doubleOrNull

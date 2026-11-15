@@ -20,6 +20,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -88,6 +89,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -1917,6 +1920,42 @@ private fun ComposePanel(
         null
     }
 
+    var zoomPreview by remember { mutableStateOf(false) }
+    var zoomDouble by remember { mutableStateOf(false) }
+    if (zoomPreview && previewBmp != null) {
+        Dialog(
+            onDismissRequest = { zoomPreview = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            BoxWithConstraints(Modifier.fillMaxSize().background(colors.bg).padding(12.dp)) {
+                val dialogWidth = maxWidth
+                Column(Modifier.fillMaxSize()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.compose_zoom), color = colors.ink, modifier = Modifier.weight(1f))
+                        Text(
+                            stringResource(if (zoomDouble) R.string.compose_zoom_fit else R.string.compose_zoom_in),
+                            color = colors.accentCool,
+                            modifier = Modifier.heightIn(min = 48.dp).clickable { zoomDouble = !zoomDouble }.padding(horizontal = 12.dp, vertical = 14.dp)
+                        )
+                        Text(
+                            stringResource(R.string.common_close),
+                            color = colors.ink,
+                            modifier = Modifier.heightIn(min = 48.dp).clickable { zoomPreview = false }.padding(horizontal = 12.dp, vertical = 14.dp)
+                        )
+                    }
+                    Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).horizontalScroll(rememberScrollState())) {
+                        Image(
+                            bitmap = previewBmp.asImageBitmap(),
+                            contentDescription = stringResource(R.string.compose_title),
+                            contentScale = ContentScale.FillWidth,
+                            modifier = Modifier.width(dialogWidth * (if (zoomDouble) 2f else 1f))
+                        )
+                    }
+                }
+            }
+        }
+    }
+
     fun move(id: String, delta: Int) {
         val idx = order.indexOf(id)
         if (idx < 0) return
@@ -1995,6 +2034,9 @@ private fun ComposePanel(
         }
     }
     Spacer(Modifier.height(10.dp))
+    val outputSize = previewBmp?.let { "${it.width} × ${it.height} px" } ?: stringResource(R.string.compose_auto_height)
+    Text(stringResource(R.string.compose_output_info, effective.size, outputSize), color = colors.accentCool, fontSize = 11.sp)
+    Spacer(Modifier.height(6.dp))
     COMPOSE_MODULES.map { it.groupRes }.distinct().forEach { group ->
         Text(
             text = stringResource(group),
@@ -2108,6 +2150,7 @@ private fun ComposePanel(
             contentScale = ContentScale.FillWidth,
             modifier = Modifier
                 .fillMaxWidth()
+                .clickable { zoomPreview = true }
                 .clip(RoundedCornerShape(14.dp))
                 .border(1.dp, colors.rule, RoundedCornerShape(14.dp))
                 .aspectRatio(previewBmp.width.toFloat() / previewBmp.height.toFloat())

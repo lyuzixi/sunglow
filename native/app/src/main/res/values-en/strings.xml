@@ -94,7 +94,7 @@
     <string name="compose_load">Load</string>
     <string name="compose_loading">Loading</string>
     <string name="compose_preview">Structure preview</string>
-    <string name="compose_preview_hint">Schematic layout, not final pixels</string>
+    <string name="compose_preview_hint">Tap for full-screen preview with 100% / 200% zoom</string>
     <string name="compose_note">All 14 modules render at pixel size from the same fetch. Choices and order are saved automatically.</string>
     <string name="compose_window_note">Set by sun altitude and azimuth around sunrise or sunset</string>
     <string name="compose_preview_pixel">Pixel preview</string>
@@ -514,6 +514,11 @@
     <string name="field_fullscreen">Fullscreen</string>
     <string name="field_map_stale">Heat map is %1$s · %2$s, different from Now</string>
     <string name="field_map_only_note">The field loads independently. Transect and ray profile require a point forecast from Now.</string>
+    <string name="compose_output_info">Export %1$d modules · PNG · %2$s</string>
+    <string name="compose_auto_height">780 px wide, height follows content</string>
+    <string name="compose_zoom">Pixel preview</string>
+    <string name="compose_zoom_in">Zoom 200%</string>
+    <string name="compose_zoom_fit">Fit width</string>
     <string name="snapshot_best_window">Best window · %1$s</string>
     <string name="snapshot_curve">Ray brightness curve · drawn from packed samples</string>
     <string name="home_hero_subtitle">Spectrum observatory · conditions, light paths and the best window</string>

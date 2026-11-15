@@ -124,7 +124,7 @@ fun TrendScreen(vm: HomeViewModel = viewModel()) {
                                 .clip(RoundedCornerShape(999.dp))
                                 .border(1.dp, colors.ruleStrong, RoundedCornerShape(999.dp))
                                 .clickable {
-                                    val bmp = ShareCard.renderTrend(context, rows, state.city, dark)
+                                    val bmp = ShareCard.renderTrend(context, rows, state.city.shortName, dark)
                                     ShareCard.shareBitmap(
                                         context,
                                         bmp,
