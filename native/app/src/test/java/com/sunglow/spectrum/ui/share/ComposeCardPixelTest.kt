@@ -1,6 +1,12 @@
 package com.sunglow.spectrum.ui.share
 
 import android.graphics.Bitmap
+import com.google.zxing.BinaryBitmap
+import com.google.zxing.RGBLuminanceSource
+import com.google.zxing.common.HybridBinarizer
+import com.google.zxing.qrcode.QRCodeReader
+import com.sunglow.spectrum.core.WebTrendRow
+import com.sunglow.spectrum.core.qrShareUrlOf
 import com.sunglow.spectrum.core.City
 import com.sunglow.spectrum.core.ForecastResult
 import com.sunglow.spectrum.core.HeatCell
@@ -34,6 +40,7 @@ import org.robolectric.annotation.GraphicsMode
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Locale
+import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
 /*
@@ -153,7 +160,9 @@ class ComposeCardPixelTest {
                 HeatCell(
                     i = node.i, j = node.j, lat = node.lat, lon = node.lon,
                     p = p, q = q, idx = idx, grade = band.key,
-                    type = "卷云", cover = 35.0, d = 180.0
+                    type = "卷云", cover = 35.0, d = 180.0,
+                    ensP = p, gfsP = p - 3, ecP = p - 5, rtP = p - 7,
+                    ensQ = q, gfsQ = q - 3, ecQ = q - 5, rtQ = q - 7
                 )
             )
         }
@@ -180,13 +189,21 @@ class ComposeCardPixelTest {
         return if (total == 0L) 0.0 else diff.toDouble() / total
     }
 
+    private fun decodeQr(bmp: Bitmap): String {
+        val pixels = IntArray(bmp.width * bmp.height)
+        bmp.getPixels(pixels, 0, bmp.width, 0, 0, bmp.width, bmp.height)
+        val source = RGBLuminanceSource(bmp.width, bmp.height, pixels)
+        return QRCodeReader().decode(BinaryBitmap(HybridBinarizer(source))).text
+    }
+
     private fun maxBlankBand(bmp: Bitmap, bg: Int): Int {
         val h = bmp.height
         val w = bmp.width
+        val scale = w / 1080.0
         val row = IntArray(w)
         var run = 0
         var worst = 0
-        for (y in 850 until h - 130) {
+        for (y in (850 * scale).toInt() until h - (130 * scale).toInt()) {
             bmp.getPixels(row, 0, w, 0, y, w, 1)
             var blank = true
             for (x in 0 until w step 5) {
@@ -205,7 +222,8 @@ class ComposeCardPixelTest {
         val bg = bmp.getPixel(4, bmp.height - 4)
         var inkPixels = 0
         val row = IntArray(bmp.width)
-        for (y in bmp.height - 260 until bmp.height) {
+        val scale = bmp.width / 1080.0
+        for (y in bmp.height - (260 * scale).toInt() until bmp.height) {
             bmp.getPixels(row, 0, bmp.width, 0, y, bmp.width, 1)
             for (x in 0 until bmp.width step 4) {
                 if (row[x] != bg) inkPixels++
@@ -215,8 +233,10 @@ class ComposeCardPixelTest {
     }
 
     private fun assertCommon(name: String, bmp: Bitmap, mods: List<String>) {
-        assertEquals("$name：宽度必须 1080", 1080, bmp.width)
-        assertEquals("$name：高度必须与 heightFor 一致", ComposeCard.heightFor(mods), bmp.height)
+        val scale = bmp.width / 1080.0
+        assertEquals("$name：宽度必须 780", ShareGeom.COMPOSE_W, bmp.width)
+        val expectedH = (ComposeCard.heightFor(mods) * ShareGeom.COMPOSE_W.toDouble() / 1080.0).roundToInt()
+        assertEquals("$name：高度必须与 heightFor 等比一致", expectedH, bmp.height)
         assertTrue("$name：页脚缺失", footerPresent(bmp))
         val bg = bmp.getPixel(4, bmp.height - 4)
         for (y in bmp.height - 10 until bmp.height) {
@@ -225,9 +245,9 @@ class ComposeCardPixelTest {
             }
         }
         val blank = maxBlankBand(bmp, bg)
-        assertTrue("$name：模块之间出现 $blank px 空白带", blank <= 110)
-        for (y in 930 until bmp.height - 130 step 6) {
-            for (x in 1040 until bmp.width step 8) {
+        assertTrue("$name：模块之间出现 $blank px 空白带", blank <= (110 * scale).toInt())
+        for (y in (930 * scale).toInt() until bmp.height - (130 * scale).toInt() step 6) {
+            for (x in (1040 * scale).toInt() until bmp.width step 8) {
                 assertEquals("$name：内容越过右边距 y=$y x=$x", bg, bmp.getPixel(x, y))
             }
         }
@@ -294,6 +314,62 @@ class ComposeCardPixelTest {
         manifest.put("cases", cases)
         File(outDir, "manifest.json").writeText(manifest.toString(2))
         assertTrue("应生成 84 张基线", cases.length() == 84)
+    }
+
+    @Test
+    fun alignedShareCardsHaveExactSizesAndScannableQr() {
+        val r = sampleResult()
+        val view = verdictViewOf(r, ModelSel.ENS)
+        val trend = sampleTrend()
+        val heat = sampleHeat()
+        val outDir = File(System.getProperty("sunglow.pixelDir") ?: "build/pixel-cards").apply { mkdirs() }
+        val manifest = JSONObject()
+        val cases = JSONArray()
+        val expected = mapOf(
+            "conclusion" to (ShareGeom.CONCLUSION_W to ShareGeom.CONCLUSION_H),
+            "story" to (ShareGeom.STORY_W to ShareGeom.STORY_H),
+            "trend" to (ShareGeom.TREND_W to ShareGeom.TREND_H),
+            "field" to (ShareGeom.FIELD_W to ShareGeom.FIELD_H)
+        )
+        for (q in listOf("zh-rCN", "zh-rTW", "en")) {
+            RuntimeEnvironment.setQualifiers("+$q")
+            Locale.setDefault(Locale.forLanguageTag(q.replace("-r", "-")))
+            val ctx = RuntimeEnvironment.getApplication()
+            for (dark in listOf(false, true)) {
+                val cards = listOf(
+                    "conclusion" to ShareCard.render(ctx, r, view, dark, 0, heat),
+                    "story" to ShareCard.renderStory(ctx, r, view, dark),
+                    "trend" to ShareCard.renderTrend(ctx, trend, r.city.name, dark),
+                    "field" to ShareCard.render(ctx, r, view, dark, 1, heat)
+                )
+                for ((kind, bmp) in cards) {
+                    val size = expected.getValue(kind)
+                    assertEquals("$kind width", size.first, bmp.width)
+                    assertEquals("$kind height", size.second, bmp.height)
+                    val name = "r5_${q}_${if (dark) "dark" else "light"}_$kind"
+                    FileOutputStream(File(outDir, "$name.png")).use { out ->
+                        bmp.compress(Bitmap.CompressFormat.PNG, 100, out)
+                    }
+                    cases.put(JSONObject().put("file", "$name.png").put("kind", kind).put("w", bmp.width).put("h", bmp.height))
+                    bmp.recycle()
+                }
+            }
+        }
+        val webTrend = trend.flatMap { row ->
+            listOfNotNull(
+                row.am?.let { WebTrendRow(row.date, "am", it.p, it.q, it.grade) },
+                row.pm?.let { WebTrendRow(row.date, "pm", it.p, it.q, it.grade) }
+            )
+        }
+        val url = qrShareUrlOf(r, webTrend, heat)
+        val qr = ShareCard.qr(url, 512)
+        assertTrue("QR 必须生成", qr != null)
+        assertEquals("QR 必须可回读同一链接", url, decodeQr(qr!!))
+        qr.recycle()
+        manifest.put("count", cases.length())
+        manifest.put("cases", cases)
+        File(outDir, "r5-manifest.json").writeText(manifest.toString(2))
+        assertEquals("四卡 × 三语 × 明暗应生成 24 张", 24, cases.length())
     }
 
     @Test

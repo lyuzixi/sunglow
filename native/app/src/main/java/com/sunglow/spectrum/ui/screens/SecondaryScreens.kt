@@ -300,7 +300,11 @@ private fun FeedbackScreen() {
     ) {
         Text(stringResource(R.string.feedback_title), color = colors.ink, style = MaterialTheme.typography.headlineSmall)
         Text(stringResource(R.string.feedback_body), color = colors.muted, textAlign = TextAlign.Center, lineHeight = 22.sp)
-        Image(bitmap = qr.asImageBitmap(), contentDescription = stringResource(R.string.feedback_title), modifier = Modifier.size(220.dp).clip(RoundedCornerShape(16.dp)))
+        if (qr != null) {
+            Image(bitmap = qr.asImageBitmap(), contentDescription = stringResource(R.string.feedback_title), modifier = Modifier.size(220.dp).clip(RoundedCornerShape(16.dp)))
+        } else {
+            Text("—", color = colors.faint, modifier = Modifier.size(220.dp).clip(RoundedCornerShape(16.dp)).background(colors.bg2).padding(88.dp), textAlign = TextAlign.Center)
+        }
         Text(
             text = stringResource(R.string.feedback_open),
             color = colors.bg,
