@@ -51,6 +51,41 @@ object ShareCard {
     const val W = 1080f
     const val H = 1440f
 
+    /** 无首页单点结果时的独立观测场卡：只依赖已加载的热力网格，不伪造 P/Q 或 QR。 */
+    fun renderMapOnly(ctx: Context, heat: HeatGrid, cityName: String, dark: Boolean): Bitmap {
+        val bmp = Bitmap.createBitmap(ShareGeom.FIELD_W, ShareGeom.FIELD_H, Bitmap.Config.ARGB_8888)
+        val cv = Canvas(bmp)
+        val bg = c(if (dark) DarkTokens.bg else LightTokens.bg)
+        val ink = c(if (dark) DarkTokens.ink else LightTokens.ink)
+        val muted = c(if (dark) DarkTokens.muted else LightTokens.muted)
+        val faint = c(if (dark) DarkTokens.faint else LightTokens.faint)
+        val accent = c(if (dark) DarkTokens.accent else LightTokens.accent)
+        cv.drawColor(bg)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        fun txt(s: String, x: Float, y: Float, size: Float, color: Int, bold: Boolean = false, align: Paint.Align = Paint.Align.LEFT) {
+            paint.reset()
+            paint.isAntiAlias = true
+            paint.textSize = size
+            paint.color = color
+            paint.typeface = Typeface.create("sans-serif", if (bold) Typeface.BOLD else Typeface.NORMAL)
+            paint.textAlign = align
+            cv.drawText(s, x, y, paint)
+        }
+        paint.color = accent
+        cv.drawRect(0f, 0f, ShareGeom.FIELD_W.toFloat(), 6f, paint)
+        txt(ctx.getString(R.string.share_heat_title), 28f, 48f, 22f, accent, true)
+        txt(ctx.getString(R.string.app_name), ShareGeom.FIELD_W - 28f, 48f, 16f, faint, false, Paint.Align.RIGHT)
+        txt(cityName, 28f, 96f, 30f, ink, true)
+        txt(heat.dateStr + " · " + heat.spanKm().roundToInt() + " km", 28f, 124f, 16f, muted)
+        val map = RectF(28f, 146f, ShareGeom.FIELD_W - 28f, 540f)
+        drawHeat(cv, heat, map, dark)
+        txt("0", 28f, 568f, 14f, faint)
+        txt("50", ShareGeom.FIELD_W / 2f, 568f, 14f, faint, false, Paint.Align.CENTER)
+        txt("100", ShareGeom.FIELD_W - 28f, 568f, 14f, faint, false, Paint.Align.RIGHT)
+        txt(ctx.getString(R.string.home_data_credit), 28f, 624f, 13f, faint)
+        return bmp
+    }
+
     /** 画一张图卡；dark 决定用哪套令牌。template 0＝结论版，1＝地图版（需 heat） */
     fun render(
         ctx: Context,

@@ -2,6 +2,7 @@ package com.sunglow.spectrum.ui.screens
 
 import android.view.MotionEvent
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -44,6 +45,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -90,6 +92,8 @@ import com.sunglow.spectrum.core.isNum
 import com.sunglow.spectrum.core.transectPoints
 import com.sunglow.spectrum.core.uAlt
 import com.sunglow.spectrum.core.uDist
+import com.sunglow.spectrum.core.verdictViewOf
+import com.sunglow.spectrum.ui.share.ShareCard
 import com.sunglow.spectrum.ui.HomeUiState
 import com.sunglow.spectrum.ui.HomeViewModel
 import com.sunglow.spectrum.ui.theme.SunglowColors
@@ -106,10 +110,17 @@ import kotlin.math.roundToInt
 fun FieldScreen(vm: HomeViewModel = viewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     val colors = SunglowTheme.colors
+    val context = LocalContext.current
+    val dark = when (state.themeMode) {
+        1 -> true
+        2 -> false
+        else -> isSystemInDarkTheme()
+    }
     val result = state.result
     var showMap by remember(state.city.name) { mutableStateOf(true) }
     /* 遮挡层默认关闭（与网页一致）：它是背景信息，要查细节再自己打开 */
     var showOcclusion by remember(state.city.name) { mutableStateOf(false) }
+    var showTestNote by rememberSaveable { mutableStateOf(true) }
     /* 城市名命中：点自绘地名弹城市卡，换城市要用户显式点，不自动取数 */
     var pickedCity by remember(state.city.name) { mutableStateOf<City?>(null) }
     /* 地图上要标注的邻近城市：按当前城市取最近 12 个（486 城排序一次即可） */
@@ -171,6 +182,15 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
             )
         }
 
+        if (showTestNote) {
+            Panel(Modifier.padding(horizontal = 18.dp, vertical = 4.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.field_test_note), color = colors.muted, fontSize = 11.sp, modifier = Modifier.weight(1f))
+                    Text(stringResource(R.string.common_close), color = colors.accentCool, fontSize = 11.sp,
+                        modifier = Modifier.clickable { showTestNote = false }.padding(12.dp))
+                }
+            }
+        }
         MapControls(
             state = state,
             onCity = {
@@ -199,6 +219,29 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
             RayProfile(result)
         }
         MapTop4(state, vm::mapPlaceLabel)
+        if (state.mapHeat != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Text(
+                    stringResource(R.string.field_share),
+                    color = colors.accentCool,
+                    fontSize = 12.sp,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(999.dp))
+                        .border(1.dp, colors.ruleStrong, RoundedCornerShape(999.dp))
+                        .clickable {
+                            val heat = state.mapHeat ?: return@clickable
+                            val bmp = result?.let {
+                                ShareCard.render(context, it, verdictViewOf(it, com.sunglow.spectrum.core.ModelSel.ENS), dark, 1, heat)
+                            } ?: ShareCard.renderMapOnly(context, heat, state.city.name, dark)
+                            ShareCard.shareBitmap(context, bmp, "sunglow-field-${state.city.shortName}.png", state.city.name)
+                        }
+                        .padding(horizontal = 14.dp, vertical = 12.dp)
+                )
+            }
+        }
         if (result == null) {
             Text(
                 text = if (state.mapLoading) stringResource(R.string.field_loading) else stringResource(R.string.field_map_only_note),
@@ -955,10 +998,19 @@ private fun MapControls(
 private fun MapTop4(state: HomeUiState, labelOf: (Double, Double) -> String) {
     val grid = state.mapHeat ?: return
     val colors = SunglowTheme.colors
+    var showAll by rememberSaveable { mutableStateOf(false) }
     Column(Modifier.padding(horizontal = 18.dp, vertical = 10.dp).fillMaxWidth()) {
-        Text(stringResource(R.string.field_top4), color = colors.ink, style = MaterialTheme.typography.titleSmall)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.field_top4), color = colors.ink, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+            Text(
+                stringResource(if (showAll) R.string.field_view_less else R.string.field_view_all),
+                color = colors.accentCool,
+                fontSize = 11.sp,
+                modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable { showAll = !showAll }.padding(12.dp)
+            )
+        }
         Spacer(Modifier.height(6.dp))
-        topHeatCells(grid, state.mapModel, 4).forEachIndexed { index, cell ->
+        topHeatCells(grid, state.mapModel, if (showAll) grid.cells.size else 4).forEachIndexed { index, cell ->
             Row(
                 Modifier.fillMaxWidth().padding(vertical = 7.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -1073,6 +1125,7 @@ private class HeatOverlay(
     var dim: FieldDim = FieldDim.MIX
     var model: ModelSel = ModelSel.ENS
     var showValues: Boolean = false
+    var showContours: Boolean = false
 
     private val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
     private val tp = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
@@ -1102,6 +1155,7 @@ private class HeatOverlay(
         p.isFilterBitmap = true
         p.alpha = 190
         c.drawBitmap(bmp, null, dst, p)
+        if (showContours) drawContours(c, g, dim, model)
 
         /* 数值直标：隔点取样，避免 121 个数字糊成一片；白字黑晕保证深浅底图都能读 */
         if (showValues) {
@@ -1130,6 +1184,50 @@ private class HeatOverlay(
             p.color = 0xFFFFFFFF.toInt()
             c.drawCircle(cx, cy, 4f, p)
         }
+    }
+
+    /** Marching-squares 等值线：在格点中心连成的四条边上按阈值插值。 */
+    private fun drawContours(c: android.graphics.Canvas, g: HeatGrid, dim: FieldDim, model: ModelSel) {
+        val at = g.cells.associateBy { it.i to it.j }
+        val density = c.density / 160f
+        fun x(gx: Float) = dst.left + gx / g.n * dst.width()
+        fun y(gy: Float) = dst.top + gy / g.n * dst.height()
+        listOf(25.0, 50.0, 75.0).forEach { threshold ->
+            tp.reset()
+            tp.isAntiAlias = true
+            tp.style = android.graphics.Paint.Style.STROKE
+            tp.strokeWidth = 1.1f * density
+            tp.color = 0xCFFFFFFF.toInt()
+            tp.setShadowLayer(2.5f * density, 0f, 0f, 0x99000000.toInt())
+            for (i in 0 until g.n - 1) {
+                for (j in 0 until g.n - 1) {
+                    val c00 = at[i to j] ?: continue
+                    val c10 = at[i to j + 1] ?: continue
+                    val c11 = at[i + 1 to j + 1] ?: continue
+                    val c01 = at[i + 1 to j] ?: continue
+                    val v00 = c00.dimValue(dim, model)
+                    val v10 = c10.dimValue(dim, model)
+                    val v11 = c11.dimValue(dim, model)
+                    val v01 = c01.dimValue(dim, model)
+                    fun fraction(a: Double, b: Double): Float? {
+                        if ((a < threshold) == (b < threshold) || a == b) return null
+                        return ((threshold - a) / (b - a)).toFloat().coerceIn(0f, 1f)
+                    }
+                    val points = mutableListOf<Pair<Float, Float>>()
+                    fraction(v00, v10)?.let { points += (j + 0.5f + it) to (i + 0.5f) }
+                    fraction(v10, v11)?.let { points += (j + 1.5f) to (i + 0.5f + it) }
+                    fraction(v01, v11)?.let { points += (j + 0.5f + it) to (i + 1.5f) }
+                    fraction(v00, v01)?.let { points += (j + 0.5f) to (i + 0.5f + it) }
+                    if (points.size == 2 || points.size == 4) {
+                        points.chunked(2).forEach { pair ->
+                            c.drawLine(x(pair[0].first), y(pair[0].second), x(pair[1].first), y(pair[1].second), tp)
+                        }
+                    }
+                }
+            }
+        }
+        tp.clearShadowLayer()
+        tp.style = android.graphics.Paint.Style.FILL
     }
 
     override fun onSingleTapConfirmed(e: MotionEvent, mapView: MapView): Boolean {
@@ -1220,12 +1318,13 @@ private fun OsmMap(
     var dim by rememberSaveable { mutableStateOf(FieldDim.MIX) }
     var showGraticule by rememberSaveable { mutableStateOf(false) }
     var showValues by rememberSaveable { mutableStateOf(false) }
+    var showContours by rememberSaveable { mutableStateOf(false) }
+    var showSamples by rememberSaveable(state.city.name) { mutableStateOf(state.showSamples) }
     var pickedCell by remember(city.name, state.dateStr, state.period) {
         mutableStateOf<HeatCell?>(null)
     }
     val holder = remember { MapHolder() }
     val heat = state.mapHeat ?: state.heat
-    val showSamples = state.showSamples
 
     /* 热力面位图：48×48 插值色面，维度或遮挡层变化时重算 */
     val heatBmp = remember(heat, colors.isDark, showOcclusion, dim, state.mapModel) {
@@ -1345,6 +1444,7 @@ private fun OsmMap(
                         it.dim = dim
                         it.model = state.mapModel
                         it.showValues = showValues
+                        it.showContours = showContours
                     }
                     holder.graticule?.let { it.isEnabled = showGraticule }
                     holder.overlay?.let {
@@ -1363,12 +1463,19 @@ private fun OsmMap(
             Row(
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .padding(8.dp),
+                    .padding(start = 8.dp, end = 8.dp, top = 52.dp)
+                    .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                val graticuleLabel = stringResource(R.string.field_graticule)
-                val valuesLabel = stringResource(R.string.field_values)
-                listOf(graticuleLabel to showGraticule, valuesLabel to showValues).forEach { (label, on) ->
+                val labels = listOf(
+                    stringResource(R.string.field_graticule),
+                    stringResource(R.string.field_values),
+                    stringResource(R.string.field_samples),
+                    stringResource(R.string.field_contours)
+                )
+                val enabled = listOf(showGraticule, showValues, showSamples, showContours)
+                labels.forEachIndexed { index, label ->
+                    val on = enabled[index]
                     Text(
                         text = label,
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
@@ -1378,10 +1485,14 @@ private fun OsmMap(
                             .background(if (on) colors.card.copy(alpha = 0.92f) else Color(0x66070B14))
                             .border(1.dp, if (on) colors.ruleStrong else colors.rule, RoundedCornerShape(999.dp))
                             .clickable {
-                                if (label == graticuleLabel) showGraticule = !showGraticule
-                                else showValues = !showValues
+                                when (index) {
+                                    0 -> showGraticule = !showGraticule
+                                    1 -> showValues = !showValues
+                                    2 -> showSamples = !showSamples
+                                    else -> showContours = !showContours
+                                }
                             }
-                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                            .padding(horizontal = 8.dp, vertical = 12.dp)
                     )
                 }
             }
@@ -1473,6 +1584,22 @@ private fun OsmMap(
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                     color = colors.faint
                 )
+            }
+            Spacer(Modifier.height(8.dp))
+            Box(
+                Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(999.dp)).background(
+                    Brush.horizontalGradient(listOf(colors.accentCool, colors.accentAlt, colors.accent))
+                )
+            )
+            Row(Modifier.fillMaxWidth()) {
+                listOf("0", "25", "50", "75", "100").forEach {
+                    Text(it, color = colors.faint, fontSize = 9.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+                }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                listOf(R.string.grade_cha, R.string.grade_yiban, R.string.grade_liang, R.string.grade_you).forEach {
+                    Text(stringResource(it), color = colors.muted, fontSize = 10.sp)
+                }
             }
         } else if (state.mapError != null) {
             Spacer(Modifier.height(8.dp))
@@ -2079,10 +2206,10 @@ private fun bandColor(grade: String, colors: SunglowColors): Color = when (grade
 /* ---------- 小组件 ---------- */
 
 @Composable
-private fun Panel(content: @Composable () -> Unit) {
+private fun Panel(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     val colors = SunglowTheme.colors
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(colors.card)

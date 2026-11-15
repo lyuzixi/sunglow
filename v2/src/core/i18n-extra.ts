@@ -614,7 +614,7 @@ export const HANT_EXTRA: Record<string, string> = {
   "原生 Android 版（内测）": "原生 Android 版（內測）",
   "查看下载页与安装说明": "查看下載頁與安裝說明",
   "Android 下载浮层的已关闭状态": "Android 下載浮層的已關閉狀態",
-  "原生 App 目前只有「今晚」单点预报界面：独立桌面图标、原生界面与 6 小时取数缓存。趋势、观测场、多地对比与分享图片请继续用网页；网页也可以「添加到主屏幕」作为 PWA 使用。": "原生 App 目前只有「今晚」單點預報介面：獨立桌面圖示、原生介面與 6 小時取數快取。趨勢、觀測場、多地對比與分享圖片請繼續使用網頁；網頁也可以「加入主畫面」作為 PWA 使用。",
+  "原生 App 已提供朝晚霞单点预报、十日趋势、观测场、多地对比、分享图片、实况校准、提醒、桌面小组件与离线快照；网页也可以「添加到主屏幕」作为 PWA 使用。": "原生 App 已提供朝晚霞單點預報、十日趨勢、觀測場、多地對比、分享圖片、實況校準、提醒、桌面小工具與離線快照；網頁也可以「加入主畫面」作為 PWA 使用。",
   "两者可以同时安装，但偏好与缓存数据不互通。安装包是未签正式证书的 debug 内测版，需要允许「安装未知来源应用」；将来发布正式签名版时，必须先卸载本包才能升级。": "兩者可同時安裝，但偏好與快取資料不相通。安裝包是未簽正式憑證的 debug 內測版，需要允許「安裝未知來源應用程式」；將來發布正式簽章版時，必須先移除本包才能升級。",
 };
 
@@ -1228,6 +1228,6 @@ export const EN_EXTRA: Record<string, string> = {
   "原生 Android 版（内测）": "Native Android app (beta)",
   "查看下载页与安装说明": "Download page and install guide",
   "Android 下载浮层的已关闭状态": "Whether the Android download banner was dismissed",
-  "原生 App 目前只有「今晚」单点预报界面：独立桌面图标、原生界面与 6 小时取数缓存。趋势、观测场、多地对比与分享图片请继续用网页；网页也可以「添加到主屏幕」作为 PWA 使用。": "The native app currently has only the Tonight single-point screen: its own launcher icon, native UI and a 6-hour forecast cache. Keep using the web app for the 10-day trend, field map, city comparison and share cards; the web app can also be added to your home screen as a PWA.",
+  "原生 App 已提供朝晚霞单点预报、十日趋势、观测场、多地对比、分享图片、实况校准、提醒、桌面小组件与离线快照；网页也可以「添加到主屏幕」作为 PWA 使用。": "The native app now provides dawn/dusk point forecasts, a 10-day trend, field map, place comparison, share cards, observation calibration, alerts, a home-screen widget and offline snapshots. The web app can also be added to your home screen as a PWA.",
   "两者可以同时安装，但偏好与缓存数据不互通。安装包是未签正式证书的 debug 内测版，需要允许「安装未知来源应用」；将来发布正式签名版时，必须先卸载本包才能升级。": "Both can be installed side by side, but preferences and cached data are not shared. This is an unsigned debug beta build and requires allowing apps from unknown sources; a future release-signed build will require uninstalling this one first.",
 };

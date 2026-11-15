@@ -373,6 +373,25 @@ class ComposeCardPixelTest {
     }
 
     @Test
+    fun mapOnlyCardDoesNotNeedPointResult() {
+        RuntimeEnvironment.setQualifiers("+zh-rCN")
+        val ctx = RuntimeEnvironment.getApplication()
+        val bmp = ShareCard.renderMapOnly(ctx, sampleHeat(), "测试观测场", false)
+        assertEquals(ShareGeom.FIELD_W, bmp.width)
+        assertEquals(ShareGeom.FIELD_H, bmp.height)
+        val colors = mutableSetOf<Int>()
+        for (y in 150 until 530 step 10) {
+            for (x in 30 until bmp.width - 30 step 10) colors += bmp.getPixel(x, y)
+        }
+        assertTrue("独立观测场卡必须画出热力面，而不是空白占位", colors.size > 20)
+        File("build/pixel-cards").mkdirs()
+        FileOutputStream(File("build/pixel-cards/r5_map_only.png")).use { out ->
+            bmp.compress(Bitmap.CompressFormat.PNG, 100, out)
+        }
+        bmp.recycle()
+    }
+
+    @Test
     fun fullStackHasNoClippingOrGaps() {
         val r = sampleResult()
         val view = verdictViewOf(r, ModelSel.ENS)

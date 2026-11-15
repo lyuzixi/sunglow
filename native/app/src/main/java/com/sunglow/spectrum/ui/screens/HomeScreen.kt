@@ -661,6 +661,19 @@ private fun HeroInputs(
             .padding(horizontal = 18.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
+        Column {
+            Text(
+                text = stringResource(R.string.app_name) + " · " + stringResource(R.string.brand_mark),
+                color = colors.ink,
+                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 25.sp),
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = stringResource(R.string.home_hero_subtitle),
+                color = colors.faint,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 0.8.sp)
+            )
+        }
         Text(
             text = state.city.shortName,
             color = colors.ink,

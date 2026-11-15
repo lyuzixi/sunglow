@@ -74,7 +74,7 @@ fun SecondaryScreen(
                 AppPage.Ray -> RayScreen(state)
                 AppPage.Calib -> CalibScreen(vm, state)
                 AppPage.Notes -> NotesScreen()
-                AppPage.Guide -> GuideSheet()
+                AppPage.Guide -> GuideScreen()
                 AppPage.About -> AboutSheet(state.requestCount)
                 AppPage.Settings -> SettingsScreen(vm, state, onOpenPage)
                 AppPage.Feedback -> FeedbackScreen()
@@ -146,7 +146,14 @@ private fun MoreScreen(state: HomeUiState, onOpenPage: (AppPage) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Text(state.city.shortName + " · " + state.dateStr, color = colors.muted, fontSize = 13.sp)
-        AppPage.menuPages.chunked(2).forEach { rowPages ->
+        listOf(
+            R.string.more_group_main to listOf(AppPage.Compare, AppPage.Share),
+            R.string.more_group_detail to listOf(AppPage.Factors, AppPage.Ray, AppPage.Calib, AppPage.Notes),
+            R.string.more_group_support to listOf(AppPage.Guide, AppPage.About, AppPage.Settings),
+            R.string.more_group_other to listOf(AppPage.Feedback, AppPage.AppLab)
+        ).forEach { (groupRes, pages) ->
+            Text(stringResource(groupRes), color = colors.accentCool, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
+            pages.chunked(2).forEach { rowPages ->
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 rowPages.forEach { page ->
                     Column(
@@ -166,6 +173,7 @@ private fun MoreScreen(state: HomeUiState, onOpenPage: (AppPage) -> Unit) {
                 if (rowPages.size == 1) Spacer(Modifier.weight(1f))
             }
         }
+        }
         Text(
             text = stringResource(R.string.about_version),
             color = colors.faint,
@@ -173,6 +181,32 @@ private fun MoreScreen(state: HomeUiState, onOpenPage: (AppPage) -> Unit) {
             modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
             textAlign = TextAlign.Center
         )
+    }
+}
+
+@Composable
+private fun GuideScreen() {
+    val colors = SunglowTheme.colors
+    val context = LocalContext.current
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 18.dp)) {
+        GuideSheet()
+        listOf(
+            R.string.guide_download to (com.sunglow.spectrum.core.SHARE_SITE + "download.html"),
+            R.string.guide_classic to (com.sunglow.spectrum.core.SHARE_SITE + "V1/index.html")
+        ).forEach { (labelRes, url) ->
+            Text(
+                stringResource(labelRes),
+                color = colors.accentCool,
+                fontSize = 13.sp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 4.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .border(1.dp, colors.ruleStrong, RoundedCornerShape(12.dp))
+                    .clickable { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } }
+                    .padding(horizontal = 16.dp, vertical = 16.dp)
+            )
+        }
     }
 }
 

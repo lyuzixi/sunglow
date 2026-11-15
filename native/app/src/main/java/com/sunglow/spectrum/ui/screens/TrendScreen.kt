@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,6 +28,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,16 +45,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.platform.LocalContext
 import com.sunglow.spectrum.R
+import com.sunglow.spectrum.core.ModelSel
 import com.sunglow.spectrum.core.TrendWindow
+import com.sunglow.spectrum.core.fmtClock
+import com.sunglow.spectrum.core.glowWindow
 import com.sunglow.spectrum.core.gradeOf
 import com.sunglow.spectrum.core.rankWindows
+import com.sunglow.spectrum.core.verdictViewOf
 import com.sunglow.spectrum.ui.HomeViewModel
 import com.sunglow.spectrum.ui.TrendCell
 import com.sunglow.spectrum.ui.TrendRow
 import com.sunglow.spectrum.ui.theme.SunglowColors
 import com.sunglow.spectrum.ui.theme.SunglowTheme
 import com.sunglow.spectrum.ui.trendRampColor
+import com.sunglow.spectrum.ui.share.ShareCard
 import java.time.LocalDate
 import kotlin.math.roundToInt
 
@@ -67,6 +78,16 @@ import kotlin.math.roundToInt
 fun TrendScreen(vm: HomeViewModel = viewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     val colors = SunglowTheme.colors
+    val context = LocalContext.current
+    var model by rememberSaveable { mutableStateOf(ModelSel.ENS) }
+    val dark = when (state.themeMode) {
+        1 -> true
+        2 -> false
+        else -> isSystemInDarkTheme()
+    }
+    val rows = state.trend.map { row ->
+        row.copy(am = row.am?.forModel(model), pm = row.pm?.forModel(model))
+    }
 
     LaunchedEffect(Unit) { vm.loadTrend(cacheOnly = true) }
 
@@ -93,6 +114,27 @@ fun TrendScreen(vm: HomeViewModel = viewModel()) {
                         style = MaterialTheme.typography.bodySmall,
                         color = colors.faint
                     )
+                    if (rows.isNotEmpty()) {
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            text = stringResource(R.string.trend_save),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = colors.accentCool,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(999.dp))
+                                .border(1.dp, colors.ruleStrong, RoundedCornerShape(999.dp))
+                                .clickable {
+                                    val bmp = ShareCard.renderTrend(context, rows, state.city, dark)
+                                    ShareCard.shareBitmap(
+                                        context,
+                                        bmp,
+                                        "sunglow-trend-${state.city.shortName}.png",
+                                        state.city.name + " · " + context.getString(R.string.trend_title)
+                                    )
+                                }
+                                .padding(horizontal = 10.dp, vertical = 8.dp)
+                        )
+                    }
                 }
                 Spacer(Modifier.height(4.dp))
                 Text(
@@ -104,6 +146,29 @@ fun TrendScreen(vm: HomeViewModel = viewModel()) {
                     style = MaterialTheme.typography.labelSmall,
                     color = colors.faint
                 )
+                Spacer(Modifier.height(10.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    ModelSel.values().forEach { option ->
+                        val label = when (option) {
+                            ModelSel.ENS -> stringResource(R.string.model_ens)
+                            ModelSel.GFS -> "GFS"
+                            ModelSel.EC -> "EC"
+                            ModelSel.RT -> stringResource(R.string.model_rt)
+                        }
+                        Text(
+                            text = label,
+                            color = if (model == option) colors.bg else colors.muted,
+                            fontSize = 10.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(if (model == option) colors.accentCool else colors.bg3)
+                                .clickable { model = option }
+                                .padding(vertical = 10.dp)
+                        )
+                    }
+                }
                 if (state.trendLoading) {
                     Spacer(Modifier.height(8.dp))
                     Box(
@@ -127,7 +192,7 @@ fun TrendScreen(vm: HomeViewModel = viewModel()) {
             }
         }
 
-        val best = bestWindows(state.trend)
+        val best = bestWindows(rows)
         if (best.isNotEmpty()) {
             item {
                 Column(Modifier.padding(horizontal = 18.dp)) {
@@ -136,20 +201,34 @@ fun TrendScreen(vm: HomeViewModel = viewModel()) {
                         style = MaterialTheme.typography.titleSmall,
                         color = colors.ink
                     )
+                    Spacer(Modifier.height(4.dp))
+                    bestWindowLabel(best.first().third)?.let { label ->
+                        Text(
+                            text = stringResource(R.string.trend_best_window, best.first().first, label),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.accentCool
+                        )
+                    }
                     Spacer(Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        best.forEachIndexed { i, w ->
-                            BestCard(
-                                rank = i + 1,
-                                date = w.first,
-                                periodAm = w.second == 0,
-                                cell = w.third,
-                                modifier = Modifier.weight(1f),
-                                onClick = {
-                                    vm.selectDate(w.first)
-                                    vm.selectTab(0)
+                    BoxWithConstraints {
+                        if (maxWidth < 420.dp) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                best.forEachIndexed { i, w ->
+                                    BestCard(i + 1, w.first, w.second == 0, w.third, Modifier.fillMaxWidth()) {
+                                        vm.selectDate(w.first)
+                                        vm.selectTab(0)
+                                    }
                                 }
-                            )
+                            }
+                        } else {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                best.forEachIndexed { i, w ->
+                                    BestCard(i + 1, w.first, w.second == 0, w.third, Modifier.weight(1f)) {
+                                        vm.selectDate(w.first)
+                                        vm.selectTab(0)
+                                    }
+                                }
+                            }
                         }
                     }
                     Spacer(Modifier.height(16.dp))
@@ -163,7 +242,7 @@ fun TrendScreen(vm: HomeViewModel = viewModel()) {
             }
         }
 
-        items(state.trend, key = { it.date }) { row ->
+        items(rows, key = { it.date }) { row ->
             TrendDayRow(
                 row = row,
                 onClick = {
@@ -207,14 +286,30 @@ fun TrendScreen(vm: HomeViewModel = viewModel()) {
 
 /** 三天最佳：跨朝/晚按 Q 降序、Q 相同按 P 降序（口径在 core/TrendRank.kt，供单测断言） */
 private fun bestWindows(rows: List<TrendRow>): List<Triple<String, Int, TrendCell>> {
-    val all = mutableListOf<TrendWindow>()
+    val candidates = mutableListOf<Pair<TrendWindow, TrendCell>>()
     rows.forEach { r ->
-        r.am?.let { all += TrendWindow(r.date, true, it.p, it.q, it.grade) }
-        r.pm?.let { all += TrendWindow(r.date, false, it.p, it.q, it.grade) }
+        r.am?.let { candidates += TrendWindow(r.date, true, it.p, it.q, it.grade) to it }
+        r.pm?.let { candidates += TrendWindow(r.date, false, it.p, it.q, it.grade) to it }
     }
-    return rankWindows(all).map {
-        Triple(it.date, if (it.periodAm) 0 else 1, TrendCell(it.p, it.q, it.grade))
+    return rankWindows(candidates.map { it.first }).map { ranked ->
+        val original = candidates.first { it.first == ranked }.second
+        Triple(ranked.date, if (ranked.periodAm) 0 else 1, original)
     }
+}
+
+private fun TrendCell.forModel(model: ModelSel): TrendCell {
+    val r = result ?: return this
+    val view = verdictViewOf(r, model)
+    return copy(p = view.p, q = view.q, grade = view.grade)
+}
+
+private fun bestWindowLabel(cell: TrendCell): String? {
+    val r = cell.result ?: return null
+    if (r.evMs <= 0L) return null
+    val duration = r.sRT.geom.dur.takeIf { it.isFinite() && it > 0.0 } ?: 20.0
+    val window = glowWindow(r.evMs, r.period.name == "AM", r.city.lat, r.city.lon, r.sRT.geom.thNearDeg, r.sRT.geom.thFarDeg)
+        ?: (r.evMs - (duration * 30_000).toLong() to r.evMs + (duration * 30_000).toLong())
+    return fmtClock(window.first, r.tz) + "–" + fmtClock(window.second, r.tz)
 }
 
 @Composable

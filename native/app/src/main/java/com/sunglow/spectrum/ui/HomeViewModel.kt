@@ -43,7 +43,7 @@ import kotlinx.coroutines.withContext
  */
 
 /** 趋势里的单日单时段 */
-data class TrendCell(val p: Double, val q: Double, val grade: String)
+data class TrendCell(val p: Double, val q: Double, val grade: String, val result: com.sunglow.spectrum.core.ForecastResult? = null)
 
 /** 趋势里的一天：朝 + 晚 */
 data class TrendRow(val date: String, val am: TrendCell?, val pm: TrendCell?)
@@ -306,8 +306,8 @@ class HomeViewModel(private val app: Application) : AndroidViewModel(app) {
                     val pm = (pmOut.getOrNull(i) as? ForecastOutcome.Success)?.result
                     TrendRow(
                         date = d,
-                        am = am?.let { TrendCell(it.p, it.q, it.grade) },
-                        pm = pm?.let { TrendCell(it.p, it.q, it.grade) }
+                        am = am?.let { TrendCell(it.p, it.q, it.grade, it) },
+                        pm = pm?.let { TrendCell(it.p, it.q, it.grade, it) }
                     )
                 }
                 _state.update {
