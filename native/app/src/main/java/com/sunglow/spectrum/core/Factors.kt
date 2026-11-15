@@ -153,7 +153,7 @@ data class FacDisplayRow(
 /* ---------- 显示单位（与网页 v2/src/core/units.ts 同口径；imperial 默认关闭） ---------- */
 
 /** 距离：输入 km */
-fun uDist(km: Double?, digits: Int = 0, imperial: Boolean = false): String {
+fun uDist(km: Double?, digits: Int = 0, imperial: Boolean = DisplayPrefs.imperial): String {
     if (km == null || !km.isFinite()) return "—"
     if (imperial) {
         val mi = km * 0.621371
@@ -165,7 +165,7 @@ fun uDist(km: Double?, digits: Int = 0, imperial: Boolean = false): String {
 }
 
 /** 高度/厚度：输入米 */
-fun uAlt(m: Double?, imperial: Boolean = false): String {
+fun uAlt(m: Double?, imperial: Boolean = DisplayPrefs.imperial): String {
     if (m == null || !m.isFinite()) return "—"
     if (imperial) return Math.round(m * 3.28084).toString() + " ft"
     return if (m >= 1000) {
@@ -177,7 +177,7 @@ fun uAlt(m: Double?, imperial: Boolean = false): String {
 }
 
 /** 风速：输入 m/s */
-fun uSpeed(ms: Double?, imperial: Boolean = false): String {
+fun uSpeed(ms: Double?, imperial: Boolean = DisplayPrefs.imperial): String {
     if (ms == null || !ms.isFinite()) return "—"
     return if (imperial) {
         String.format(java.util.Locale.US, "%.1f", ms * 2.23694) + " mph"
