@@ -169,6 +169,22 @@ fun TrendScreen(vm: HomeViewModel = viewModel()) {
                         )
                     }
                 }
+                if (rows.isNotEmpty()) {
+                    Spacer(Modifier.height(8.dp))
+                    Canvas(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp))) {
+                        drawRect(
+                            brush = Brush.horizontalGradient(
+                                listOf(0.0, 25.0, 50.0, 75.0, 100.0).map { trendRampColor(it, colors.isDark) }
+                            ),
+                            size = size
+                        )
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        listOf(R.string.grade_short_cha, R.string.grade_short_yiban, R.string.grade_short_liang, R.string.grade_short_you).forEach {
+                            Text(stringResource(it), color = colors.faint, fontSize = 9.sp)
+                        }
+                    }
+                }
                 if (state.trendLoading) {
                     Spacer(Modifier.height(8.dp))
                     Box(

@@ -521,7 +521,10 @@
     <string name="compose_zoom_fit">Fit width</string>
     <string name="snapshot_best_window">Best window · %1$s</string>
     <string name="snapshot_curve">Ray brightness curve · drawn from packed samples</string>
-    <string name="home_hero_subtitle">Spectrum observatory · conditions, light paths and the best window</string>
+    <string name="home_hero_station">Atmospheric Spectrum Observatory · Multi-model blend</string>
+    <string name="home_hero_slogan">Every glow chase leaves a trace.</string>
+    <string name="home_hero_subtitle">An immersive forecast — GFS, ECMWF and ray-tracing models turn tonight\'s sky into a reason to head out.</string>
+    <string name="home_hero_note">Probabilistic forecast · for reference only</string>
     <string name="more_group_main">Main results</string>
     <string name="more_group_detail">Technical details</string>
     <string name="more_group_support">Guides and support</string>

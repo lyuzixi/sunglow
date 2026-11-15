@@ -521,7 +521,10 @@
     <string name="compose_zoom_fit">適應寬度</string>
     <string name="snapshot_best_window">最佳窗口 · %1$s</string>
     <string name="snapshot_curve">光追亮度曲線 · 按包內樣本繪製</string>
-    <string name="home_hero_subtitle">光譜觀測 · 記錄霞光的條件、路徑與最佳窗口</string>
+    <string name="home_hero_station">大氣光譜觀測站 · 多模型綜合</string>
+    <string name="home_hero_slogan">讓每一次追霞，都有跡可循</string>
+    <string name="home_hero_subtitle">沉浸式預報體驗 —— GFS / ECMWF / 光追物理三套演算法，把今晚的天空寫成一份可以出發的理由。</string>
+    <string name="home_hero_note">概率預報 · 僅供參考</string>
     <string name="more_group_main">主結果</string>
     <string name="more_group_detail">技術細節</string>
     <string name="more_group_support">指南與支援</string>

@@ -703,7 +703,12 @@ private fun HeroInputs(
             .padding(horizontal = 18.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Column {
+        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(
+                text = stringResource(R.string.home_hero_station),
+                color = colors.accentCool,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp)
+            )
             Text(
                 text = stringResource(R.string.app_name) + " · " + stringResource(R.string.brand_mark),
                 color = colors.ink,
@@ -711,9 +716,26 @@ private fun HeroInputs(
                 fontWeight = FontWeight.SemiBold
             )
             Text(
+                text = stringResource(R.string.app_name_full),
+                color = colors.muted,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp)
+            )
+            Text(
+                text = stringResource(R.string.home_hero_slogan),
+                color = colors.ink,
+                style = MaterialTheme.typography.titleSmall.copy(fontSize = 14.sp),
+                fontWeight = FontWeight.Medium
+            )
+            Text(
                 text = stringResource(R.string.home_hero_subtitle),
                 color = colors.faint,
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 0.8.sp)
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                lineHeight = 16.sp
+            )
+            Text(
+                text = stringResource(R.string.home_hero_note),
+                color = colors.faint,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp)
             )
         }
         Text(
