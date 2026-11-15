@@ -74,12 +74,16 @@ fun wallIsoToReal(iso: String, offsetSec: Int): Double {
     }
 }
 
-/** 真实时刻 → 城市墙钟的 HH:MM */
+/** 真实时刻 → 城市墙钟；尊重设置中的 24/12 小时制。 */
 fun fmtClock(ms: Double?, tz: TzInfo?): String {
     if (ms == null || !ms.isFinite()) return "—"
     val off = tz?.offsetSec ?: 0
     val d = Instant.ofEpochMilli((ms + off * 1000L).toLong()).atZone(ZoneOffset.UTC)
-    return pad2(d.hour) + ":" + pad2(d.minute)
+    if (!DisplayPrefs.hour12) return pad2(d.hour) + ":" + pad2(d.minute)
+    val h = d.hour % 12
+    val hh = if (h == 0) 12 else h
+    val ap = if (d.hour < 12) "AM" else "PM"
+    return String.format(java.util.Locale.US, "%02d:%02d %s", hh, d.minute, ap)
 }
 
 /** 真实时刻 → 城市墙钟的 YYYY-MM-DD */
