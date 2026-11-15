@@ -57,6 +57,20 @@ must(/@media \(pointer: coarse\)[\s\S]{0,120}height: 44px/.test(shareBtn),
   "ShareButton 缺少触屏 44px 热区");
 must(/@media \(pointer: coarse\)[\s\S]{0,120}height: 44px/.test(shareDrop),
   "ShareDropdown 缺少触屏 44px 热区");
+/* 2026-11-15 手机端实测：≤720 时按钮被折到标题下方、贴着视口左缘，
+   旧 absolute + right:0 让 172px 菜单往左溢出约 120px，被 body 的
+   overflow-x:hidden 裁掉左半边，只剩「完整版 / 9:16」两列小字。
+   必须走与城市下拉 / 月历同一套锚定弹层，别再退回容器内绝对定位。 */
+must(/useAnchoredPopup/.test(shareDrop) && /<Teleport to="body">/.test(shareDrop),
+  "保存菜单没用 useAnchoredPopup + Teleport（窄屏会溢出视口被裁）");
+/* 只查 .sdd-menu 规则块本身：script / CSS 注释里写了「别用 right:0」是说明，不是样式 */
+const sddMenuCss = (shareDrop.match(/\.sdd-menu\s*\{([\s\S]*?)\}/) || [])[1] || "";
+must(!/position:\s*absolute|right:\s*0/.test(sddMenuCss),
+  "保存菜单又退回 absolute / right:0 定位（手机端左侧溢出）");
+must(/max-width:\s*min\(240px,\s*calc\(100vw - 24px\)\)/.test(shareDrop),
+  "保存菜单缺少极窄屏的 max-width 兜底（右侧仍可能溢出）");
+must(/popEl\.value\?\.contains/.test(shareDrop),
+  "Teleport 后点外部关闭没有把菜单算进「内部」（点菜单项会被误关）");
 
 /* ---------- 1.6 分享闭环：故事卡 / 二维码 / 文案 / 日历 ---------- */
 const home = read("src/views/HomeView.vue");

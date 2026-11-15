@@ -4,7 +4,7 @@
  *
  * 守三件事，别的一概不碰：
  *   1) 设置按钮与右侧三个 .icon-btn 完全同规格（尺寸/圆角/类名口径）
- *   2) 桌面导航 7 项齐全、锚点都活着、滚动高亮跟着走；≤860 交回汉堡抽屉
+ *   2) 桌面导航 7 项锚点齐全、都活着、滚动高亮跟着走，外加末尾 1 个下载页入口；≤860 交回汉堡抽屉
  *   3) 手机（390px）设置面板不出界、关得掉、与抽屉互斥
  *
  * 用 agent-browser 驱动已有的 file:// 产物 v2/index.html（构建后才有意义）。
@@ -25,6 +25,11 @@ const PAGE = "file:///" + path.join(ROOT, "index.html").replace(/\\/g, "/");
    实况校准撤出目录（页面仍在，位置在光追之后、附注之前） */
 const NAV_LABELS = ["结论", "十日趋势", "观测场", "多地对比", "分享", "影响因素", "光追细节"];
 const NAV_IDS = ["#verdict", "#trend", "#field", "#compare", "#share", "#factors", "#ray"];
+/* 2026-11-12 Android 内测包上线：下载页是独立静态文件（不是 #section），
+   不能进 NAV 数组（那是 scroll-spy / IntersectionObserver 的唯一口径），
+   只作为第 8 个链接挂在 .nav-tabs 末尾。2026-11-15 同步判据：
+   从「按 7 项数」改成「7 个锚点 + 1 个下载入口，各验各的身份」。 */
+const DL_NAV = { label: "下载 App", href: "./download.html" };
 
 let pass = 0;
 const fails = [];
@@ -191,7 +196,14 @@ eq("1280px 顶栏收成单行 63px",
   ev(`Math.round(document.querySelector('.topbar').getBoundingClientRect().height)`), 63);
 eq("1280px 形态是 mode-one（不收紧、不汉堡）",
   ev(`[...document.querySelector('.topbar').classList]`), ["topbar", "mode-one"]);
-eq("导航 7 项文案与顺序", ev(`[...document.querySelectorAll('.nav-tabs a')].map(a=>a.textContent.trim())`), NAV_LABELS);
+eq("导航 7 项锚点 + 下载入口：文案与顺序",
+  ev(`[...document.querySelectorAll('.nav-tabs a')].map(a=>a.textContent.trim())`),
+  [...NAV_LABELS, DL_NAV.label]);
+eq("下载入口是独立静态页（href 非 #section 且带 .dl-nav 身份）",
+  ev(`(()=>{const a=document.querySelector('.nav-tabs .dl-nav'); return a?[a.getAttribute('href'),a.classList.contains('dl-nav')]:null;})()`),
+  [DL_NAV.href, true]);
+ok("前 7 个仍是 #section 锚点（scroll-spy 口径没被下载页污染）",
+  ev(`[...document.querySelectorAll('.nav-tabs a')].slice(0,7).every(a=>(a.getAttribute('href')||'').startsWith('#'))`) === true);
 const PILL = `(()=>{const p=document.querySelector('.top-actions > .meta-pill'); if(!p) return null;
   const r=p.getBoundingClientRect(); const cs=getComputedStyle(p);
   const kids=[...p.parentElement.children].filter(k=>getComputedStyle(k).display!=='none');
@@ -245,10 +257,10 @@ wait(500);
 eq("1000px 走 mode-tight", ev(`[...document.querySelector('.topbar').classList]`), ["topbar", "mode-tight"]);
 eq("1000px 顶栏仍是单行 63px",
   ev(`Math.round(document.querySelector('.topbar').getBoundingClientRect().height)`), 63);
-eq("1000px 7 项导航仍是一行且可见",
+eq("1000px 8 个导航链接仍是一行且可见（7 锚点 + 下载页）",
   ev(`(()=>{const n=document.querySelector('.nav-tabs'); if(getComputedStyle(n).display==='none') return 'hidden';
     const tops=new Set([...n.querySelectorAll('a')].map(a=>Math.round(a.getBoundingClientRect().top)));
-    return n.querySelectorAll('a').length + '/' + tops.size;})()`), "7/1");
+    return n.querySelectorAll('a').length + '/' + tops.size;})()`), "8/1");
 eq("收紧档导航内边距 6/9", ev(`(()=>{const a=document.querySelector('.nav-tabs a');const cs=getComputedStyle(a);
   return cs.paddingTop+' '+cs.paddingLeft;})()`), "6px 9px");
 eq("收紧档藏起 SUNGLOW 副标", ev(`getComputedStyle(document.querySelector('.brand .name em')).display`), "none");
@@ -286,16 +298,22 @@ eq("图标尺寸统一 34×34", icons861.map((i) => [i.w, i.h]), [[34, 34], [34,
 eq("图标圆角统一", [...new Set(icons861.map((i) => i.r))].length, 1);
 ok("设置按钮走的是 .icon-btn", String(icons861[0].cls).includes("icon-btn"), String(icons861[0].cls));
 
-/* 版本菜单（2026-11-10）：两条真链接，顺序 V1 → Skyglow；V1 用根位置，
-   Skyglow 已独立部署，走跨域绝对地址（文案随留/停更徽章一并断言） */
+/* 版本菜单（2026-11-10 建，2026-11-15 同步为三条）：V1 → Skyglow → Android 内测版。
+   V1 用根位置；Skyglow 已独立部署走跨域绝对地址；Android 是站内独立下载页，
+   与顶栏 .dl-nav 同址（文案随留/停更徽章一并断言）。 */
 ev(`document.querySelector('.top-actions .ver-btn').click()`);
 wait(250);
 ok("版本按钮能打开菜单", ev(`!!document.querySelector('.ver-pop')`) === true);
-eq("版本菜单两条 = V1 / Skyglow（Skyglow 走跨域绝对地址）",
+eq("版本菜单三条 = V1 / Skyglow / Android（Skyglow 走跨域绝对地址）",
   ev(`[...document.querySelectorAll('.ver-pop a')].map(a=>[
     a.textContent.replace(/\\s+/g,'').replace('↗',''), a.getAttribute('href')])`),
   [["Sunglow经典原版已停更", "V1/index.html"],
-    ["Skyglow移植增强版独立项目", "https://sky.sunglow.cloud/"]]);
+    ["Skyglow移植增强版独立项目", "https://sky.sunglow.cloud/"],
+    ["Android内测版", DL_NAV.href]]);
+ok("版本菜单的 Android 入口与顶栏下载页同址",
+  ev(`(()=>{const a=[...document.querySelectorAll('.ver-pop a')].find(x=>x.getAttribute('href')==='./download.html');
+    const d=document.querySelector('.nav-tabs .dl-nav');
+    return !!a && !!d && a.getAttribute('href')===d.getAttribute('href');})()`) === true);
 ev(`document.querySelector('.top-actions .ver-btn').click()`);
 
 ok("设置面板能打开", ev(OPEN_SETTINGS) === true);
@@ -1068,6 +1086,38 @@ ok("390px 下文案仍在 aria-label 里", !!sg390 && /保存图片/.test(sg390.
 ok("390px 下页面没有横向溢出",
   ev(`document.documentElement.scrollWidth <= document.documentElement.clientWidth`) === true,
   JSON.stringify(ev(`[document.documentElement.scrollWidth, document.documentElement.clientWidth]`)));
+
+/* 2026-11-15 手机端实测回归：菜单 Teleport 到 body 后仍要整块落在视口内。
+   旧实现 absolute + right:0 在 390px 下左侧溢出约 120px，被 body 裁掉，
+   只剩右列「完整版 / 9:16」两行小字，两个产物名看不见也点不全。
+   几何与有没有预报结果无关：先解除可能的禁用态，再打开菜单。 */
+ev(`(()=>{const b=document.querySelector('#verdict .share-btn'); if(!b) return false; b.removeAttribute('disabled'); b.click(); return true})()`);
+wait(280);
+const MENU_GEO = `(()=>{
+  const m = document.querySelector('.sdd-menu');
+  if (!m) return null;
+  const r = m.getBoundingClientRect();
+  return {
+    l: Math.round(r.left), rr: Math.round(r.right),
+    t: Math.round(r.top), bb: Math.round(r.bottom), w: Math.round(r.width),
+    vw: document.documentElement.clientWidth, vh: window.innerHeight,
+    vis: getComputedStyle(m).visibility,
+    items: [...m.querySelectorAll('button')].map(x => x.innerText.replace(/\\s+/g,' ').trim())
+  };
+})()`;
+const mg390 = ev(MENU_GEO);
+ok("390px 下保存菜单整块落在视口内",
+  !!mg390 && mg390.vis === "visible" && mg390.l >= 0 && mg390.rr <= mg390.vw &&
+  mg390.t >= 0 && mg390.bb <= mg390.vh,
+  JSON.stringify(mg390));
+ok("390px 下菜单宽度不小于 158px（scoped 样式跟着 Teleport 生效）",
+  !!mg390 && mg390.w >= 158, JSON.stringify(mg390 && [mg390.w, mg390.vis]));
+ok("390px 下两个产物名都完整可读（不再只剩右列小字）",
+  !!mg390 && mg390.items.length === 2 &&
+  mg390.items.some(x => /结论卡/.test(x) && /完整版/.test(x)) &&
+  mg390.items.some(x => /竖版故事卡/.test(x) && /9:16/.test(x)),
+  JSON.stringify(mg390 && mg390.items));
+ev(`document.querySelector('#verdict .share-btn').click()`);
 
 /* 英文模式：按钮与文件名都要翻译 */
 ab("eval", `localStorage.setItem('SUNGLOW.v2.pref', JSON.stringify({lang:'en',theme:'light'}))`);
