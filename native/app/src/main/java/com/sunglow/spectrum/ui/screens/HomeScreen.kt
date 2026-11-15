@@ -551,11 +551,20 @@ private fun HeroBlock(
                         SkeletonBar(Modifier.width(72.dp).height(36.dp))
                     }
                 } else {
-                    Text(
-                        text = state.error ?: stringResource(R.string.home_start),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.8f)
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(86.dp), contentAlignment = Alignment.Center) {
+                            Canvas(Modifier.fillMaxSize()) {
+                                drawCircle(color = Color.White.copy(alpha = 0.20f), radius = size.minDimension / 2f - 4.dp.toPx(), style = androidx.compose.ui.graphics.drawscope.Stroke(3.dp.toPx()))
+                            }
+                            Text("—", color = Color.White, fontSize = 28.sp)
+                        }
+                        Spacer(Modifier.width(14.dp))
+                        Text(
+                            text = state.error ?: stringResource(R.string.home_start),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
+                    }
                 }
             } else {
                 Row(
@@ -566,33 +575,10 @@ private fun HeroBlock(
                     ),
                     verticalAlignment = Alignment.Bottom
                 ) {
-                    Column {
-                        AnimatedNumberText(
-                            target = view.p,
-                            style = MaterialTheme.typography.displaySmall.copy(
-                                fontSize = 40.sp,
-                                fontWeight = FontWeight.Medium,
-                                shadow = Shadow(colors.accent.copy(alpha = 0.45f), blurRadius = 18f)
-                            ),
-                            color = Color.White,
-                            durationMs = 600,
-                            enabled = motion
-                        )
-                        Text(
-                            text = if (state.period == Period.AM) stringResource(R.string.home_am_prob) else stringResource(R.string.home_pm_prob),
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 9.sp,
-                                letterSpacing = 1.4.sp
-                            ),
-                            color = Color.White.copy(alpha = 0.62f)
-                        )
-                    }
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = "%",
-                        style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp),
-                        color = Color.White.copy(alpha = 0.9f),
-                        modifier = Modifier.padding(bottom = 18.dp)
+                    ProbabilityRing(
+                        p = view.p,
+                        label = if (state.period == Period.AM) stringResource(R.string.home_am_prob) else stringResource(R.string.home_pm_prob),
+                        motion = motion
                     )
                     Spacer(Modifier.width(20.dp))
                     Column {
@@ -646,6 +632,59 @@ private fun HeroBlock(
         }
     }
         HeroInputs(state, onOpenCity, onSelectDate, onSelectPeriod)
+    }
+}
+
+@Composable
+private fun ProbabilityRing(p: Double, label: String, motion: Boolean) {
+    val colors = SunglowTheme.colors
+    Box(Modifier.size(116.dp), contentAlignment = Alignment.Center) {
+        Canvas(Modifier.fillMaxSize()) {
+            val stroke = 5.dp.toPx()
+            val inset = stroke / 2f + 3.dp.toPx()
+            val arcSize = Size(size.width - inset * 2, size.height - inset * 2)
+            drawArc(
+                color = Color.White.copy(alpha = 0.20f),
+                startAngle = -90f,
+                sweepAngle = 360f,
+                useCenter = false,
+                topLeft = Offset(inset, inset),
+                size = arcSize,
+                style = androidx.compose.ui.graphics.drawscope.Stroke(stroke)
+            )
+            drawArc(
+                color = colors.accentCool,
+                startAngle = -90f,
+                sweepAngle = (p.coerceIn(0.0, 100.0) * 3.6).toFloat(),
+                useCenter = false,
+                topLeft = Offset(inset, inset),
+                size = arcSize,
+                style = androidx.compose.ui.graphics.drawscope.Stroke(stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+            )
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Row(verticalAlignment = Alignment.Bottom) {
+                AnimatedNumberText(
+                    target = p,
+                    style = MaterialTheme.typography.displaySmall.copy(
+                        fontSize = 31.sp,
+                        fontWeight = FontWeight.Medium,
+                        shadow = Shadow(colors.accent.copy(alpha = 0.45f), blurRadius = 18f)
+                    ),
+                    color = Color.White,
+                    durationMs = 600,
+                    enabled = motion
+                )
+                Text("%", color = Color.White.copy(alpha = 0.9f), fontSize = 13.sp, modifier = Modifier.padding(bottom = 5.dp))
+            }
+            Text(
+                label,
+                color = Color.White.copy(alpha = 0.68f),
+                fontSize = 7.5.sp,
+                letterSpacing = 0.7.sp,
+                maxLines = 1
+            )
+        }
     }
 }
 
@@ -3146,7 +3185,7 @@ private fun colorLabel(key: String): String = when (key) {
 }
 
 @Composable
-private fun factorName(key: String): String = stringResource(
+internal fun factorName(key: String): String = stringResource(
     when (key) {
         "cover" -> R.string.factor_name_cover
         "base" -> R.string.factor_name_base

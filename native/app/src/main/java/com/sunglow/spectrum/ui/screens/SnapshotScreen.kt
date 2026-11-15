@@ -47,6 +47,8 @@ import com.sunglow.spectrum.ui.i18n.gradeText
 import com.sunglow.spectrum.ui.theme.SunglowColors
 import com.sunglow.spectrum.ui.theme.SunglowTheme
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.doubleOrNull
@@ -159,7 +161,7 @@ fun SnapshotScreen(snap: PackSnapshot, onExit: () -> Unit) {
             SnapshotSection("models", stringResource(R.string.model_title), colors) {
                 models.mapNotNull { it as? JsonObject }.forEach { model ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(model.text("label").ifBlank { model.text("id") }, color = colors.ink, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                        Text(snapshotModelName(model), color = colors.ink, fontSize = 13.sp, modifier = Modifier.weight(1f))
                         Text("P ${model.num("P")?.toInt() ?: 0}%", color = colors.muted, fontSize = 12.sp)
                         Spacer(Modifier.width(12.dp))
                         Text("Q ${model.num("Q")?.toInt() ?: 0}", color = colors.accentCool, fontSize = 12.sp)
@@ -171,11 +173,11 @@ fun SnapshotScreen(snap: PackSnapshot, onExit: () -> Unit) {
         if (!factors.isNullOrEmpty()) {
             SnapshotSection("factors", stringResource(R.string.page_factors), colors) {
                 factors.mapNotNull { it as? JsonArray }.forEach { row ->
-                    val key = (row.getOrNull(0) as? JsonPrimitive)?.content ?: "—"
-                    val raw = (row.getOrNull(1) as? JsonPrimitive)?.content ?: "—"
+                    val key = jsonText(row.getOrNull(0)).ifBlank { "—" }
+                    val raw = jsonText(row.getOrNull(1)).ifBlank { "—" }
                     val score = (row.getOrNull(2) as? JsonPrimitive)?.doubleOrNull
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(key, color = colors.muted, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                        Text(factorName(key), color = colors.muted, fontSize = 12.sp, modifier = Modifier.weight(1f))
                         Text(raw, color = colors.ink, fontSize = 12.sp, modifier = Modifier.padding(end = 10.dp))
                         Text(score?.let { String.format(Locale.US, "%.0f", it) } ?: "—", color = colors.accentCool, fontSize = 12.sp)
                     }
@@ -285,6 +287,15 @@ private fun SnapshotRayCurve(ray: JsonObject) {
     }
 }
 
+@Composable
+private fun snapshotModelName(model: JsonObject): String = when (model.text("id")) {
+    "gfs" -> stringResource(R.string.model_gfs)
+    "ec" -> stringResource(R.string.model_ec)
+    "rt" -> stringResource(R.string.model_rt)
+    "ens", "mix" -> stringResource(R.string.model_ens)
+    else -> model.text("label").ifBlank { model.text("id") }
+}
+
 private fun snapshotWindow(obj: JsonObject?, snap: PackSnapshot): String? {
     val evMs = obj.num("evMs") ?: return null
     if (evMs <= 0.0) return null
@@ -309,7 +320,12 @@ private fun snapshotClock(ms: Double, offsetSec: Long): String =
 
 private fun JsonObject?.obj(key: String): JsonObject? = this?.get(key) as? JsonObject
 private fun JsonObject?.num(key: String): Double? = (this?.get(key) as? JsonPrimitive)?.doubleOrNull
-private fun JsonObject?.text(key: String): String = (this?.get(key) as? JsonPrimitive)?.content.orEmpty()
+private fun JsonObject?.text(key: String): String = jsonText(this?.get(key))
+private fun jsonText(value: JsonElement?): String = when (value) {
+    null, is JsonNull -> ""
+    is JsonPrimitive -> value.content
+    else -> ""
+}
 
 @Composable
 private fun SnapshotSection(
