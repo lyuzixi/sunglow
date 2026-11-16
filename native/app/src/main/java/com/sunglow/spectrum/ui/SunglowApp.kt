@@ -220,7 +220,7 @@ private fun DrawScope.tabIcon(type: Int, color: Color) {
                 cap = StrokeCap.Round
             )
         }
-        else -> {
+        2 -> {
             /* 观测场：定位针 */
             drawCircle(
                 color = color,
@@ -241,7 +241,7 @@ private fun DrawScope.tabIcon(type: Int, color: Color) {
                 cap = StrokeCap.Round
             )
         }
-        3 -> {
+        else -> {
             /* 我的：头像 + 肩线 */
             drawCircle(
                 color = color,
