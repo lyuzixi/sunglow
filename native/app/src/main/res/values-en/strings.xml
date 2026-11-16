@@ -7,9 +7,21 @@
     <string name="lang_zh_tw">Traditional Chinese</string>
     <string name="lang_en">English</string>
 
-    <string name="tab_conclusion">Now</string>
+    <string name="tab_conclusion">Forecast</string>
     <string name="tab_trend">Trend</string>
     <string name="tab_field">Field</string>
+    <string name="tab_mine">Me</string>
+    <string name="mine_subtitle">Preferences, alerts, offline data and support live here</string>
+    <string name="mine_full_settings">Full settings</string>
+    <string name="mine_app_lab">App Lab · Experiments</string>
+    <string name="share_full_center">Full share center</string>
+    <string name="share_full_note">Poster sizes, templates, long cards and QR codes</string>
+    <string name="field_tools_short">Field tools</string>
+    <string name="field_tools">Field tools</string>
+    <string name="field_tools_note">Comparison, calibration and method notes start from this field</string>
+    <string name="field_compare_note">Compare probability and quality across up to four points</string>
+    <string name="field_calib_note">Log what you saw to calibrate local forecasts</string>
+    <string name="field_notes_note">Data sources, algorithm notes and method details</string>
     <string name="settings_title">Settings</string>
     <string name="settings_theme">Theme</string>
     <string name="theme_system">System</string>
@@ -527,10 +539,6 @@
     <string name="home_hero_note">Probabilistic forecast · for reference only</string>
     <string name="home_quick_share">Share this card</string>
     <string name="home_quick_save">Save image</string>
-    <string name="more_group_main">Main results</string>
-    <string name="more_group_detail">Technical details</string>
-    <string name="more_group_support">Guides and support</string>
-    <string name="more_group_other">More</string>
     <string name="guide_download">Download and installation guide</string>
     <string name="guide_classic">Open Sunglow Classic Edition</string>
     <string name="field_contours">Contours</string>
@@ -544,7 +552,6 @@
     <string name="compose_preset_standard">Standard</string>
     <string name="compose_preset_full">Complete</string>
     <!-- R5 navigation, settings and support pages -->
-    <string name="page_more">Catalog</string>
     <string name="page_back">Back</string>
     <string name="page_compare">Compare places</string>
     <string name="page_factors">Factors</string>

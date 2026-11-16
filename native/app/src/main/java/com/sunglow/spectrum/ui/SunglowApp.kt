@@ -47,13 +47,15 @@ import com.sunglow.spectrum.R
 import com.sunglow.spectrum.ui.motion.rememberMotionEnabled
 import com.sunglow.spectrum.ui.screens.FieldScreen
 import com.sunglow.spectrum.ui.screens.HomeScreen
+import com.sunglow.spectrum.ui.screens.MineScreen
 import com.sunglow.spectrum.ui.screens.SecondaryScreen
 import com.sunglow.spectrum.ui.screens.SnapshotScreen
 import com.sunglow.spectrum.ui.screens.TrendScreen
 import com.sunglow.spectrum.ui.theme.SunglowTheme
 
 /*
- * 应用骨架：三个 Tab（结论 / 趋势 / 观测场），共用同一个 ViewModel。
+ * 手机信息架构：四个 Tab（预报 / 趋势 / 观测场 / 我的），共用同一个 ViewModel。
+ * 二级页从上下文进入，顶部只保留返回；不再有目录与跨页页脚。
  */
 
 @Composable
@@ -97,8 +99,9 @@ fun SunglowApp(vm: HomeViewModel = viewModel()) {
                 ) { current ->
                     when (current) {
                         0 -> HomeScreen(vm, ::openPage)
-                        1 -> TrendScreen(vm)
-                        else -> FieldScreen(vm)
+                        1 -> TrendScreen(vm, ::openPage)
+                        2 -> FieldScreen(vm, ::openPage)
+                        else -> MineScreen(vm, state, ::openPage)
                     }
                 }
             }
@@ -131,6 +134,7 @@ private fun SunglowTabBar(selected: Int, onSelect: (Int) -> Unit) {
             TabItem(0, stringResource(R.string.tab_conclusion), selected == 0, Modifier.weight(1f)) { onSelect(0) }
             TabItem(1, stringResource(R.string.tab_trend), selected == 1, Modifier.weight(1f)) { onSelect(1) }
             TabItem(2, stringResource(R.string.tab_field), selected == 2, Modifier.weight(1f)) { onSelect(2) }
+            TabItem(3, stringResource(R.string.tab_mine), selected == 3, Modifier.weight(1f)) { onSelect(3) }
         }
     }
 }
@@ -235,6 +239,24 @@ private fun DrawScope.tabIcon(type: Int, color: Color) {
                 end = Offset(size.width * 0.5f, size.height * 0.94f),
                 strokeWidth = sw,
                 cap = StrokeCap.Round
+            )
+        }
+        3 -> {
+            /* 我的：头像 + 肩线 */
+            drawCircle(
+                color = color,
+                radius = size.width * 0.16f,
+                center = Offset(size.width * 0.5f, size.height * 0.31f),
+                style = Stroke(width = sw)
+            )
+            drawArc(
+                color = color,
+                startAngle = 180f,
+                sweepAngle = 180f,
+                useCenter = false,
+                topLeft = Offset(size.width * 0.18f, size.height * 0.50f),
+                size = Size(size.width * 0.64f, size.height * 0.38f),
+                style = Stroke(width = sw, cap = StrokeCap.Round)
             )
         }
     }

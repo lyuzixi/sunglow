@@ -24,9 +24,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -47,6 +50,8 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -94,6 +99,9 @@ import com.sunglow.spectrum.core.transectPoints
 import com.sunglow.spectrum.core.uAlt
 import com.sunglow.spectrum.core.uDist
 import com.sunglow.spectrum.core.verdictViewOf
+import com.sunglow.spectrum.ui.AppPage
+import com.sunglow.spectrum.ui.components.MoreIcon
+import com.sunglow.spectrum.ui.components.ShareIcon
 import com.sunglow.spectrum.ui.share.ShareCard
 import com.sunglow.spectrum.ui.HomeUiState
 import com.sunglow.spectrum.ui.HomeViewModel
@@ -107,11 +115,22 @@ import kotlin.math.roundToInt
  * 观测场：地图（osmdroid 原生底图，可拖拽缩放）+ 光路剖面。
  */
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FieldScreen(vm: HomeViewModel = viewModel()) {
+fun FieldScreen(vm: HomeViewModel = viewModel(), onOpenPage: (AppPage) -> Unit = {}) {
     val state by vm.state.collectAsStateWithLifecycle()
     val colors = SunglowTheme.colors
     val context = LocalContext.current
+    val pageScroll = rememberScrollState()
+    var shareOpen by rememberSaveable { mutableStateOf(false) }
+    var toolsOpen by rememberSaveable { mutableStateOf(false) }
+    var lastTabTap by rememberSaveable { mutableStateOf(state.tabTap) }
+    LaunchedEffect(state.tabTap) {
+        if (state.tabTap != lastTabTap) {
+            lastTabTap = state.tabTap
+            if (state.tab == 2) pageScroll.scrollTo(0)
+        }
+    }
     val dark = when (state.themeMode) {
         1 -> true
         2 -> false
@@ -155,12 +174,12 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(pageScroll)
             .statusBarsPadding()
             .padding(bottom = 24.dp)
     ) {
         Column(Modifier.padding(horizontal = 18.dp, vertical = 14.dp)) {
-            Row(verticalAlignment = Alignment.Bottom) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = stringResource(R.string.field_title),
                     style = MaterialTheme.typography.headlineSmall.copy(fontSize = 20.sp),
@@ -168,16 +187,46 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
                 )
                 Spacer(Modifier.weight(1f))
                 Text(
-                    text = state.city.name + " · " + stringResource(
-                        if (state.period == Period.AM) R.string.widget_am else R.string.widget_pm
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colors.faint
+                    text = stringResource(R.string.field_compare),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.accentCool,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(999.dp))
+                        .border(1.dp, colors.ruleStrong, RoundedCornerShape(999.dp))
+                        .clickable { onOpenPage(AppPage.Compare) }
+                        .padding(horizontal = 12.dp, vertical = 9.dp)
                 )
+                Spacer(Modifier.width(6.dp))
+                if (result != null) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(colors.glass)
+                            .clickable { shareOpen = true }
+                            .semantics { contentDescription = context.getString(R.string.share_title) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        ShareIcon(colors.accentCool, 16.dp)
+                    }
+                }
+                Spacer(Modifier.width(2.dp))
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .clickable { toolsOpen = true }
+                        .semantics { contentDescription = context.getString(R.string.field_tools_short) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    MoreIcon(colors.muted, 16.dp)
+                }
             }
             Spacer(Modifier.height(4.dp))
             Text(
-                text = stringResource(R.string.field_subtitle),
+                text = state.city.name + " · " + stringResource(
+                    if (state.period == Period.AM) R.string.widget_am else R.string.widget_pm
+                ) + " · " + stringResource(R.string.field_subtitle),
                 style = MaterialTheme.typography.labelSmall,
                 color = colors.faint
             )
@@ -425,9 +474,98 @@ fun FieldScreen(vm: HomeViewModel = viewModel()) {
             }
         }
     }
+
+    if (toolsOpen) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = { toolsOpen = false },
+            sheetState = sheetState,
+            containerColor = colors.bg2
+        ) {
+            FieldToolsSheet(
+                onCompare = {
+                    toolsOpen = false
+                    onOpenPage(AppPage.Compare)
+                },
+                onCalib = {
+                    toolsOpen = false
+                    onOpenPage(AppPage.Calib)
+                },
+                onNotes = {
+                    toolsOpen = false
+                    onOpenPage(AppPage.Notes)
+                },
+                onFullShare = {
+                    toolsOpen = false
+                    onOpenPage(AppPage.Share)
+                }
+            )
+        }
+    }
+
+    if (shareOpen && result != null) {
+        ShareBottomSheetModal(
+            result = result,
+            view = verdictViewOf(result, ModelSel.ENS),
+            state = state,
+            onLoadHeat = { vm.loadMapHeat() },
+            onDismiss = { shareOpen = false },
+            onOpenFull = {
+                shareOpen = false
+                onOpenPage(AppPage.Share)
+            }
+        )
+    }
 }
 
-/* ---------- 剖面 ---------- */
+@Composable
+private fun FieldToolsSheet(
+    onCompare: () -> Unit,
+    onCalib: () -> Unit,
+    onNotes: () -> Unit,
+    onFullShare: () -> Unit
+) {
+    val colors = SunglowTheme.colors
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(start = 20.dp, end = 20.dp, bottom = 28.dp)
+    ) {
+        Text(
+            text = stringResource(R.string.field_tools),
+            style = MaterialTheme.typography.titleMedium,
+            color = colors.ink
+        )
+        Spacer(Modifier.height(5.dp))
+        Text(
+            text = stringResource(R.string.field_tools_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = colors.faint
+        )
+        Spacer(Modifier.height(14.dp))
+        listOf(
+            Triple(stringResource(R.string.field_compare), stringResource(R.string.field_compare_note), onCompare),
+            Triple(stringResource(R.string.field_calib), stringResource(R.string.field_calib_note), onCalib),
+            Triple(stringResource(R.string.settings_notes_title), stringResource(R.string.field_notes_note), onNotes),
+            Triple(stringResource(R.string.share_full_center), stringResource(R.string.share_full_note), onFullShare)
+        ).forEach { (title, note, action) ->
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(colors.glass)
+                    .border(1.dp, colors.rule, RoundedCornerShape(14.dp))
+                    .clickable { action() }
+                    .padding(horizontal = 15.dp, vertical = 13.dp)
+            ) {
+                Text(title, color = colors.ink, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(3.dp))
+                Text(note, color = colors.faint, fontSize = 11.sp, lineHeight = 16.sp)
+            }
+        }
+    }
+}
 
 @Composable
 private fun RayProfile(result: ForecastResult) {

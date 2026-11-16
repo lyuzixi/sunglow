@@ -46,6 +46,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.rememberScrollState
@@ -184,6 +185,14 @@ fun HomeScreen(vm: HomeViewModel = viewModel(), onOpenPage: (AppPage) -> Unit = 
     }
 
     val result = state.result
+    val listState = rememberLazyListState()
+    var lastTabTap by remember { mutableStateOf(state.tabTap) }
+    LaunchedEffect(state.tabTap) {
+        if (state.tabTap != lastTabTap) {
+            lastTabTap = state.tabTap
+            if (state.tab == 0) listState.scrollToItem(0)
+        }
+    }
 
     PullToRefreshBox(
         isRefreshing = state.loading && result != null,
@@ -192,6 +201,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel(), onOpenPage: (AppPage) -> Unit = 
     ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
+        state = listState,
         contentPadding = PaddingValues(bottom = 20.dp)
     ) {
         item {
@@ -203,12 +213,12 @@ fun HomeScreen(vm: HomeViewModel = viewModel(), onOpenPage: (AppPage) -> Unit = 
                 onOpenCity = { vm.setCitySheetOpen(true) },
                 onSelectDate = vm::selectDate,
                 onSelectPeriod = vm::selectPeriod,
-                onOpenSettings = { onOpenPage(AppPage.More) },
+                onOpenSettings = { vm.selectTab(3) },
                 onCycleModel = cycleModel,
                 onShare = {
                     if (result != null) {
                         haptics.open()
-                        onOpenPage(AppPage.Share)
+                        sheet = "share"
                     }
                 }
             )
@@ -304,7 +314,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel(), onOpenPage: (AppPage) -> Unit = 
                                 .border(1.dp, colors.ruleStrong, RoundedCornerShape(999.dp))
                                 .clickable {
                                     haptics.open()
-                                    onOpenPage(AppPage.Share)
+                                    sheet = "share"
                                 }
                                 .padding(horizontal = 12.dp, vertical = 8.dp)
                         )
@@ -350,7 +360,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel(), onOpenPage: (AppPage) -> Unit = 
                     Spacer(Modifier.height(8.dp))
                     FoldRow(stringResource(R.string.fold_share), stringResource(R.string.fold_share_note)) {
                         haptics.open()
-                        onOpenPage(AppPage.Share)
+                        sheet = "share"
                     }
                 }
             }
@@ -407,7 +417,16 @@ fun HomeScreen(vm: HomeViewModel = viewModel(), onOpenPage: (AppPage) -> Unit = 
             when (sheet) {
                 "factors" -> FactorsSheet(result)
                 "ray" -> RaySheet(result)
-                "share" -> ShareSheet(result, verdictViewOf(result, modelSel), state, { vm.loadMapHeat() })
+                "share" -> ShareSheet(
+                    result = result,
+                    view = verdictViewOf(result, modelSel),
+                    state = state,
+                    onLoadHeat = { vm.loadMapHeat() },
+                    onOpenFull = {
+                        sheet = null
+                        onOpenPage(AppPage.Share)
+                    }
+                )
                 "settings" -> SettingsSheet(
                     themeMode = state.themeMode,
                     photoMode = state.photoMode,
@@ -1655,12 +1674,40 @@ private fun TimeLine(result: ForecastResult, colors: SunglowColors) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun ShareBottomSheetModal(
+    result: ForecastResult,
+    view: VerdictView,
+    state: com.sunglow.spectrum.ui.HomeUiState,
+    onLoadHeat: () -> Unit,
+    onDismiss: () -> Unit,
+    onOpenFull: () -> Unit
+) {
+    val colors = SunglowTheme.colors
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = colors.bg2
+    ) {
+        ShareSheet(
+            result = result,
+            view = view,
+            state = state,
+            onLoadHeat = onLoadHeat,
+            onOpenFull = onOpenFull
+        )
+    }
+}
+
 @Composable
 internal fun ShareSheet(
     result: ForecastResult,
     view: VerdictView,
     state: com.sunglow.spectrum.ui.HomeUiState,
-    onLoadHeat: () -> Unit
+    onLoadHeat: () -> Unit,
+    onOpenFull: (() -> Unit)? = null
 ) {
     val colors = SunglowTheme.colors
     val context = LocalContext.current
@@ -1705,11 +1752,25 @@ internal fun ShareSheet(
             .verticalScroll(rememberScrollState())
             .padding(start = 20.dp, end = 20.dp, bottom = 28.dp)
     ) {
-        Text(
-            text = stringResource(R.string.share_title),
-            style = MaterialTheme.typography.titleMedium,
-            color = colors.ink
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(R.string.share_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = colors.ink,
+                modifier = Modifier.weight(1f)
+            )
+            onOpenFull?.let { open ->
+                Text(
+                    text = stringResource(R.string.share_full_center),
+                    color = colors.accentCool,
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(999.dp))
+                        .clickable { open() }
+                        .padding(horizontal = 8.dp, vertical = 10.dp)
+                )
+            }
+        }
         Spacer(Modifier.height(6.dp))
         Text(
             text = caption,
@@ -2502,7 +2563,10 @@ internal fun SettingsSheet(
     onClearCache: () -> Unit,
     cacheStats: () -> com.sunglow.spectrum.ui.AppCacheStats,
     onClearResults: () -> Unit,
-    onClearMemory: () -> Unit
+    onClearMemory: () -> Unit,
+    showTitle: Boolean = true,
+    onOpenAppLab: (() -> Unit)? = null,
+    onOpenSettings: (() -> Unit)? = null
 ) {
     val colors = SunglowTheme.colors
     val context = LocalContext.current
@@ -2539,13 +2603,14 @@ internal fun SettingsSheet(
             .verticalScroll(rememberScrollState())
             .padding(start = 20.dp, end = 20.dp, bottom = 28.dp)
     ) {
-        Text(
-            text = stringResource(R.string.settings_title),
-            style = MaterialTheme.typography.titleMedium,
-            color = colors.ink
-        )
-
-        Spacer(Modifier.height(16.dp))
+        if (showTitle) {
+            Text(
+                text = stringResource(R.string.settings_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = colors.ink
+            )
+            Spacer(Modifier.height(16.dp))
+        }
         Text(
             text = stringResource(R.string.settings_theme),
             style = MaterialTheme.typography.labelSmall,
@@ -2805,6 +2870,8 @@ internal fun SettingsSheet(
         SettingsAction(stringResource(R.string.guide_title), onOpenGuide)
         SettingsAction(stringResource(R.string.settings_about), onOpenAbout)
         SettingsAction(stringResource(R.string.settings_feedback), onFeedback)
+        onOpenSettings?.let { SettingsAction(stringResource(R.string.mine_full_settings), it) }
+        onOpenAppLab?.let { SettingsAction(stringResource(R.string.mine_app_lab), it) }
         SettingsAction(stringResource(R.string.settings_clear_cache)) {
             onClearCache()
             stats = cacheStats()

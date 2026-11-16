@@ -6,9 +6,21 @@
     <!-- P0 空壳期文案（shell_* / core_* / next_*）已于 2026-11-13 清理：代码无引用，且三语未对齐。 -->
 
     <!-- M5 · 导航与设置 -->
-    <string name="tab_conclusion">结论</string>
+    <string name="tab_conclusion">预报</string>
     <string name="tab_trend">趋势</string>
     <string name="tab_field">观测场</string>
+    <string name="tab_mine">我的</string>
+    <string name="mine_subtitle">常用偏好、提醒、离线与支持都收在这里</string>
+    <string name="mine_full_settings">完整设置页</string>
+    <string name="mine_app_lab">App Lab · 实验室</string>
+    <string name="share_full_center">完整分享中心</string>
+    <string name="share_full_note">打开发布尺寸、模板、长图与二维码</string>
+    <string name="field_tools_short">观测场工具</string>
+    <string name="field_tools">观测场工具</string>
+    <string name="field_tools_note">比较、校准与附注都从当前观测场进入</string>
+    <string name="field_compare_note">最多 4 个点位，并排比较概率与质量</string>
+    <string name="field_calib_note">记录实测霞况，校准本地预报</string>
+    <string name="field_notes_note">数据口径、算法说明与方法附注</string>
     <string name="settings_title">设置</string>
     <string name="settings_theme">主题</string>
     <string name="theme_system">跟随系统</string>
@@ -534,10 +546,6 @@
     <string name="home_hero_note">概率预报 · 仅供参考</string>
     <string name="home_quick_share">分享这张卡</string>
     <string name="home_quick_save">保存图卡</string>
-    <string name="more_group_main">主结果</string>
-    <string name="more_group_detail">技术细节</string>
-    <string name="more_group_support">指南与支持</string>
-    <string name="more_group_other">更多项目</string>
     <string name="guide_download">下载页与安装说明</string>
     <string name="guide_classic">打开 Sunglow 经典原版</string>
     <string name="field_contours">等值线</string>
@@ -551,7 +559,6 @@
     <string name="compose_preset_standard">标准</string>
     <string name="compose_preset_full">完整</string>
     <!-- R5 页面骨架、设置与支持页 -->
-    <string name="page_more">目录</string>
     <string name="page_back">返回</string>
     <string name="page_compare">多地对比</string>
     <string name="page_factors">影响因素</string>

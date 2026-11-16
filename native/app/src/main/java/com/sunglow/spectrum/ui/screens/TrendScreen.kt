@@ -17,11 +17,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -54,7 +56,9 @@ import com.sunglow.spectrum.core.glowWindow
 import com.sunglow.spectrum.core.gradeOf
 import com.sunglow.spectrum.core.rankWindows
 import com.sunglow.spectrum.core.verdictViewOf
+import com.sunglow.spectrum.ui.AppPage
 import com.sunglow.spectrum.ui.HomeViewModel
+import com.sunglow.spectrum.ui.components.ShareIcon
 import com.sunglow.spectrum.ui.TrendCell
 import com.sunglow.spectrum.ui.TrendRow
 import com.sunglow.spectrum.ui.theme.SunglowColors
@@ -75,11 +79,21 @@ import kotlin.math.roundToInt
  */
 
 @Composable
-fun TrendScreen(vm: HomeViewModel = viewModel()) {
+fun TrendScreen(vm: HomeViewModel = viewModel(), onOpenPage: (AppPage) -> Unit = {}) {
     val state by vm.state.collectAsStateWithLifecycle()
     val colors = SunglowTheme.colors
     val context = LocalContext.current
     var model by rememberSaveable { mutableStateOf(ModelSel.ENS) }
+    var shareOpen by rememberSaveable { mutableStateOf(false) }
+    val listState = rememberLazyListState()
+    val shareResult = state.result
+    var lastTabTap by rememberSaveable { mutableStateOf(state.tabTap) }
+    LaunchedEffect(state.tabTap) {
+        if (state.tabTap != lastTabTap) {
+            lastTabTap = state.tabTap
+            if (state.tab == 1) listState.scrollToItem(0)
+        }
+    }
     val dark = when (state.themeMode) {
         1 -> true
         2 -> false
@@ -93,6 +107,7 @@ fun TrendScreen(vm: HomeViewModel = viewModel()) {
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
+        state = listState,
         contentPadding = PaddingValues(bottom = 24.dp)
     ) {
         item {
@@ -115,6 +130,20 @@ fun TrendScreen(vm: HomeViewModel = viewModel()) {
                         color = colors.faint
                     )
                     if (rows.isNotEmpty()) {
+                        Spacer(Modifier.width(8.dp))
+                        if (shareResult != null) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(999.dp))
+                                    .background(colors.glass)
+                                    .clickable { shareOpen = true }
+                                    .semantics { contentDescription = context.getString(R.string.share_title) },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                ShareIcon(colors.accentCool, 15.dp)
+                            }
+                        }
                         Spacer(Modifier.width(12.dp))
                         Text(
                             text = stringResource(R.string.trend_save),
@@ -297,6 +326,20 @@ fun TrendScreen(vm: HomeViewModel = viewModel()) {
                 )
             }
         }
+    }
+
+    if (shareOpen && shareResult != null) {
+        ShareBottomSheetModal(
+            result = shareResult,
+            view = verdictViewOf(shareResult, model),
+            state = state,
+            onLoadHeat = { vm.loadMapHeat() },
+            onDismiss = { shareOpen = false },
+            onOpenFull = {
+                shareOpen = false
+                onOpenPage(AppPage.Share)
+            }
+        )
     }
 }
 

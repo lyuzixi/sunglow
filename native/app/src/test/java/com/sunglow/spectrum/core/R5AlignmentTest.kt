@@ -126,10 +126,12 @@ class R5AlignmentTest {
     }
     @Test fun topLimitZero() = assertTrue(topHeatCells(heat(), limit = 0).isEmpty())
 
-    @Test fun menuHasElevenPages() = assertEquals(11, AppPage.menuPages.size)
-    @Test fun destinationCountIsSixteen() = assertEquals(16, 3 + 1 + AppPage.menuPages.size + 1)
-    @Test fun snapshotIsNotInOrdinaryMenu() = assertFalse(AppPage.menuPages.any { it.name == "Snapshot" })
-    @Test fun menuDestinationsAreUnique() = assertEquals(AppPage.menuPages.size, AppPage.menuPages.distinct().size)
+    @Test fun secondaryPagesHasElevenPages() = assertEquals(11, AppPage.secondaryPages.size)
+    @Test fun tabCountIsFour() = assertEquals(4, AppPage.TAB_COUNT)
+    @Test fun destinationCountIsSixteen() = assertEquals(16, AppPage.TAB_COUNT + AppPage.secondaryPages.size + 1)
+    @Test fun snapshotIsNotInSecondaryPages() = assertFalse(AppPage.secondaryPages.any { it.name == "Snapshot" })
+    @Test fun secondaryDestinationsAreUnique() = assertEquals(AppPage.secondaryPages.size, AppPage.secondaryPages.distinct().size)
+    @Test fun moreDirectoryIsGone() = assertFalse(AppPage.secondaryPages.any { it.name == "More" })
 
     @Test fun bestWindowIsFinite() {
         val w = bestWindowOf(result())

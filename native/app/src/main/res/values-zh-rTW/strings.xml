@@ -7,9 +7,21 @@
     <string name="lang_zh_tw">繁體</string>
     <string name="lang_en">英文</string>
 
-    <string name="tab_conclusion">結論</string>
+    <string name="tab_conclusion">預報</string>
     <string name="tab_trend">趨勢</string>
     <string name="tab_field">觀測場</string>
+    <string name="tab_mine">我的</string>
+    <string name="mine_subtitle">常用偏好、提醒、離線與支援都在這裡</string>
+    <string name="mine_full_settings">完整設定頁</string>
+    <string name="mine_app_lab">App Lab · 實驗室</string>
+    <string name="share_full_center">完整分享中心</string>
+    <string name="share_full_note">打開發佈尺寸、模板、長圖與 QR Code</string>
+    <string name="field_tools_short">觀測場工具</string>
+    <string name="field_tools">觀測場工具</string>
+    <string name="field_tools_note">比較、校準與附註都從目前觀測場進入</string>
+    <string name="field_compare_note">最多 4 個點位，並排比較機率與品質</string>
+    <string name="field_calib_note">記錄實測霞況，校準本地預報</string>
+    <string name="field_notes_note">資料口徑、演算法說明與方法附註</string>
     <string name="settings_title">設定</string>
     <string name="settings_theme">主題</string>
     <string name="theme_system">跟隨系統</string>
@@ -527,10 +539,6 @@
     <string name="home_hero_note">概率預報 · 僅供參考</string>
     <string name="home_quick_share">分享這張卡</string>
     <string name="home_quick_save">儲存圖卡</string>
-    <string name="more_group_main">主結果</string>
-    <string name="more_group_detail">技術細節</string>
-    <string name="more_group_support">指南與支援</string>
-    <string name="more_group_other">更多項目</string>
     <string name="guide_download">下載頁與安裝說明</string>
     <string name="guide_classic">開啟 Sunglow 經典原版</string>
     <string name="field_contours">等值線</string>
@@ -544,7 +552,6 @@
     <string name="compose_preset_standard">標準</string>
     <string name="compose_preset_full">完整</string>
     <!-- R5 頁面骨架、設定與支援頁 -->
-    <string name="page_more">目錄</string>
     <string name="page_back">返回</string>
     <string name="page_compare">多地對比</string>
     <string name="page_factors">影響因素</string>

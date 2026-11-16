@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -64,10 +65,9 @@ fun SecondaryScreen(
     val colors = SunglowTheme.colors
     val state by vm.state.collectAsStateWithLifecycle()
     Column(Modifier.fillMaxSize().background(colors.bg)) {
-        PageTopBar(page, onBack) { onOpenPage(AppPage.More) }
+        PageTopBar(page, onBack)
         Box(Modifier.weight(1f)) {
             when (page) {
-                AppPage.More -> MoreScreen(state, onOpenPage)
                 AppPage.Compare -> CompareScreen(vm)
                 AppPage.Share -> ShareScreen(vm, state)
                 AppPage.Factors -> FactorsScreen(state)
@@ -82,12 +82,11 @@ fun SecondaryScreen(
                 else -> Unit
             }
         }
-        if (page != AppPage.More) PageFooter(page, onOpenPage)
     }
 }
 
 @Composable
-private fun PageTopBar(page: AppPage, onBack: () -> Unit, onMore: () -> Unit) {
+private fun PageTopBar(page: AppPage, onBack: () -> Unit) {
     val colors = SunglowTheme.colors
     Row(
         modifier = Modifier
@@ -97,7 +96,9 @@ private fun PageTopBar(page: AppPage, onBack: () -> Unit, onMore: () -> Unit) {
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        TextButton(onClick = onBack) { Text("‹ " + stringResource(R.string.page_back), color = colors.ink) }
+        TextButton(onClick = onBack) {
+            Text("‹ " + stringResource(R.string.page_back), color = colors.ink)
+        }
         Text(
             text = stringResource(page.titleRes),
             color = colors.ink,
@@ -105,82 +106,77 @@ private fun PageTopBar(page: AppPage, onBack: () -> Unit, onMore: () -> Unit) {
             modifier = Modifier.weight(1f),
             textAlign = TextAlign.Center
         )
-        TextButton(onClick = onMore, enabled = page != AppPage.More) {
-            Text(if (page == AppPage.More) "" else stringResource(R.string.page_more), color = colors.accentCool)
-        }
+        Spacer(Modifier.size(64.dp))
     }
 }
 
+/**
+ * 第四个 Tab「我的」：常用偏好、提醒、缓存与支持都在同一屏；
+ * 不再作为「更多」目录。完整设置与实验室保留为上下文二级页。
+ */
 @Composable
-private fun PageFooter(page: AppPage, onOpenPage: (AppPage) -> Unit) {
+internal fun MineScreen(vm: HomeViewModel, state: HomeUiState, onOpenPage: (AppPage) -> Unit) {
     val colors = SunglowTheme.colors
-    val pages = AppPage.menuPages
-    val index = pages.indexOf(page).coerceAtLeast(0)
-    val previous = pages.getOrNull(index - 1)
-    val next = pages.getOrNull(index + 1) ?: AppPage.More
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, colors.rule)
-            .padding(horizontal = 12.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        TextButton(onClick = { onOpenPage(previous ?: AppPage.More) }, modifier = Modifier.weight(1f)) {
-            Text("‹ " + (previous?.let { stringResource(it.titleRes) } ?: stringResource(R.string.page_more)), color = colors.muted)
-        }
-        Text("${index + 1}/${pages.size}", color = colors.faint, fontSize = 11.sp)
-        TextButton(onClick = { onOpenPage(next) }, modifier = Modifier.weight(1f)) {
-            Text((next.let { stringResource(it.titleRes) }) + " ›", color = colors.muted)
-        }
-    }
-}
-
-@Composable
-private fun MoreScreen(state: HomeUiState, onOpenPage: (AppPage) -> Unit) {
-    val colors = SunglowTheme.colors
+    val ctx = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 18.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+            .background(colors.bg)
+            .statusBarsPadding()
     ) {
-        Text(state.city.shortName + " · " + state.dateStr, color = colors.muted, fontSize = 13.sp)
-        listOf(
-            R.string.more_group_main to listOf(AppPage.Compare, AppPage.Share),
-            R.string.more_group_detail to listOf(AppPage.Factors, AppPage.Ray, AppPage.Calib, AppPage.Notes),
-            R.string.more_group_support to listOf(AppPage.Guide, AppPage.About, AppPage.Settings),
-            R.string.more_group_other to listOf(AppPage.Feedback, AppPage.AppLab)
-        ).forEach { (groupRes, pages) ->
-            Text(stringResource(groupRes), color = colors.accentCool, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
-            pages.chunked(2).forEach { rowPages ->
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                rowPages.forEach { page ->
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(colors.bg2)
-                            .border(1.dp, colors.rule, RoundedCornerShape(14.dp))
-                            .clickable { onOpenPage(page) }
-                            .padding(16.dp)
-                    ) {
-                        Text(stringResource(page.titleRes), color = colors.ink, fontWeight = FontWeight.SemiBold)
-                        Spacer(Modifier.height(6.dp))
-                        Text(stringResource(pageSubtitle(page)), color = colors.faint, fontSize = 11.sp, lineHeight = 16.sp)
-                    }
-                }
-                if (rowPages.size == 1) Spacer(Modifier.weight(1f))
+        Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 6.dp)) {
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    text = stringResource(R.string.tab_mine),
+                    style = MaterialTheme.typography.headlineSmall.copy(fontSize = 24.sp),
+                    color = colors.ink
+                )
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = state.city.shortName + " · " + state.dateStr,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.faint
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.mine_subtitle),
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.muted
+            )
+        }
+        Box(Modifier.weight(1f)) {
+            key(state.tabTap) {
+                SettingsSheet(
+                themeMode = state.themeMode,
+                photoMode = state.photoMode,
+                imperial = state.imperial,
+                hour12 = state.hour12,
+                lang = state.lang,
+                reminderEnabled = state.reminderEnabled,
+                reminderThreshold = state.reminderThreshold,
+                showSamples = state.showSamples,
+                onSetTheme = vm::setThemeMode,
+                onSetPhotoMode = vm::setPhotoMode,
+                onSetImperial = vm::setImperial,
+                onSetHour12 = vm::setHour12,
+                onSetLang = { vm.setLanguage(it); (ctx as? android.app.Activity)?.recreate() },
+                onSetReminder = vm::setReminderEnabled,
+                onSetThreshold = vm::setReminderThreshold,
+                onSetSamples = vm::setShowSamples,
+                onOpenAbout = { onOpenPage(AppPage.About) },
+                onOpenGuide = { onOpenPage(AppPage.Guide) },
+                onFeedback = { onOpenPage(AppPage.Feedback) },
+                onClearCache = vm::clearLocalCache,
+                cacheStats = vm::cacheStats,
+                onClearResults = vm::clearResultCache,
+                onClearMemory = vm::clearPointCache,
+                showTitle = false,
+                onOpenAppLab = { onOpenPage(AppPage.AppLab) },
+                onOpenSettings = { onOpenPage(AppPage.Settings) }
+                )
             }
         }
-        }
-        Text(
-            text = stringResource(R.string.about_version),
-            color = colors.faint,
-            fontSize = 11.sp,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-            textAlign = TextAlign.Center
-        )
     }
 }
 
@@ -208,20 +204,6 @@ private fun GuideScreen() {
             )
         }
     }
-}
-
-private fun pageSubtitle(page: AppPage): Int = when (page) {
-    AppPage.Compare -> R.string.page_compare_sub
-    AppPage.Share -> R.string.page_share_sub
-    AppPage.Factors -> R.string.page_factors_sub
-    AppPage.Ray -> R.string.page_ray_sub
-    AppPage.Calib -> R.string.page_calib_sub
-    AppPage.Notes -> R.string.page_notes_sub
-    AppPage.Guide -> R.string.page_guide_sub
-    AppPage.About -> R.string.page_about_sub
-    AppPage.Settings -> R.string.page_settings_sub
-    AppPage.Feedback -> R.string.page_feedback_sub
-    else -> R.string.page_app_lab_sub
 }
 
 @Composable
