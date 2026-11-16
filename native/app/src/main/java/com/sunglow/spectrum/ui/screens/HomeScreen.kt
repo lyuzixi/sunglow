@@ -247,6 +247,40 @@ fun HomeScreen(vm: HomeViewModel = viewModel(), onOpenPage: (AppPage) -> Unit = 
             }
             val view = verdictViewOf(result, modelSel)
             item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 18.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    modelOrder.forEach { option ->
+                        val on = option == modelSel
+                        val label = when (option) {
+                            ModelSel.ENS -> stringResource(R.string.model_ens)
+                            ModelSel.GFS -> stringResource(R.string.model_gfs)
+                            ModelSel.EC -> stringResource(R.string.model_ec)
+                            ModelSel.RT -> stringResource(R.string.model_rt)
+                        }
+                        Text(
+                            text = label,
+                            color = if (on) colors.bg else colors.muted,
+                            fontSize = 10.sp,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1,
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(if (on) colors.accentCool else colors.bg3)
+                                .clickable {
+                                    modelSel = option
+                                    haptics.tap()
+                                }
+                                .padding(vertical = 9.dp)
+                        )
+                    }
+                }
+            }
+            item {
                 Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp)) {
                     Crossfade(
                         targetState = verdictSentence(view),
@@ -257,6 +291,35 @@ fun HomeScreen(vm: HomeViewModel = viewModel(), onOpenPage: (AppPage) -> Unit = 
                             text = sentence,
                             style = MaterialTheme.typography.titleMedium.copy(fontSize = 14.5.sp),
                             color = colors.ink
+                        )
+                    }
+                    Spacer(Modifier.height(9.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = stringResource(R.string.home_quick_share),
+                            color = colors.accentCool,
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(999.dp))
+                                .border(1.dp, colors.ruleStrong, RoundedCornerShape(999.dp))
+                                .clickable {
+                                    haptics.open()
+                                    onOpenPage(AppPage.Share)
+                                }
+                                .padding(horizontal = 12.dp, vertical = 8.dp)
+                        )
+                        Text(
+                            text = stringResource(R.string.home_quick_save),
+                            color = colors.ink,
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(colors.glassStrong)
+                                .clickable {
+                                    haptics.confirm()
+                                    ShareCard.shareImage(context, result, view, colors.isDark, 0, null)
+                                }
+                                .padding(horizontal = 12.dp, vertical = 8.dp)
                         )
                     }
                 }
@@ -1653,6 +1716,35 @@ internal fun ShareSheet(
             style = MaterialTheme.typography.bodyMedium,
             color = colors.muted
         )
+        Spacer(Modifier.height(9.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = stringResource(R.string.share_copy_link),
+                color = colors.accentCool,
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .border(1.dp, colors.ruleStrong, RoundedCornerShape(999.dp))
+                    .clickable {
+                        haptics.tap()
+                        copyText(link, R.string.share_link_copied)
+                    }
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+            )
+            Text(
+                text = stringResource(R.string.share_tile_qr),
+                color = colors.ink,
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(colors.glassStrong)
+                    .clickable {
+                        haptics.tap()
+                        qrOpen = !qrOpen
+                    }
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+            )
+        }
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf(

@@ -532,6 +532,8 @@
     <string name="home_hero_slogan">让每一次追霞，都有迹可循</string>
     <string name="home_hero_subtitle">沉浸式预报体验 —— GFS / ECMWF / 光追物理三套算法，把今晚的天空写成一份可以出发的理由。</string>
     <string name="home_hero_note">概率预报 · 仅供参考</string>
+    <string name="home_quick_share">分享这张卡</string>
+    <string name="home_quick_save">保存图卡</string>
     <string name="more_group_main">主结果</string>
     <string name="more_group_detail">技术细节</string>
     <string name="more_group_support">指南与支持</string>

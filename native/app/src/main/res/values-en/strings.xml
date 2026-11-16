@@ -525,6 +525,8 @@
     <string name="home_hero_slogan">Every glow chase leaves a trace.</string>
     <string name="home_hero_subtitle">An immersive forecast — GFS, ECMWF and ray-tracing models turn tonight\'s sky into a reason to head out.</string>
     <string name="home_hero_note">Probabilistic forecast · for reference only</string>
+    <string name="home_quick_share">Share this card</string>
+    <string name="home_quick_save">Save image</string>
     <string name="more_group_main">Main results</string>
     <string name="more_group_detail">Technical details</string>
     <string name="more_group_support">Guides and support</string>
