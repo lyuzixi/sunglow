@@ -127,6 +127,10 @@ const geomTxt = computed(() => {
             <p v-if="res.aodFallback" class="aod-note">
               {{ t("本次没有取到气溶胶数据，颜色浓淡按默认值估算，实际霞光可能比预报更淡或更浓。") }}
             </p>
+            <!-- 实时取数失败、回落到旧缓存：必须自己说出来，不能靠「缓存 · N 小时前」暗示 -->
+            <p v-if="res.staleH" class="aod-note stale-note">
+              {{ t("上游取数失败，以下是 {h} 小时前的缓存结果，仅供参考；网络恢复后请点「重新计算」。", { h: res.staleH }) }}
+            </p>
             <p class="v-note">{{ t("概率预报 · 仅供参考") }}</p>
 
             <div class="v-grid">

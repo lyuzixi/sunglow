@@ -21,9 +21,14 @@ import { MAP_TZ } from "./mapdata";
 import { snapCacheEntry, snapCacheAge } from "./snapshot";
 import { t } from "./i18n";
 
-/* 取数失败时的唯一文案（不造演示数据）：键即简体原文，繁 / 英在 i18n-extra 里 */
+/* 取数失败时的文案（不造演示数据）：键即简体原文，繁 / 英在 i18n-extra 里。
+   2026-11-19：把「为什么失败」分开说 —— 用户无法从一句「网络中断」判断
+   是自己断网、还是上游线路在抽风。 */
 const NO_DATA_MSG =
   "这次没有取到数据：气象接口没有响应或网络中断。稍后点「重新计算」再试一次。";
+const OFFLINE_MSG = "当前设备没有联网。连上网络后点「重新计算」即可。";
+const TIMEOUT_MSG =
+  "气象接口连续超时：上游线路短时不通（这类故障通常几分钟内自愈）。稍等一下再点「重新计算」。";
 import { makeSeries, mergeSeries, type Series } from "./series";
 import { primaryDeckOf } from "./scoring";
 import type { City } from "./city";
@@ -68,6 +73,8 @@ export interface ForecastResult {
   src: "live" | "mock" | "cache";
   /** 本次没取到气溶胶（AOD），评分实际用了 0.25 兜底值 —— 首屏据此给用户提示 */
   aodFallback: boolean;
+  /** 实时取数失败、回落到本机旧缓存时的小时数（结论卡据此显式告警） */
+  staleH?: number;
 }
 export interface ForecastFail { ok: false; error: string; /** 已被更新的请求取代，调用方应静默丢弃 */ stale?: boolean }
 
@@ -157,23 +164,35 @@ const POINT_CACHE_PREFIX = "SUNGLOW.v2.point.v3.";
 /* 6 小时：GFS/EC 本身 6 小时一轮，3 小时的 TTL 等于有一半时间在重复取同一份数据 */
 const POINT_CACHE_TTL = 6 * 3600000;
 const POINT_CACHE_MAX = 12;
+/* 兜底缓存（2026-11-19 多用户「取不到数」事件后新增，用户拍板窗口 12 小时）：
+   上游 api.open-meteo.com 在国内是单 A 记录的跨境线路，会出现整段黑障。此时
+   宁可给用户「几小时前同一时段的结果 + 明写是缓存」也好过一片「没有取到数据」，
+   但那必须是**真取过的数**（不是造数），所以只回落到本机缓存；窗口收在 12 小时
+   —— 再老就是跨天了，拿昨天的天预报今晚的霞没有意义。 */
+const POINT_CACHE_FALLBACK = 12 * 3600000;
 
 function pointKeyOf(lat: number, lon: number, dateStr: string, period: string): string {
   return POINT_CACHE_PREFIX + dateStr + "|" + period + "@" + lat.toFixed(1) + "," + lon.toFixed(1);
 }
 
-export function pointCacheGet(
-  lat: number, lon: number, dateStr: string, period: "am" | "pm"
-): ForecastResult | null {
-  /* 全功能快照链接：分享者打包的条目优先于本机缓存，且不参与 6h TTL。
+export interface PointCacheHit { obj: ForecastResult; ageMs: number }
+
+/** 单点缓存的唯一读取口：结构校验只写在这里，按 maxAge 决定新旧可用性。 */
+function pointCacheRead(
+  lat: number, lon: number, dateStr: string, period: "am" | "pm", maxAgeMs: number
+): PointCacheHit | null {
+  const key = pointKeyOf(lat, lon, dateStr, period);
+  /* 全功能快照链接：分享者打包的条目优先于本机缓存，且不参与 TTL。
      只放在内存 overlay 里，绝不写进被分享者的 localStorage。 */
-  const snap = snapCacheEntry(pointKeyOf(lat, lon, dateStr, period));
-  if (snap && snap.obj) return snap.obj as ForecastResult;
+  const snap = snapCacheEntry(key);
+  if (snap && snap.obj) return { obj: snap.obj as ForecastResult, ageMs: 0 };
   try {
-    const s2 = localStorage.getItem(pointKeyOf(lat, lon, dateStr, period));
+    const s2 = localStorage.getItem(key);
     if (!s2) return null;
     const j = JSON.parse(s2);
-    if (!j || !j.obj || Date.now() - j.ts > POINT_CACHE_TTL) return null;
+    if (!j || !j.obj || !isNum(j.ts)) return null;
+    const age = Date.now() - j.ts;
+    if (age < 0 || age > maxAgeMs) return null;
     const o = j.obj as ForecastResult;
     /* 结构校验：P/Q 必须是数、models 非空、日期时段对得上 —— 缺一项就当没缓存 */
     if (typeof o.P !== "number" || typeof o.Q !== "number") return null;
@@ -186,10 +205,24 @@ export function pointCacheGet(
     const z = o.tz as TzInfo | undefined;
     if (!z || typeof z.offsetSec !== "number") return null;
     if (Math.abs(z.offsetSec) > 14 * 3600 || z.offsetSec % 900 !== 0) return null;
-    return o;
+    return { obj: o, ageMs: age };
   } catch {
     return null;
   }
+}
+
+export function pointCacheGet(
+  lat: number, lon: number, dateStr: string, period: "am" | "pm"
+): ForecastResult | null {
+  const hit = pointCacheRead(lat, lon, dateStr, period, POINT_CACHE_TTL);
+  return hit ? hit.obj : null;
+}
+
+/** 兜底读取：允许超期（兜底窗口内）的旧条目，仅在实时取数彻底失败时使用 */
+export function pointCacheFallback(
+  lat: number, lon: number, dateStr: string, period: "am" | "pm"
+): PointCacheHit | null {
+  return pointCacheRead(lat, lon, dateStr, period, POINT_CACHE_FALLBACK);
 }
 
 /** 缓存条目的年龄（毫秒）；没有可用条目返回 null。用于「缓存 · N 分钟前」提示。 */
@@ -204,7 +237,9 @@ export function pointCacheAge(
     const j = JSON.parse(s);
     if (!j || !isNum(j.ts)) return null;
     const age = Date.now() - j.ts;
-    return age < 0 || age > POINT_CACHE_TTL ? null : age;
+    /* 上限用兜底窗口（12h）而不是 TTL：超期条目在取数失败时会被当作旧结果
+       交出去，此时年龄必须如实报（否则结论卡会写「缓存 · 刚刚」骗人）。 */
+    return age < 0 || age > POINT_CACHE_FALLBACK ? null : age;
   } catch {
     return null;
   }
@@ -304,16 +339,34 @@ export async function runForecast(opts: {
     src = "mock";
   } else {
     try {
+      /* 预算要盖住 jget 的最坏路径：3 次尝试 × 10s + 两次退避（≤2s），留一点余量。
+         旧值 12s 只够一次尝试加一点余量 —— 一次握手卡住就直接判死。 */
       sG = await withBudget(
         apiForecastBatched(MODEL_NAME.gfs, ptsLL, dateStr, dateStr, MAP_TZ, F_VARS),
-        12000
+        34000
       ) as Series[];
       sE = await apiForecastBatched(
         MODEL_NAME.ec, ptsLL, dateStr, dateStr, MAP_TZ, F_VARS
       ).catch(() => null);
       sA = await apiAQBatched(ptsLL, dateStr, dateStr, MAP_TZ).catch(() => null);
     } catch (e) {
-      const err = e as { friendly?: string; fatal?: boolean; status?: number; code?: string };
+      const err = e as {
+        friendly?: string; fatal?: boolean; status?: number; code?: string; timeout?: boolean
+      };
+      /* 上游彻底不通时，本机 12h 内的旧结果比「一片没有取到数据」有用得多：
+         明确标成缓存 + 给出小时数（结论卡上有告警），用户自己判断可信度。
+         只有真取过数才会出现在缓存里，绝不在这里造数。 */
+      const stale = pointCacheFallback(city.lat, city.lon, dateStr, period);
+      if (stale) {
+        return {
+          ...stale.obj,
+          src: "cache",
+          staleH: Math.max(1, Math.round(stale.ageMs / 3600000))
+        };
+      }
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        return { ok: false, error: t(OFFLINE_MSG) };
+      }
       /* 额度用尽（429）单独说清楚：这是限流不是故障，等一分钟或改用付费计划即可 */
       if (err && (err.status === 429 || err.code === "429")) {
         const head = err.friendly ||
@@ -323,7 +376,7 @@ export async function runForecast(opts: {
           : "";
         return { ok: false, error: tail ? head + "\n" + tail : head };
       }
-      return { ok: false, error: t(NO_DATA_MSG) };
+      return { ok: false, error: err?.friendly || t(err?.timeout ? TIMEOUT_MSG : NO_DATA_MSG) };
     }
   }
   /* 取数回来先确认自己仍是最新一次请求：被取代的一律丢弃，不写时区 / 预报缓存 */

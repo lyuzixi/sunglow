@@ -37,18 +37,30 @@ export const F_VARS = [
   "precipitation", "cape"
 ];
 
-const JGET_TIMEOUT_MS = 12000;
+/* 单次尝试上限：跨境 RTT 正常 350ms、17 点 14 变量的一批实测 1~4s（慢时 7s），
+   10s 足够容纳"能通但慢"的正常请求；卡死的握手由它兜住，再交给下一次尝试。 */
+const JGET_TIMEOUT_MS = 10000;
 
-/* 重试策略（2026-10 额度审计后收紧）
-   旧行为：无论什么错都重试 3 次。429 被限流时这么打，等于把请求量再放大 3 倍
-   —— 这正是「额度掉得比预期快」最隐蔽的一处来源；超时也照样连打 12s × 3。
-   新行为：
-   · 429 —— 不重试。服务端已明确拒绝，限流期间再打只会更糟。
-   · 有 retry-after 的错误 —— 按服务端建议等，但超过 3s 就直接报错交上层。
-   · 超时 / 网络错误 / 5xx —— 最多再补 1 次。
-   最坏请求数：普通错误 2 次（旧 3 次），限流 1 次（旧 3 次）。 */
-const JGET_RETRY_MAX = 1;
+/* 重试策略（2026-11-19 多用户「取不到数」事件后第二次调整）
+   为什么放宽：api.open-meteo.com 在国内只有一条 A 记录（OVH 机房，跨境 RTT ~350ms），
+   会出现「TCP 连上了、TLS 握手卡住」的间歇黑障（实测凌晨可达数分钟，期间所有用户
+   同时失败），也会出现整体连不上。旧策略只补 1 次、单次 12s，任何一次黑障就等于
+   全站「这次没有取到数据」。
+   现行行为：
+   · 429 —— 不重试。服务端已明确拒绝，限流期间再打只会更糟（这条不能动）。
+   · 其它 4xx —— 不重试：参数/额度类错误重试多少次都一样。
+   · 超时 / 网络错误 / 5xx —— 最多 3 次尝试，退避 500ms / 1500ms（带抖动，避免
+     多用户同拍重试把上游打更狠）。
+   最坏请求数：普通错误 3 次，限流 / 4xx 1 次。 */
+const JGET_ATTEMPTS = 3;
+const JGET_BACKOFF_MS = [500, 1500];
 const RETRY_AFTER_CAP_MS = 3000;
+
+/* 退避抖动：±35%，同一秒内涌入的用户不会同时重启请求 */
+function backoffMs(i: number): number {
+  const base = JGET_BACKOFF_MS[Math.min(i, JGET_BACKOFF_MS.length - 1)];
+  return Math.round(base * (0.65 + Math.random() * 0.7));
+}
 
 export class MapFetchError extends Error {
   friendly?: string;
@@ -60,7 +72,7 @@ export class MapFetchError extends Error {
 
 async function jget(url: string): Promise<unknown> {
   let lastErr: MapFetchError | null = null;
-  for (let i = 0; i <= JGET_RETRY_MAX; i++) {
+  for (let i = 0; i < JGET_ATTEMPTS; i++) {
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), JGET_TIMEOUT_MS);
     try {
@@ -95,15 +107,26 @@ async function jget(url: string): Promise<unknown> {
       if (lastErr && lastErr.fatal) throw lastErr;
       /* 429 一律重试 —— 这里绝不能写反：限流时重复请求只会加长封禁 */
       if (lastErr && lastErr.status === 429) throw lastErr;
-      if (i < JGET_RETRY_MAX) {
+      /* 其它 4xx 是「请求本身不对」，重试没有意义（还会白烧额度） */
+      if (lastErr && isNum(lastErr.status) && lastErr.status! >= 400 && lastErr.status! < 500) {
+        throw lastErr;
+      }
+      if (i < JGET_ATTEMPTS - 1) {
         /* 服务端给了 retry-after 就听它的；等太久（>3s）不如直接报错让用户重试 */
-        const wait = lastErr?.retryAfter ?? 400 * (i + 1);
+        const wait = lastErr?.retryAfter ?? backoffMs(i);
         if (wait > RETRY_AFTER_CAP_MS) throw lastErr;
         await sleep(wait);
       }
     } finally {
       clearTimeout(timer);
     }
+  }
+  /* 重试用尽：把"是超时/断网"说清楚，上层文案才能给对（旧版一律回落成
+     「没有响应或网络中断」，用户没法判断是自己断网还是上游线路问题） */
+  if (lastErr && !lastErr.friendly) {
+    lastErr.friendly = lastErr.timeout
+      ? `气象接口连接超时（连续 ${JGET_ATTEMPTS} 次尝试都卡在握手/响应）。这通常是上游线路短时不通，等一两分钟点「重新计算」即可。`
+      : `气象取数连续 ${JGET_ATTEMPTS} 次失败（网络错误）。请检查网络后点「重新计算」。`;
   }
   throw lastErr || new MapFetchError("network");
 }

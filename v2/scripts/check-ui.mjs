@@ -173,8 +173,15 @@ for (const rel of ["tutorial.html", "404.html", "sw.js", "app.html", "README.md"
    一份编造的概率会让人拿着它出门，比没有结果更糟：失败只能给「没有取到数据」提示。
    src="mock" 只允许出现在显式 useMock 分支里，不允许再有任何自动回落。 */
 const fc = read("src/core/forecast.ts");
-must(/NO_DATA_MSG/.test(fc) && /return \{ ok: false, error: t\(NO_DATA_MSG\) \}/.test(fc),
+must(/NO_DATA_MSG/.test(fc) && /return \{ ok: false, error: [\s\S]{0,90}NO_DATA_MSG/.test(fc),
   "取数失败没有返回「没有取到数据」提示");
+/* 2026-11-19：兜底只能是「真取过的旧缓存」，且必须自报年龄（staleH）。
+   放开的是提示文案的拼装方式，不放开的仍然是「不许造数」。 */
+must(/const stale = pointCacheFallback\(/.test(fc) &&
+  /staleH: Math\.max\(1, Math\.round\(stale\.ageMs \/ 3600000\)\)/.test(fc),
+  "取数失败没有回落到本机旧缓存（或回落时没带 staleH 年龄）");
+must(/res\.staleH[\s\S]{0,240}小时前的缓存结果/.test(read("src/components/ConclusionCard.vue")),
+  "结论卡没有显式告警「上游取数失败 · N 小时前的缓存」");
 must((fc.match(/src = "mock"/g) || []).length === 1 && /if \(opts\.useMock\)/.test(fc),
   "mock 仍有自动回落分支（src=\"mock\" 只允许出现在显式 useMock 分支）");
 must(/err-note[\s\S]{0,600}重新计算/.test(read("src/components/ConclusionCard.vue")),

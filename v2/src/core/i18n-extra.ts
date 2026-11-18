@@ -399,6 +399,13 @@ export const HANT_EXTRA: Record<string, string> = {
   "生成图片失败，请重试。": "產生圖片失敗，請重試。",
   "这次没有取到数据：气象接口没有响应或网络中断。稍后点「重新计算」再试一次。":
     "這次沒有取到資料：氣象介面沒有回應或網路中斷。稍後點「重新計算」再試一次。",
+  /* ---- 取数失败分级（2026-11-19） ---- */
+  "当前设备没有联网。连上网络后点「重新计算」即可。":
+    "目前裝置沒有連網。連上網路後點「重新計算」即可。",
+  "气象接口连续超时：上游线路短时不通（这类故障通常几分钟内自愈）。稍等一下再点「重新计算」。":
+    "氣象介面連續逾時：上游線路短時不通（這類故障通常幾分鐘內自癒）。稍等一下再點「重新計算」。",
+  "上游取数失败，以下是 {h} 小时前的缓存结果，仅供参考；网络恢复后请点「重新计算」。":
+    "上游取數失敗，以下是 {h} 小時前的快取結果，僅供參考；網路恢復後請點「重新計算」。",
   /* ---- 方案 C 入口改名 + 方案 D 合成卡 ---- */
   "趋势图": "趨勢圖",
   "观测场图": "觀測場圖",
@@ -1014,6 +1021,13 @@ export const EN_EXTRA: Record<string, string> = {
   "生成图片失败，请重试。": "Could not render the image. Please try again.",
   "这次没有取到数据：气象接口没有响应或网络中断。稍后点「重新计算」再试一次。":
     "No data this time — the weather API did not respond or the network dropped. Press Calculate again in a moment.",
+  /* ---- 取数失败分级（2026-11-19） ---- */
+  "当前设备没有联网。连上网络后点「重新计算」即可。":
+    "This device is offline. Connect to a network, then press Calculate again.",
+  "气象接口连续超时：上游线路短时不通（这类故障通常几分钟内自愈）。稍等一下再点「重新计算」。":
+    "The weather API keeps timing out — the upstream route is briefly unreachable (usually recovers within minutes). Try Calculate again shortly.",
+  "上游取数失败，以下是 {h} 小时前的缓存结果，仅供参考；网络恢复后请点「重新计算」。":
+    "Could not reach the weather API. Below is the cached result from {h} hours ago — for reference only. Press Calculate again once your network is back.",
   /* ---- 方案 C 入口改名 + 方案 D 合成卡 ---- */
   "趋势图": "Trend chart",
   "观测场图": "Field map",
