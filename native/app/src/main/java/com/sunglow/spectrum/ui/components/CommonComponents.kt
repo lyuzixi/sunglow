@@ -26,7 +26,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -235,11 +234,8 @@ fun BigNumber(
                     center = center
                 )
             }
-            .graphicsLayer {
-                shadowElevation = 18f
-                ambientColor = resolvedColor
-                spotColor = resolvedColor
-            }
+            /* 辉光仅由上方 drawBehind 的半透明圆负责；不再用 graphicsLayer 的
+               ambientColor/spotColor/shadowElevation——这些属性在本工程 Compose 版本不可用。 */
     } else {
         modifier
     }
