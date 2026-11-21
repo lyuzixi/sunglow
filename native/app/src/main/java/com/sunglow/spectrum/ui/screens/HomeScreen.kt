@@ -297,6 +297,12 @@ fun HomeScreen(vm: HomeViewModel = viewModel(), onOpenPage: (AppPage) -> Unit = 
                             color = colors.ink
                         )
                     }
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = "${stringResource(R.string.home_confidence)} · ${confLabel(result.conf.key)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = colors.faint
+                    )
                     Spacer(Modifier.height(9.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
