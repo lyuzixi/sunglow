@@ -20,8 +20,17 @@ import { fileURLToPath } from "node:url"
 
 const here = dirname(fileURLToPath(import.meta.url))
 const res = resolve(here, "../app/src/main/res")
-const screensDir = resolve(here, "../app/src/main/java/com/sunglow/spectrum/ui/screens")
-const localizedScreens = ["FieldScreen.kt", "TrendScreen.kt", "CitySheet.kt", "HomeScreen.kt"]
+const uiDir = resolve(here, "../app/src/main/java/com/sunglow/spectrum/ui")
+/* 路径相对 ui 根目录：screens 与 components 下的已完成抽键文件都纳入门禁 */
+const localizedScreens = [
+  "screens/FieldScreen.kt",
+  "screens/TrendScreen.kt",
+  "screens/CitySheet.kt",
+  "screens/HomeScreen.kt",
+  "screens/SecondaryScreens.kt",
+  "screens/SnapshotScreen.kt",
+  "components/CommonComponents.kt"
+]
 const files = {
   zh: resolve(res, "values/strings.xml"),
   hant: resolve(res, "values-zh-rTW/strings.xml"),
@@ -32,7 +41,7 @@ function parse(path) {
   const src = readFileSync(path, "utf8")
   const map = new Map()
   const dup = []
-  const re = /<string\s+name="([^"]+)"\s*>([\s\S]*?)<\/string>/g
+  const re = /<string\s+name="([^"]+)"[^>]*>([\s\S]*?)<\/string>/g
   let m
   while ((m = re.exec(src)) !== null) {
     const [, name, raw] = m
@@ -86,7 +95,7 @@ if (failed) {
 /* 裸中文门禁：只看已完成抽键的界面文件，注释行直接跳过 */
 const CJK = /[\u4e00-\u9fff]/
 for (const name of localizedScreens) {
-  const path = resolve(screensDir, name)
+  const path = resolve(uiDir, name)
   const lines = readFileSync(path, "utf8").split(/\r?\n/)
   const hits = []
   lines.forEach((line, i) => {

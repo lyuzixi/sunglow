@@ -2,6 +2,7 @@ package com.sunglow.spectrum.ui.motion
 
 import android.provider.Settings
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -27,6 +28,12 @@ import kotlin.math.roundToInt
  * 动效与触觉的统一入口
  * 全部动画都遵守系统「移除动画」设置：ANIMATOR_DURATION_SCALE = 0 时直接落位。
  */
+
+/** 与网页 tokens.css 同源的缓动与时长（--ease-out / --t-fast|med|slow） */
+val EaseOut = CubicBezierEasing(0.16f, 1f, 0.3f, 1f)
+const val TFast = 160
+const val TMed = 320
+const val TSlow = 700
 
 /** 系统动画缩放是否为 0（无障碍里的“移除动画”） */
 @Composable

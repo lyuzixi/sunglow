@@ -35,6 +35,10 @@ data class SunglowColors(
     val mid: Color,
     val bad: Color,
     val info: Color,
+    /** 柔和光谱渐变与玻璃高光，与网页 --spectrum-soft / --glass-* 同源 */
+    val spectrumSoft: List<Color> = listOf(),
+    val glassSheen: Color = Color.Unspecified,
+    val glassHi: Color = Color.Unspecified,
     val isDark: Boolean
 ) {
     /** 品红 → 琥珀 → 电离青，与网页 --spectrum 同序 */
@@ -96,7 +100,10 @@ data class SunglowSpacing(
     val lg: Dp = 16.dp,
     val xl: Dp = 24.dp,
     val xxl: Dp = 32.dp,
-    val page: Dp = 20.dp
+    val page: Dp = 20.dp,
+    /** 网页 --sp-7 / --sp-8 */
+    val xxl2: Dp = 48.dp,
+    val xxxl: Dp = 72.dp
 )
 
 /** 圆角阶梯，与网页 --r-sm / --r-md / --r-lg 对应 */
@@ -104,7 +111,9 @@ data class SunglowSpacing(
 data class SunglowRadius(
     val sm: Dp = 8.dp,
     val md: Dp = 14.dp,
-    val lg: Dp = 22.dp
+    val lg: Dp = 22.dp,
+    /** 网页 --r-full：胶囊/圆形 */
+    val full: Dp = 999.dp
 )
 
 val LocalSunglowColors = staticCompositionLocalOf { DarkColors }

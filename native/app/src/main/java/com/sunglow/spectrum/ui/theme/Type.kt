@@ -23,10 +23,14 @@ val SpaceGrotesk: FontFamily = FontFamily(
     Font(R.font.space_grotesk, FontWeight.Bold)
 )
 
-/** 正文：中文走系统黑体，英文数字由系统字体渲染 */
-val InterFamily: FontFamily = FontFamily.SansSerif
+/** 正文：英文数字用内置 Inter 三字重，中文由 FontFamily 自动回退系统黑体 */
+val InterFamily: FontFamily = FontFamily(
+    Font(R.font.inter_latin_400, FontWeight.Normal),
+    Font(R.font.inter_latin_500, FontWeight.Medium),
+    Font(R.font.inter_latin_600, FontWeight.SemiBold)
+)
 
-private val Reading: FontFamily = FontFamily.SansSerif
+private val Reading: FontFamily = InterFamily
 
 val SunglowTypography = Typography(
     displayLarge = TextStyle(
