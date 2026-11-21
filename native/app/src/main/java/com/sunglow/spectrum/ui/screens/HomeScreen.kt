@@ -126,6 +126,7 @@ import com.sunglow.spectrum.ui.HomeViewModel
 import com.sunglow.spectrum.ui.components.ChevronRight
 import com.sunglow.spectrum.ui.components.MoreIcon
 import com.sunglow.spectrum.ui.components.ShareIcon
+import com.sunglow.spectrum.ui.components.SpectrumPill
 import com.sunglow.spectrum.ui.i18n.Lang
 import com.sunglow.spectrum.ui.motion.AnimatedNumberText
 import com.sunglow.spectrum.ui.motion.confirm
@@ -271,21 +272,14 @@ fun HomeScreen(vm: HomeViewModel = viewModel(), onOpenPage: (AppPage) -> Unit = 
                             ModelSel.EC -> stringResource(R.string.model_ec)
                             ModelSel.RT -> stringResource(R.string.model_rt)
                         }
-                        Text(
+                        SpectrumPill(
                             text = label,
-                            color = if (on) colors.bg else colors.muted,
-                            fontSize = 10.sp,
-                            textAlign = TextAlign.Center,
-                            maxLines = 1,
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(999.dp))
-                                .background(if (on) colors.accentCool else colors.bg3)
-                                .clickable {
-                                    modelSel = option
-                                    haptics.tap()
-                                }
-                                .padding(vertical = 9.dp)
+                            selected = on,
+                            onClick = {
+                                modelSel = option
+                                haptics.tap()
+                            },
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 }
@@ -502,7 +496,7 @@ private fun HeroBlock(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(236.dp)
+            .height(330.dp)
             .background(Color(0xFF1B2130))
     ) {
         if (state.photoMode == 1 || state.photoMode == 2) {
