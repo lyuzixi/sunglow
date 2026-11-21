@@ -146,6 +146,16 @@ jobs:
         working-directory: .
         run: node native/tools/check-i18n.mjs
 
+      # R7A 设计令牌同步：网页 tokens.css 改色而 Color.kt 未跟改则直接红（平台差异走豁免清单）
+      - name: Check design token parity (web ↔ native)
+        working-directory: .
+        run: node native/tools/check-tokens.mjs
+
+      # 取数纪律静态契约：趋势批量/换日期不取数/429不重试/额度口径，防回退（无需编译即可守）
+      - name: Check fetch discipline contract
+        working-directory: .
+        run: node native/tools/check-fetch-contract.mjs
+
       - name: Unit tests (含算法基准对拍)
         shell: bash
         run: set -o pipefail; gradle :app:testDebugUnitTest --no-daemon --stacktrace 2>&1 | tee build.log
